@@ -1,0 +1,830 @@
+{% extends "base.html" %}
+
+{% block title %}BuddySkincare - Mỹ Phẩm Thanh Lý Giá Tốt Nhất{% endblock %}
+
+{% block content %}
+<!-- Hero Banner -->
+<section class="hero-banner">
+    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="{{ url_for('static', filename='image/demo/1200x429px_f18b4a4fee8d439b95d810bbd94b3493.jpg') }}" class="d-block w-100" alt="Banner 1" style="height: 520px; object-fit: cover;">
+                <!-- <div class="carousel-caption d-none d-md-block">
+                    <h2 class="fw-bold display-4 mb-3">FREESHIP 15K ĐƠN TỪ 199K</h2>
+                    <p class="lead mb-4">Giao hàng toàn quốc - Thanh toán khi nhận hàng</p>
+                    <a href="#products" class="btn btn-primary btn-lg px-4 py-2">Mua Ngay</a>
+                </div> -->
+            </div>
+            <div class="carousel-item">
+                <img src="{{ url_for('static', filename='image/demo/1200x429px_f18b4a4fee8d439b95d810bbd94b3493.jpg') }}" class="d-block w-100" alt="Banner 1" style="height: 520px; object-fit: cover;">
+                <!-- <div class="carousel-caption d-none d-md-block">
+                    <h2 class="fw-bold display-4 mb-3">Giao hàng toàn quốc</h2>
+                    <p class="lead mb-4">Đặt hàng online - Nhận hàng tại nhà</p>
+                    <a href="#products" class="btn btn-primary btn-lg px-4 py-2">Đặt Hàng Ngay</a>
+                </div> -->
+            </div>
+            <!-- <div class="carousel-item">
+                <img src="{{ url_for('static', filename='image/demo/6fde01da-d545-435d-ab71-50ed3184afe0.webp') }}" class="d-block w-100" alt="Banner 3" style="height: 400px; object-fit: cover;">
+                <div class="carousel-caption d-none d-md-block">
+                    <h2 class="fw-bold">Nhận mã ưu đãi</h2>
+                    <p>Đăng ký nhận thông báo khuyến mãi mới nhất</p>
+                    <a href="#" class="btn btn-primary btn-lg">Đăng Ký Ngay</a>
+                </div>
+            </div> -->
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+</section>
+
+<!-- Flash Sale Section -->
+<section class="flash-sale section-padding">
+    <div class="container">
+        <div class="section-header">
+            <h3 class="section-title section-title-glow"><i class="fas fa-bolt icon-bolt"></i> FLASH SALE </h3>
+            <a href="#" class="btn btn-outline-dark btn-sm">Xem tất cả</a>
+        </div>
+
+        <!-- Countdown -->
+        <div class="timer">
+            <div class="time-pill">
+                <span class="count countdown-number">00</span>
+                <div class="label">NGÀY</div>
+            </div>
+            <div class="time-pill">
+                <span class="count countdown-number">00</span>
+                <div class="label">GIỜ</div>
+            </div>
+            <div class="time-pill">
+                <span class="count countdown-number">00</span>
+                <div class="label">PHÚT</div>
+            </div>
+            <div class="time-pill">
+                <span class="count countdown-number">00</span>
+                <div class="label">GIÂY</div>
+            </div>
+        </div>
+
+        <!-- Products -->
+        <div class="row g-3 homepage-products">
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="YEHWADAM">
+                        <div class="badge-sale">30%</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">YEHWADAM</h6>
+                        <p class="text-muted small">Tẩy Tế Bào Chết Toàn Thân</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-decoration-line-through text-muted me-2 dt">929.000đ</span>
+                            <span class="text-danger fw-bold fs-5 dt-text">649.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(8)</small>
+                        </div>
+                        <div class="stock">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 35%" aria-valuenow="35" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="stock-text">còn 7 sản phẩm</span>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mt-2">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Cetaphil">
+                        <div class="badge-sale">25%</div>
+                        
+                        
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Sữa rửa mặt Cetaphil 500ml</h6>
+                        <p class="text-muted small">Cetaphil</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-decoration-line-through text-muted me-2 dt" >260.000đ</span>
+                            <span class="text-danger fw-bold fs-5 dt-text">195.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><i class="far fa-star"></i>
+                            </div>
+                            <small class="text-muted">(180)</small>
+                        </div>
+                        <div class="stock">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 52%" aria-valuenow="52" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="stock-text">còn 12 sản phẩm</span>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mt-2">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-kem-chong-nang-l-oreal-paris-x20-thoang-da-mong-nhe-50ml-1738898716_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="L'oreal">
+                        <div class="badge-sale">17%</div>
+                        
+                        
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Kem chống nắng L'Oreal 50ml</h6>
+                        <p class="text-muted small">L'Oreal Paris</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-decoration-line-through text-muted me-2 dt">239.000đ</span>
+                            <span class="text-danger fw-bold fs-5 dt-text">199.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                            </div>
+                            <small class="text-muted">(96)</small>
+                        </div>
+                        <div class="stock">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 40%" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="stock-text">còn 9 sản phẩm</span>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mt-2">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-combo-cocoon-nuoc-can-bang-sen-hau-giang-310ml-nuoc-tay-trang-bi-dao-500ml-1741320900_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Cocoon">
+                        <div class="badge-sale">20%</div>
+                        
+                        
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Combo Cocoon: Toner 310ml + Tẩy trang 500ml</h6>
+                        <p class="text-muted small">Cocoon</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-decoration-line-through text-muted me-2 dt">549.000đ</span>
+                            <span class="text-danger fw-bold fs-5 dt-text">439.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i><i class="far fa-star"></i>
+                            </div>
+                            <small class="text-muted">(67)</small>
+                        </div>
+                        <div class="stock">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 78%" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="stock-text">còn 7 sản phẩm</span>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mt-2">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/z6945395708832_75208e7b905c3aafc997c7db19894dfd.jpg') }}" class="card-img-top" alt="Mac Ruby Woo">
+                        <div class="badge-sale">35%</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Son môi Mac Ruby Woo 3g</h6>
+                        <p class="text-muted small">Mac Cosmetics</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-decoration-line-through text-muted me-2 dt">850.000đ</span>
+                            <span class="text-danger fw-bold fs-5 dt-text">552.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(89)</small>
+                        </div>
+                        <div class="stock">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 25%" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <span class="stock-text">còn 5 sản phẩm</span>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mt-2">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Brands Section -->
+
+
+<!-- Categories Section -->
+<section class="categories-section section-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h3 class="fw-bold text-primary">Tìm kiếm nhiều nhất</h3>
+                <p class="text-muted">Những từ khóa được tìm kiếm nhiều nhất</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card text-center p-3 rounded border">
+                    <h6 class="mb-0">Vitamin C serum</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card text-center p-3 rounded border">
+                    <h6 class="mb-0">Son lì New Bold</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card text-center p-3 rounded border">
+                    <h6 class="mb-0">Real Nature</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card text-center p-3 rounded border">
+                    <h6 class="mb-0">Mặt nạ</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card text-center p-3 rounded border">
+                    <h6 class="mb-0">Kem chống nắng</h6>
+                </div>
+            </div>
+            <div class="col-lg-2 col-md-4 col-6">
+                <div class="category-card text-center p-3 rounded border">
+                    <h6 class="mb-0">Cushion</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Flash Sale Section -->
+<section id="products" class="flash-sale-section section-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h3 class="fw-bold text-primary">Sản Phẩm Mới Về</h3>
+                <p class="text-muted">Những sản phẩm mới được cập nhật</p>
+            </div>
+        </div>
+        <div class="row g-3 homepage-products">
+            <!-- Product 1 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-80 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-combo-cocoon-nuoc-can-bang-sen-hau-giang-310ml-nuoc-tay-trang-bi-dao-500ml-1741320900_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Nước cân bằng sen hậu giang" >
+                        <div class="badge bg-danger position-absolute top-0 start-0 m-2">-30%</div>
+                        <div class="badge bg-warning position-absolute top-0 end-0 m-2">Còn 8</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Combo Nước Cân Bằng Sen Hậu Giang</h6>
+                        <p class="text-muted small">TheFaceShop</p>
+                        <div class="price-section d-flex align-items-center">
+                            <span class="text-decoration-line-through text-muted me-2">450.000đ</span>
+                            <span class="text-danger fw-bold fs-5">315.000đ</span>
+                        </div>
+                        <div class="rating-section d-flex align-items-center">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(156)</small>
+                        </div>
+                        <button class="btn btn-primary btn-sm">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product 2 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-80 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Sữa rửa mặt Cetaphil" ">
+                        <div class="badge bg-danger position-absolute top-0 start-0 m-2">-25%</div>
+                        <div class="badge bg-warning position-absolute top-0 end-0 m-2">Còn 12</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Sữa Rửa Mặt Cetaphil Dịu Nhẹ</h6>
+                        <p class="text-muted small">Cetaphil</p>
+                        <div class="price-section d-flex align-items-center">
+                            <span class="text-decoration-line-through text-muted me-2">320.000đ</span>
+                            <span class="text-danger fw-bold fs-5">240.000đ</span>
+                        </div>
+                        <div class="rating-section d-flex align-items-center">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(203)</small>
+                        </div>
+                        <button class="btn btn-primary btn-sm">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product 3 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-80 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Nước tẩy trang Bioderma" >
+                        <div class="badge bg-danger position-absolute top-0 start-0 m-2">-20%</div>
+                        <div class="badge bg-warning position-absolute top-0 end-0 m-2">Còn 15</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Nước Tẩy Trang Bioderma</h6>
+                        <p class="text-muted small">Bioderma</p>
+                        <div class="price-section d-flex align-items-center">
+                            <span class="text-decoration-line-through text-muted me-2">280.000đ</span>
+                            <span class="text-danger fw-bold fs-5">224.000đ</span>
+                        </div>
+                        <div class="rating-section d-flex align-items-center">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(178)</small>
+                        </div>
+                        <button class="btn btn-primary btn-sm">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product 4 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-80 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/z6945395685617_d0df38206d0bf09155a54b1ed964c329.jpg') }}" class="card-img-top" alt="Kem chống nắng L'Oreal" >
+                        <div class="badge bg-danger position-absolute top-0 start-0 m-2">-30%</div>
+                        <div class="badge bg-warning position-absolute top-0 end-0 m-2">Còn 6</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Kem Chống Nắng L'Oreal Paris</h6>
+                        <p class="text-muted small">L'Oreal Paris</p>
+                        <div class="price-section d-flex align-items-center">
+                            <span class="text-decoration-line-through text-muted me-2">350.000đ</span>
+                            <span class="text-danger fw-bold fs-5">245.000đ</span>
+                        </div>
+                        <div class="rating-section d-flex align-items-center">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(134)</small>
+                        </div>
+                        <button class="btn btn-primary btn-sm">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Product 5 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-80 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-son-moi-mac-cosmetics-ruby-woo-matte-finish-3g-1741235596_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Son môi Mac Ruby Woo">
+                        <div class="badge bg-danger position-absolute top-0 start-0 m-2">-35%</div>
+                        <div class="badge bg-warning position-absolute top-0 end-0 m-2">Còn 5</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Son Môi Mac Ruby Woo</h6>
+                        <p class="text-muted small">Mac Cosmetics</p>
+                        <div class="price-section d-flex align-items-center">
+                            <span class="text-decoration-line-through text-muted me-2">850.000đ</span>
+                            <span class="text-danger fw-bold fs-5">552.000đ</span>
+                        </div>
+                        <div class="rating-section d-flex align-items-center">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(89)</small>
+                        </div>
+                        <button class="btn btn-primary btn-sm">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section class="featured-products py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="fw-bold">Sản Phẩm Nổi Bật</h2>
+                <p class="text-muted">Những sản phẩm được yêu thích nhất</p>
+            </div>
+        </div>
+        <div class="row g-4 homepage-products">
+            <!-- Featured Product 1 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="/static/image/demo/z6945395685617_d0df38206d0bf09155a54b1ed964c329.jpg" class="card-img-top" alt="Kem Dưỡng">
+                        <div class="badge bg-success position-absolute top-0 start-0 m-2">Bán chạy</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Kem Dưỡng Ẩm La Mer</h6>
+                        <p class="text-muted small">La Mer</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-primary fw-bold fs-5">3.500.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(156)</small>
+                        </div>
+                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Featured Product 2 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="/static/image/demo/z6945395685617_d0df38206d0bf09155a54b1ed964c329.jpg" class="card-img-top" alt="Phấn Phủ">
+                        <div class="badge bg-info position-absolute top-0 start-0 m-2">Mới</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Phấn Phủ Laura Mercier</h6>
+                        <p class="text-muted small">Laura Mercier</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-primary fw-bold fs-5">1.800.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                            <small class="text-muted">(89)</small>
+                        </div>
+                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Featured Product 3 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="/static/image/demo/z6945395708832_75208e7b905c3aafc997c7db19894dfd.jpg" class="card-img-top" alt="Son Lì">
+                        <div class="badge bg-warning position-absolute top-0 start-0 m-2">Hot</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Son Lì Dior 999</h6>
+                        <p class="text-muted small">Dior</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-primary fw-bold fs-5">950.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(203)</small>
+                        </div>
+                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Featured Product 4 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="https://via.placeholder.com/300x300/48dbfb/ffffff?text=Toner" class="card-img-top" alt="Toner">
+                        <div class="badge bg-secondary position-absolute top-0 start-0 m-2">Giảm giá</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Toner SK-II</h6>
+                        <p class="text-muted small">SK-II</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-decoration-line-through text-muted me-2">2.200.000đ</span>
+                            <span class="text-danger fw-bold fs-5">1.650.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(178)</small>
+                        </div>
+                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Featured Product 5 -->
+            <div class="col-lg-2 col-md-6 col-6">
+                <div class="product-card card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <img src="/static/image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg" class="card-img-top" alt="Nước tẩy trang Bioderma">
+                        <div class="badge bg-primary position-absolute top-0 start-0 m-2">Top</div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title">Nước Tẩy Trang Bioderma</h6>
+                        <p class="text-muted small">Bioderma</p>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="text-primary fw-bold fs-5">390.000đ</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stars text-warning me-2">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <small class="text-muted">(245)</small>
+                        </div>
+                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section section-padding bg-primary text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h3 class="fw-bold">Tại Sao Chọn BuddySkincare?</h3>
+                <p class="lead">Những lý do khiến chúng tôi trở thành lựa chọn hàng đầu</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-shield-alt fa-3x"></i>
+                    </div>
+                    <h5 class="mb-3">Miễn phí đổi trả</h5>
+                    <p class="mb-0">Miễn phí đổi trả nếu sản phẩm gặp vấn đề</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-truck fa-3x"></i>
+                    </div>
+                    <h5 class="mb-3">Giao Hàng Toàn Quốc</h5>
+                    <p class="mb-0">Giao hàng nhanh chóng đến mọi tỉnh thành, hỗ trợ COD</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-percentage fa-3x"></i>
+                    </div>
+                    <h5 class="mb-3">Giá Tốt Nhất</h5>
+                    <p class="mb-0">Giá thanh lý cực sốc, tiết kiệm đến 70% so với giá gốc</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="feature-card text-center p-4">
+                    <div class="feature-icon mb-3">
+                        <i class="fas fa-headset fa-3x"></i>
+                    </div>
+                    <h5 class="mb-3">Hỗ Trợ 24/7</h5>
+                    <p class="mb-0">Đội ngũ tư vấn chuyên nghiệp, hỗ trợ khách hàng mọi lúc</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
+<!-- Stats Section -->
+<section class="stats-section section-padding bg-dark text-white">
+    <div class="container">
+        <div class="row g-3 text-center">
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number display-4 fw-bold text-primary mb-2">8,400+</div>
+                    <div class="stat-label">Khách hàng hài lòng</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number display-4 fw-bold text-primary mb-2">300+</div>
+                    <div class="stat-label">Sản phẩm đa dạng</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number display-4 fw-bold text-primary mb-2">63</div>
+                    <div class="stat-label">Tỉnh thành phục vụ</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stat-item">
+                    <div class="stat-number display-4 fw-bold text-primary mb-2">24/7</div>
+                    <div class="stat-label">Hỗ trợ khách hàng</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section section-padding">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h3 class="fw-bold">Khách Hàng Nói Gì</h3>
+                <p class="text-muted">Những đánh giá từ khách hàng của chúng tôi</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-4">
+                <div class="testimonial-card card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <img src="{{ url_for('static', filename='image/khach/gai-xinh-cute-anh-dai-dien-dep-cho-nu-2.jpg') }}" alt="Khách hàng" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
+                        </div>
+                        <h6 class="fw-bold">Nguyễn Thị Anh</h6>
+                        <div class="stars text-warning mb-3">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <p class="text-muted">"Sản phẩm chất lượng tốt, giá cả hợp lý. Giao hàng online nhanh và đóng gói cẩn thận. Sẽ mua lại!"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="testimonial-card card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <img src="{{ url_for('static', filename='image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg') }}" alt="Khách hàng" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
+                        </div>
+                        <h6 class="fw-bold">Trần Văn Bình</h6>
+                        <div class="stars text-warning mb-3">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <p class="text-muted">"Mua son Mac với giá rẻ hơn 50% so với giá gốc. Chất lượng vẫn tốt như mới. Rất hài lòng!"</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="testimonial-card card border-0 shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <img src="{{ url_for('static', filename='image/khach/img20171211150728496.jpg') }}" alt="Khách hàng" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
+                        </div>
+                        <h6 class="fw-bold">Lê Thị Cẩm</h6>
+                        <div class="stars text-warning mb-3">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <p class="text-muted">"Website dễ sử dụng, thanh toán online thuận tiện. Sản phẩm đúng như mô tả. Đáng tin cậy!"</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Blog Section -->
+<section class="blog-section section-padding bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h3 class="fw-bold text-primary">Blog Làm Đẹp</h3>
+                <p class="text-muted">Những bài viết hữu ích về chăm sóc da và làm đẹp</p>
+            </div>
+        </div>
+        <div class="row g-3">
+            <div class="col-lg-4 col-md-6">
+                <div class="blog-card card border-0 shadow-sm h-100">
+                    <img src="/static/image/tintuc/cach-chon-kem-chong-nang-phu-hop-nhat-cho-tung-loai-da-201910150810078833.jpg" class="card-img-top" alt="Blog 1">
+                    <div class="card-body">
+                        <div class="blog-meta text-muted small mb-2">
+                            <i class="fas fa-calendar me-2"></i>25/08/2024
+                            <i class="fas fa-user ms-3 me-2"></i>BuddySkincare
+                        </div>
+                        <h5 class="card-title">Cách Chọn Kem Chống Nắng Phù Hợp</h5>
+                        <p class="card-text text-muted">Hướng dẫn chi tiết cách chọn kem chống nắng phù hợp với từng loại da và mục đích sử dụng...</p>
+                        <a href="#" class="btn btn-outline-primary btn-sm">Đọc thêm</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="blog-card card border-0 shadow-sm h-100">
+                    <img src="https://via.placeholder.com/350x200/4ecdc4/ffffff?text=Blog+2" class="card-img-top" alt="Blog 2">
+                    <div class="card-body">
+                        <div class="blog-meta text-muted small mb-2">
+                            <i class="fas fa-calendar me-2"></i>24/08/2024
+                            <i class="fas fa-user ms-3 me-2"></i>BuddySkincare
+                        </div>
+                        <h5 class="card-title">Quy Trình Chăm Sóc Da Buổi Tối</h5>
+                        <p class="card-text text-muted">Quy trình chăm sóc da buổi tối chuẩn giúp da khỏe mạnh và trẻ trung hơn...</p>
+                        <a href="#" class="btn btn-outline-primary btn-sm">Đọc thêm</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="blog-card card border-0 shadow-sm h-100">
+                    <img src="https://via.placeholder.com/350x200/45b7d1/ffffff?text=Blog+3" class="card-img-top" alt="Blog 3">
+                    <div class="card-body">
+                        <div class="blog-meta text-muted small mb-2">
+                            <i class="fas fa-calendar me-2"></i>23/08/2024
+                            <i class="fas fa-user ms-3 me-2"></i>BuddySkincare
+                        </div>
+                        <h5 class="card-title">Top 5 Serum Vitamin C Tốt Nhất</h5>
+                        <p class="card-text text-muted">Danh sách 5 serum vitamin C được đánh giá cao nhất trong năm 2024...</p>
+                        <a href="#" class="btn btn-outline-primary btn-sm">Đọc thêm</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12 text-center">
+                <a href="#" class="btn btn-primary">Xem tất cả bài viết</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Floating Action Button -->
+<div class="floating-actions">
+    <div class="floating-action-item">
+        <a href="tel:1900-1234" class="floating-btn phone-btn" title="Gọi ngay">
+            <i class="fas fa-phone"></i>
+        </a>
+    </div>
+    <div class="floating-action-item">
+        <a href="https://zalo.me/0123456789" class="floating-btn zalo-btn" title="Chat Zalo">
+            <i class="fab fa-facebook-messenger"></i>
+        </a>
+    </div>
+    <div class="floating-action-item">
+        <a href="#" class="floating-btn scroll-top-btn" title="Lên đầu trang" onclick="scrollToTop()">
+            <i class="fas fa-arrow-up"></i>
+        </a>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Sản Phẩm - BuddySkincare{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header bg-light py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-0">
+                        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Trang chủ</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Sản phẩm</li>
+                    </ol>
+                </nav>
+                <h1 class="fw-bold mt-3">{% if page_title %}{{ page_title }}{% else %}Tất Cả Sản Phẩm{% endif %}</h1>
+                <p class="text-muted">
+                    {% if current_condition == 'Mới 100%' %}
+                        Sản phẩm mới 100% chính hãng, đảm bảo chất lượng
+                    {% elif current_condition == 'Đã sử dụng' %}
+                        Sản phẩm đã sử dụng với giá tốt, tiết kiệm 50-80%
+                    {% else %}
+                        Khám phá bộ sưu tập mỹ phẩm thanh lý chất lượng cao
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Filters and Products -->
+<section class="products-section py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Sidebar Filters -->
+            <div class="col-lg-3">
+                <div class="filters-sidebar">
+                    <h5 class="fw-bold mb-4">Bộ Lọc</h5>
+                    
+                    <!-- Category Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Danh Mục</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="category1" checked>
+                            <label class="form-check-label" for="category1">Son Môi (50)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="category2">
+                            <label class="form-check-label" for="category2">Kem Nền (30)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="category3">
+                            <label class="form-check-label" for="category3">Chăm Sóc Da (80)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="category4">
+                            <label class="form-check-label" for="category4">Nước Hoa (25)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="category5">
+                            <label class="form-check-label" for="category5">Trang Điểm Mắt (40)</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Brand Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Thương Hiệu</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brand1">
+                            <label class="form-check-label" for="brand1">Mac Cosmetics</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brand2">
+                            <label class="form-check-label" for="brand2">Estee Lauder</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brand3">
+                            <label class="form-check-label" for="brand3">Dior</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brand4">
+                            <label class="form-check-label" for="brand4">Chanel</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="brand5">
+                            <label class="form-check-label" for="brand5">The Ordinary</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Price Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Khoảng Giá</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="price" id="price1">
+                            <label class="form-check-label" for="price1">Dưới 500.000đ</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="price" id="price2">
+                            <label class="form-check-label" for="price2">500.000đ - 1.000.000đ</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="price" id="price3">
+                            <label class="form-check-label" for="price3">1.000.000đ - 2.000.000đ</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="price" id="price4">
+                            <label class="form-check-label" for="price4">Trên 2.000.000đ</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Condition Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Tình Trạng Sản Phẩm</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="condition" id="condition1" value="all" {% if current_condition == 'all' %}checked{% endif %}>
+                            <label class="form-check-label" for="condition1">
+                                <i class="fas fa-th-large text-primary"></i> Tất cả
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="condition" id="condition2" value="Mới 100%" {% if current_condition == 'Mới 100%' %}checked{% endif %}>
+                            <label class="form-check-label" for="condition2">
+                                <i class="fas fa-tag text-success"></i> Mới 100% <small class="text-muted">(Chính hãng)</small>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="condition" id="condition3" value="Đã sử dụng" {% if current_condition == 'Đã sử dụng' %}checked{% endif %}>
+                            <label class="form-check-label" for="condition3">
+                                <i class="fas fa-recycle text-warning"></i> Đã sử dụng <small class="text-muted">(Tiết kiệm 50-80%)</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Discount Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Giảm Giá</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="discount1">
+                            <label class="form-check-label" for="discount1">Trên 50%</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="discount2">
+                            <label class="form-check-label" for="discount2">30% - 50%</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="discount3">
+                            <label class="form-check-label" for="discount3">Dưới 30%</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Clear Filters -->
+                    <button class="btn btn-outline-secondary w-100">Xóa Bộ Lọc</button>
+                </div>
+            </div>
+            
+            <!-- Products Grid -->
+            <div class="col-lg-9">
+                <!-- Sort and View Options -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="d-flex align-items-center">
+                        <span class="me-3">Hiển thị:</span>
+                        <select class="form-select form-select-sm" style="width: auto;">
+                            <option>12 sản phẩm</option>
+                            <option>24 sản phẩm</option>
+                            <option>48 sản phẩm</option>
+                        </select>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="me-3">Sắp xếp:</span>
+                        <select class="form-select form-select-sm" style="width: auto;">
+                            <option>Mới nhất</option>
+                            <option>Giá thấp đến cao</option>
+                            <option>Giá cao đến thấp</option>
+                            <option>Bán chạy nhất</option>
+                            <option>Giảm giá nhiều nhất</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Products Grid -->
+                <div class="row g-4">
+                    {% for product in products %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="product-card card h-100 border-0 shadow-sm">
+                            <div class="position-relative">
+                                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none">
+                                    <img src="/{{ product.image }}" class="card-img-top" alt="{{ product.name }}">
+                                </a>
+                                <!-- Condition Badge -->
+                                {% if product.specifications.condition != 'Mới 100%' %}
+                                <div class="badge bg-warning position-absolute top-0 start-0 m-2">
+                                    <i class="fas fa-recycle me-1"></i>{{ product.specifications.condition }}
+                                </div>
+                                {% endif %}
+                                <!-- Discount Badge -->
+                                <div class="badge bg-danger position-absolute top-0 end-0 m-2">-{{ product.discount }}%</div>
+                                <!-- Stock Badge -->
+                                {% if product.stock <= 5 %}
+                                <div class="badge bg-warning position-absolute bottom-0 start-0 m-2">Còn {{ product.stock }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <h6 class="card-title">
+                                    <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none text-dark">
+                                        {{ product.name }}
+                                    </a>
+                                </h6>
+                                <p class="text-muted small">{{ product.brand }}</p>
+                                <div class="price-section d-flex align-items-center mb-2">
+                                    <span class="text-decoration-line-through text-muted me-2">{{ "{:,.0f}".format(product.original_price) }}đ</span>
+                                    <span class="text-danger fw-bold fs-5">{{ "{:,.0f}".format(product.sale_price) }}đ</span>
+                                </div>
+                                <div class="rating-section d-flex align-items-center mb-3">
+                                    <div class="stars text-warning me-2">
+                                        {% for i in range(5) %}
+                                            {% if i < product.rating|int %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif product.rating - i >= 0.5 %}
+                                                <i class="fas fa-star-half-alt"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <small class="text-muted">({{ product.reviews }})</small>
+                                </div>
+                                <!-- Usage Note for Used Products -->
+                                {% if product.specifications.condition != 'Mới 100%' and product.specifications.usage_note %}
+                                <div class="alert alert-info py-1 px-2 mb-3 small">
+                                    <i class="fas fa-info-circle me-1"></i>{{ product.specifications.usage_note }}
+                                </div>
+                                {% endif %}
+                                <div class=" d-flex gap-3">
+                                    <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-outline-primary">
+                                        Xem chi tiết
+                                    </a>
+                                    <button class="btn btn-primary add-to-cart-btn" data-product-id="{{ product.id }}">
+                                        Thêm vào giỏ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Product pagination" class="mt-5">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Trước</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %} 

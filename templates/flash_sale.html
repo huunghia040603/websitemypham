@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Flash Sale Chớp Nhoáng - Giảm Giá Sốc{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <!-- Hero Section -->
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-danger">⚡ Flash Sale Chớp Nhoáng</h1>
+        <p class="lead text-muted">Giảm giá sốc - Số lượng có hạn!</p>
+    </div>
+
+    <!-- Countdown Timer -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8">
+            <div class="card bg-danger text-white text-center">
+                <div class="card-body py-4">
+                    <h4 class="mb-3">⏰ Flash Sale kết thúc sau:</h4>
+                    <div class="row">
+                        <div class="col-3">
+                            <div class="bg-white text-danger rounded p-3">
+                                <div class="h2 fw-bold" id="flashHours">00</div>
+                                <small>GIỜ</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="bg-white text-danger rounded p-3">
+                                <div class="h2 fw-bold" id="flashMinutes">00</div>
+                                <small>PHÚT</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="bg-white text-danger rounded p-3">
+                                <div class="h2 fw-bold" id="flashSeconds">00</div>
+                                <small>GIÂY</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="bg-white text-danger rounded p-3">
+                                <div class="h2 fw-bold" id="flashMilliseconds">00</div>
+                                <small>MS</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Sale Products -->
+    <div class="row g-4">
+        <!-- Product 1 -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm position-relative">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-combo-cocoon-nuoc-can-bang-sen-hau-giang-310ml-nuoc-tay-trang-bi-dao-500ml-1741320900_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Combo Sen Hậu Giang">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger fs-6">FLASH SALE</span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">-70%</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Combo Nước Cân Bằng Sen Hậu Giang</h5>
+                    <p class="text-muted small">TheFaceShop</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="text-decoration-line-through text-muted me-2">450.000₫</span>
+                        <span class="text-danger fw-bold fs-4">135.000₫</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: 15%"></div>
+                    </div>
+                    <small class="text-danger">Chỉ còn 3 sản phẩm!</small>
+                    <button class="btn btn-danger w-100 mt-3">
+                        <i class="fas fa-bolt me-2"></i>Mua Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 2 -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm position-relative">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Cetaphil">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger fs-6">FLASH SALE</span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">-60%</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Sữa Rửa Mặt Cetaphil Dịu Nhẹ</h5>
+                    <p class="text-muted small">Cetaphil</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="text-decoration-line-through text-muted me-2">320.000₫</span>
+                        <span class="text-danger fw-bold fs-4">128.000₫</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: 25%"></div>
+                    </div>
+                    <small class="text-danger">Chỉ còn 5 sản phẩm!</small>
+                    <button class="btn btn-danger w-100 mt-3">
+                        <i class="fas fa-bolt me-2"></i>Mua Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 3 -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm position-relative">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-kem-chong-nang-l-oreal-paris-x20-thoang-da-mong-nhe-50ml-1738898716_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="L'Oreal">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger fs-6">FLASH SALE</span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">-55%</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Kem Chống Nắng L'Oreal Paris</h5>
+                    <p class="text-muted small">L'Oreal Paris</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="text-decoration-line-through text-muted me-2">350.000₫</span>
+                        <span class="text-danger fw-bold fs-4">157.500₫</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: 40%"></div>
+                    </div>
+                    <small class="text-danger">Chỉ còn 8 sản phẩm!</small>
+                    <button class="btn btn-danger w-100 mt-3">
+                        <i class="fas fa-bolt me-2"></i>Mua Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 4 -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm position-relative">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Bioderma">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger fs-6">FLASH SALE</span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">-65%</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Nước Tẩy Trang Bioderma</h5>
+                    <p class="text-muted small">Bioderma</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="text-decoration-line-through text-muted me-2">280.000₫</span>
+                        <span class="text-danger fw-bold fs-4">98.000₫</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: 20%"></div>
+                    </div>
+                    <small class="text-danger">Chỉ còn 4 sản phẩm!</small>
+                    <button class="btn btn-danger w-100 mt-3">
+                        <i class="fas fa-bolt me-2"></i>Mua Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 5 -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm position-relative">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-combo-cocoon-nuoc-can-bang-sen-hau-giang-310ml-nuoc-tay-trang-bi-dao-500ml-1741320900_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Mac">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger fs-6">FLASH SALE</span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">-75%</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Son Mac Ruby Woo</h5>
+                    <p class="text-muted small">Mac Cosmetics</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="text-decoration-line-through text-muted me-2">850.000₫</span>
+                        <span class="text-danger fw-bold fs-4">212.500₫</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: 10%"></div>
+                    </div>
+                    <small class="text-danger">Chỉ còn 2 sản phẩm!</small>
+                    <button class="btn btn-danger w-100 mt-3">
+                        <i class="fas fa-bolt me-2"></i>Mua Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product 6 -->
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm position-relative">
+                <div class="position-relative">
+                    <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg') }}" class="card-img-top" alt="Innisfree">
+                    <div class="position-absolute top-0 start-0 m-2">
+                        <span class="badge bg-danger fs-6">FLASH SALE</span>
+                    </div>
+                    <div class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-warning text-dark">-50%</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Mặt Nạ Innisfree</h5>
+                    <p class="text-muted small">Innisfree</p>
+                    <div class="d-flex align-items-center mb-3">
+                        <span class="text-decoration-line-through text-muted me-2">120.000₫</span>
+                        <span class="text-danger fw-bold fs-4">60.000₫</span>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-danger" style="width: 30%"></div>
+                    </div>
+                    <small class="text-danger">Chỉ còn 6 sản phẩm!</small>
+                    <button class="btn btn-danger w-100 mt-3">
+                        <i class="fas fa-bolt me-2"></i>Mua Ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash Sale Rules -->
+    <div class="row mt-5">
+        <div class="col-lg-8 mx-auto">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h4 class="text-center mb-4">📋 Quy Tắc Flash Sale</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-clock text-danger me-2"></i>Thời gian có hạn</li>
+                                <li class="mb-2"><i class="fas fa-box text-warning me-2"></i>Số lượng giới hạn</li>
+                                <li class="mb-2"><i class="fas fa-shopping-cart text-success me-2"></i>Mua ngay, thanh toán sau</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><i class="fas fa-truck text-primary me-2"></i>Freeship toàn quốc</li>
+                                <li class="mb-2"><i class="fas fa-undo text-info me-2"></i>Đổi trả 30 ngày</li>
+                                <li class="mb-2"><i class="fas fa-shield-alt text-success me-2"></i>Bảo hành chính hãng</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Flash Sale Countdown Timer
+function updateFlashCountdown() {
+    const now = new Date();
+    const endTime = new Date();
+    endTime.setHours(23, 59, 59, 999); // End at 23:59:59
+    
+    const diff = endTime - now;
+    
+    if (diff <= 0) {
+        document.getElementById('flashHours').textContent = '00';
+        document.getElementById('flashMinutes').textContent = '00';
+        document.getElementById('flashSeconds').textContent = '00';
+        document.getElementById('flashMilliseconds').textContent = '00';
+        return;
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const milliseconds = Math.floor((diff % 1000) / 10);
+    
+    document.getElementById('flashHours').textContent = hours.toString().padStart(2, '0');
+    document.getElementById('flashMinutes').textContent = minutes.toString().padStart(2, '0');
+    document.getElementById('flashSeconds').textContent = seconds.toString().padStart(2, '0');
+    document.getElementById('flashMilliseconds').textContent = milliseconds.toString().padStart(2, '0');
+}
+
+// Update countdown every 10ms for smooth milliseconds
+setInterval(updateFlashCountdown, 10);
+updateFlashCountdown();
+</script>
+{% endblock %} 

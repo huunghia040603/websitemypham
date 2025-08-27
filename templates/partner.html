@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng Ký Cộng Tác Viên - Thu Nhập Hấp Dẫn{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold text-primary">🤝 Đăng Ký Cộng Tác Viên</h1>
+                <p class="lead text-muted">Thu nhập hấp dẫn với BeautySale</p>
+            </div>
+            
+            <div class="card shadow-lg border-0">
+                <div class="card-body p-5">
+                    <h3 class="text-center mb-4">💼 Cơ Hội Thu Nhập</h3>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-percentage fa-2x"></i>
+                            </div>
+                            <h5 class="mt-3">Hoa Hồng Cao</h5>
+                            <p class="text-muted">Từ 10-30% hoa hồng</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-chart-line fa-2x"></i>
+                            </div>
+                            <h5 class="mt-3">Thu Nhập Không Giới Hạn</h5>
+                            <p class="text-muted">Càng bán nhiều, thu nhập càng cao</p>
+                        </div>
+                        <div class="col-md-4 text-center mb-3">
+                            <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                <i class="fas fa-gift fa-2x"></i>
+                            </div>
+                            <h5 class="mt-3">Thưởng Hấp Dẫn</h5>
+                            <p class="text-muted">Thưởng thêm cho top seller</p>
+                        </div>
+                    </div>
+                    
+                    <form>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fullName" class="form-label">Họ và tên *</label>
+                                <input type="text" class="form-control" id="fullName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">Số điện thoại *</label>
+                                <input type="tel" class="form-control" id="phone" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="address" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="experience" class="form-label">Kinh nghiệm bán hàng</label>
+                                <select class="form-select" id="experience">
+                                    <option value="">Chọn kinh nghiệm</option>
+                                    <option value="beginner">Mới bắt đầu</option>
+                                    <option value="intermediate">Có kinh nghiệm</option>
+                                    <option value="expert">Chuyên nghiệp</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="socialMedia" class="form-label">Mạng xã hội chính</label>
+                                <select class="form-select" id="socialMedia">
+                                    <option value="">Chọn mạng xã hội</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="instagram">Instagram</option>
+                                    <option value="zalo">Zalo</option>
+                                    <option value="tiktok">TikTok</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="motivation" class="form-label">Lý do muốn trở thành cộng tác viên</label>
+                            <textarea class="form-control" id="motivation" rows="4" placeholder="Hãy chia sẻ lý do bạn muốn trở thành cộng tác viên của BeautySale..."></textarea>
+                        </div>
+                        
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                            <label class="form-check-label" for="agreeTerms">
+                                Tôi đồng ý với <a href="#" class="text-primary">điều khoản và điều kiện</a> của BeautySale
+                            </label>
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-paper-plane me-2"></i>Gửi Đăng Ký
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <p class="text-muted">Chúng tôi sẽ liên hệ với bạn trong vòng 24h!</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

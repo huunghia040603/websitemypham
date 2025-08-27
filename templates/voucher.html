@@ -1,0 +1,939 @@
+{% extends "base.html" %}
+{% block title %}Mở Túi May Mắn - Săn Voucher Khủng Hàng Ngày!{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: #f8f9fa;
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .main-content {
+        padding: 2rem 0;
+    }
+
+    .voucher-hero {
+        position: relative;
+        background: linear-gradient(135deg, #7c63f2 0%, #4a4be7 60%, #3b2f92 100%);
+        color: #f8f9fa;
+        padding: 2.5rem 0 2.25rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        overflow: hidden;
+    }
+
+    /* soft spotlight accents */
+    .voucher-hero::before,
+    .voucher-hero::after {
+        content: "";
+        position: absolute;
+        width: 480px;
+        height: 480px;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.35;
+        pointer-events: none;
+    }
+
+    .voucher-hero::before {
+        background: radial-gradient(circle at center, #c7d6ff 0%, transparent 60%);
+        top: -180px;
+        left: -120px;
+    }
+
+    .voucher-hero::after {
+        background: radial-gradient(circle at center, #ffe3c2 0%, transparent 60%);
+        bottom: -220px;
+        right: -140px;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+        font-weight: 600;
+        /* color: #ffffff; */
+        margin-bottom: 0.35rem;
+        letter-spacing: 0.2px;
+    }
+
+    .hero-subtitle {
+        font-size: 0.95rem;
+        color: #0369a1;
+                font-weight: 400;
+        margin-bottom: 0.75rem;
+    }
+
+    /* small modern pill for time/info */
+    .hero-badges { display: flex; gap: 0.5rem; margin-top: 0.25rem; flex-wrap: wrap; color: #0c4a6e; }
+
+    .time-badge {
+        padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 300;
+    text-transform: uppercase;
+    background: rgb(219, 234, 254);
+    color: rgb(30, 64, 175);
+    border: 2px solid rgb(59, 130, 246);
+    }
+
+    /* subtle floating dots */
+    .hero-dots {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .hero-dot {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #0d6efd;
+        border-radius: 50%;
+        opacity: 0.15;
+        animation: floatUp 8s linear infinite;
+    }
+
+    .hero-dot.d2 { left: 18%; bottom: -10px; animation-duration: 10s; }
+    .hero-dot.d3 { left: 82%; bottom: -8px; animation-duration: 12s; }
+
+    @keyframes floatUp {
+        0% { transform: translateY(0); opacity: 0; }
+        20% { opacity: 0.25; }
+        100% { transform: translateY(-180px); opacity: 0; }
+    }
+
+    /* hero layout cards */
+    .hero-card, .hero-banner {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.25);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        
+    }
+
+    .hero-card { padding: 1.25rem 1.25rem; border: 2px solid #0ea5e9; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);color: #0c4a6e !important;}
+
+    .hero-title-group { display: flex; align-items: center; gap: 0.75rem; }
+
+    .hero-logo {
+        width: 44px; height: 44px; border-radius: 50%;
+        background: linear-gradient(135deg, #5ad1ff, #8affc1);
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #193b7b; font-weight: 700;
+    }
+
+    .hero-banner { padding: 0.75rem; }
+    .hero-banner-inner {
+        height: 140px; border-radius: 10px;
+        background: linear-gradient(135deg, #1b1b8a 0%, #2b2bb5 60%);
+        display: grid; grid-template-columns: 1fr; overflow: hidden;
+    }
+    .banner-left {     color: #92400e;
+        padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;     background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);}
+    .banner-title { font-size: 1rem; font-weight: 700; letter-spacing: 0.4px; margin-bottom: 0.25rem; }
+    .banner-sub { font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem; }
+
+    /* countdown styles */
+    .countdown { display: flex; gap: 0.5rem; align-items: center; justify-content: center; }
+    .count-item { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); border-radius: 10px; width: 68px; padding: 0.35rem 0.25rem; color: #fff; }
+    .count-num { display: block; font-weight: 800; font-size: 1.35rem; line-height: 1; letter-spacing: 1px; color: #92400e; }
+    .count-label { display: block; font-size: 0.7rem; opacity: 0.85; margin-top: 0.15rem; color: #92400e; }
+
+    .game-section {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);        border-radius: 8px;
+        padding: 3rem 2rem;
+        margin: 2rem 0;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 2px solid #0ea5e9;
+    }
+
+    /* Keep game and info panels equal height when side-by-side */
+    .game-layout > [class^="col-"] > .game-section,
+    .game-layout > [class^="col-"] > .info-panel {
+        height: 100%;
+    }
+
+    .game-instructions {
+        text-align: center;
+        color: #333;
+        margin-bottom: 3rem;
+    }
+
+    .game-instructions h4 {
+        color: #333;
+        font-weight: 400;
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .game-instructions p {
+        color: #6c757d;
+        font-size: 0.95rem;
+    }
+
+    .bags-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2rem;
+        margin: 2rem 0;
+        max-width: 550px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .bag {
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background-color: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        display: block;
+        cursor: pointer;
+        transition: box-shadow 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+        position: relative;
+        margin: 0 auto;
+        overflow: hidden; /* ensure image corners follow container radius */
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+
+    .bag:hover {
+        border-color: #007bff;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 14px rgba(16, 24, 40, 0.08);
+    }
+
+    .bag-img {
+        /* width: 100%; */
+        height: 100%;
+        object-fit: contain; /* show full image within border */
+        display: block;
+        padding: 0; /* full border around image, no inner spacing */
+        image-rendering: auto;
+        -webkit-user-drag: none;
+        user-select: none;
+    }
+
+    .bag.opened {
+        background: #e8f5e8;
+        border-color: #28a745;
+        transform: scale(0.95);
+        cursor: not-allowed;
+    }
+
+    .bag.opening {
+        animation: gentleShake 0.6s ease-in-out;
+    }
+
+    @keyframes gentleShake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-3px); }
+        75% { transform: translateX(3px); }
+    }
+
+    /* No inner icon; image fills the whole cell via .bag background */
+
+    /* removed number badge for a cleaner look */
+
+    .info-panel {
+        background: white;
+        border-radius: 8px;
+        padding: 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
+        color: #333;
+        height: fit-content;
+        margin-top: 2rem;
+    }
+
+    .tab-buttons {
+        display: flex;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .tab-button {
+        background: transparent;
+        border: none;
+        color: #6c757d;
+        padding: 0.75rem 1.5rem;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .tab-button.active {
+        border-bottom-color: #007bff;
+        color: #007bff;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .tab-content h4 {
+        color: #333;
+        font-weight: 500;
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+    }
+
+    .tab-content p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .prize-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .prize-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .prize-list li:before {
+        /* content: '•'; */
+        color: #007bff;
+        font-weight: bold;
+        margin-right: 0.5rem;
+    }
+
+    .btn-reset {
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 18px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        background: rgb(219, 234, 254);
+    color: rgb(30, 64, 175);
+    border: 2px solid rgb(59, 130, 246);
+    }
+
+    .btn-reset:hover {
+        background: #006adc;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    .notification-banner {
+        background: #e7f3ff;
+        color: #0056b3;
+        padding: 1rem;
+        border-radius: 6px;
+        margin: 1rem 0;
+        text-align: center;
+        border: 1px solid #b3d9ff;
+        font-size: 0.9rem;
+    }
+
+    .notification-banner.success {
+        background: #d4edda;
+        color: #155724;
+        border-color: #c3e6cb;
+    }
+
+    .fireworks {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+    }
+
+    .firework {
+        position: absolute;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        animation: explode 1s ease-out forwards;
+    }
+
+    @keyframes explode {
+        0% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(15);
+            opacity: 0;
+        }
+    }
+
+    .brand-logo {
+        color: #333;
+        font-weight: 300;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        letter-spacing: 1px;
+    }
+
+    .game-status {
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+        
+        .bags-container {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+            max-width: 360px;
+        }
+        
+        .game-section {
+            padding: 2rem 1rem;
+        }
+        
+        .info-panel {
+            padding: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .bags-container {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.8rem;
+        }
+        
+        .bag {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .bag-icon {
+            font-size: 1.6rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Hero Section -->
+    <div class="voucher-hero">
+        <div class="container">
+            <div class="row g-4 align-items-stretch">
+                <div class="col-lg-7">
+                    <div class="hero-card">
+                        <div class="hero-title-group mb-2">
+                            <div class="hero-logo">B</div>
+                            <div>
+                                <h1 class="hero-title mb-0">Mở Túi May Mắn</h1>
+                                <div class="hero-subtitle">Chọn túi để nhận voucher hấp dẫn</div>
+                            </div>
+                        </div>
+                        <div class="hero-badges">
+                            <span class="time-badge">Thời gian: 18:00 - 19:00</span>
+                            <span class="time-badge">Chắc chắn trúng</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="hero-banner">
+                        <div class="hero-banner-inner">
+                            <div class="banner-left">
+                                <div class="banner-title">Đếm ngược mở túi</div>
+                                <div class="banner-sub">Sự kiện mở túi diễn ra từ 18:00 - 19:00</div>
+                                <div class="countdown" id="heroCountdown">
+                                    <div class="count-item">
+                                        <span class="count-num" id="cHours">00</span>
+                                        <span class="count-label">GIỜ</span>
+                                    </div>
+                                    <div class="count-item">
+                                        <span class="count-num" id="cMinutes">00</span>
+                                        <span class="count-label">PHÚT</span>
+                                    </div>
+                                    <div class="count-item">
+                                        <span class="count-num" id="cSeconds">00</span>
+                                        <span class="count-label">GIÂY</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hero-dots">
+            <span class="hero-dot" style="left: 8%; bottom: -12px;"></span>
+            <span class="hero-dot d2"></span>
+            <span class="hero-dot d3"></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Notification Banner -->
+        <div class="notification-banner" id="notificationBanner" style="display: none;">
+            <span id="notificationText"></span>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="row game-layout g-4 align-items-start">
+            <!-- Left: Game Section -->
+            <div class="col-md-6 col-lg-6 d-flex">
+                <div class="game-section flex-fill">
+                    <div class="text-center">
+                        <div class="brand-logo" style=" color: #0c4a6e; font-weight: 600; font-size: 1.5rem;">BuddySkincare</div>
+                    </div>
+                    
+                    <div class="game-instructions">
+                        <h4>Chọn túi may mắn</h4>
+                        <p>9 túi quà hấp dẫn - chọn 1 túi để nhận voucher</p>
+                    </div>
+                    
+                    <div class="bags-container" id="bagsContainer">
+                        <!-- Bags will be generated by JavaScript -->
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button class="btn-reset" id="resetBtn" style="display: none;">
+                            Chơi lại
+                        </button>
+                    </div>
+                    
+                    <div class="game-status">
+                        Chọn 1 túi để bắt đầu
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Info Panel -->
+            <div class="col-md-6 col-lg-6 d-flex">
+                <div class="info-panel flex-fill">
+                    <!-- Tab Buttons -->
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="showTab('rules')">Thể lệ</button>
+                        <button class="tab-button" onclick="showTab('winners')">Danh sách trúng thưởng</button>
+                    </div>
+
+                    <!-- Rules Tab -->
+                    <div id="rules" class="tab-content active">
+                        <h4>Thể lệ chương trình</h4>
+                        <p class="mb-3">Cơ hội nhận voucher khủng cùng hàng nghìn phần quà hấp dẫn.</p>
+                        <p class="mb-4"><strong>Thời gian:</strong> 18:00 - 19:00 hàng ngày</p>
+                        
+                        <h5 style="font-size: 1rem; margin-bottom: 0.75rem;">Hướng dẫn tham gia trò chơi:</h5>
+                        <ul class="prize-list">
+                            <li>Đăng nhập đúng giờ 18:00 - 19:00</li>
+                            <li>Chọn túi may mắn</li>
+                            <li>Nhận voucher</li>
+                            <li>Chia sẻ lên Facebook</li>
+                        </ul>
+
+                        <h5 style="font-size: 1rem; margin-bottom: 0.75rem;">Giải thưởng:</h5>
+                        <ul class="prize-list">
+                            <li>10 voucher 1.000.000₫</li>
+                            <li>20 voucher 500.000₫</li>
+                            <li>50 voucher 200.000₫</li>
+                            <li>100 voucher 100.000₫</li>
+                            <li>200 voucher 50.000₫</li>
+                            <li>500 voucher Freeship</li>
+                        </ul>
+                    </div>
+
+                    <!-- Winners Tab -->
+                    <div id="winners" class="tab-content">
+                        <h4>Danh sách trúng thưởng</h4>
+                        <ul id="winnersList" class="prize-list mb-0"></ul>
+                        <div id="noWinnersMsg" class="text-muted" style="font-size: 0.9rem;">
+                            Chưa có voucher nào. Hãy chơi để nhận quà!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fireworks Container -->
+<div class="fireworks" id="fireworks"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Prize data
+const prizes = [
+    { name: '1.000.000₫', value: 1000000, probability: 0.05 },
+    { name: '500.000₫', value: 500000, probability: 0.1 },
+    { name: 'Freeship', value: 'freeship', probability: 0.15 },
+    { name: '200.000₫', value: 200000, probability: 0.2 },
+    { name: '100.000₫', value: 100000, probability: 0.25 },
+    { name: '50.000₫', value: 50000, probability: 0.25 }
+];
+
+let gamePlayed = false;
+let selectedBag = null;
+
+// Initialize Bags
+function initializeBags() {
+    const container = document.getElementById('bagsContainer');
+    const bagCount = 9;
+    
+    for (let i = 0; i < bagCount; i++) {
+        const bag = document.createElement('div');
+        bag.className = 'bag';
+        bag.innerHTML = `
+            <img class="bag-img" src="${"{{ url_for('static', filename='image/sukien/qua.png') }}"}" alt="Túi quà">
+        `;
+        
+        bag.addEventListener('click', () => openBag(i, bag));
+        container.appendChild(bag);
+    }
+}
+
+// Open Bag
+function openBag(bagIndex, bagElement) {
+    if (gamePlayed || bagElement.classList.contains('opened')) {
+        return;
+    }
+    
+    gamePlayed = true;
+    selectedBag = bagIndex;
+    
+    // Add opening animation
+    bagElement.classList.add('opening');
+    
+    // Random prize selection
+    const random = Math.random();
+    let cumulativeProbability = 0;
+    let selectedPrize = prizes[0];
+    
+    for (const prize of prizes) {
+        cumulativeProbability += prize.probability;
+        if (random <= cumulativeProbability) {
+            selectedPrize = prize;
+            break;
+        }
+    }
+    
+    setTimeout(() => {
+        // Remove opening animation and show result
+        bagElement.classList.remove('opening');
+        bagElement.classList.add('opened');
+        
+        // Change bag icon based on prize
+        // Add subtle animation on the bag itself when opened
+        bagElement.style.animation = 'none';
+        void bagElement.offsetWidth;
+        bagElement.style.animation = 'gentleShake 0.6s ease-in-out';
+        
+        // Show result
+        showPrizeResult(selectedPrize);
+        
+        // Trigger fireworks for big prizes
+        if (selectedPrize.value >= 500000) {
+            createFireworks();
+        }
+        
+        // Show reset button
+        document.getElementById('resetBtn').style.display = 'inline-block';
+        
+        // Update game status
+        document.querySelector('.game-status').textContent = 'Bạn đã chọn túi ' + (bagIndex + 1);
+        
+    }, 600);
+}
+
+// Reset Game
+function resetGame() {
+    const bags = document.querySelectorAll('.bag');
+    bags.forEach(bag => {
+        bag.classList.remove('opened', 'opening');
+        bag.style.animation = 'none';
+    });
+    
+    gamePlayed = false;
+    selectedBag = null;
+    document.getElementById('resetBtn').style.display = 'none';
+    document.querySelector('.game-status').textContent = 'Chọn 1 túi để bắt đầu';
+    
+    showNotification('Trò chơi đã được reset! Chọn túi mới', 'info');
+}
+
+// Show Prize Result
+function showPrizeResult(prize) {
+    const message = prize.value === 'freeship' 
+        ? `Chúc mừng! Bạn đã nhận được ${prize.name}`
+        : `Chúc mừng! Bạn đã nhận được voucher ${prize.name}`;
+    
+    showNotification(message, 'success');
+    
+    // Create modal for prize details
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    const voucherCode = 'VOUCHER' + Date.now().toString().slice(-6);
+    const expiresAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000); // 2 days
+    modal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chúc mừng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <h4>${prize.name}</h4>
+                    <p class="text-muted">Voucher đã được gửi vào tài khoản của bạn</p>
+                    <div class="alert alert-info d-flex align-items-center justify-content-center gap-2 flex-wrap">
+                        <strong class="me-1">Mã voucher:</strong>
+                        <span class="voucher-code fw-bold" id="currentVoucherCode">${voucherCode}</span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="copyVoucherCode('${voucherCode}')">Copy</button>
+                        <span id="copyStatus" class="small text-success d-none">Đã sao chép</span>
+                    </div>
+                    <div class="small text-muted">Hết hạn sau 2 ngày (vào ${expiresAt.toLocaleString('vi-VN')})</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+    
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.body.removeChild(modal);
+    });
+
+    // Persist to winners list
+    try {
+        const stored = JSON.parse(localStorage.getItem('winners') || '[]');
+        const entry = {
+            code: voucherCode,
+            prize: prize.name,
+            time: new Date().toISOString(),
+            expiresAt: expiresAt.toISOString(),
+            used: false
+        };
+        stored.unshift(entry);
+        localStorage.setItem('winners', JSON.stringify(stored.slice(0, 50)));
+        renderWinners();
+    } catch (e) {
+        console.warn('Unable to store winners', e);
+    }
+}
+
+// Show Notification
+function showNotification(message, type = 'info') {
+    const banner = document.getElementById('notificationBanner');
+    const text = document.getElementById('notificationText');
+    
+    text.textContent = message;
+    banner.style.display = 'block';
+    
+    if (type === 'success') {
+        banner.classList.add('success');
+    } else {
+        banner.classList.remove('success');
+    }
+    
+    setTimeout(() => {
+        banner.style.display = 'none';
+    }, 5000);
+}
+
+// Create Fireworks
+function createFireworks() {
+    const fireworks = document.getElementById('fireworks');
+    const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14'];
+    
+    for (let i = 0; i < 30; i++) {
+        setTimeout(() => {
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.style.left = Math.random() * 100 + '%';
+            firework.style.top = Math.random() * 100 + '%';
+            firework.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            fireworks.appendChild(firework);
+            
+            setTimeout(() => {
+                if (fireworks.contains(firework)) {
+                    fireworks.removeChild(firework);
+                }
+            }, 1000);
+        }, i * 50);
+    }
+}
+
+// Copy voucher code helper
+function copyVoucherCode(code) {
+    try {
+        navigator.clipboard.writeText(code).then(() => {
+            const status = document.getElementById('copyStatus');
+            if (status) {
+                status.classList.remove('d-none');
+                status.textContent = 'Đã sao chép';
+                setTimeout(() => status.classList.add('d-none'), 2000);
+            }
+            showNotification('Đã sao chép mã: ' + code, 'success');
+        }).catch(() => {
+            // Fallback
+            const temp = document.createElement('input');
+            temp.value = code;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            const status = document.getElementById('copyStatus');
+            if (status) {
+                status.classList.remove('d-none');
+                status.textContent = 'Đã sao chép';
+                setTimeout(() => status.classList.add('d-none'), 2000);
+            }
+            showNotification('Đã sao chép mã: ' + code, 'success');
+        });
+    } catch (e) {
+        showNotification('Không thể sao chép. Hãy thử thủ công.', 'info');
+    }
+}
+
+// Render winners from localStorage
+function formatRemaining(ms) {
+    if (ms <= 0) return 'Đã hết hạn';
+    const d = Math.floor(ms / (24*60*60*1000));
+    const h = Math.floor((ms % (24*60*60*1000)) / (60*60*1000));
+    const m = Math.floor((ms % (60*60*1000)) / (60*1000));
+    if (d > 0) return `Còn ${d} ngày ${h} giờ`;
+    if (h > 0) return `Còn ${h} giờ ${m} phút`;
+    return `Còn ${m} phút`;
+}
+
+function renderWinners() {
+    const list = document.getElementById('winnersList');
+    const empty = document.getElementById('noWinnersMsg');
+    if (!list || !empty) return;
+    list.innerHTML = '';
+    let winners = [];
+    try {
+        winners = JSON.parse(localStorage.getItem('winners') || '[]');
+    } catch {}
+
+    // Migrate old records without expiresAt (set = time + 2 days)
+    let migrated = false;
+    const TWO_DAYS = 2 * 24 * 60 * 60 * 1000;
+    winners = winners.map(w => {
+        if (!w.expiresAt && w.time) {
+            const base = new Date(w.time).getTime();
+            w.expiresAt = new Date(base + TWO_DAYS).toISOString();
+            migrated = true;
+        }
+        if (typeof w.used === 'undefined') w.used = false;
+        return w;
+    });
+    if (migrated) {
+        localStorage.setItem('winners', JSON.stringify(winners));
+    }
+    if (winners.length === 0) {
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    const now = Date.now();
+    winners.forEach((w, idx) => {
+        const li = document.createElement('li');
+        const dateStr = new Date(w.time).toLocaleString('vi-VN');
+        const exp = w.expiresAt ? new Date(w.expiresAt).getTime() : null;
+        const expStr = exp ? new Date(exp).toLocaleString('vi-VN') : '';
+        const remaining = exp ? formatRemaining(exp - now) : '';
+        const isExpired = exp ? (now >= exp) : false;
+        li.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span>${w.prize} - Mã: <strong>${w.code}</strong>
+                    
+                    ${!isExpired ? `<span class=\"badge bg-info text-dark ms-1\">${remaining}</span>` : ''}
+                </span>
+                <button class="btn btn-outline-secondary btn-sm" ${isExpired ? 'disabled' : ''} onclick="copyVoucherCode('${w.code}')">Copy</button>
+            </div>
+        `;
+        if (isExpired) li.classList.add('opacity-75');
+        list.appendChild(li);
+    });
+}
+
+// Tab functionality
+function showTab(tabName) {
+    // Hide all tab contents
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => content.classList.remove('active'));
+    
+    // Remove active class from all tab buttons
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(button => button.classList.remove('active'));
+    
+    // Show selected tab content
+    document.getElementById(tabName).classList.add('active');
+    
+    // Add active class to clicked button
+    event.target.classList.add('active');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBags();
+    
+    // Event listeners
+    document.getElementById('resetBtn').addEventListener('click', resetGame);
+    
+    // Request notification permission
+    if ('Notification' in window) {
+        Notification.requestPermission();
+    }
+    
+    // Initialize hero countdown
+    function updateHeroCountdown() {
+        const now = new Date();
+        const start = new Date();
+        start.setHours(18, 0, 0, 0);
+        if (now > start) {
+            // if after 19:00, set to tomorrow 18:00
+            const end = new Date();
+            end.setHours(19, 0, 0, 0);
+            if (now >= end) start.setDate(start.getDate() + 1);
+        }
+        let diff = start - now;
+        if (diff <= 0) diff = 0;
+        const h = Math.floor(diff / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+        const hEl = document.getElementById('cHours');
+        const mEl = document.getElementById('cMinutes');
+        const sEl = document.getElementById('cSeconds');
+        if (hEl && mEl && sEl) {
+            hEl.textContent = String(h).padStart(2, '0');
+            mEl.textContent = String(m).padStart(2, '0');
+            sEl.textContent = String(s).padStart(2, '0');
+        }
+    }
+    updateHeroCountdown();
+    setInterval(updateHeroCountdown, 1000);
+    
+    // Render winners on load
+    renderWinners();
+
+    // Show welcome notification
+    setTimeout(() => {
+        showNotification('Chào mừng đến với Mở Túi May Mắn! Chọn 1 túi để bắt đầu', 'info');
+    }, 1200);
+});
+</script>
+{% endblock %} 
