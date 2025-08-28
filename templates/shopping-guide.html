@@ -1,0 +1,736 @@
+{% extends "base.html" %}
+
+{% block title %}Hướng Dẫn Mua Hàng - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Minimal Style */
+    body {
+        background: #ffffff;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        color: #374151;
+    }
+
+    .guide-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Hero Section */
+    .hero {
+        position: relative;
+        padding: 2rem 0 1.5rem;
+        text-align: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.025em;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.9);
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        line-height: 1.7;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .hero-features {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+
+    .hero-feature {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .hero-feature:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-feature-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .hero-feature:hover .hero-feature-icon {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    .hero-feature h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-feature p {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    /* Floating elements */
+    .hero::after {
+        content: '';
+        position: absolute;
+        top: 20%;
+        right: 10%;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        bottom: 30%;
+        left: 5%;
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    /* Section Styles */
+    .section {
+        padding: 4rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .section:last-child {
+        border-bottom: none;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+    }
+
+    .section-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Content Layout */
+    .content-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 3rem;
+        margin-top: 3rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 1rem;
+    }
+
+    .main-content {
+        /* Main content area */
+    }
+
+    .sidebar {
+        /* Sidebar area */
+    }
+
+    /* Process Steps */
+    .process-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .step {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .step:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        background: #10b981;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-weight: 600;
+        font-size: 1.125rem;
+    }
+
+    .step h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.75rem;
+    }
+
+    .step p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Liquidation Service */
+    .liquidation-service {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 2px solid #0ea5e9;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+
+    .liquidation-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .liquidation-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0c4a6e;
+        margin-bottom: 0.5rem;
+    }
+
+    .liquidation-subtitle {
+        font-size: 1rem;
+        color: #0369a1;
+    }
+
+    .liquidation-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .liquidation-step {
+        background: #ffffff;
+        border: 1px solid #e0f2fe;
+        border-radius: 8px;
+        padding: 1.5rem;
+        position: relative;
+    }
+
+    .liquidation-step::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+        border-radius: 0 2px 2px 0;
+    }
+
+    .liquidation-step h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #0c4a6e;
+        margin-bottom: 0.75rem;
+    }
+
+    .liquidation-step p {
+        font-size: 0.875rem;
+        color: #0369a1;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .liquidation-note {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+    }
+
+    .liquidation-note h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #92400e;
+        margin-bottom: 1rem;
+    }
+
+    .liquidation-note ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .liquidation-note li {
+        font-size: 0.875rem;
+        color: #92400e;
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .liquidation-note li::before {
+        content: '•';
+        position: absolute;
+        left: 0;
+        color: #f59e0b;
+        font-weight: 600;
+    }
+
+    /* Sidebar */
+    .sidebar-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .info-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-content {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero {
+            padding: 1.5rem 0 1rem;
+        }
+        
+        .hero h1 {
+            font-size: 2rem;
+        }
+        
+        .hero p {
+            font-size: 1rem;
+        }
+        
+        .hero-features {
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .hero-feature {
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .content-layout {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .sidebar {
+            order: -1;
+        }
+        
+        .process-steps {
+            grid-template-columns: 1fr;
+        }
+        
+        .liquidation-steps {
+            grid-template-columns: 1fr;
+        }
+        
+        .section {
+            padding: 3rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Hướng Dẫn Mua Hàng</h1>
+            <p>Hướng dẫn chi tiết cách mua hàng và sử dụng dịch vụ thanh lý hộ tại BuddySkincare</p>
+            <div class="hero-features">
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-shopping-cart"></i></div>
+                    <h3>Mua Hàng Dễ Dàng</h3>
+                    <p>Quy trình mua hàng đơn giản, nhanh chóng và an toàn.</p>
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-handshake"></i></div>
+                    <h3>Thanh Lý Hộ</h3>
+                    <p>Dịch vụ thanh lý hộ chuyên nghiệp, uy tín và minh bạch.</p>
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Bảo Mật & An Toàn</h3>
+                    <p>Đảm bảo thông tin và giao dịch an toàn tuyệt đối.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Regular Shopping Process -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Quy Trình Mua Hàng Thông Thường</h2>
+                    <p class="section-subtitle">Hướng dẫn mua sản phẩm thanh lý và pass tester</p>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Xem Sản Phẩm</h4>
+                        <p>Khám phá danh mục sản phẩm thanh lý mới và pass tester với giá tốt nhất.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Thêm Vào Giỏ Hàng</h4>
+                        <p>Chọn sản phẩm yêu thích và thêm vào giỏ hàng của bạn.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Chọn Phương Thức Thanh Toán</h4>
+                        <p>Chọn chuyển khoản ngân hàng (giảm 50% phí ship) hoặc COD.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h4>Xác Nhận Đơn Hàng</h4>
+                        <p>Nhân viên sẽ liên hệ xác nhận và thông báo thời gian giao hàng.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <h4>Nhận Hàng & Thanh Toán</h4>
+                        <p>Kiểm tra sản phẩm và thanh toán (COD) hoặc đã thanh toán trước.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">6</div>
+                        <h4>Đánh Giá & Phản Hồi</h4>
+                        <p>Chia sẻ trải nghiệm mua hàng và đánh giá sản phẩm.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Liquidation Service -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Dịch Vụ Thanh Lý Hộ</h2>
+                    <p class="section-subtitle">Giải pháp thanh lý sản phẩm mỹ phẩm chuyên nghiệp</p>
+                </div>
+                
+                <div class="liquidation-service">
+                    <div class="liquidation-header">
+                        <h3 class="liquidation-title">Bạn Có Sản Phẩm Cần Thanh Lý?</h3>
+                        <p class="liquidation-subtitle">Chúng tôi sẽ giúp bạn thanh lý sản phẩm một cách nhanh chóng và hiệu quả</p>
+                    </div>
+                    
+                    <div class="liquidation-steps">
+                        <div class="liquidation-step">
+                            <h4>1. Đăng Ký Thanh Lý</h4>
+                            <p>Gửi thông tin sản phẩm cần thanh lý bao gồm: tên sản phẩm, thương hiệu, tình trạng, hạn sử dụng, giá mong muốn.</p>
+                        </div>
+                        
+                        <div class="liquidation-step">
+                            <h4>2. Duyệt & Đăng Bán</h4>
+                            <p>Nhân viên sẽ kiểm tra và duyệt sản phẩm. Nếu phù hợp, sản phẩm sẽ được đăng lên website để khách hàng mua.</p>
+                        </div>
+                        
+                        <div class="liquidation-step">
+                            <h4>3. Khách Hàng Mua</h4>
+                            <p>Khách hàng sẽ thanh toán 100% giá trị sản phẩm cho chúng tôi. Chúng tôi sẽ gửi sản phẩm đến người mua.</p>
+                        </div>
+                        
+                        <div class="liquidation-step">
+                            <h4>4. Xác Nhận Hoàn Tất</h4>
+                            <p>Sau 5 ngày kể từ khi người mua nhận hàng, nếu không có khiếu nại, đơn hàng được xác nhận hoàn tất.</p>
+                        </div>
+                        
+                        <div class="liquidation-step">
+                            <h4>5. Thanh Toán</h4>
+                            <p>Chúng tôi sẽ thanh toán lại cho người thanh lý hộ 80% giá trị sản phẩm (trừ 20% phí dịch vụ).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="liquidation-note">
+                        <h4>Lưu Ý Quan Trọng:</h4>
+                        <ul>
+                            <li>Sản phẩm phải còn hạn sử dụng ít nhất 3 tháng</li>
+                            <li>Tình trạng sản phẩm phải được mô tả chính xác</li>
+                            <li>Giá thanh lý phải hợp lý và cạnh tranh</li>
+                            <li>Phí dịch vụ thanh lý hộ là 20% giá trị sản phẩm</li>
+                            <li>Thời gian xử lý: 1-3 ngày làm việc</li>
+                            <li>Thanh toán cho người thanh lý hộ sau 5 ngày xác nhận hoàn tất</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Benefits Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Lợi Ích Của Dịch Vụ Thanh Lý Hộ</h2>
+                    <p class="section-subtitle">Tại sao nên chọn dịch vụ thanh lý hộ của chúng tôi</p>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number"><i class="fas fa-rocket"></i></div>
+                        <h4>Nhanh Chóng</h4>
+                        <p>Quy trình thanh lý nhanh chóng, chỉ 1-3 ngày làm việc để duyệt và đăng bán.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><i class="fas fa-shield-alt"></i></div>
+                        <h4>An Toàn</h4>
+                        <p>Đảm bảo giao dịch an toàn, thanh toán đầy đủ và đúng thời hạn.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><i class="fas fa-users"></i></div>
+                        <h4>Tiếp Cận Khách Hàng</h4>
+                        <p>Tiếp cận lượng khách hàng lớn đang tìm kiếm sản phẩm mỹ phẩm giá tốt.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><i class="fas fa-handshake"></i></div>
+                        <h4>Chuyên Nghiệp</h4>
+                        <p>Dịch vụ chuyên nghiệp với đội ngũ nhân viên giàu kinh nghiệm.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><i class="fas fa-percentage"></i></div>
+                        <h4>Phí Hợp Lý</h4>
+                        <p>Phí dịch vụ chỉ 20% - một trong những mức phí cạnh tranh nhất thị trường.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number"><i class="fas fa-clock"></i></div>
+                        <h4>Thanh Toán Nhanh</h4>
+                        <p>Thanh toán nhanh chóng sau 5 ngày xác nhận hoàn tất đơn hàng.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Contact Support -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Hỗ Trợ Mua Hàng</h3>
+                <div class="info-item">
+                    <div class="info-title">Hotline</div>
+                    <div class="info-content">
+                        0987.789.274
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Email</div>
+                    <div class="info-content">
+                        buddyskincarevn@gmail.com
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Zalo</div>
+                    <div class="info-content">
+                        0987.789.274
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liquidation Contact -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Đăng Ký Thanh Lý Hộ</h3>
+                <div class="info-item">
+                    <div class="info-title">Liên Hệ</div>
+                    <div class="info-content">
+                        Gửi thông tin sản phẩm qua Zalo hoặc Email để được tư vấn chi tiết.
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Thông Tin Cần Cung Cấp</div>
+                    <div class="info-content">
+                        - Tên sản phẩm<br>
+                        - Thương hiệu<br>
+                        - Tình trạng<br>
+                        - Hạn sử dụng<br>
+                        - Giá mong muốn
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Info -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Thông Tin Thanh Toán</h3>
+                <div class="info-item">
+                    <div class="info-title">Ngân hàng Saccombank</div>
+                    <div class="info-content">
+                        Số tài khoản: 0701 1991 0003<br>
+                        Chủ tài khoản: NGUYEN HUU NGHIA
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Phí Dịch Vụ</div>
+                    <div class="info-content">
+                        Thanh lý hộ: 20% giá trị sản phẩm<br>
+                        Vận chuyển: Giảm 50% khi chuyển khoản
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Câu Hỏi Thường Gặp</h3>
+                <div class="info-item">
+                    <div class="info-title">Sản phẩm nào được chấp nhận?</div>
+                    <div class="info-content">
+                        Mỹ phẩm chính hãng, còn hạn sử dụng ít nhất 3 tháng, tình trạng tốt.
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Thời gian thanh toán?</div>
+                    <div class="info-content">
+                        Sau 5 ngày kể từ khi người mua nhận hàng và xác nhận hoàn tất.
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Phí dịch vụ bao nhiêu?</div>
+                    <div class="info-content">
+                        20% giá trị sản phẩm - một trong những mức phí cạnh tranh nhất.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

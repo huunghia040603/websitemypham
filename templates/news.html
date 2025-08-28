@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Tin Tức - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .news-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 700px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+
+    /* Filters */
+    .filters { display: grid; grid-template-columns: 1fr 280px; gap: 0.75rem; margin-bottom: 1rem; }
+    .search { position: relative; }
+    .search input { width: 100%; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.65rem 2.6rem 0.65rem 0.75rem; font-size: 0.95rem; }
+    .search .icon { position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 1rem; line-height: 1; height: 1rem; display: inline-flex; align-items: center; pointer-events: none; }
+    .categories { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    .chip { border: 1px solid #e5e7eb; border-radius: 999px; padding: 0.4rem 0.8rem; font-size: 0.9rem; background: #fff; cursor: pointer; }
+    .chip.active { background: #111827; border-color: #111827; color: #fff; }
+
+    /* Article list */
+    .articles { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+    .article { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; transition: box-shadow .2s ease, border-color .2s ease; display: flex; flex-direction: column; }
+    .article:hover { border-color: #d1d5db; box-shadow: 0 8px 22px rgba(0,0,0,0.06); }
+    .thumb { position: relative; aspect-ratio: 16/9; background: #f3f4f6; overflow: hidden; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .badge { position: absolute; left: 10px; top: 10px; background: #111827; color: #fff; border-radius: 999px; padding: 0.2rem 0.6rem; font-size: 0.75rem; }
+    .content { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+    .title { font-size: 1.05rem; font-weight: 700; color: #111827; margin: 0; line-height: 1.4; }
+    .meta { font-size: 0.85rem; color: #6b7280; }
+    .excerpt { font-size: 0.92rem; color: #4b5563; line-height: 1.6; margin-top: 0.2rem; }
+    .read-more { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: #6d28d9; font-size: 0.92rem; }
+    .read-more:hover { text-decoration: underline; }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 800; color: #111827; margin-bottom: 0.6rem; }
+    .list { list-style: none; padding: 0; margin: 0; }
+    .list li { display: flex; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; }
+    .list li:last-child { border-bottom: 0; }
+    .list a { color: #374151; text-decoration: none; font-size: 0.95rem; }
+    .list a:hover { color: #111827; text-decoration: underline; }
+
+    .newsletter { background: linear-gradient(135deg, #ede9fe, #eef2ff); border: 1px solid #ddd6fe; border-radius: 12px; padding: 1rem; }
+    .newsletter input { width: 100%; border: 1px solid #ddd6fe; border-radius: 10px; padding: 0.6rem 0.75rem; font-size: 0.95rem; margin-top: 0.5rem; }
+    .btn-primary { background: #6d28d9; color: #fff; border: none; border-radius: 10px; padding: 0.6rem 0.9rem; font-weight: 700; font-size: 0.9rem; margin-top: 0.6rem; }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero { padding: 1.5rem 0 1rem; }
+        .hero h1 { font-size: 2rem; }
+        .hero p { font-size: 0.95rem; }
+        .content-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+        .filters { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="news-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Tin Tức & Bài Viết</h1>
+            <p>Cập nhật xu hướng làm đẹp, mẹo chọn mỹ phẩm thanh lý/pass tester và ưu đãi mới nhất từ BuddySkincare.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main-content">
+            <div class="filters">
+                <div class="categories">
+                    <button class="chip active" data-cat="all">Tất cả</button>
+                    <button class="chip" data-cat="tips">Mẹo làm đẹp</button>
+                    <button class="chip" data-cat="deal">Ưu đãi</button>
+                    <button class="chip" data-cat="guide">Hướng dẫn</button>
+                    <button class="chip" data-cat="tester">Pass tester</button>
+                </div>
+                <div class="search">
+                    <input id="searchInput" type="text" placeholder="Tìm kiếm bài viết...">
+                </div>
+            </div>
+
+            <div id="articleList" class="articles">
+                <!-- Article 1 -->
+                <article class="article" data-cat="tips">
+                    <div class="thumb">
+                        <img src="{{ url_for('static', filename='image/tintuc/cach-chon-kem-chong-nang-phu-hop-nhat-cho-tung-loai-da-201910150810078833.jpg') }}" alt="Chọn kem chống nắng">
+                        <span class="badge">Mẹo</span>
+                    </div>
+                    <div class="content">
+                        <h3 class="title">Cách chọn kem chống nắng phù hợp từng loại da</h3>
+                        <div class="meta">12/08/2025 · 6 phút đọc</div>
+                        <p class="excerpt">Tìm hiểu SPF/PA, thành phần và kết cấu phù hợp với da dầu/khô/hỗn hợp để tối ưu hiệu quả bảo vệ.</p>
+                        <a class="read-more" href="#">Đọc tiếp <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </article>
+
+                <!-- Article 2 -->
+                <article class="article" data-cat="deal">
+                    <div class="thumb">
+                        <img src="{{ url_for('static', filename='image/demo/6fde01da-d545-435d-ab71-50ed3184afe0.webp') }}" alt="Ưu đãi giờ vàng">
+                        <span class="badge">Ưu đãi</span>
+                    </div>
+                    <div class="content">
+                        <h3 class="title">Giờ Vàng 18:00–19:00: Săn deal khủng mỗi ngày</h3>
+                        <div class="meta">10/08/2025 · 3 phút đọc</div>
+                        <p class="excerpt">Tham gia Flash Sale giờ vàng với mức giảm đến 75% và số lượng cực giới hạn.</p>
+                        <a class="read-more" href="/flash-sale">Tham gia ngay <i class="fas fa-bolt"></i></a>
+                    </div>
+                </article>
+
+                <!-- Article 3 -->
+                <article class="article" data-cat="guide tester">
+                    <div class="thumb">
+                        <img src="{{ url_for('static', filename='image/demo/1200x429px_f18b4a4fee8d439b95d810bbd94b3493.jpg') }}" alt="Mua hàng an toàn">
+                        <span class="badge">Hướng dẫn</span>
+                    </div>
+                    <div class="content">
+                        <h3 class="title">Hướng dẫn mua hàng và thanh lý hộ an toàn</h3>
+                        <div class="meta">08/08/2025 · 5 phút đọc</div>
+                        <p class="excerpt">Quy trình mua hàng, đăng sản phẩm thanh lý hộ, thời gian xác nhận và phí dịch vụ 20%.</p>
+                        <a class="read-more" href="/shopping-guide">Xem hướng dẫn <i class="fas fa-external-link-alt"></i></a>
+                    </div>
+                </article>
+
+                <!-- Article 4 -->
+                <article class="article" data-cat="guide">
+                    <div class="thumb">
+                        <img src="{{ url_for('static', filename='image/demo/47e547c3-bc87-4c3a-a0da-eeddf358e0f5.webp') }}" alt="Thanh toán an toàn">
+                        <span class="badge">Hướng dẫn</span>
+                    </div>
+                    <div class="content">
+                        <h3 class="title">Thanh toán online an toàn và kiểm tra thông tin chuyển khoản</h3>
+                        <div class="meta">05/08/2025 · 4 phút đọc</div>
+                        <p class="excerpt">Checklist xác minh STK, tên thụ hưởng, nội dung chuyển và lưu biên lai để đối soát nhanh.</p>
+                        <a class="read-more" href="/online-payment-safety">Xem chi tiết <i class="fas fa-external-link-alt"></i></a>
+                    </div>
+                </article>
+            </div>
+
+            <!-- Pagination (static demo) -->
+            <div class="d-flex justify-content-center my-4">
+                <nav aria-label="pagination">
+                    <ul class="pagination">
+                        <li class="page-item disabled"><span class="page-link">«</span></li>
+                        <li class="page-item active"><span class="page-link">1</span></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link" href="#">»</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Bài Viết Mới</div>
+                <ul class="list">
+                    <li><a href="/flash-sale">Flash Sale giờ vàng: cách săn deal hiệu quả</a></li>
+                    <li><a href="/shopping-guide">Hướng dẫn thanh lý hộ chi tiết</a></li>
+                    <li><a href="/online-payment-safety">5 bước kiểm tra chuyển khoản an toàn</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Danh Mục</div>
+                <ul class="list">
+                    <li><a href="#" data-cat="tips">Mẹo làm đẹp</a></li>
+                    <li><a href="#" data-cat="deal">Ưu đãi</a></li>
+                    <li><a href="#" data-cat="guide">Hướng dẫn</a></li>
+                    <li><a href="#" data-cat="tester">Pass tester</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section newsletter">
+                <div class="sidebar-title">Nhận Bản Tin</div>
+                <div class="small">Nhập email để nhận tin ưu đãi mới nhất.</div>
+                <input id="newsEmail" type="email" placeholder="email@domain.com">
+                <button class="btn-primary" onclick="subscribeNews()">Đăng ký</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Simple client-side filters/search (demo)
+(function() {
+    const chips = document.querySelectorAll('.chip');
+    const list = document.getElementById('articleList');
+    const items = list.querySelectorAll('.article');
+    const searchInput = document.getElementById('searchInput');
+
+    function applyFilters() {
+        const activeChip = document.querySelector('.chip.active');
+        const cat = activeChip ? activeChip.getAttribute('data-cat') : 'all';
+        const q = (searchInput.value || '').toLowerCase().trim();
+
+        items.forEach(it => {
+            const inCat = (cat === 'all') || it.getAttribute('data-cat').includes(cat);
+            const text = it.innerText.toLowerCase();
+            const match = !q || text.includes(q);
+            it.style.display = (inCat && match) ? '' : 'none';
+        });
+    }
+
+    chips.forEach(chip => chip.addEventListener('click', () => {
+        chips.forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        applyFilters();
+    }));
+
+    searchInput.addEventListener('input', applyFilters);
+    applyFilters();
+})();
+
+function subscribeNews() {
+    const input = document.getElementById('newsEmail');
+    const val = (input.value || '').trim();
+    if (!val) { alert('Vui lòng nhập email.'); return; }
+    alert('Đăng ký bản tin thành công (demo): ' + val);
+    input.value = '';
+}
+</script>
+{% endblock %}

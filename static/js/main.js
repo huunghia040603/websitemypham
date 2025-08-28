@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initMobileMenu();
     initCartQuantityControls();
     initCartBadgeZero();
+    initLoginModal();
     // Ensure modal dismiss buttons always work
     document.addEventListener('click', function(e) {
         const dismissBtn = e.target.closest('[data-bs-dismiss="modal"]');
@@ -666,4 +667,153 @@ function showCartConfirm(message, onOk) {
     modalEl.addEventListener('hidden.bs.modal', cleanup);
     modalEl.addEventListener('shown.bs.modal', handleShown);
     modal.show();
+}
+
+// Login Modal Handler
+function initLoginModal() {
+    const loginForm = document.getElementById('loginForm');
+    const googleLoginBtn = document.getElementById('googleLoginBtn');
+    
+    if (!loginForm) return;
+
+    // Regular form login
+    loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('modalEmail').value;
+        const password = document.getElementById('modalPassword').value;
+        
+        // Simple validation
+        if (!email || !password) {
+            showNotification('Vui lòng nhập đầy đủ thông tin', 'error');
+            return;
+        }
+        
+        if (!email.includes('@')) {
+            showNotification('Email không hợp lệ', 'error');
+            return;
+        }
+        
+        // Simulate login process
+        const submitBtn = loginForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang đăng nhập...';
+        submitBtn.disabled = true;
+        
+        // Simulate API call
+        setTimeout(() => {
+            showNotification('Đăng nhập thành công!', 'success');
+            
+            // Reset form
+            loginForm.reset();
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Update header to show user info
+            updateHeaderAfterLogin(email);
+            
+        }, 2000);
+    });
+
+    // Google login
+    if (googleLoginBtn) {
+        googleLoginBtn.addEventListener('click', function() {
+            handleGoogleLogin();
+        });
+    }
+}
+
+// Handle Google Login
+function handleGoogleLogin() {
+    const googleBtn = document.getElementById('googleLoginBtn');
+    if (!googleBtn) return;
+
+    const originalText = googleBtn.innerHTML;
+    
+    // Show loading state
+    googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang kết nối Google...';
+    googleBtn.disabled = true;
+    
+    // Simulate Google OAuth process
+    setTimeout(() => {
+        // Simulate successful Google login
+        const mockGoogleUser = {
+            name: 'Nguyễn Văn A',
+            email: 'nguyenvana@gmail.com',
+            picture: 'https://via.placeholder.com/40x40/4285f4/ffffff?text=G'
+        };
+        
+        showNotification(`Đăng nhập thành công với ${mockGoogleUser.email}!`, 'success');
+        
+        // Reset button
+        googleBtn.innerHTML = originalText;
+        googleBtn.disabled = false;
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Update header with Google user info
+        updateHeaderAfterGoogleLogin(mockGoogleUser);
+        
+    }, 2500);
+}
+
+// Update header after Google login
+function updateHeaderAfterGoogleLogin(user) {
+    const loginLink = document.querySelector('a[data-bs-target="#loginModal"]');
+    if (loginLink) {
+        loginLink.innerHTML = `
+            <img src="${user.picture}" alt="${user.name}" class="rounded-circle me-1" style="width: 20px; height: 20px;">
+            ${user.name.split(' ').pop()}
+        `;
+        loginLink.removeAttribute('data-bs-toggle');
+        loginLink.removeAttribute('data-bs-target');
+        loginLink.href = '#';
+        loginLink.classList.remove('text-muted');
+        loginLink.classList.add('text-primary');
+    }
+}
+
+// Update header after successful login
+function updateHeaderAfterLogin(email) {
+    const loginLink = document.querySelector('a[data-bs-target="#loginModal"]');
+    if (loginLink) {
+        loginLink.innerHTML = `<i class="fas fa-user me-1"></i>${email.split('@')[0]}`;
+        loginLink.removeAttribute('data-bs-toggle');
+        loginLink.removeAttribute('data-bs-target');
+        loginLink.href = '#';
+        loginLink.classList.remove('text-muted');
+        loginLink.classList.add('text-primary');
+    }
+}
+
+// Show notification function
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
 }

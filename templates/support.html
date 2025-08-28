@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Hỗ Trợ & Giải Đáp Thắc Mắc - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .support-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 700px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+
+    /* Search */
+    .faq-search { position: relative; margin-bottom: 1rem; }
+    .faq-search input { width: 100%; border: 1px solid #eaecef; border-radius: 8px; padding: 0.6rem 2.2rem 0.6rem 0.75rem; font-size: 0.95rem; }
+    .faq-search .icon { position: absolute; right: 0.55rem; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: .95rem; pointer-events: none; }
+
+    /* Accordion - unified minimal */
+    .accordion-item { border: 1px solid #eee; border-radius: 8px; background: #fff; margin-bottom: 0.5rem; overflow: hidden; transition: border-color .15s ease, background .15s ease; }
+    .accordion-item:hover { border-color: #e5e7eb; box-shadow: none; }
+    .accordion-item.active { border-color: #c7d2fe; box-shadow: none; background: #fafbff; }
+    .accordion-button { width: 100%; text-align: left; background: transparent; border: 0; padding: 0.75rem 0.9rem; font-weight: 500; color: #111827; display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; }
+    .accordion-button:focus { outline: none; }
+    .accordion-button .title { flex: 1; }
+    .accordion-button .caret { transition: transform .15s ease; color: #9ca3af; display: inline-flex; align-items: center; font-size: .9rem; }
+    .accordion-content { display: none; padding: 0 0.9rem 0.75rem; color: #4b5563; font-size: 0.92rem; line-height: 1.55; }
+    .accordion-item.active .accordion-content { display: block; }
+    .accordion-item.active .accordion-button .caret { transform: rotate(180deg); }
+
+    /* Group headings */
+    .faq-section-title { font-size: 0.9rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .06em; margin: 1rem 0 .5rem; }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 800; color: #111827; margin-bottom: 0.6rem; }
+    .list { list-style: none; padding: 0; margin: 0; }
+    .list li { display: flex; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid #f3f4f6; }
+    .list li:last-child { border-bottom: 0; }
+    .list a { color: #374151; text-decoration: none; font-size: 0.95rem; }
+    .list a:hover { color: #111827; text-decoration: underline; }
+
+    .contact-card { background: linear-gradient(135deg, #ede9fe, #eef2ff); border: 1px solid #ddd6fe; border-radius: 12px; padding: 1rem; }
+    .support-btn { background: #6d28d9; color: #fff; border: none; border-radius: 10px; padding: 0.6rem 0.9rem; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; transition: background .2s ease, box-shadow .2s ease, transform .05s ease; }
+    .support-btn:hover { background: #5b21b6; box-shadow: 0 10px 20px rgba(93,63,211,.25); color: #fff; text-decoration: none; }
+    .support-btn:active { transform: translateY(1px); }
+
+    @media (max-width: 768px) {
+        .hero { padding: 1.5rem 0 1rem; }
+        .hero h1 { font-size: 2rem; }
+        .hero p { font-size: 0.95rem; }
+        .content-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="support-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Hỗ Trợ & Giải Đáp Thắc Mắc</h1>
+            <p>Tìm câu trả lời nhanh cho các vấn đề thường gặp hoặc liên hệ chúng tôi để được hỗ trợ.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main-content">
+            <div class="faq-search">
+                <input id="faqSearch" type="text" placeholder="Tìm câu hỏi... (ví dụ: thanh lý hộ, thanh toán, vận chuyển)">
+                <span class="icon"><i class="fas fa-search"></i></span>
+            </div>
+
+            <div id="faqList">
+                <div class="faq-section-title">Thanh lý hộ</div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Chính sách thanh lý hộ hoạt động như thế nào?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Khách gửi thông tin sản phẩm, nhân viên duyệt và đăng lên web. Khi có người mua thanh toán 100% cho chúng tôi, sau 5 ngày người mua xác nhận hoàn tất, chúng tôi thanh toán lại 80% (trừ 20% phí dịch vụ) cho người thanh lý hộ.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Cần cung cấp thông tin gì khi đăng thanh lý hộ?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Tên sản phẩm, thương hiệu, tình trạng, hạn sử dụng, ảnh chụp rõ nét và giá mong muốn. Chúng tôi sẽ tư vấn mức giá hợp lý nếu cần.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Khi nào tôi nhận được tiền thanh toán?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Sau 5 ngày kể từ khi người mua xác nhận nhận hàng thành công và không có khiếu nại, chúng tôi sẽ chuyển 80% giá trị sản phẩm cho bạn.
+                    </div>
+                </div>
+
+                <div class="faq-section-title">Thanh toán</div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Thanh toán chuyển khoản cần kiểm tra những gì?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Số tài khoản 0701 1991 0003 (Saccombank), tên thụ hưởng NGUYEN HUU NGHIA, số tiền đúng tổng đơn, nội dung BSK-[MÃ ĐƠN]-[SĐT] và lưu biên lai để đối soát.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Chuyển khoản có ưu đãi gì không?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Có. Khách hàng chuyển khoản được giảm 50% phí ship. Đơn sẽ được xác nhận sau khi đối soát thành công.
+                    </div>
+                </div>
+
+                <div class="faq-section-title">Vận chuyển</div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Phí ship và điều kiện COD như thế nào?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Với COD, nhân viên sẽ gọi xác nhận. Khách mới có đơn >600k cần thanh toán trước phí ship. Chuyển khoản được giảm 50% phí ship.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Thời gian giao hàng dự kiến?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Nội thành: 1–2 ngày làm việc. Ngoại tỉnh: 2–5 ngày làm việc tùy khu vực và đơn vị vận chuyển.
+                    </div>
+                </div>
+
+                <div class="faq-section-title">Flash Sale giờ vàng</div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Giờ vàng diễn ra khi nào và cách tham gia?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Mỗi ngày 18:00–19:00. Trong khung giờ này, nút "Mua ngay" sẽ được bật. Ngoài khung giờ, nút sẽ tắt.
+                    </div>
+                </div>
+
+                <div class="faq-section-title">Đổi trả & Bảo mật</div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Sản phẩm thanh lý có được đổi trả không?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Có, nhưng chỉ giải quyết sau 5 ngày nhận hàng và đáp ứng điều kiện quy định. Vui lòng đọc kỹ mô tả trước khi mua.
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <button class="accordion-button" type="button">
+                        <span class="title">Dữ liệu cá nhân của tôi được bảo vệ ra sao?</span>
+                        <span class="caret"><i class="fas fa-chevron-down"></i></span>
+                    </button>
+                    <div class="accordion-content">
+                        Chúng tôi áp dụng HTTPS/TLS, hạn chế truy cập nội bộ, sao lưu định kỳ và không bán/chia sẻ dữ liệu cho bên thứ ba ngoài mục đích xử lý đơn hàng.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Liên Kết Nhanh</div>
+                <ul class="list">
+                    <li><a href="/shopping-guide">Hướng dẫn mua hàng</a></li>
+                    <li><a href="/shipping-payment">Vận chuyển & Thanh toán</a></li>
+                    <li><a href="/online-payment-safety">Thanh toán an toàn</a></li>
+                    <li><a href="/return-policy">Chính sách đổi trả</a></li>
+                    <li><a href="/privacy-policy">Chính sách bảo mật</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section contact-card">
+                <div class="sidebar-title">Cần hỗ trợ thêm?</div>
+                <div class="small">Hotline: 0987.789.274</div>
+                <div class="small">Email: buddyskincarevn@gmail.com</div>
+                <div class="small">Zalo: 0987.789.274</div>
+                <a class="support-btn mt-2" href="/contact">Liên hệ chúng tôi</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Accordion toggle (single active optional)
+    document.querySelectorAll('.accordion-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const item = btn.closest('.accordion-item');
+            item.classList.toggle('active');
+        });
+    });
+
+    // Search filter
+    const search = document.getElementById('faqSearch');
+    const items = document.querySelectorAll('#faqList .accordion-item');
+    search.addEventListener('input', () => {
+        const q = search.value.toLowerCase().trim();
+        items.forEach(item => {
+            const text = item.innerText.toLowerCase();
+            item.style.display = text.includes(q) ? '' : 'none';
+        });
+    });
+})();
+</script>
+{% endblock %}

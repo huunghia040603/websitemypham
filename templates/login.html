@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - BeautySale</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .particle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .particle:nth-child(2) {
+            width: 60px;
+            height: 60px;
+            top: 60%;
+            right: 15%;
+            animation-delay: 2s;
+        }
+        
+        .particle:nth-child(3) {
+            width: 40px;
+            height: 40px;
+            top: 80%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        
+        .particle:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 10%;
+            right: 30%;
+            animation-delay: 1s;
+        }
+        
+        .particle:nth-child(5) {
+            width: 50px;
+            height: 50px;
+            top: 40%;
+            left: 80%;
+            animation-delay: 3s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        /* Decorative shapes */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 0;
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            bottom: -50px;
+            left: -50px;
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 0;
+            animation: pulse 4s ease-in-out infinite reverse;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.1; }
+            50% { transform: scale(1.1); opacity: 0.2; }
+        }
+        
+        .login-container {
+            position: relative;
+            z-index: 1;
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            padding: 3rem 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideInUp 0.8s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo {
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bounceIn 1s ease-out 0.3s both;
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .login-logo {
+            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+            transition: all 0.3s ease;
+        }
+        
+        .login-logo:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.2));
+        }
+        
+        .welcome-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 2rem;
+            animation: fadeInUp 0.8s ease-out 0.5s both;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+            animation: fadeInUp 0.8s ease-out 0.7s both;
+        }
+        
+        .form-group:nth-child(2) {
+            animation-delay: 0.9s;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+        
+        .input-group {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            z-index: 2;
+            transition: color 0.3s ease;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem 0.875rem 2.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(249, 250, 251, 0.8);
+            font-family: inherit;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #f97316;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .form-control:focus + .input-icon {
+            color: #f97316;
+        }
+        
+        .btn-signin {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease-out 1.1s both;
+        }
+        
+        .btn-signin::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-signin:hover::before {
+            left: 100%;
+        }
+        
+        .btn-signin:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(249, 115, 22, 0.4);
+        }
+        
+        .links-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            animation: fadeInUp 0.8s ease-out 1.3s both;
+        }
+        
+        .link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #3b82f6;
+            transition: width 0.3s ease;
+        }
+        
+        .link:hover::after {
+            width: 100%;
+        }
+        
+        .link:hover {
+            color: #1d4ed8;
+            transform: translateY(-1px);
+        }
+        
+        /* Advertisement Section */
+        .ad-section {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 300px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: slideInRight 0.8s ease-out 0.5s both;
+            z-index: 10;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .ad-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .ad-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.75rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .ad-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1.1rem;
+        }
+        
+        .ad-content {
+            color: #6b7280;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+        
+        .ad-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-5px); }
+            60% { transform: translateY(-3px); }
+        }
+        
+        .products-row {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 2rem;
+            z-index: 1;
+            animation: fadeInUp 0.8s ease-out 1.5s both;
+        }
+        
+        .product-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .product-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        .product-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .dot-red { background: #ef4444; }
+        .dot-yellow { background: #fbbf24; }
+        .dot-purple { background: #8b5cf6; }
+        .dot-blue { background: #3b82f6; }
+        .dot-pink { background: #ec4899; }
+        
+        /* Floating elements */
+        .floating-element {
+            position: fixed;
+            color: rgba(255, 255, 255, 0.1);
+            font-size: 2rem;
+            animation: float 4s ease-in-out infinite;
+            z-index: 0;
+        }
+        
+        .floating-element:nth-child(1) {
+            top: 15%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+        
+        .floating-element:nth-child(2) {
+            top: 25%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .floating-element:nth-child(3) {
+            bottom: 30%;
+            left: 15%;
+            animation-delay: 1s;
+        }
+        
+        @media (max-width: 768px) {
+            .ad-section {
+                position: relative;
+                top: auto;
+                right: auto;
+                margin: 1rem auto;
+                max-width: 100%;
+                padding: 1rem;
+            }
+            
+            .ad-title {
+                font-size: 0.95rem;
+            }
+            
+            .ad-content {
+                font-size: 0.8rem;
+                line-height: 1.4;
+            }
+            
+            .ad-badge {
+                font-size: 0.7rem;
+                padding: 0.2rem 0.6rem;
+            }
+            
+            .login-card {
+                padding: 1.5rem 1.25rem;
+                margin: 0.5rem;
+                max-width: 100%;
+                border-radius: 16px;
+            }
+            
+            .login-logo {
+                max-height: 50px !important;
+            }
+            
+            .welcome-text {
+                font-size: 1.1rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .form-label {
+                font-size: 0.85rem;
+                margin-bottom: 0.4rem;
+            }
+            
+            .form-control {
+                padding: 0.7rem 0.8rem 0.7rem 2.5rem;
+                font-size: 0.9rem;
+                border-radius: 10px;
+            }
+            
+            .input-icon {
+                left: 0.8rem;
+                font-size: 0.9rem;
+            }
+            
+            .btn-signin {
+                padding: 0.7rem 0.8rem;
+                font-size: 0.9rem;
+                border-radius: 10px;
+                margin-bottom: 1.25rem;
+            }
+            
+            .links-row {
+                font-size: 0.75rem;
+                gap: 1rem;
+            }
+            
+            .link {
+                font-size: 0.75rem;
+            }
+            
+            .products-row {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.75rem;
+                bottom: 0.75rem;
+                padding: 0 0.5rem;
+            }
+            
+            .product-item {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.8rem;
+                border-radius: 20px;
+            }
+            
+            .product-dot {
+                width: 6px;
+                height: 6px;
+            }
+            
+            .floating-element {
+                display: none;
+            }
+            
+            .particle {
+                display: none;
+            }
+            
+            body::before,
+            body::after {
+                display: none;
+            }
+            
+            .login-container {
+                padding: 1rem 0.5rem;
+            }
+            
+            .form-group {
+                margin-bottom: 1.25rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 1.25rem 1rem;
+                margin: 0.25rem;
+            }
+            
+            .login-logo {
+                max-height: 45px !important;
+            }
+            
+            .welcome-text {
+                font-size: 1rem;
+                margin-bottom: 1.25rem;
+            }
+            
+            .form-label {
+                font-size: 0.8rem;
+            }
+            
+            .form-control {
+                padding: 0.6rem 0.7rem 0.6rem 2.3rem;
+                font-size: 0.85rem;
+            }
+            
+            .input-icon {
+                left: 0.7rem;
+                font-size: 0.85rem;
+            }
+            
+            .btn-signin {
+                padding: 0.6rem 0.7rem;
+                font-size: 0.85rem;
+            }
+            
+            .links-row {
+                font-size: 0.7rem;
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+            
+            .ad-section {
+                padding: 0.8rem;
+                margin: 0.5rem;
+            }
+            
+            .ad-title {
+                font-size: 0.9rem;
+            }
+            
+            .ad-content {
+                font-size: 0.75rem;
+            }
+            
+            .products-row {
+                gap: 0.5rem;
+                bottom: 0.5rem;
+            }
+            
+            .product-item {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    
+    <!-- Floating decorative elements -->
+    <div class="floating-element">✨</div>
+    <div class="floating-element">💄</div>
+    <div class="floating-element">🌸</div>
+    
+    <!-- Advertisement Section -->
+    <div class="ad-section">
+        <div class="ad-header">
+            <div class="ad-icon">
+                <i class="fas fa-gift text-white"></i>
+            </div>
+            <div class="ad-title">Ưu đãi đặc biệt!</div>
+        </div>
+        <div class="ad-content">
+            Đăng nhập ngay nhận lên đến <strong>20% giảm giá</strong> cho đơn hàng và <strong>miễn phí vận chuyển</strong>!
+        </div>
+        <div class="ad-badge">
+            <i class="fas fa-fire me-1"></i>Flash Sale
+        </div>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-card">
+                    <div class="logo">
+            <img src="{{ url_for('static', filename='image/logo.png') }}" alt="BeautySale Logo" class="login-logo" style="max-height: 60px; width: auto;">
+        </div>
+            
+            <h1 class="welcome-text">Rất vui được gặp lại bạn</h1>
+            
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Email của bạn</label>
+                    <div class="input-group">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="email" class="form-control" placeholder="vd: nguyenvanA@gmail.com" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu của bạn</label>
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" class="form-control" placeholder="vd: matkhau123" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-signin">Đăng nhập</button>
+                
+                <div class="links-row">
+                    <a href="#" class="link">Chưa có tài khoản?</a>
+                    <a href="#" class="link">Quên mật khẩu?</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.getElementById('loginForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Đăng nhập thành công! Chào mừng bạn trở lại BuddySkincare! 🎉');
+        });
+        
+        // Add some interactive effects
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html> 

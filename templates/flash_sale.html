@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Flash Sale Chớp Nhoáng - Giảm Giá Sốc{% endblock %}
+{% block title %}Flash Sale Giờ Vàng 18:00–19:00{% endblock %}
 
 {% block content %}
 <div class="container my-5">
     <!-- Hero Section -->
     <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold text-danger">⚡ Flash Sale Chớp Nhoáng</h1>
-        <p class="lead text-muted">Giảm giá sốc - Số lượng có hạn!</p>
+        <h1 class="display-4 fw-bold text-danger">⚡ Flash Sale Giờ Vàng 18:00–19:00</h1>
+        <p class="lead text-muted">Giảm giá sốc - Số lượng có hạn! Chỉ áp dụng trong khung giờ vàng.</p>
     </div>
 
     <!-- Countdown Timer -->
@@ -15,7 +15,7 @@
         <div class="col-lg-8">
             <div class="card bg-danger text-white text-center">
                 <div class="card-body py-4">
-                    <h4 class="mb-3">⏰ Flash Sale kết thúc sau:</h4>
+                    <h4 class="mb-3">⏰ <span id="flashLabel">Bắt đầu sau:</span></h4>
                     <div class="row">
                         <div class="col-3">
                             <div class="bg-white text-danger rounded p-3">
@@ -42,6 +42,7 @@
                             </div>
                         </div>
                     </div>
+                    <small class="d-block mt-3" style="opacity:.9">Khung giờ áp dụng: 18:00 – 19:00 hàng ngày</small>
                 </div>
             </div>
         </div>
@@ -72,7 +73,7 @@
                         <div class="progress-bar bg-danger" style="width: 15%"></div>
                     </div>
                     <small class="text-danger">Chỉ còn 3 sản phẩm!</small>
-                    <button class="btn btn-danger w-100 mt-3">
+                    <button class="btn btn-danger w-100 mt-3 buy-btn" disabled>
                         <i class="fas fa-bolt me-2"></i>Mua Ngay
                     </button>
                 </div>
@@ -102,7 +103,7 @@
                         <div class="progress-bar bg-danger" style="width: 25%"></div>
                     </div>
                     <small class="text-danger">Chỉ còn 5 sản phẩm!</small>
-                    <button class="btn btn-danger w-100 mt-3">
+                    <button class="btn btn-danger w-100 mt-3 buy-btn" disabled>
                         <i class="fas fa-bolt me-2"></i>Mua Ngay
                     </button>
                 </div>
@@ -132,7 +133,7 @@
                         <div class="progress-bar bg-danger" style="width: 40%"></div>
                     </div>
                     <small class="text-danger">Chỉ còn 8 sản phẩm!</small>
-                    <button class="btn btn-danger w-100 mt-3">
+                    <button class="btn btn-danger w-100 mt-3 buy-btn" disabled>
                         <i class="fas fa-bolt me-2"></i>Mua Ngay
                     </button>
                 </div>
@@ -162,7 +163,7 @@
                         <div class="progress-bar bg-danger" style="width: 20%"></div>
                     </div>
                     <small class="text-danger">Chỉ còn 4 sản phẩm!</small>
-                    <button class="btn btn-danger w-100 mt-3">
+                    <button class="btn btn-danger w-100 mt-3 buy-btn" disabled>
                         <i class="fas fa-bolt me-2"></i>Mua Ngay
                     </button>
                 </div>
@@ -192,7 +193,7 @@
                         <div class="progress-bar bg-danger" style="width: 10%"></div>
                     </div>
                     <small class="text-danger">Chỉ còn 2 sản phẩm!</small>
-                    <button class="btn btn-danger w-100 mt-3">
+                    <button class="btn btn-danger w-100 mt-3 buy-btn" disabled>
                         <i class="fas fa-bolt me-2"></i>Mua Ngay
                     </button>
                 </div>
@@ -222,7 +223,7 @@
                         <div class="progress-bar bg-danger" style="width: 30%"></div>
                     </div>
                     <small class="text-danger">Chỉ còn 6 sản phẩm!</small>
-                    <button class="btn btn-danger w-100 mt-3">
+                    <button class="btn btn-danger w-100 mt-3 buy-btn" disabled>
                         <i class="fas fa-bolt me-2"></i>Mua Ngay
                     </button>
                 </div>
@@ -239,16 +240,16 @@
                     <div class="row">
                         <div class="col-md-6">
                             <ul class="list-unstyled">
-                                <li class="mb-2"><i class="fas fa-clock text-danger me-2"></i>Thời gian có hạn</li>
+                                <li class="mb-2"><i class="fas fa-clock text-danger me-2"></i>Chỉ áp dụng 18:00–19:00</li>
                                 <li class="mb-2"><i class="fas fa-box text-warning me-2"></i>Số lượng giới hạn</li>
-                                <li class="mb-2"><i class="fas fa-shopping-cart text-success me-2"></i>Mua ngay, thanh toán sau</li>
+                                <li class="mb-2"><i class="fas fa-shopping-cart text-success me-2"></i>Mua ngay trong khung giờ</li>
                             </ul>
                         </div>
                         <div class="col-md-6">
                             <ul class="list-unstyled">
-                                <li class="mb-2"><i class="fas fa-truck text-primary me-2"></i>Freeship toàn quốc</li>
-                                <li class="mb-2"><i class="fas fa-undo text-info me-2"></i>Đổi trả 30 ngày</li>
-                                <li class="mb-2"><i class="fas fa-shield-alt text-success me-2"></i>Bảo hành chính hãng</li>
+                                <li class="mb-2"><i class="fas fa-truck text-primary me-2"></i>Giảm 50% phí ship khi chuyển khoản</li>
+                                <li class="mb-2"><i class="fas fa-undo text-info me-2"></i>Đổi trả theo chính sách thanh lý</li>
+                                <li class="mb-2"><i class="fas fa-shield-alt text-success me-2"></i>Hàng chính hãng</li>
                             </ul>
                         </div>
                     </div>
@@ -259,35 +260,55 @@
 </div>
 
 <script>
-// Flash Sale Countdown Timer
+// Golden Hour Countdown (18:00–19:00)
+function getGoldenWindow(now) {
+    const start = new Date(now);
+    start.setHours(18, 0, 0, 0);
+    const end = new Date(now);
+    end.setHours(19, 0, 0, 0);
+
+    if (now < start) {
+        return { phase: 'before', target: start };
+    }
+    if (now >= start && now < end) {
+        return { phase: 'during', target: end };
+    }
+    // after window → next day's start
+    const nextStart = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+    return { phase: 'after', target: nextStart };
+}
+
 function updateFlashCountdown() {
     const now = new Date();
-    const endTime = new Date();
-    endTime.setHours(23, 59, 59, 999); // End at 23:59:59
-    
-    const diff = endTime - now;
-    
-    if (diff <= 0) {
-        document.getElementById('flashHours').textContent = '00';
-        document.getElementById('flashMinutes').textContent = '00';
-        document.getElementById('flashSeconds').textContent = '00';
-        document.getElementById('flashMilliseconds').textContent = '00';
-        return;
-    }
-    
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    const milliseconds = Math.floor((diff % 1000) / 10);
-    
+    const { phase, target } = getGoldenWindow(now);
+    const diff = target - now;
+
+    const hours = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
+    const minutes = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
+    const seconds = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
+    const milliseconds = Math.max(0, Math.floor((diff % 1000) / 10));
+
     document.getElementById('flashHours').textContent = hours.toString().padStart(2, '0');
     document.getElementById('flashMinutes').textContent = minutes.toString().padStart(2, '0');
     document.getElementById('flashSeconds').textContent = seconds.toString().padStart(2, '0');
     document.getElementById('flashMilliseconds').textContent = milliseconds.toString().padStart(2, '0');
+
+    const label = document.getElementById('flashLabel');
+    const buyButtons = document.querySelectorAll('.buy-btn');
+
+    if (phase === 'before') {
+        label.textContent = 'Bắt đầu sau:';
+        buyButtons.forEach(btn => { btn.disabled = true; btn.title = 'Chỉ mở trong 18:00–19:00'; });
+    } else if (phase === 'during') {
+        label.textContent = 'Kết thúc sau:';
+        buyButtons.forEach(btn => { btn.disabled = false; btn.title = ''; });
+    } else {
+        label.textContent = 'Bắt đầu lại sau:';
+        buyButtons.forEach(btn => { btn.disabled = true; btn.title = 'Đã hết giờ vàng • Mời quay lại 18:00 ngày mai'; });
+    }
 }
 
-// Update countdown every 10ms for smooth milliseconds
-setInterval(updateFlashCountdown, 10);
+setInterval(updateFlashCountdown, 50);
 updateFlashCountdown();
 </script>
 {% endblock %} 

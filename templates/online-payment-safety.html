@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block title %}Thanh Toán Online An Toàn - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .safety-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 640px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; margin-top: 3rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+    .section { padding: 3rem 0; border-bottom: 1px solid #f3f4f6; }
+    .section:last-child { border-bottom: none; }
+    .section-header { margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem; letter-spacing: -0.015em; }
+    .section-subtitle { font-size: 0.95rem; color: #6b7280; margin: 0; }
+
+    /* Cards */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; transition: box-shadow .2s ease, border-color .2s ease; }
+    .card:hover { border-color: #d1d5db; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+    .card h4 { font-size: 1.05rem; font-weight: 600; color: #111827; margin: 0 0 0.5rem; }
+    .card p { font-size: 0.9rem; color: #6b7280; margin: 0; line-height: 1.6; }
+
+    /* Checklist */
+    .checklist { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; }
+    .check { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.6rem 0; }
+    .check i { color: #10b981; margin-top: 2px; }
+    .check .label { font-weight: 600; color: #111827; }
+    .check .desc { color: #6b7280; font-size: 0.9rem; }
+
+    /* Highlight */
+    .highlight { background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%); border: 1px solid #10b981; border-radius: 10px; padding: 1rem 1.25rem; color: #065f46; }
+    .danger { background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1px solid #dc2626; color: #7f1d1d; border-radius: 10px; padding: 1rem 1.25rem; }
+    .note { background: #fff7ed; border: 1px solid #fdba74; color: #92400e; border-radius: 10px; padding: 1rem 1.25rem; }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 0.75rem; }
+    .small { font-size: 0.9rem; color: #6b7280; }
+    .kv { display: grid; grid-template-columns: 140px 1fr; gap: 0.5rem 0.75rem; }
+    .kv div { font-size: 0.92rem; }
+
+    @media (max-width: 768px) {
+        .hero { padding: 1.5rem 0 1rem; }
+        .hero h1 { font-size: 2rem; }
+        .hero p { font-size: 0.95rem; }
+        .content-layout { grid-template-columns: 1fr; gap: 2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="safety-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Thanh Toán Online An Toàn</h1>
+            <p>Hướng dẫn bảo mật giao dịch và kiểm tra đầy đủ thông tin khi chuyển khoản ngân hàng.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main-content">
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Nguyên Tắc An Toàn Khi Thanh Toán</h2>
+                    <p class="section-subtitle">Tuân thủ các nguyên tắc sau để bảo vệ tài khoản và giao dịch của bạn</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <h4>Sử dụng kết nối Internet an toàn</h4>
+                        <p>Tránh dùng Wi-Fi công cộng khi thanh toán. Ưu tiên 4G/5G hoặc mạng gia đình.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Xác minh tên người thụ hưởng</h4>
+                        <p>Đảm bảo tên tài khoản hiển thị đúng: NGUYEN HUU NGHIA trước khi chuyển.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Kiểm tra URL và chứng chỉ</h4>
+                        <p>Chỉ nhập thông tin thanh toán trên trang có https và ổ khóa bảo mật.</p>
+                    </div>
+                    <div class="card">
+                        <h4>Không chia sẻ OTP/mật khẩu</h4>
+                        <p>Tuyệt đối không cung cấp OTP hoặc mật khẩu cho bất kỳ ai, kể cả nhân viên.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Checklist Khi Chuyển Khoản</h2>
+                    <p class="section-subtitle">Xác nhận đầy đủ thông tin trước khi nhấn nút chuyển</p>
+                </div>
+                <div class="checklist">
+                    <div class="check">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="label">Số tài khoản</div>
+                            <div class="desc">0701 1991 0003 (Ngân hàng Saccombank)</div>
+                        </div>
+                    </div>
+                    <div class="check">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="label">Tên người thụ hưởng</div>
+                            <div class="desc">NGUYEN HUU NGHIA (khớp chính tả 100%)</div>
+                        </div>
+                    </div>
+                    <div class="check">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="label">Số tiền</div>
+                            <div class="desc">Khớp với tổng thanh toán trên đơn hàng</div>
+                        </div>
+                    </div>
+                    <div class="check">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="label">Nội dung chuyển khoản</div>
+                            <div class="desc">BSK-[MÃ ĐƠN HÀNG]-[SỐ ĐIỆN THOẠI] (ví dụ: BSK-12345-0987789274)</div>
+                        </div>
+                    </div>
+                    <div class="check">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <div class="label">Lưu biên lai</div>
+                            <div class="desc">Chụp màn hình/biên lai và tải lên mục Bill xác nhận để đối soát nhanh.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="note" style="margin-top: 1rem;">
+                    Lưu ý: Với chuyển khoản, bạn được giảm 50% phí vận chuyển. Đơn sẽ được xác nhận sau khi đối soát thành công.
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Dấu Hiệu Lừa Đảo Cần Tránh</h2>
+                    <p class="section-subtitle">Một số tình huống thường gặp khi mua sắm online</p>
+                </div>
+                <div class="grid">
+                    <div class="card danger">
+                        <h4>Yêu cầu chuyển tiền vào tài khoản lạ</h4>
+                        <p>Chỉ chuyển vào tài khoản Saccombank số 0701 1991 0003. Không chuyển vào tài khoản khác.</p>
+                    </div>
+                    <div class="card danger">
+                        <h4>Liên hệ giả mạo nhân viên</h4>
+                        <p>Kiểm tra số hotline 0987.789.274 hoặc email buddyskincarevn@gmail.com trước khi xác nhận.</p>
+                    </div>
+                    <div class="card danger">
+                        <h4>Đường link thanh toán lạ</h4>
+                        <p>Không nhấn vào link lạ từ SMS/Zalo không rõ nguồn gốc. Hãy vào website chính thức.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Quy Trình Xác Nhận Thanh Toán</h2>
+                    <p class="section-subtitle">Theo dõi trạng thái và nhận xác nhận nhanh chóng</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <h4>1) Gửi biên lai</h4>
+                        <p>Upload ảnh biên lai trong mục Bill xác nhận hoặc gửi qua Zalo/Email.</p>
+                    </div>
+                    <div class="card">
+                        <h4>2) Đối soát 1-2 giờ</h4>
+                        <p>Nhân viên kiểm tra giao dịch trong giờ làm việc và phản hồi sớm nhất.</p>
+                    </div>
+                    <div class="card">
+                        <h4>3) Xác nhận đơn</h4>
+                        <p>Đơn được đánh dấu "Đã thanh toán" và chuyển sang bước chuẩn bị hàng.</p>
+                    </div>
+                </div>
+                <div class="highlight" style="margin-top: 1rem;">
+                    Nếu sau 2 giờ chưa có xác nhận, vui lòng liên hệ hotline để được hỗ trợ ngay.
+                </div>
+            </section>
+        </div>
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Thông Tin Chuyển Khoản</div>
+                <div class="kv">
+                    <div>Ngân hàng</div><div>Saccombank</div>
+                    <div>Số tài khoản</div><div>0701 1991 0003</div>
+                    <div>Chủ tài khoản</div><div>NGUYEN HUU NGHIA</div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Hỗ Trợ</div>
+                <div class="small">Hotline: 0987.789.274</div>
+                <div class="small">Email: buddyskincarevn@gmail.com</div>
+                <div class="small">Zalo: 0987.789.274</div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Mẹo Bảo Mật Nhanh</div>
+                <ul class="small" style="margin:0; padding-left: 1rem;">
+                    <li>Đặt mật khẩu mạnh, bật xác thực 2 lớp</li>
+                    <li>Không lưu thông tin thẻ trên máy công cộng</li>
+                    <li>Kiểm tra lịch sử giao dịch định kỳ</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

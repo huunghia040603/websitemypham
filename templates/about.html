@@ -1,0 +1,722 @@
+{% extends "base.html" %}
+
+{% block title %}Về Chúng Tôi - BeautySale{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Minimal Style */
+    body {
+        background: #ffffff;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        color: #374151;
+    }
+
+    .about-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* Hero Section */
+    .hero {
+        padding: 0;
+        text-align: center;
+        background: #ffffff;
+        border-bottom: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero-banner {
+        width: 100%;
+        height: 600px;
+        background-image: url('/static/image/demo/47e547c3-bc87-4c3a-a0da-eeddf358e0f5.webp');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .hero-banner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        /* background: rgba(0, 0, 0, 0.3); */
+        z-index: 1;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        color: #ffffff;
+        text-align: center;
+        max-width: 600px;
+        padding: 0 2rem;
+    }
+
+    .hero h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 1rem;
+        letter-spacing: -0.025em;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .hero p {
+        font-size: 1.125rem;
+        color: #ffffff;
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        line-height: 1.7;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .stats {
+        display: flex;
+        justify-content: center;
+        gap: 3rem;
+        margin-top: 2rem;
+    }
+
+    .stat {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #ffffff;
+        display: block;
+        margin-bottom: 0.25rem;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #ffffff;
+        font-weight: 500;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Section Styles */
+    .section {
+        padding: 4rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .section:last-child {
+        border-bottom: none;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+    }
+
+    .section-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Content Styles */
+    .content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .content p {
+        font-size: 0.9375rem;
+        color: #4b5563;
+        line-height: 1.7;
+        margin-bottom: 1.5rem;
+    }
+
+    .content p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Values Grid */
+    .values {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .value {
+        padding: 1.5rem;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .value:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .value-icon {
+        width: 40px;
+        height: 40px;
+        background: #f3f4f6;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        color: #6b7280;
+        font-size: 1rem;
+    }
+
+    .value h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .value p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Team Grid */
+    .team {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .member {
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .member-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: 0 auto 1rem;
+        object-fit: cover;
+        border: 2px solid #f3f4f6;
+    }
+
+    .member h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.25rem;
+    }
+
+    .member-position {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+    }
+
+    .member-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    /* Mission Section */
+    .mission {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .mission-item {
+        margin-bottom: 1.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .mission-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .mission-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.5rem;
+        width: 6px;
+        height: 6px;
+        background: #6b7280;
+        border-radius: 50%;
+    }
+
+    .mission-label {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .mission-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    /* Contact Grid */
+    .contact {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .contact-item {
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .contact-icon {
+        width: 40px;
+        height: 40px;
+        background: #f3f4f6;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        color: #6b7280;
+        font-size: 1rem;
+    }
+
+    .contact-item h4 {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .contact-info {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    /* Layout Structure */
+    .main-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 3rem;
+        margin-top: 3rem;
+    }
+
+    .main-content {
+        /* Main content area */
+    }
+
+    .sidebar {
+        /* Sidebar area */
+    }
+
+    /* Sidebar Styles */
+    .sidebar-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    /* New Products */
+    .product-item {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        transition: all 0.2s ease;
+    }
+
+    .product-item:last-child {
+        border-bottom: none;
+    }
+
+    .product-item:hover {
+        background: #f9fafb;
+        border-radius: 6px;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .product-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 6px;
+        object-fit: cover;
+        border: 1px solid #e5e7eb;
+    }
+
+    .product-info {
+        flex: 1;
+    }
+
+    .product-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #111827;
+        margin-bottom: 0.25rem;
+        line-height: 1.4;
+    }
+
+    .product-price {
+        font-size: 0.8125rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .product-old-price {
+        text-decoration: line-through;
+        color: #9ca3af;
+        margin-right: 0.5rem;
+    }
+
+    .product-new-price {
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    /* News Items */
+    .news-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        transition: all 0.2s ease;
+    }
+
+    .news-item:last-child {
+        border-bottom: none;
+    }
+
+    .news-item:hover {
+        background: #f9fafb;
+        border-radius: 6px;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+
+    .news-date {
+        font-size: 0.75rem;
+        color: #9ca3af;
+        margin-bottom: 0.5rem;
+    }
+
+    .news-title {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #111827;
+        line-height: 1.4;
+        margin-bottom: 0.5rem;
+    }
+
+    .news-excerpt {
+        font-size: 0.8125rem;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2rem;
+        }
+        
+        .hero p {
+            font-size: 1rem;
+        }
+        
+        .stats {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .values {
+            grid-template-columns: 1fr;
+        }
+        
+        .team {
+            grid-template-columns: 1fr;
+        }
+        
+        .contact {
+            grid-template-columns: 1fr;
+        }
+        
+        .section {
+            padding: 3rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+        }
+
+        .main-layout {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        
+        .sidebar {
+            order: -1;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-banner">
+            <div class="hero-content">
+                
+            </div>
+        </div>
+    </section>
+
+    <div class="about-container">
+        <div class="main-layout">
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Story Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">Câu Chuyện Của Chúng Tôi</h2>
+                        <p class="section-subtitle">Hành trình 5 năm phát triển và trưởng thành</p>
+                    </div>
+                    
+                    <div class="content">
+                        <p>
+                            BuddySkincare được thành lập với một tầm nhìn đặc biệt: mang đến những sản phẩm mỹ phẩm chất lượng cao từ các thương hiệu nổi tiếng với giá cả phải chăng thông qua hình thức thanh lý và pass tester. Chúng tôi hiểu rằng không phải ai cũng có thể tiếp cận các sản phẩm mỹ phẩm cao cấp với giá gốc, vì vậy chúng tôi tạo ra cơ hội cho mọi người được sử dụng những sản phẩm chất lượng.
+                        </p>
+                        <p>
+                            Chúng tôi chuyên cung cấp hai loại sản phẩm chính: mỹ phẩm thanh lý (liquidation) - những sản phẩm còn hạn sử dụng nhưng được bán với giá rẻ hơn nhiều so với giá gốc, và mỹ phẩm pass tester - những sản phẩm được sử dụng để test trong các cửa hàng, trung tâm thương mại nhưng vẫn còn chất lượng tốt.
+                        </p>
+                        <p>
+                            Điều làm nên sự khác biệt của BuddySkincare không chỉ là giá cả hợp lý mà còn là sự minh bạch trong việc cung cấp thông tin về tình trạng sản phẩm. Chúng tôi cam kết chỉ bán những sản phẩm còn hạn sử dụng an toàn và chất lượng đảm bảo, giúp khách hàng tiết kiệm chi phí mà vẫn được sử dụng những sản phẩm mỹ phẩm cao cấp.
+                        </p>
+                    </div>
+                </section>
+
+                <!-- Values Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">Giá Trị Cốt Lõi</h2>
+                        <p class="section-subtitle">Những nguyên tắc định hướng mọi hoạt động của chúng tôi</p>
+                    </div>
+                    
+                    <div class="values">
+                        <div class="value">
+                            <div class="value-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3>Chất Lượng Đảm Bảo</h3>
+                            <p>Tất cả sản phẩm thanh lý và pass tester đều được kiểm định chất lượng nghiêm ngặt, đảm bảo an toàn và hiệu quả cho người sử dụng.</p>
+                        </div>
+                        
+                        <div class="value">
+                            <div class="value-icon">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <h3>Minh Bạch & Trung Thực</h3>
+                            <p>Chúng tôi cam kết cung cấp thông tin chính xác về nguồn gốc, tình trạng sản phẩm và hạn sử dụng của từng sản phẩm.</p>
+                        </div>
+                        
+                        <div class="value">
+                            <div class="value-icon">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <h3>Giá Cả Hợp Lý</h3>
+                            <p>Cung cấp sản phẩm mỹ phẩm cao cấp với mức giá phù hợp, giúp mọi người đều có thể tiếp cận các thương hiệu nổi tiếng.</p>
+                        </div>
+                        
+                        <div class="value">
+                            <div class="value-icon">
+                                <i class="fas fa-recycle"></i>
+                            </div>
+                            <h3>Tiêu Dùng Bền Vững</h3>
+                            <p>Thúc đẩy việc tái sử dụng và tái chế sản phẩm mỹ phẩm, góp phần bảo vệ môi trường và giảm lãng phí.</p>
+                        </div>
+                        
+                        <div class="value">
+                            <div class="value-icon">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <h3>Tận Tâm Phục Vụ</h3>
+                            <p>Đội ngũ tư vấn chuyên nghiệp luôn sẵn sàng hỗ trợ khách hàng chọn lựa sản phẩm phù hợp và an toàn.</p>
+                        </div>
+                        
+                        <div class="value">
+                            <div class="value-icon">
+                                <i class="fas fa-shipping-fast"></i>
+                            </div>
+                            <h3>Giao Hàng Nhanh Chóng</h3>
+                            <p>Dịch vụ giao hàng toàn quốc nhanh chóng, an toàn với nhiều lựa chọn vận chuyển linh hoạt.</p>
+                        </div>
+                    </div>
+                </section>
+
+                
+
+                <!-- Mission Section -->
+                <section class="section">
+                    <div class="section-header">
+                        <h2 class="section-title">Sứ Mệnh & Tầm Nhìn</h2>
+                        <p class="section-subtitle">Định hướng phát triển và mục tiêu tương lai</p>
+                    </div>
+                    
+                    <div class="mission">
+                        <div class="mission-item">
+                            <div class="mission-label">Sứ mệnh</div>
+                            <p class="mission-text">BuddySkincare cam kết mang đến những sản phẩm mỹ phẩm thanh lý và pass tester chất lượng cao với giá cả hợp lý, giúp mọi người có cơ hội sử dụng các thương hiệu mỹ phẩm cao cấp mà không cần chi trả quá nhiều.</p>
+                        </div>
+                        
+                        <div class="mission-item">
+                            <div class="mission-label">Tầm nhìn</div>
+                            <p class="mission-text">Trở thành đối tác tin cậy hàng đầu trong lĩnh vực mỹ phẩm thanh lý và pass tester tại Việt Nam, góp phần thúc đẩy tiêu dùng bền vững và tạo cơ hội cho mọi người tiếp cận các sản phẩm mỹ phẩm chất lượng.</p>
+                        </div>
+                        
+                        <div class="mission-item">
+                            <div class="mission-label">Mục tiêu</div>
+                            <p class="mission-text">Mở rộng danh mục sản phẩm đa dạng từ các thương hiệu nổi tiếng, phục vụ ngày càng nhiều khách hàng và trở thành điểm đến tin cậy cho những ai muốn mua sắm mỹ phẩm chất lượng với giá tốt.</p>
+                        </div>
+                    </div>
+                </section>
+
+                
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- New Products Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Sản Phẩm Thanh Lý</h3>
+                    <div class="product-item">
+                        <img src="https://via.placeholder.com/60x60/6b7280/ffffff?text=SP1" alt="Sản phẩm 1" class="product-image">
+                        <div class="product-info">
+                            <div class="product-name">Kem dưỡng ẩm The Face Shop (Pass Tester)</div>
+                            <div class="product-price">
+                                <span class="product-old-price">450.000đ</span>
+                                <span class="product-new-price">180.000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product-item">
+                        <img src="https://via.placeholder.com/60x60/6b7280/ffffff?text=SP2" alt="Sản phẩm 2" class="product-image">
+                        <div class="product-info">
+                            <div class="product-name">Son môi MAC Ruby Woo (Thanh Lý)</div>
+                            <div class="product-price">
+                                <span class="product-old-price">680.000đ</span>
+                                <span class="product-new-price">320.000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product-item">
+                        <img src="https://via.placeholder.com/60x60/6b7280/ffffff?text=SP3" alt="Sản phẩm 3" class="product-image">
+                        <div class="product-info">
+                            <div class="product-name">Serum Vitamin C Innisfree (Pass Tester)</div>
+                            <div class="product-price">
+                                <span class="product-old-price">520.000đ</span>
+                                <span class="product-new-price">250.000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="product-item">
+                        <img src="https://via.placeholder.com/60x60/6b7280/ffffff?text=SP4" alt="Sản phẩm 4" class="product-image">
+                        <div class="product-info">
+                            <div class="product-name">Kem chống nắng Anessa (Thanh Lý)</div>
+                            <div class="product-price">
+                                <span class="product-old-price">750.000đ</span>
+                                <span class="product-new-price">380.000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Tin Tức Mới</h3>
+                    <div class="news-item">
+                        <div class="news-date">15/12/2024</div>
+                        <div class="news-title">Hướng dẫn phân biệt mỹ phẩm thanh lý và pass tester</div>
+                        <div class="news-excerpt">Hiểu rõ sự khác biệt giữa mỹ phẩm thanh lý và pass tester để chọn lựa sản phẩm phù hợp...</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-date">12/12/2024</div>
+                        <div class="news-title">Cách kiểm tra hạn sử dụng mỹ phẩm thanh lý</div>
+                        <div class="news-excerpt">Những lưu ý quan trọng khi mua mỹ phẩm thanh lý để đảm bảo an toàn cho da...</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-date">10/12/2024</div>
+                        <div class="news-title">Top 5 thương hiệu mỹ phẩm pass tester được yêu thích</div>
+                        <div class="news-excerpt">Khám phá những thương hiệu mỹ phẩm pass tester chất lượng cao với giá tốt...</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-date">08/12/2024</div>
+                        <div class="news-title">Lợi ích của việc mua mỹ phẩm thanh lý</div>
+                        <div class="news-excerpt">Tiết kiệm chi phí, bảo vệ môi trường và vẫn được sử dụng sản phẩm chất lượng...</div>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-title">Liên Kết Nhanh</h3>
+                    <div class="news-item">
+                        <div class="news-title">Chính sách đổi trả</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-title">Hướng dẫn mua hàng</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-title">Chương trình khuyến mãi</div>
+                    </div>
+                    <div class="news-item">
+                        <div class="news-title">Tuyển dụng</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %} 

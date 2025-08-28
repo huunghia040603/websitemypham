@@ -1,0 +1,777 @@
+{% extends "base.html" %}
+
+{% block title %}Chính Sách Đổi Trả - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Minimal Style */
+    body {
+        background: #ffffff;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        color: #374151;
+    }
+
+    .policy-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Hero Section */
+    .hero {
+        position: relative;
+        padding: 2rem 0 1.5rem;
+        text-align: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.025em;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.9);
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        line-height: 1.7;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .hero-features {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+
+    .hero-feature {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .hero-feature:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-feature-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .hero-feature:hover .hero-feature-icon {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    .hero-feature h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-feature p {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    /* Floating elements */
+    .hero::after {
+        content: '';
+        position: absolute;
+        top: 20%;
+        right: 10%;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        bottom: 30%;
+        left: 5%;
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    /* Section Styles */
+    .section {
+        padding: 4rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .section:last-child {
+        border-bottom: none;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+    }
+
+    .section-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Content Layout */
+    .content-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 3rem;
+        margin-top: 3rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 1rem;
+    }
+
+    .main-content {
+        /* Main content area */
+    }
+
+    .sidebar {
+        /* Sidebar area */
+    }
+
+    /* Policy Cards */
+    .policy-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .policy-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .policy-card:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .policy-card.important {
+        border: 2px solid #dc2626;
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    }
+
+    .policy-card.warning {
+        border: 2px solid #f59e0b;
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+    }
+
+    .policy-card.success {
+        border: 2px solid #10b981;
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    }
+
+    .policy-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        color: white;
+    }
+
+    .policy-card.important .policy-icon {
+        background: #dc2626;
+    }
+
+    .policy-card.warning .policy-icon {
+        background: #f59e0b;
+    }
+
+    .policy-card.success .policy-icon {
+        background: #10b981;
+    }
+
+    .policy-card h4 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+
+    .policy-card p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Conditions List */
+    .conditions-list {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+
+    .condition-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .condition-item:last-child {
+        border-bottom: none;
+    }
+
+    .condition-icon {
+        width: 40px;
+        height: 40px;
+        background: #f3f4f6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .condition-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .condition-content p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Important Notice */
+    .important-notice {
+        background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        border: 2px solid #dc2626;
+        border-radius: 12px;
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+
+    .important-notice h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #dc2626;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .important-notice ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .important-notice li {
+        font-size: 0.875rem;
+        color: #991b1b;
+        margin-bottom: 0.75rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .important-notice li::before {
+        content: '⚠️';
+        position: absolute;
+        left: 0;
+        font-size: 1rem;
+    }
+
+    /* Process Steps */
+    .process-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .step {
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        background: #10b981;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-weight: 600;
+        font-size: 1.125rem;
+    }
+
+    .step h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .step p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    /* Sidebar */
+    .sidebar-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .info-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-content {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero {
+            padding: 1.5rem 0 1rem;
+        }
+        
+        .hero h1 {
+            font-size: 2rem;
+        }
+        
+        .hero p {
+            font-size: 1rem;
+        }
+        
+        .hero-features {
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .hero-feature {
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .content-layout {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .sidebar {
+            order: -1;
+        }
+        
+        .policy-cards {
+            grid-template-columns: 1fr;
+        }
+        
+        .process-steps {
+            grid-template-columns: 1fr;
+        }
+        
+        .section {
+            padding: 3rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="policy-container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Chính Sách Đổi Trả</h1>
+            <p>Thông tin chi tiết về chính sách đổi trả và hoàn tiền tại BuddySkincare</p>
+            <div class="hero-features">
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Bảo Vệ Khách Hàng</h3>
+                    <p>Cam kết bảo vệ quyền lợi khách hàng với chính sách đổi trả minh bạch.</p>
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-clock"></i></div>
+                    <h3>Thời Gian Xử Lý</h3>
+                    <p>Xử lý đổi trả nhanh chóng trong vòng 5 ngày sau khi nhận hàng.</p>
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-info-circle"></i></div>
+                    <h3>Thông Tin Rõ Ràng</h3>
+                    <p>Đọc kỹ thông tin sản phẩm trước khi mua để tránh hiểu lầm.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Policy Overview -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Tổng Quan Chính Sách Đổi Trả</h2>
+                    <p class="section-subtitle">Hiểu rõ quyền lợi và điều kiện đổi trả của bạn</p>
+                </div>
+                
+                <div class="policy-cards">
+                    <div class="policy-card important">
+                        <div class="policy-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h4>Điều Kiện Quan Trọng</h4>
+                        <p>Sản phẩm thanh lý chỉ được giải quyết đổi trả sau 5 ngày nhận hàng. Sản phẩm phải không bị đổ bể khi gửi về.</p>
+                    </div>
+                    
+                    <div class="policy-card warning">
+                        <div class="policy-icon">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <h4>Đọc Kỹ Thông Tin</h4>
+                        <p>Quý khách vui lòng đọc đầy đủ thông tin sản phẩm trước khi mua hàng. Không giải quyết do vấn đề đọc thông tin không kỹ.</p>
+                    </div>
+                    
+                    <div class="policy-card success">
+                        <div class="policy-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <h4>Liên Hệ Hỗ Trợ</h4>
+                        <p>Nếu có bất kỳ vấn đề gì, vui lòng liên hệ ngay với chúng tôi để được hỗ trợ và giải quyết nhanh chóng.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Return Conditions -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Điều Kiện Đổi Trả</h2>
+                    <p class="section-subtitle">Các trường hợp được và không được đổi trả</p>
+                </div>
+                
+                <div class="conditions-list">
+                    <div class="condition-item">
+                        <div class="condition-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="condition-content">
+                            <h4>Được Đổi Trả</h4>
+                            <p>Sản phẩm bị lỗi từ nhà sản xuất, hư hỏng trong quá trình vận chuyển, hoặc không đúng với mô tả trên website.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <div class="condition-icon">
+                            <i class="fas fa-times"></i>
+                        </div>
+                        <div class="condition-content">
+                            <h4>Không Được Đổi Trả</h4>
+                            <p>Sản phẩm đã được sử dụng, bị đổ bể do lỗi của khách hàng, hoặc do không đọc kỹ thông tin sản phẩm trước khi mua.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <div class="condition-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="condition-content">
+                            <h4>Thời Gian Xử Lý</h4>
+                            <p>Đối với sản phẩm thanh lý: Chỉ giải quyết sau 5 ngày nhận hàng. Đối với sản phẩm thường: Trong vòng 7 ngày.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="condition-item">
+                        <div class="condition-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="condition-content">
+                            <h4>Tình Trạng Sản Phẩm</h4>
+                            <p>Sản phẩm phải được đóng gói nguyên vẹn, không bị đổ bể, và giữ nguyên tình trạng ban đầu khi gửi về.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Important Notice -->
+            <section class="section">
+                <div class="important-notice">
+                    <h3>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Lưu Ý Quan Trọng
+                    </h3>
+                    <ul>
+                        <li><strong>Sản phẩm thanh lý:</strong> Chỉ giải quyết đổi trả sau 5 ngày nhận hàng</li>
+                        <li><strong>Đọc kỹ thông tin:</strong> Vui lòng đọc đầy đủ thông tin sản phẩm trước khi mua hàng</li>
+                        <li><strong>Không giải quyết:</strong> Do vấn đề đọc thông tin không kỹ</li>
+                        <li><strong>Sản phẩm đổ bể:</strong> Không được đổi trả nếu do lỗi của khách hàng</li>
+                        <li><strong>Liên hệ ngay:</strong> Nếu có bất kỳ vấn đề gì, vui lòng liên hệ chúng tôi</li>
+                        <li><strong>Thời gian xử lý:</strong> 1-3 ngày làm việc sau khi nhận được sản phẩm trả</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Return Process -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Quy Trình Đổi Trả</h2>
+                    <p class="section-subtitle">Các bước thực hiện đổi trả sản phẩm</p>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Liên Hệ Hỗ Trợ</h4>
+                        <p>Gọi điện hoặc gửi tin nhắn cho chúng tôi để báo cáo vấn đề và yêu cầu đổi trả.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Xác Nhận Điều Kiện</h4>
+                        <p>Nhân viên sẽ kiểm tra và xác nhận sản phẩm có đủ điều kiện đổi trả hay không.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Gửi Sản Phẩm Về</h4>
+                        <p>Đóng gói sản phẩm cẩn thận và gửi về địa chỉ được chỉ định.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h4>Kiểm Tra & Xử Lý</h4>
+                        <p>Chúng tôi sẽ kiểm tra sản phẩm và xử lý đổi trả trong 1-3 ngày làm việc.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <h4>Hoàn Tiền/Đổi Hàng</h4>
+                        <p>Hoàn tiền hoặc gửi sản phẩm thay thế tùy theo yêu cầu của khách hàng.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Contact Support -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Liên Hệ Hỗ Trợ</h3>
+                <div class="info-item">
+                    <div class="info-title">Hotline</div>
+                    <div class="info-content">
+                        0987.789.274
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Email</div>
+                    <div class="info-content">
+                        buddyskincarevn@gmail.com
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Zalo</div>
+                    <div class="info-content">
+                        0987.789.274
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Giờ làm việc</div>
+                    <div class="info-content">
+                        Thứ 2 - Thứ 7: 8:00 - 20:00<br>
+                        Chủ nhật: 9:00 - 18:00
+                    </div>
+                </div>
+            </div>
+
+           
+
+            <!-- FAQ -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Câu Hỏi Thường Gặp</h3>
+                <div class="info-item">
+                    <div class="info-title">Sản phẩm thanh lý có được đổi trả không?</div>
+                    <div class="info-content">
+                        Có, nhưng chỉ sau 5 ngày nhận hàng và phải đáp ứng đủ điều kiện.
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Sản phẩm bị đổ bể có đổi trả được không?</div>
+                    <div class="info-content">
+                        Không, nếu do lỗi của khách hàng trong quá trình sử dụng.
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Thời gian xử lý đổi trả bao lâu?</div>
+                    <div class="info-content">
+                        1-3 ngày làm việc sau khi nhận được sản phẩm trả.
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Có mất phí đổi trả không?</div>
+                    <div class="info-content">
+                        Không mất phí nếu sản phẩm có lỗi từ phía chúng tôi.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Lưu Ý Khi Mua Hàng</h3>
+                <div class="info-item">
+                    <div class="info-title">Trước khi mua</div>
+                    <div class="info-content">
+                        - Đọc kỹ thông tin sản phẩm<br>
+                        - Xem tình trạng sản phẩm
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Khi nhận hàng</div>
+                    <div class="info-content">
+                        - Kiểm tra ngay khi nhận<br>
+                        - Chụp ảnh nếu có vấn đề<br>
+                        - Liên hệ ngay nếu cần
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -595,6 +595,48 @@ def all_events():
     """Trang tất cả sự kiện"""
     return render_template('events.html')
 
+@app.route('/login')
+def login():
+    """Trang đăng nhập"""
+    return render_template('login.html')
+
+@app.route('/about')
+def about():
+    """Trang về chúng tôi"""
+    return render_template('about.html')
+
+@app.route('/shipping-payment')
+def shipping_payment():
+    return render_template('shipping-payment.html')
+
+@app.route('/shopping-guide')
+def shopping_guide():
+    return render_template('shopping-guide.html')
+
+@app.route('/return-policy')
+def return_policy():
+    return render_template('return-policy.html')
+
+@app.route('/online-payment-safety')
+def online_payment_safety():
+    return render_template('online-payment-safety.html')
+
+@app.route('/privacy-policy')
+def privacy_policy():
+    return render_template('privacy-policy.html')
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
+
+@app.route('/news')
+def news():
+    return render_template('news.html')
+
+@app.route('/support')
+def support():
+    return render_template('support.html')
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404
@@ -616,6 +658,7 @@ if __name__ == '__main__':
     print("📦 Sản phẩm: http://localhost:8000/products")
     print("🛒 Giỏ hàng: http://localhost:8000/cart")
     print("💳 Thanh toán: http://localhost:8000/checkout")
+    print("🔐 Đăng nhập: http://localhost:8000/login")
     print("\n✨ Tính năng demo:")
     print("- Flash sale với countdown timer")
     print("- Bộ lọc sản phẩm đa tiêu chí")

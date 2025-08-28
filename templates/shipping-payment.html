@@ -1,0 +1,753 @@
+{% extends "base.html" %}
+
+{% block title %}Vận Chuyển & Thanh Toán - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Modern Minimal Style */
+    body {
+        background: #ffffff;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        color: #374151;
+    }
+
+    .shipping-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Hero Section */
+    .hero {
+        position: relative;
+        padding: 2rem 0 1.5rem;
+        text-align: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        overflow: hidden;
+        width: 100%;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 2rem;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 1.5rem;
+        letter-spacing: -0.025em;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        animation: fadeInUp 0.8s ease-out;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.9);
+        max-width: 600px;
+        margin: 0 auto 2rem;
+        line-height: 1.7;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .hero-features {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 1.5rem;
+        animation: fadeInUp 0.8s ease-out 0.4s both;
+    }
+
+    .hero-feature {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .hero-feature:hover {
+        transform: translateY(-5px);
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero-feature-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: #ffffff;
+        transition: all 0.3s ease;
+    }
+
+    .hero-feature:hover .hero-feature-icon {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+
+    .hero-feature h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-bottom: 0.5rem;
+    }
+
+    .hero-feature p {
+        font-size: 0.875rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+    }
+
+    /* Floating elements */
+    .hero::after {
+        content: '';
+        position: absolute;
+        top: 20%;
+        right: 10%;
+        width: 100px;
+        height: 100px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .hero::before {
+        content: '';
+        position: absolute;
+        bottom: 30%;
+        left: 5%;
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 50%;
+        animation: float 8s ease-in-out infinite reverse;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes float {
+        0%, 100% {
+            transform: translateY(0px);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    /* Section Styles */
+    .section {
+        padding: 4rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .section:last-child {
+        border-bottom: none;
+    }
+
+    .section-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.75rem;
+        letter-spacing: -0.025em;
+    }
+
+    .section-subtitle {
+        font-size: 1rem;
+        color: #6b7280;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    /* Content Layout */
+    .content-layout {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 3rem;
+        margin-top: 3rem;
+        max-width: 1200px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 1rem;
+    }
+
+    .main-content {
+        /* Main content area */
+    }
+
+    .sidebar {
+        /* Sidebar area */
+    }
+
+    /* Payment Methods */
+    .payment-methods {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .payment-method {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2rem;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .payment-method:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .payment-method.recommended {
+        border: 2px solid #10b981;
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+    }
+
+    .payment-method.recommended::before {
+        content: 'Khuyến nghị';
+        position: absolute;
+        top: -10px;
+        left: 20px;
+        background: #10b981;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .payment-icon {
+        width: 60px;
+        height: 60px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        color: #6b7280;
+        font-size: 1.5rem;
+    }
+
+    .payment-method h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.75rem;
+    }
+
+    .payment-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+
+    .payment-benefits {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .payment-benefits li {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+        padding-left: 1.5rem;
+        position: relative;
+    }
+
+    .payment-benefits li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        color: #10b981;
+        font-weight: 600;
+    }
+
+    .payment-note {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-top: 1rem;
+        font-size: 0.875rem;
+        color: #92400e;
+    }
+
+    /* Shipping Info */
+    .shipping-info {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-top: 2rem;
+    }
+
+    .shipping-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .shipping-item:last-child {
+        border-bottom: none;
+    }
+
+    .shipping-icon {
+        width: 40px;
+        height: 40px;
+        background: #f3f4f6;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .shipping-content h4 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .shipping-content p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Process Steps */
+    .process-steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+
+    .step {
+        text-align: center;
+        padding: 1.5rem;
+    }
+
+    .step-number {
+        width: 50px;
+        height: 50px;
+        background: #10b981;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-weight: 600;
+        font-size: 1.125rem;
+    }
+
+    .step h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .step p {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.6;
+    }
+
+    /* Sidebar */
+    .sidebar-section {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .sidebar-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .info-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-title {
+        font-size: 0.9375rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-content {
+        font-size: 0.875rem;
+        color: #6b7280;
+        line-height: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .hero {
+            padding: 1.5rem 0 1rem;
+        }
+        
+        .hero h1 {
+            font-size: 2rem;
+        }
+        
+        .hero p {
+            font-size: 1rem;
+        }
+        
+        .hero-features {
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .hero-feature {
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .content-layout {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding: 0 1rem;
+        }
+        
+        .sidebar {
+            order: -1;
+        }
+        
+        .payment-methods {
+            grid-template-columns: 1fr;
+        }
+        
+        .process-steps {
+            grid-template-columns: 1fr;
+        }
+        
+        .section {
+            padding: 3rem 0;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="shipping-container">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Vận Chuyển & Thanh Toán</h1>
+            <p>Thông tin chi tiết về các phương thức vận chuyển và thanh toán tại BuddySkincare</p>
+            <div class="hero-features">
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-shipping-fast"></i></div>
+                    <h3>Vận Chuyển Nhanh Chóng</h3>
+                    <p>Giao hàng tận nơi, thời gian giao hàng được cam kết và đảm bảo.</p>
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Bảo Mật & An Toàn</h3>
+                    <p>Cam kết bảo mật thông tin thanh toán và đảm bảo an toàn cho sản phẩm.</p>
+                </div>
+                <div class="hero-feature">
+                    <div class="hero-feature-icon"><i class="fas fa-hand-holding-usd"></i></div>
+                    <h3>Thanh Toán Dễ Dàng</h3>
+                    <p>Hỗ trợ nhiều phương thức thanh toán tiện lợi, đảm bảo trải nghiệm mua sắm tuyệt vời.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Payment Methods Section -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Phương Thức Thanh Toán</h2>
+                    <p class="section-subtitle">Chọn phương thức thanh toán phù hợp với bạn</p>
+                </div>
+                
+                <div class="payment-methods">
+                    <!-- Bank Transfer -->
+                    <div class="payment-method recommended">
+                        <div class="payment-icon">
+                            <i class="fas fa-university"></i>
+                        </div>
+                        <h3>Chuyển Khoản Ngân Hàng</h3>
+                        <p class="payment-description">Thanh toán trực tiếp qua chuyển khoản ngân hàng để được giảm 50% phí vận chuyển.</p>
+                        <ul class="payment-benefits">
+                            <li>Giảm 50% phí vận chuyển</li>
+                            <li>Xử lý đơn hàng nhanh chóng</li>
+                            <li>An toàn và bảo mật</li>
+                            <li>Không cần tiền mặt</li>
+                        </ul>
+                        <div class="payment-note">
+                            <strong>Lưu ý:</strong> Quý khách vui lòng chụp file chuyển khoản và upload vào bill thanh toán, nhân viên sẽ đối soát và xác nhận đơn hàng trong thời gian sớm nhất.
+                        </div>
+                    </div>
+
+                    <!-- COD -->
+                    <div class="payment-method">
+                        <div class="payment-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h3>Thanh Toán Khi Nhận Hàng (COD)</h3>
+                        <p class="payment-description">Thanh toán bằng tiền mặt khi nhận hàng, phù hợp cho những ai muốn kiểm tra sản phẩm trước khi thanh toán.</p>
+                        <ul class="payment-benefits">
+                            <li>Kiểm tra sản phẩm trước khi thanh toán</li>
+                            <li>Không cần thẻ ngân hàng</li>
+                            <li>Phù hợp với mọi đối tượng</li>
+                            <li>An tâm khi mua sắm</li>
+                        </ul>
+                        <div class="payment-note">
+                            <strong>Lưu ý:</strong> Nhân viên sẽ gọi xác nhận đơn hàng. Đối với khách mới có đơn hàng trên 600.000đ, bắt buộc phải thanh toán trước phí vận chuyển.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Shipping Information -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Thông Tin Vận Chuyển</h2>
+                    <p class="section-subtitle">Dịch vụ vận chuyển nhanh chóng và an toàn</p>
+                </div>
+                
+                <div class="shipping-info">
+                    <div class="shipping-item">
+                        <div class="shipping-icon">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="shipping-content">
+                            <h4>Vận Chuyển Toàn Quốc</h4>
+                            <p>Chúng tôi cung cấp dịch vụ vận chuyển đến tất cả các tỉnh thành trên toàn quốc với thời gian giao hàng từ 1-3 ngày làm việc.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="shipping-item">
+                        <div class="shipping-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="shipping-content">
+                            <h4>Giảm 50% Phí Vận Chuyển</h4>
+                            <p>Áp dụng cho tất cả đơn hàng thanh toán bằng chuyển khoản ngân hàng trực tiếp. Giúp khách hàng tiết kiệm chi phí vận chuyển.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="shipping-item">
+                        <div class="shipping-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="shipping-content">
+                            <h4>Đóng Gói An Toàn</h4>
+                            <p>Tất cả sản phẩm được đóng gói cẩn thận với vật liệu chống sốc, đảm bảo sản phẩm không bị hư hỏng trong quá trình vận chuyển.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="shipping-item">
+                        <div class="shipping-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="shipping-content">
+                            <h4>Thời Gian Giao Hàng</h4>
+                            <p>TP.HCM & Hà Nội: 1-2 ngày làm việc<br>
+                            Các tỉnh khác: 2-3 ngày làm việc<br>
+                            Vùng sâu, vùng xa: 3-5 ngày làm việc</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Order Process -->
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Quy Trình Đặt Hàng</h2>
+                    <p class="section-subtitle">Các bước đặt hàng đơn giản và nhanh chóng</p>
+                </div>
+                
+                <div class="process-steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Chọn Sản Phẩm</h4>
+                        <p>Duyệt qua danh mục sản phẩm và chọn những sản phẩm phù hợp với nhu cầu của bạn.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Thêm Vào Giỏ Hàng</h4>
+                        <p>Thêm sản phẩm vào giỏ hàng và kiểm tra lại thông tin đơn hàng trước khi thanh toán.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Chọn Phương Thức Thanh Toán</h4>
+                        <p>Chọn phương thức thanh toán phù hợp: chuyển khoản ngân hàng hoặc thanh toán khi nhận hàng.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h4>Xác Nhận Đơn Hàng</h4>
+                        <p>Nhân viên sẽ liên hệ xác nhận đơn hàng và thông báo thời gian giao hàng dự kiến.</p>
+                    </div>
+                    
+                    <div class="step">
+                        <div class="step-number">5</div>
+                        <h4>Nhận Hàng</h4>
+                        <p>Kiểm tra sản phẩm và thanh toán (nếu chọn COD) hoặc đã thanh toán trước (nếu chuyển khoản).</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <!-- Bank Account Info -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Thông Tin Tài Khoản</h3>
+                <div class="info-item">
+                    <div class="info-title">Ngân hàng Saccombank</div>
+                    <div class="info-content">
+                        Số tài khoản: 0701 1991 0003<br>
+                        Chủ tài khoản: NGUYEN HUU NGHIA<br>
+                        Nội dung: [Mã đơn hàng] - [Số điện thoại]
+                    </div>
+                </div>
+            </div>
+
+            <!-- Shipping Fees -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Phí Vận Chuyển</h3>
+                <div class="info-item">
+                    <div class="info-title">Chuyển khoản trước</div>
+                    <div class="info-content">
+                        Giảm 50% phí vận chuyển<br>
+                        Phí ship: 15.000đ - 30.000đ
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Thanh toán COD</div>
+                    <div class="info-content">
+                        Phí ship: 30.000đ - 60.000đ<br>
+                        Khách mới >600k: thanh toán trước phí ship
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Support -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Hỗ Trợ</h3>
+                <div class="info-item">
+                    <div class="info-title">Hotline</div>
+                    <div class="info-content">
+                        0987.789.274
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Email</div>
+                    <div class="info-content">
+                        buddyskincarevn@gmail.com
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Giờ làm việc</div>
+                    <div class="info-content">
+                        Thứ 2 - Thứ 7: 8:00 - 20:00<br>
+                        Chủ nhật: 9:00 - 18:00
+                    </div>
+                </div>
+            </div>
+
+            <!-- Important Notes -->
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">Lưu Ý Quan Trọng</h3>
+                <div class="info-item">
+                    <div class="info-title">Đối với chuyển khoản</div>
+                    <div class="info-content">
+                        - Chụp file chuyển khoản<br>
+                        - Upload vào bill thanh toán<br>
+                        - Chờ nhân viên đối soát
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-title">Đối với COD</div>
+                    <div class="info-content">
+                        - Nhân viên sẽ gọi xác nhận<br>
+                        - Khách mới >600k: thanh toán trước phí ship<br>
+                        - Kiểm tra sản phẩm trước khi thanh toán
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

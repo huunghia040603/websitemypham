@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Chính Sách Bảo Mật Thông Tin - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .privacy-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 700px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; margin-top: 3rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+    .section { padding: 3rem 0; border-bottom: 1px solid #f3f4f6; }
+    .section:last-child { border-bottom: none; }
+    .section-header { margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem; letter-spacing: -0.015em; }
+    .section-subtitle { font-size: 0.95rem; color: #6b7280; margin: 0; }
+
+    /* Content blocks */
+    .block { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+    .block h3 { font-size: 1.1rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem; }
+    .block p, .block li { font-size: 0.95rem; color: #6b7280; line-height: 1.7; }
+    .block ul { padding-left: 1.25rem; margin: 0; }
+
+    .highlight { background: #ecfeff; border: 1px solid #06b6d4; color: #0e7490; border-radius: 10px; padding: 1rem 1.25rem; }
+    .note { background: #fff7ed; border: 1px solid #fdba74; color: #92400e; border-radius: 10px; padding: 1rem 1.25rem; }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 0.75rem; }
+    .small { font-size: 0.9rem; color: #6b7280; }
+
+    @media (max-width: 768px) {
+        .hero { padding: 1.5rem 0 1rem; }
+        .hero h1 { font-size: 2rem; }
+        .hero p { font-size: 0.95rem; }
+        .content-layout { grid-template-columns: 1fr; gap: 2rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="privacy-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Chính Sách Bảo Mật Thông Tin</h1>
+            <p>Chúng tôi cam kết bảo mật và chỉ sử dụng dữ liệu cá nhân của bạn cho mục đích hợp pháp, minh bạch và an toàn.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main-content">
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">1. Phạm Vi Thu Thập Thông Tin</h2>
+                    <p class="section-subtitle">Các loại thông tin chúng tôi có thể thu thập</p>
+                </div>
+                <div class="block">
+                    <ul>
+                        <li>Thông tin liên hệ: Họ tên, số điện thoại, email, địa chỉ nhận hàng</li>
+                        <li>Thông tin thanh toán: Mã đơn hàng, lịch sử giao dịch (không lưu thông tin thẻ)</li>
+                        <li>Thông tin kỹ thuật: Địa chỉ IP, loại trình duyệt, thời gian truy cập</li>
+                        <li>Tùy chọn người dùng: Sản phẩm yêu thích, lịch sử xem</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">2. Mục Đích Sử Dụng Thông Tin</h2>
+                    <p class="section-subtitle">Chúng tôi chỉ sử dụng dữ liệu để phục vụ bạn tốt hơn</p>
+                </div>
+                <div class="block">
+                    <ul>
+                        <li>Xử lý đơn hàng, giao hàng và chăm sóc khách hàng</li>
+                        <li>Gửi thông báo về đơn hàng, khuyến mãi (khi bạn đồng ý)</li>
+                        <li>Cải thiện trải nghiệm người dùng và nâng cao chất lượng dịch vụ</li>
+                        <li>Phòng chống gian lận và đảm bảo an toàn hệ thống</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">3. Lưu Trữ Và Bảo Mật</h2>
+                    <p class="section-subtitle">Bảo vệ dữ liệu là ưu tiên hàng đầu của chúng tôi</p>
+                </div>
+                <div class="block">
+                    <ul>
+                        <li>Mã hóa dữ liệu nhạy cảm khi truyền tải (HTTPS/TLS)</li>
+                        <li>Hạn chế truy cập nội bộ theo nguyên tắc tối thiểu cần thiết</li>
+                        <li>Sao lưu định kỳ và giám sát bảo mật liên tục</li>
+                        <li>Thời gian lưu trữ: chỉ trong thời gian cần thiết cho mục đích xử lý</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">4. Chia Sẻ Thông Tin Với Bên Thứ Ba</h2>
+                    <p class="section-subtitle">Chỉ chia sẻ khi cần thiết và có căn cứ pháp lý</p>
+                </div>
+                <div class="block">
+                    <ul>
+                        <li>Đơn vị vận chuyển: chỉ nhận thông tin cần thiết để giao hàng</li>
+                        <li>Đối tác thanh toán: phục vụ xác nhận giao dịch</li>
+                        <li>Cơ quan nhà nước: khi có yêu cầu hợp lệ theo pháp luật</li>
+                        <li>Không bán hoặc trao đổi thông tin cá nhân của bạn cho bên thứ ba</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">5. Quyền Của Khách Hàng</h2>
+                    <p class="section-subtitle">Bạn có toàn quyền kiểm soát dữ liệu của mình</p>
+                </div>
+                <div class="block">
+                    <ul>
+                        <li>Yêu cầu xem, chỉnh sửa hoặc xóa thông tin cá nhân</li>
+                        <li>Hủy đăng ký nhận thông báo tiếp thị bất kỳ lúc nào</li>
+                        <li>Gửi yêu cầu qua Email/Zalo để được hỗ trợ trong 48 giờ làm việc</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">6. Cookie Và Công Nghệ Tương Tự</h2>
+                    <p class="section-subtitle">Cookie giúp cá nhân hóa trải nghiệm của bạn</p>
+                </div>
+                <div class="block">
+                    <ul>
+                        <li>Cookie phiên: đảm bảo đăng nhập và chức năng giỏ hàng</li>
+                        <li>Cookie phân tích: hiểu hành vi sử dụng để tối ưu website</li>
+                        <li>Bạn có thể tắt cookie trong cài đặt trình duyệt (một số tính năng có thể bị hạn chế)</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">7. Liên Hệ</h2>
+                    <p class="section-subtitle">Mọi thắc mắc về bảo mật vui lòng liên hệ</p>
+                </div>
+                <div class="block highlight">
+                    Hotline: 0987.789.274 · Email: buddyskincarevn@gmail.com · Zalo: 0987.789.274
+                </div>
+                <div class="block note">
+                    Cập nhật chính sách: Chúng tôi có thể cập nhật nội dung chính sách theo định kỳ để phù hợp quy định pháp luật và dịch vụ. Phiên bản mới sẽ được công bố trên website.
+                </div>
+            </section>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Nguyên Tắc Vàng</div>
+                <ul class="small" style="margin:0; padding-left: 1rem;">
+                    <li>Minh bạch · Hợp pháp · Bảo mật</li>
+                    <li>Chỉ thu thập khi cần thiết</li>
+                    <li>Bảo vệ dữ liệu theo chuẩn tốt nhất</li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Hỗ Trợ Bảo Mật</div>
+                <div class="small">Xóa dữ liệu: Gửi yêu cầu qua email</div>
+                <div class="small">Cập nhật thông tin: Phản hồi trong 48h</div>
+                <div class="small">Khiếu nại: Tiếp nhận 24/7</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Liên Hệ - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .contact-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 700px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; margin-top: 3rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+    .section { padding: 3rem 0; border-bottom: 1px solid #f3f4f6; }
+    .section:last-child { border-bottom: none; }
+    .section-header { margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 0.5rem; letter-spacing: -0.015em; }
+    .section-subtitle { font-size: 0.95rem; color: #6b7280; margin: 0; }
+
+    /* Cards and form */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; transition: box-shadow .2s ease, border-color .2s ease; }
+    .card:hover { border-color: #d1d5db; box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+    .card h4 { font-size: 1.05rem; font-weight: 600; color: #111827; margin: 0 0 0.5rem; }
+    .card p { font-size: 0.9rem; color: #6b7280; margin: 0; line-height: 1.6; }
+
+    .contact-form { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.25rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .form-group { margin-bottom: 0.75rem; }
+    label { display: block; font-size: 0.9rem; color: #374151; margin-bottom: 0.35rem; font-weight: 600; }
+    input[type="text"], input[type="email"], input[type="tel"], textarea, select { width: 100%; border: 1px solid #e5e7eb; border-radius: 10px; padding: 0.65rem 0.75rem; font-size: 0.95rem; color: #111827; background: #fff; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+    textarea { min-height: 120px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { border-color: #a78bfa; box-shadow: 0 0 0 3px rgba(167,139,250,.2); }
+    .btn-primary { background: #6d28d9; color: #fff; border: none; border-radius: 10px; padding: 0.7rem 1.1rem; font-weight: 600; font-size: 0.95rem; transition: transform .1s ease, box-shadow .2s ease, background .2s ease; }
+    .btn-primary:hover { background: #5b21b6; box-shadow: 0 10px 20px rgba(93,63,211,.25); }
+    .btn-primary:active { transform: translateY(1px); }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 700; color: #111827; margin: 0 0 0.75rem; }
+    .small { font-size: 0.9rem; color: #6b7280; }
+    .kv { display: grid; grid-template-columns: 120px 1fr; gap: 0.35rem 0.75rem; }
+    .kv div { font-size: 0.95rem; }
+
+    .map-embed { border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
+
+    @media (max-width: 768px) {
+        .hero { padding: 1.5rem 0 1rem; }
+        .hero h1 { font-size: 2rem; }
+        .hero p { font-size: 0.95rem; }
+        .content-layout { grid-template-columns: 1fr; gap: 2rem; }
+        .form-row { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contact-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Liên Hệ BuddySkincare</h1>
+            <p>Chúng tôi luôn sẵn sàng hỗ trợ bạn. Hãy liên hệ khi cần tư vấn sản phẩm, hỗ trợ đơn hàng hoặc hợp tác.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main-content">
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Gửi Tin Nhắn Cho Chúng Tôi</h2>
+                    <p class="section-subtitle">Điền biểu mẫu, chúng tôi sẽ phản hồi trong giờ làm việc</p>
+                </div>
+                <form class="contact-form" onsubmit="event.preventDefault(); alert('Đã gửi liên hệ (demo). Chúng tôi sẽ phản hồi sớm!'); this.reset();">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Họ và tên</label>
+                            <input id="name" type="text" placeholder="Nguyễn Văn A" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại</label>
+                            <input id="phone" type="tel" placeholder="0987 789 274" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input id="email" type="email" placeholder="email@domain.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="topic">Chủ đề</label>
+                            <select id="topic">
+                                <option value="support">Hỗ trợ đơn hàng</option>
+                                <option value="product">Tư vấn sản phẩm</option>
+                                <option value="partner">Hợp tác/Cộng tác viên</option>
+                                <option value="other">Khác</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Nội dung</label>
+                        <textarea id="message" placeholder="Mô tả nhu cầu của bạn..."></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Gửi liên hệ</button>
+                </form>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Thông Tin Văn Phòng</h2>
+                    <p class="section-subtitle">Liên hệ trực tiếp trong giờ làm việc</p>
+                </div>
+                <div class="grid">
+                    <div class="card">
+                        <h4>Địa chỉ</h4>
+                        <p>123 Đường ABC, Quận 1, TP. Hồ Chí Minh</p>
+                    </div>
+                    <div class="card">
+                        <h4>Giờ làm việc</h4>
+                        <p>Thứ 2 - Thứ 7: 8:00 - 20:00 · Chủ nhật: 9:00 - 18:00</p>
+                    </div>
+                    <div class="card">
+                        <h4>Liên hệ nhanh</h4>
+                        <p>Hotline: 0987.789.274 · Zalo: 0987.789.274 · Email: buddyskincarevn@gmail.com</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Bản Đồ</h2>
+                    <p class="section-subtitle">Tìm đường đến cửa hàng của chúng tôi</p>
+                </div>
+                <div class="map-embed">
+                    <iframe title="map" src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3919.447812981099!2d106.700!3d10.776!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0:0x0!2zMTAuNzc2LCDDsE4gQ2jhu6MgTWluaCwgVGjhuqFuaCBwaOG6oW0!5e0!3m2!1svi!2svi!4v1680000000000" width="100%" height="340" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                </div>
+            </section>
+        </div>
+
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Kênh Liên Hệ</div>
+                <div class="kv">
+                    <div>Hotline</div><div>0987.789.274</div>
+                    <div>Email</div><div>buddyskincarevn@gmail.com</div>
+                    <div>Zalo</div><div>0987.789.274</div>
+                    <div>Facebook</div><div>@BuddySkincare</div>
+                    <div>Instagram</div><div>@buddyskincare.vn</div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Hỗ Trợ Nhanh</div>
+                <ul class="small" style="margin:0; padding-left: 1rem;">
+                    <li>Kiểm tra tình trạng đơn hàng</li>
+                    <li>Tư vấn chọn sản phẩm phù hợp</li>
+                    <li>Đăng ký cộng tác viên</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

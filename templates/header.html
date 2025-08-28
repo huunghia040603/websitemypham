@@ -11,9 +11,9 @@
             </div>
             <div class="col-md-6 text-center text-md-end" style="padding-bottom: 5px;">
                 <small class="text-muted">
-                    <a href="#" class="text-decoration-none text-muted me-3">Blog làm đẹp</a>
-                    <a href="#" class="text-decoration-none text-muted me-3">Hỗ trợ</a>
-                    <a href="#" class="text-decoration-none text-muted me-3">Đăng nhập</a>
+                    <a href="/news" class="text-decoration-none text-muted me-3">Blog làm đẹp</a>
+                    <a href="/support" class="text-decoration-none text-muted me-3">Hỗ trợ - Giải đáp</a>
+                    <a href="#" class="text-decoration-none text-muted me-3" data-bs-toggle="modal" data-bs-target="#loginModal">Đăng nhập</a>
                 </small>
             </div>
         </div>
@@ -26,9 +26,12 @@
         <div class="row align-items-center py-3 g-2">
             <!-- Logo -->
             <div class="col-lg-2 col-md-3 col-6">
-                <a href="/" class="text-decoration-none header-brand">
-                    <h2 class="text-primary mb-0 fw-bold logo-title">BuddySkincare</h2>
-                    <small class="text-muted logo-subtitle">Mỹ Phẩm Thanh Lý</small>
+                <a href="/" class="text-decoration-none header-brand d-flex align-items-center">
+                    <img src="{{ url_for('static', filename='image/logo.png') }}" alt="BeautySale Logo" class="header-logo me-2" style="max-height: 50px; width: auto;">
+                    <div class="header-text">
+                        <h2 class="text-primary mb-0 fw-bold logo-title" style="color: #1600bf !important;">BuddySkincare</h2>
+                        <small class="text-muted logo-subtitle">Mỹ Phẩm Thanh Lý</small>
+                    </div>
                 </a>
             </div>
             
