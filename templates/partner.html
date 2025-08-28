@@ -1,113 +1,148 @@
 {% extends "base.html" %}
 
-{% block title %}Đăng Ký Cộng Tác Viên - Thu Nhập Hấp Dẫn{% endblock %}
+{% block title %}Đăng ký Cộng Tác Viên{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pt-hero{position:relative;background:linear-gradient(135deg,#7c63f2 0%,#4a4be7 60%,#3b2f92 100%);color:#fff;padding:2.5rem 0 2rem;overflow:hidden}
+  .pt-pill{border-radius:999px;padding:.35rem .8rem;background: rgb(219, 234, 254);
+    color: rgb(30, 64, 175);
+    border: 2px solid rgb(59, 130, 246);}
+  .pt-card{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+  .pt-muted{color:#6b7280}
+  .pt-form .form-label{font-weight:500}
+  .pt-form .form-control,.pt-form .form-select{border-radius:10px}
+  .pt-benefit{display:flex;gap:.75rem;align-items:flex-start}
+  .pt-benefit .ico{width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
+  .fw-semibold{ color: #0b0061 !important; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container my-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="text-center mb-5">
-                <h1 class="display-4 fw-bold text-primary">🤝 Đăng Ký Cộng Tác Viên</h1>
-                <p class="lead text-muted">Thu nhập hấp dẫn với BeautySale</p>
-            </div>
-            
-            <div class="card shadow-lg border-0">
-                <div class="card-body p-5">
-                    <h3 class="text-center mb-4">💼 Cơ Hội Thu Nhập</h3>
-                    
-                    <div class="row mb-4">
-                        <div class="col-md-4 text-center mb-3">
-                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                <i class="fas fa-percentage fa-2x"></i>
-                            </div>
-                            <h5 class="mt-3">Hoa Hồng Cao</h5>
-                            <p class="text-muted">Từ 10-30% hoa hồng</p>
-                        </div>
-                        <div class="col-md-4 text-center mb-3">
-                            <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                <i class="fas fa-chart-line fa-2x"></i>
-                            </div>
-                            <h5 class="mt-3">Thu Nhập Không Giới Hạn</h5>
-                            <p class="text-muted">Càng bán nhiều, thu nhập càng cao</p>
-                        </div>
-                        <div class="col-md-4 text-center mb-3">
-                            <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                <i class="fas fa-gift fa-2x"></i>
-                            </div>
-                            <h5 class="mt-3">Thưởng Hấp Dẫn</h5>
-                            <p class="text-muted">Thưởng thêm cho top seller</p>
-                        </div>
-                    </div>
-                    
-                    <form>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="fullName" class="form-label">Họ và tên *</label>
-                                <input type="text" class="form-control" id="fullName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="phone" class="form-label">Số điện thoại *</label>
-                                <input type="tel" class="form-control" id="phone" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email *</label>
-                            <input type="email" class="form-control" id="email" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Địa chỉ</label>
-                            <textarea class="form-control" id="address" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="experience" class="form-label">Kinh nghiệm bán hàng</label>
-                                <select class="form-select" id="experience">
-                                    <option value="">Chọn kinh nghiệm</option>
-                                    <option value="beginner">Mới bắt đầu</option>
-                                    <option value="intermediate">Có kinh nghiệm</option>
-                                    <option value="expert">Chuyên nghiệp</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="socialMedia" class="form-label">Mạng xã hội chính</label>
-                                <select class="form-select" id="socialMedia">
-                                    <option value="">Chọn mạng xã hội</option>
-                                    <option value="facebook">Facebook</option>
-                                    <option value="instagram">Instagram</option>
-                                    <option value="zalo">Zalo</option>
-                                    <option value="tiktok">TikTok</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="motivation" class="form-label">Lý do muốn trở thành cộng tác viên</label>
-                            <textarea class="form-control" id="motivation" rows="4" placeholder="Hãy chia sẻ lý do bạn muốn trở thành cộng tác viên của BeautySale..."></textarea>
-                        </div>
-                        
-                        <div class="form-check mb-4">
-                            <input class="form-check-input" type="checkbox" id="agreeTerms" required>
-                            <label class="form-check-label" for="agreeTerms">
-                                Tôi đồng ý với <a href="#" class="text-primary">điều khoản và điều kiện</a> của BeautySale
-                            </label>
-                        </div>
-                        
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-primary btn-lg px-5">
-                                <i class="fas fa-paper-plane me-2"></i>Gửi Đăng Ký
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            
-            <div class="text-center mt-4">
-                <p class="text-muted">Chúng tôi sẽ liên hệ với bạn trong vòng 24h!</p>
-            </div>
+<div class="pt-hero">
+  <div class="container">
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-7">
+        <div class="pt-card p-3" style="background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%); border: 2px solid #93c5fd !important;">
+          <h1 class="h3 mb-2 text-dark">Đăng ký Cộng Tác Viên</h1>
+          <div class="pt-muted mb-2">Phong cách tối giản, tinh tế như trang voucher</div>
+          <div class="d-flex gap-2 flex-wrap">
+            <span class="pt-pill">Hoa hồng đến 22%</span>
+            <span class="pt-pill">Thanh toán hàng tuần</span>
+            <span class="pt-pill">Hỗ trợ tài liệu & media</span>
+          </div>
         </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="pt-card p-3">
+          <div class="pt-muted">Lợi ích nhanh</div>
+          <div class="mt-2 d-grid gap-2">
+            <div class="pt-benefit"><span class="ico bg-primary-subtle text-primary"><i class="fa-solid fa-bolt"></i></span><div><div class="fw-semibold">Bắt đầu nhanh</div><div class="pt-muted small">Duyệt hồ sơ trong 24h</div></div></div>
+            <div class="pt-benefit"><span class="ico bg-success-subtle text-success"><i class="fa-solid fa-percent"></i></span><div><div class="fw-semibold">Chiết khấu tốt</div><div class="pt-muted small">Ưu đãi theo doanh số</div></div></div>
+            <div class="pt-benefit"><span class="ico bg-info-subtle text-info"><i class="fa-solid fa-headset"></i></span><div><div class="fw-semibold">Hỗ trợ 24/7</div><div class="pt-muted small">Đội ngũ tư vấn đồng hành</div></div></div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 </div>
+
+<div class="container py-4">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="pt-card p-4">
+        <h2 class="h5 mb-3">Thông tin đăng ký</h2>
+        <form id="partnerForm" class="row g-3 pt-form">
+          <div class="col-md-6">
+            <label class="form-label">Họ và tên</label>
+            <input class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Số điện thoại</label>
+            <input class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Kênh bán chính</label>
+            <select class="form-select" required>
+              <option value="">Chọn...</option>
+              <option>Facebook</option>
+              <option>TikTok</option>
+              <option>Zalo</option>
+              <option>Shopee/Lazada</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Ghi chú</label>
+            <textarea class="form-control" rows="3"></textarea>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary w-100">Gửi đăng ký</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="pt-card p-4">
+        <h2 class="h5 mb-3">Câu hỏi thường gặp</h2>
+        <div class="mb-2"><strong>Điều kiện tham gia?</strong><div class="pt-muted">Chỉ cần đam mê làm đẹp và có kênh bán phù hợp.</div></div>
+        <div class="mb-2"><strong>Thanh toán hoa hồng?</strong><div class="pt-muted">Chuyển khoản hằng tuần khi đủ ngưỡng.</div></div>
+        <div class="mb-2"><strong>Đào tạo/hỗ trợ?</strong><div class="pt-muted">Tài liệu, nhóm cộng đồng và hỗ trợ trực tiếp.</div></div>
+      </div>
+      <div class="pt-card p-4 mt-3">
+        <h2 class="h5 mb-3">Cấp bậc Cộng tác viên</h2>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:140px">Cấp</th>
+                <th style="width:160px">Hoa hồng</th>
+                <th>Mô tả</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="pt-pill">Cấp 1</span></td>
+                <td><strong>10%</strong></td>
+                <td class="pt-muted">Hoa hồng trên doanh thu bán được (mặc định).</td>
+              </tr>
+              <tr>
+                <td><span class="pt-pill">Cấp 2</span></td>
+                <td><strong>12%</strong></td>
+                <td class="pt-muted">Tăng theo ngưỡng doanh thu tháng.</td>
+              </tr>
+              <tr>
+                <td><span class="pt-pill">Cấp 3</span></td>
+                <td><strong>16%</strong></td>
+                <td class="pt-muted">Ưu đãi tốt hơn cho CTV tích cực.</td>
+              </tr>
+              <tr>
+                <td><span class="pt-pill">Cấp 4</span></td>
+                <td><strong>20%</strong></td>
+                <td class="pt-muted">Duy trì doanh số ổn định.</td>
+              </tr>
+              <tr>
+                <td><span class="pt-pill">Cấp 5</span></td>
+                <td><strong>22%</strong></td>
+                <td class="pt-muted">Cấp cao nhất, thưởng hoa hồng tối đa.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('partnerForm')?.addEventListener('submit', function(e){
+  e.preventDefault();
+  alert('Đã gửi đăng ký! Chúng tôi sẽ liên hệ sớm.');
+});
+</script>
 {% endblock %} 
