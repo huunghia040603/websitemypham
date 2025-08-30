@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+
+{% block title %}Dưỡng Da - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .skin-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.25); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 680px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+    .section { padding: 3rem 0; border-bottom: 1px solid #f3f4f6; }
+    .section:last-child { border-bottom: none; }
+    .section-header { margin-bottom: 1.5rem; text-align: left; }
+    .section-title { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0 0 .6rem; letter-spacing: -0.015em; }
+    .section-subtitle { font-size: 0.95rem; color: #6b7280; margin: 0; }
+
+    /* Routine steps */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+    .step { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; transition: border-color .2s ease, box-shadow .2s ease; text-decoration: none; color: inherit; display: block; cursor: pointer; }
+    .step:hover { border-color: #d1d5db; box-shadow: 0 8px 22px rgba(0,0,0,0.06); }
+    .step h4 { font-size: 1.05rem; font-weight: 700; color: #111827; margin: 0 0 .4rem; }
+    .step p { font-size: .92rem; color: #6b7280; margin: 0; line-height: 1.6; }
+    .badge-num { width: 36px; height: 36px; border-radius: 50%; background: #6d28d9; color: #fff; display: grid; place-items: center; font-weight: 800; margin-bottom: .6rem; }
+
+    /* Tips grid */
+    .tips { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .tip { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #10b981; border-radius: 12px; padding: 1rem; }
+    .tip h4 { margin: 0 0 .35rem; font-size: 1rem; color: #065f46; font-weight: 800; }
+    .tip p { margin: 0; color: #047857; font-size: .92rem; }
+
+    /* Product cards */
+    .products { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+    .product { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .product img { width: 100%; height: 160px; object-fit: cover; display: block; }
+    .product .p-content { padding: .8rem; }
+    .product h5 { font-size: 1rem; font-weight: 700; margin: 0 0 .25rem; color: #111827; }
+    .price { color: #dc2626; font-weight: 800; font-size: .98rem; }
+    .old { text-decoration: line-through; color: #9ca3af; font-size: .85rem; margin-left: .35rem; }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 800; color: #111827; margin-bottom: .6rem; }
+    .list { list-style: none; margin: 0; padding: 0; }
+    .list li { padding: .45rem 0; border-bottom: 1px solid #f3f4f6; }
+    .list li:last-child { border-bottom: 0; }
+
+    /* FAQ */
+    .faq { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; }
+    .faq-item { border-bottom: 1px solid #f3f4f6; }
+    .faq-item:last-child { border-bottom: 0; }
+    .faq-q { position: relative; background: #fff; padding: .9rem 2rem .9rem 1rem; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .faq-q::after { content: "\f078"; font-family: "Font Awesome 5 Free"; font-weight: 900; color: #9ca3af; position: absolute; right: .75rem; transition: transform .2s ease; }
+    .faq-item.active .faq-q::after { transform: rotate(180deg); }
+    .faq-a { display: none; background: #fff; padding: 0 1rem 1rem; color: #6b7280; font-size: .95rem; }
+    .faq-item.active .faq-a { display: block; }
+
+    /* Modal content */
+    .modal-product img { width: 100%; border-radius: 10px; height: 140px; object-fit: cover; }
+    .news-mini { display: grid; grid-template-columns: 56px 1fr; gap: .5rem; padding: .5rem; border: 1px solid #f3f4f6; border-radius: 10px; margin-bottom: .5rem; text-decoration: none; color: inherit; }
+    .news-mini:hover { background: #f9fafb; }
+    .news-mini .thumb { width: 56px; height: 42px; border-radius: 8px; overflow: hidden; background: #f3f4f6; }
+    .news-mini .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .news-mini .title { font-size: .92rem; font-weight: 700; margin: 0; color: #111827; line-height: 1.35; }
+    .news-mini .meta { font-size: .8rem; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="skin-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Dưỡng Da Căn Bản</h1>
+            <p>Quy trình dưỡng da tối giản nhưng hiệu quả cùng mỹ phẩm thanh lý BuddySkincare.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main">
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Quy Trình 6 Bước Sáng - Tối</h2>
+                    <p class="section-subtitle">Bấm vào từng bước để xem hướng dẫn chi tiết và gợi ý sản phẩm</p>
+                </div>
+                <div class="steps">
+                    <div class="step" data-step="1" role="button" tabindex="0">
+                        <div class="badge-num">1</div>
+                        <h4>Làm sạch</h4>
+                        <p>Sáng: sữa rửa mặt dịu nhẹ. Tối: tẩy trang + rửa mặt để loại bỏ bụi bẩn.</p>
+                    </div>
+                    <div class="step" data-step="2" role="button" tabindex="0">
+                        <div class="badge-num">2</div>
+                        <h4>Cân bằng</h4>
+                        <p>Nước cân bằng (toner) phục hồi pH, chuẩn bị cho bước dưỡng sau.</p>
+                    </div>
+                    <div class="step" data-step="3" role="button" tabindex="0">
+                        <div class="badge-num">3</div>
+                        <h4>Điều trị</h4>
+                        <p>Serum đặc trị (AHA/BHA, Niacinamide, Hyaluronic...).</p>
+                    </div>
+                    <div class="step" data-step="4" role="button" tabindex="0">
+                        <div class="badge-num">4</div>
+                        <h4>Khóa ẩm</h4>
+                        <p>Kem dưỡng giúp giảm mất nước qua biểu bì.</p>
+                    </div>
+                    <div class="step" data-step="5" role="button" tabindex="0">
+                        <div class="badge-num">5</div>
+                        <h4>Chống nắng</h4>
+                        <p>SPF 30+ phổ rộng; đủ lượng và thoa lại sau 2-3 giờ.</p>
+                    </div>
+                    <div class="step" data-step="6" role="button" tabindex="0">
+                        <div class="badge-num">6</div>
+                        <h4>Đặc biệt</h4>
+                        <p>Mask/peel dịu nhẹ 1–2 lần/tuần.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Gợi Ý Sản Phẩm Phù Hợp</h2>
+                    <p class="section-subtitle">Một số sản phẩm thanh lý giá tốt đang có</p>
+                </div>
+                <div class="products">
+                    <div class="product">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg') }}" alt="Sữa rửa mặt dịu nhẹ">
+                        <div class="p-content">
+                            <h5>Sữa rửa mặt dịu nhẹ</h5>
+                            <div><span class="price">128.000₫</span><span class="old">320.000₫</span></div>
+                        </div>
+                    </div>
+                    <div class="product">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg') }}" alt="Tẩy trang Bioderma">
+                        <div class="p-content">
+                            <h5>Tẩy trang Bioderma</h5>
+                            <div><span class="price">98.000₫</span><span class="old">280.000₫</span></div>
+                        </div>
+                    </div>
+                    <div class="product">
+                        <img src="{{ url_for('static', filename='image/demo/facebook-dynamic-kem-chong-nang-l-oreal-paris-x20-thoang-da-mong-nhe-50ml-1738898716_img_300x300_b798dd_fit_center.jpg') }}" alt="Kem chống nắng L'Oreal">
+                        <div class="p-content">
+                            <h5>Kem chống nắng L'Oreal</h5>
+                            <div><span class="price">157.500₫</span><span class="old">350.000₫</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Mẹo Dưỡng Da Theo Loại Da</h2>
+                    <p class="section-subtitle">Điều chỉnh quy trình theo nhu cầu</p>
+                </div>
+                <div class="tips">
+                    <div class="tip">
+                        <h4>Da dầu/Hỗn hợp</h4>
+                        <p>Ưu tiên gel/foaming cleanser, toner không cồn, serum Niacinamide, gel dưỡng mỏng.</p>
+                    </div>
+                    <div class="tip">
+                        <h4>Da khô</h4>
+                        <p>Chọn sữa rửa mặt dịu nhẹ, thêm Hyaluronic/ceramide, kem dưỡng đặc hơn, khóa ẩm.</p>
+                    </div>
+                    <div class="tip">
+                        <h4>Da nhạy cảm</h4>
+                        <p>Tránh hương liệu/mùi; test thử vùng nhỏ trước khi dùng; ưu tiên thành phần phục hồi.</p>
+                    </div>
+                    <div class="tip">
+                        <h4>Da nám/tối màu</h4>
+                        <p>Thêm Vitamin C/Arbutin/Tranexamic; chống nắng nghiêm ngặt mỗi ngày.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Câu Hỏi Thường Gặp</h2>
+                    <p class="section-subtitle">Những thắc mắc phổ biến về dưỡng da cơ bản</p>
+                </div>
+                <div class="faq" id="faq">
+                    <div class="faq-item">
+                        <div class="faq-q">Nên rửa mặt mấy lần mỗi ngày? </div>
+                        <div class="faq-a">Hai lần sáng/tối là đủ. Tránh rửa quá nhiều gây khô kích ứng.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Có cần toner không?</div>
+                        <div class="faq-a">Toner hỗ trợ cân bằng pH và làm ẩm nhẹ. Không bắt buộc nhưng hữu ích cho nhiều loại da.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Bôi chống nắng bao nhiêu là đủ?</div>
+                        <div class="faq-a">Ước lượng 2 ngón tay cho mặt và cổ, thoa lại sau 2-3 giờ nếu ở ngoài trời.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Da dầu có cần dưỡng ẩm không?</div>
+                        <div class="faq-a">Có. Dùng gel/kem mỏng, không gây bít tắc (non-comedogenic) để cân bằng dầu.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Niacinamide dùng chung Vitamin C được không?</div>
+                        <div class="faq-a">Có thể dùng cùng routine. Nếu da nhạy cảm, dùng xen kẽ sáng/tối để da thích nghi.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">AHA/BHA nên dùng mấy lần/tuần?</div>
+                        <div class="faq-a">Bắt đầu 1-2 lần/tuần, tăng dần theo đáp ứng. Tránh lạm dụng gây kích ứng.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Có cần tẩy trang khi không trang điểm?</div>
+                        <div class="faq-a">Nên tẩy trang buổi tối để loại bỏ kem chống nắng/bụi bẩn/bã nhờn.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Da mụn có nên dùng dầu dưỡng?</div>
+                        <div class="faq-a">Có thể dùng các loại oil nhẹ (squalane) ở lượng nhỏ, sau serum và trước kem khóa ẩm.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Thứ tự layer sản phẩm thế nào?</div>
+                        <div class="faq-a">Lỏng đến đặc: rửa mặt → toner → serum → kem dưỡng → chống nắng (ban ngày).</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Bao lâu thấy hiệu quả serum?</div>
+                        <div class="faq-a">Thường 2-8 tuần tùy hoạt chất/mức độ vấn đề da và thói quen sinh hoạt.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Da đang kích ứng nên làm gì?</div>
+                        <div class="faq-a">Dừng hoạt chất mạnh, ưu tiên phục hồi (panthenol, ceramide), chống nắng kỹ và tối giản routine.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Có cần rửa mặt sau khi đắp mask?</div>
+                        <div class="faq-a">Với mask giấy: không cần rửa, vỗ nhẹ cho thấm. Với mask rửa: rửa sạch theo hướng dẫn.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Dùng retinol khi nào?</div>
+                        <div class="faq-a">Dùng buổi tối, 1-3 lần/tuần lúc đầu, tăng dần. Luôn chống nắng và dưỡng ẩm kỹ.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Vitamin C bị oxy hóa có dùng tiếp được không?</div>
+                        <div class="faq-a">Khi chuyển vàng nâu đậm, mùi hắc, nên ngừng dùng. Bảo quản kín, tránh sáng/nhiệt.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Có nên rửa mặt bằng nước lạnh buổi sáng?</div>
+                        <div class="faq-a">Nếu da rất khô/nhạy cảm có thể chỉ dùng nước ấm nhẹ. Đa số vẫn nên dùng sữa rửa mặt dịu nhẹ.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Thoa kem mắt trước hay sau serum?</div>
+                        <div class="faq-a">Sau serum cho mặt, trước kem dưỡng. Dùng lượng ít, vỗ nhẹ quanh hốc mắt.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Chọn kem chống nắng vật lý hay hóa học?</div>
+                        <div class="faq-a">Da nhạy cảm dễ hợp vật lý; cần mỏng nhẹ vô hình có thể chọn hóa học. Quan trọng là dùng đủ lượng.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Dùng nhiều sản phẩm cùng lúc có tốt hơn không?</div>
+                        <div class="faq-a">Không. Tối giản và nhất quán giúp da ổn định hơn, giảm nguy cơ kích ứng và tiết kiệm chi phí.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Bao lâu nên thay sữa rửa mặt/kem dưỡng?</div>
+                        <div class="faq-a">Theo hạn dùng ghi trên bao bì (PAO). Thường 6-12 tháng sau khi mở nắp tùy sản phẩm.</div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-q">Dùng sản phẩm thanh lý/pass tester có an toàn?</div>
+                        <div class="faq-a">Chúng tôi kiểm tra tình trạng, hạn dùng và niêm phong kỹ. Bạn nên đọc mô tả chi tiết và test thử vùng nhỏ trước khi dùng.</div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Danh Mục Liên Quan</div>
+                <ul class="list">
+                    <li><a href="/flash-sale">Flash Sale giờ vàng</a></li>
+                    <li><a href="/shopping-guide">Hướng dẫn mua hàng</a></li>
+                    <li><a href="/online-payment-safety">Thanh toán an toàn</a></li>
+                    <li><a href="/support">Hỗ trợ & FAQ</a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Lưu Ý Nhanh</div>
+                <ul class="list">
+                    <li>Test thử vùng nhỏ khi dùng sản phẩm mới</li>
+                    <li>Ưu tiên SPF hằng ngày</li>
+                    <li>Không dùng quá nhiều hoạt chất cùng lúc</li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Tin Tức Mới</div>
+                <a class="news-mini" href="/news">
+                    <div class="thumb"><img src="{{ url_for('static', filename='image/tintuc/cach-chon-kem-chong-nang-phu-hop-nhat-cho-tung-loai-da-201910150810078833.jpg') }}" alt="kem chống nắng"></div>
+                    <div>
+                        <div class="title">Cách chọn kem chống nắng phù hợp</div>
+                        <div class="meta">12/08/2025 · 6 phút</div>
+                    </div>
+                </a>
+                <a class="news-mini" href="/flash-sale">
+                    <div class="thumb"><img src="{{ url_for('static', filename='image/demo/6fde01da-d545-435d-ab71-50ed3184afe0.webp') }}" alt="giờ vàng"></div>
+                    <div>
+                        <div class="title">Giờ vàng 18:00–19:00: Săn deal khủng</div>
+                        <div class="meta">10/08/2025 · 3 phút</div>
+                    </div>
+                </a>
+                <a class="news-mini" href="/online-payment-safety">
+                    <div class="thumb"><img src="{{ url_for('static', filename='image/demo/47e547c3-bc87-4c3a-a0da-eeddf358e0f5.webp') }}" alt="an toàn thanh toán"></div>
+                    <div>
+                        <div class="title">Thanh toán online an toàn</div>
+                        <div class="meta">05/08/2025 · 4 phút</div>
+                    </div>
+                </a>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<!-- Step Detail Modal -->
+<div class="modal fade" id="stepModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="stepTitle">Chi tiết bước</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="stepDesc" class="mb-3 text-muted"></p>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h6 class="fw-bold">Cách thực hiện</h6>
+            <ol id="stepHow" class="mb-0"></ol>
+          </div>
+          <div class="col-md-6">
+            <h6 class="fw-bold">Mẹo nhỏ</h6>
+            <ul id="stepTips" class="mb-0"></ul>
+          </div>
+        </div>
+        <div id="stepProductsWrap" class="mt-3" style="display:none;">
+          <h6 class="fw-bold mb-2">Gợi ý sản phẩm</h6>
+          <div id="stepProducts" class="row g-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const stepsData = {
+    1: {title:'Bước 1: Làm sạch',desc:'Loại bỏ bụi bẩn, dầu thừa và lớp trang điểm để da thông thoáng.',how:['Buổi tối: tẩy trang (dầu/nước micellar) trước khi rửa mặt','Làm ướt mặt với nước ấm để mở nhẹ lỗ chân lông','Lấy 1–2 hạt đậu sữa rửa mặt, tạo bọt trong lòng bàn tay','Massage vòng tròn 30–60 giây, tập trung vùng chữ T','Rửa sạch và thấm khô bằng khăn mềm'],tips:['Chọn pH ~5.5, công thức dịu nhẹ cho mọi loại da','Sáng rửa nhẹ, tối làm sạch kép nếu dùng chống nắng/trang điểm'],products:[{name:'Sữa rửa mặt dịu nhẹ',price:'128.000₫',old:'320.000₫',img:'image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg'},{name:'Nước tẩy trang Bioderma',price:'98.000₫',old:'280.000₫',img:'image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg'}]},
+    2: {title:'Bước 2: Cân bằng',desc:'Phục hồi pH, cấp ẩm nhẹ và hỗ trợ hấp thụ cho bước sau.',how:['Sau khi rửa mặt, thấm ướt bông với toner','Lau nhẹ theo chiều cấu trúc da hoặc vỗ trực tiếp bằng tay sạch','Chờ 30–60 giây trước bước tiếp theo'],tips:['Da nhạy cảm: ưu tiên toner không cồn, có panthenol/HA','Có thể layer 2–3 lần để tăng ẩm khi thời tiết khô hanh'],products:[{name:'Toner cân bằng dịu nhẹ',price:'120.000₫',old:'210.000₫',img:'image/demo/6fde01da-d545-435d-ab71-50ed3184afe0.webp'}]},
+    3: {title:'Bước 3: Serum điều trị',desc:'Tập trung giải quyết vấn đề: mụn, thâm nám, thiếu ẩm, lão hóa...',how:['Dùng 2–3 giọt serum trên mặt và cổ','Vỗ/ấn nhẹ cho thấm, tránh chà xát','Đợi 1–2 phút trước khi khóa ẩm'],tips:['Không trộn nhiều hoạt chất mạnh (retinol, AHA/BHA, vitC) cùng một lúc','Da nhạy cảm: bắt đầu cách ngày, tăng dần tần suất'],products:[{name:'Serum Niacinamide 10%',price:'159.000₫',old:'280.000₫',img:'image/demo/47e547c3-bc87-4c3a-a0da-eeddf358e0f5.webp'}]},
+    4: {title:'Bước 4: Khóa ẩm',desc:'Giữ ẩm cho da, giảm mất nước qua biểu bì và phục hồi hàng rào.',how:['Lấy lượng kem bằng hạt đậu, chấm 5 điểm và tán đều','Massage hướng lên trên và ra ngoài','Vùng khô có thể chấm thêm một lớp mỏng'],tips:['Da dầu: chọn gel/cream nhẹ, non‑comedogenic','Da khô: ưu tiên ceramide, squalane, shea butter'],products:[{name:'Kem dưỡng phục hồi',price:'165.000₫',old:'300.000₫',img:'image/demo/1200x429px_f18b4a4fee8d439b95d810bbd94b3493.jpg'}]},
+    5: {title:'Bước 5: Chống nắng',desc:'Bảo vệ da trước UVA/UVB, ngăn nám sạm và lão hóa sớm.',how:['Dùng lượng ~2 ngón tay cho mặt/cổ','Thoa sau dưỡng ẩm 15–20 phút trước khi ra ngoài','Thoa lại sau 2–3 giờ hoặc sau khi đổ mồ hôi/nước'],tips:['Chọn SPF 30+ phổ rộng, PA+++','Trong nhà vẫn nên dùng nếu có ánh sáng xanh/ánh nắng'],products:[{name:"Kem chống nắng L'Oreal",price:'157.500₫',old:'350.000₫',img:'image/demo/facebook-dynamic-kem-chong-nang-l-oreal-paris-x20-thoang-da-mong-nhe-50ml-1738898716_img_300x300_b798dd_fit_center.jpg'}]},
+    6: {title:'Bước 6: Mask/Peel',desc:'Tăng cường: cấp ẩm sâu, sáng da, làm mịn bề mặt (1–2 lần/tuần).',how:['Sau làm sạch, đắp mask 10–20 phút rồi gỡ nhẹ','Với peel dịu nhẹ: thoa mỏng, chờ 5–10 phút và rửa sạch','Luôn khóa ẩm sau mask/peel'],tips:['Tránh dùng chung ngày với retinol/AHA mạnh nếu da nhạy cảm','Theo dõi phản ứng da, giảm tần suất nếu kích ứng'],products:[{name:'Mặt nạ cấp ẩm',price:'45.000₫',old:'79.000₫',img:'image/tintuc/cach-chon-kem-chong-nang-phu-hop-nhat-cho-tung-loai-da-201910150810078833.jpg'}]}
+  };
+
+  const modalEl = document.getElementById('stepModal');
+  let bsModal = null;
+  function ensureModal(){
+    try{
+      if (window.bootstrap && bootstrap.Modal){ if (!bsModal) bsModal = new bootstrap.Modal(modalEl); return 'bootstrap'; }
+    }catch(err){ console.error('Bootstrap check error:', err); }
+    return 'fallback';
+  }
+
+  const stepTitle = document.getElementById('stepTitle');
+  const stepDesc = document.getElementById('stepDesc');
+  const stepHow = document.getElementById('stepHow');
+  const stepTips = document.getElementById('stepTips');
+  const stepProducts = document.getElementById('stepProducts');
+  const stepProductsWrap = document.getElementById('stepProductsWrap');
+
+  function renderList(el, items){ el.innerHTML=''; (items||[]).forEach(t=>{ const li=document.createElement('li'); li.textContent=t; el.appendChild(li); }); }
+
+  function imgPath(src){
+    if(!src) return '';
+    if(src.startsWith('http')) return src;
+    if(src.startsWith('/')) return src;
+    // ensure /static prefix
+    return '/static/' + src.replace(/^static\//,'');
+  }
+
+  function openStep(step){
+    try{
+      const data = stepsData[step]; if(!data) return;
+      stepTitle.textContent = data.title||'Chi tiết bước';
+      stepDesc.textContent = data.desc||'';
+      renderList(stepHow, data.how);
+      renderList(stepTips, data.tips);
+
+      stepProducts.innerHTML='';
+      if (data.products && data.products.length){
+        stepProductsWrap.style.display='';
+        data.products.forEach(p=>{
+          const col=document.createElement('div'); col.className='col-sm-6 col-md-4';
+          col.innerHTML=`<div class="modal-product card border-0"><img src="${imgPath(p.img)}" alt="${p.name||''}"><div class="card-body p-2"><div class="fw-bold small">${p.name||''}</div><div class="small"><span class="text-danger fw-bold">${p.price||''}</span>${p.old?`<span class='text-muted text-decoration-line-through ms-1'>${p.old}</span>`:''}</div></div></div>`;
+          stepProducts.appendChild(col);
+        });
+      } else { stepProductsWrap.style.display='none'; }
+
+      if (ensureModal()==='bootstrap'){ bsModal.show(); }
+      else {
+        modalEl.classList.add('show'); modalEl.style.display='block'; modalEl.removeAttribute('aria-hidden'); document.body.classList.add('modal-open');
+        let backdrop=document.createElement('div'); backdrop.className='modal-backdrop fade show'; backdrop.setAttribute('data-fallback','1'); document.body.appendChild(backdrop);
+        const closeBtn = modalEl.querySelector('[data-bs-dismiss="modal"]');
+        if (closeBtn){ closeBtn.onclick=function(){ modalEl.classList.remove('show'); modalEl.style.display='none'; modalEl.setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); const bd=document.querySelector('.modal-backdrop[data-fallback="1"]'); if(bd) bd.remove(); } }
+      }
+    }catch(err){ console.error('Open step error:', err); alert('Xin lỗi, không thể mở chi tiết. Vui lòng tải lại trang.'); }
+  }
+
+  document.querySelectorAll('.step[data-step]').forEach(card=>{
+    const handler = ()=> openStep(card.getAttribute('data-step'));
+    card.addEventListener('click', handler);
+    card.addEventListener('keypress', (e)=>{ if(e.key==='Enter' || e.key===' ') { e.preventDefault(); handler(); } });
+  });
+
+  document.querySelectorAll('.faq-q').forEach(q=> q.addEventListener('click', ()=> q.parentElement.classList.toggle('active')));
+})();
+</script>
+{% endblock %}
