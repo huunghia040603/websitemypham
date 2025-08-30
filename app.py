@@ -637,6 +637,10 @@ def news():
 def support():
     return render_template('support.html')
 
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
+
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404

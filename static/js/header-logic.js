@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+
     // Kiểm tra trạng thái đăng nhập
-    if (typeof isLoggedIn !== 'undefined' && isLoggedIn()) {
+   if (typeof isLoggedIn !== 'undefined' && isLoggedIn()) {
         const userProfile = getUserProfile();
         const userName = userProfile.name || userProfile.phone_number;
+        const token = userProfile.access_token;
 
+        // BẮT ĐẦU CẬP NHẬT GIAO DIỆN TRƯỚC
+        
         // Cập nhật Top Bar
         const topBarUserSection = document.getElementById('top-bar-user-section');
         if (topBarUserSection) {
@@ -47,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </ul>
             `;
         }
-        
+
         // Gắn sự kiện đăng xuất cho các nút
         const logoutButtons = document.querySelectorAll('#logoutBtnTopBar, #logoutBtnDesktop, #logoutBtnMobile');
         logoutButtons.forEach(button => {
@@ -57,5 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.reload(); 
             });
         });
+        
+    
     }
 });

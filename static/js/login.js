@@ -8,12 +8,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const forgotPasswordTrigger = document.getElementById('forgotPasswordTrigger');
     const backToLoginTrigger = document.getElementById('backToLoginTrigger');
 
-    console.log('Đã tìm thấy các phần tử:');
-    console.log('loginFormContainer:', loginFormContainer);
-    console.log('forgotPasswordFormContainer:', forgotPasswordFormContainer);
-    console.log('forgotPasswordTrigger:', forgotPasswordTrigger);
-    console.log('backToLoginTrigger:', backToLoginTrigger);
-
     // Chuyển đổi từ form Đăng nhập sang Quên mật khẩu
     if (forgotPasswordTrigger && loginFormContainer && forgotPasswordFormContainer) {
         forgotPasswordTrigger.addEventListener('click', (e) => {
@@ -72,8 +66,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const result = await response.json();
                     console.log('Đăng nhập bằng số điện thoại thành công:', result);
                     saveLoginState(result);
-                    alert('Đăng nhập thành công!');
-                    window.location.href = '/';
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 100);
                 } else {
                     const error = await response.json();
                     console.error('Đăng nhập thất bại:', error);
@@ -173,3 +168,6 @@ async function handleCredentialResponse(response) {
         alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
     }
 }
+
+
+
