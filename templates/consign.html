@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Đăng Ký Thanh Lý Hộ - BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background: #ffffff; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; color: #374151; }
+    .consign-container { max-width: 100%; margin: 0 auto; padding: 0; }
+
+    /* Hero */
+    .hero { position: relative; padding: 2rem 0 1.5rem; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; overflow: hidden; width: 100%; }
+    .hero-content { position: relative; z-index: 2; max-width: 860px; margin: 0 auto; padding: 0 2rem; }
+    .hero h1 { font-size: 3rem; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 1rem; text-shadow: 0 4px 8px rgba(0,0,0,0.25); }
+    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.9); margin: 0 auto; max-width: 700px; }
+
+    /* Layout */
+    .content-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-top: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; padding: 0 1rem; }
+    .section { padding: 3rem 0; border-bottom: 1px solid #f3f4f6; }
+    .section:last-child { border-bottom: none; }
+    .section-header { margin-bottom: 1.5rem; }
+    .section-title { font-size: 1.5rem; font-weight: 800; color: #111827; margin: 0 0 .6rem; letter-spacing: -0.015em; }
+    .section-subtitle { font-size: .95rem; color: #6b7280; margin: 0; }
+
+    /* Form */
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .form-group { display: flex; flex-direction: column; gap: .35rem; }
+    label { font-weight: 600; font-size: .92rem; color: #111827; }
+    input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="number"], textarea, select { border: 1px solid #e5e7eb; border-radius: 10px; padding: .6rem .75rem; font-size: .95rem; }
+    textarea { min-height: 110px; resize: vertical; }
+    .btn-primary { background: #6d28d9; color: #fff; border: none; border-radius: 10px; padding: .65rem 1rem; font-weight: 700; }
+    .btn-primary:hover { background: #5b21b6; }
+
+    /* Upload preview */
+    .preview { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .6rem; margin-top: .6rem; }
+    .thumb { border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; background: #f8fafc; display: grid; place-items: center; height: 120px; }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* Sidebar */
+    .sidebar-section { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+    .sidebar-title { font-size: 1rem; font-weight: 800; color: #111827; margin-bottom: .6rem; }
+    .steps { display: grid; grid-template-columns: 1fr; gap: .6rem; }
+    .step { background: #f9fafb; border: 1px solid #eef2f7; border-radius: 10px; padding: .6rem .75rem; }
+    .step b { color: #111827; }
+    .benefit { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #10b981; border-radius: 12px; padding: .75rem; margin-bottom: .6rem; }
+
+    @media (max-width: 768px) {
+        .hero { padding: 1.5rem 0 1rem; }
+        .hero h1 { font-size: 2rem; }
+        .hero p { font-size: .95rem; }
+        .content-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+        .form-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="consign-container">
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Đăng Ký Thanh Lý Hộ</h1>
+            <p>Gửi thông tin sản phẩm của bạn, BuddySkincare sẽ duyệt và đăng bán giúp bạn. Phí dịch vụ 20% sau khi đơn hoàn tất.</p>
+        </div>
+    </section>
+
+    <div class="content-layout">
+        <div class="main">
+            <section class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Biểu Mẫu Đăng Ký</h2>
+                    <p class="section-subtitle">Điền thông tin chính xác để chúng tôi duyệt nhanh trong 1–3 ngày làm việc</p>
+                </div>
+                <form class="card" id="consignForm" onsubmit="event.preventDefault(); alert('Đã gửi đăng ký (demo). Chúng tôi sẽ liên hệ sớm!'); this.reset(); document.getElementById('preview').innerHTML='';">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fullName">Họ và tên</label>
+                            <input id="fullName" type="text" placeholder="Nguyễn Văn A" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại</label>
+                            <input id="phone" type="tel" placeholder="0987 789 274" required>
+                        </div>
+                        <!-- <div class="form-group">
+                            <label for="email">Email</label>
+                            <input id="email" type="email" placeholder="email@domain.com">
+                        </div> -->
+                        <div class="form-group">
+                            <label for="productName">Tên sản phẩm</label>
+                            <input id="productName" type="text" placeholder="Kem dưỡng/Serum/..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="brand">Thương hiệu</label>
+                            <input id="brand" type="text" placeholder="TheFaceShop, L'Oreal, ...">
+                        </div>
+                        <div class="form-group">
+                            <label for="condition">Tình trạng</label>
+                            <select id="condition">
+                                <option value="new">Mới 100% (chưa mở niêm phong)</option>
+                                <option value="like-new">Gần như mới (đã mở hộp)</option>
+                                <option value="used-light">Đã dùng nhẹ (&lt; 10%)</option>
+                                <option value="used">Đã dùng (&gt; 10%)</option>
+                                <option value="box-dent">Bao bì lỗi</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="expiry">Hạn sử dụng (ước tính)</label>
+                            <input id="expiry" type="date">
+                        </div>
+                        <div class="form-group">
+                            <label for="price">Giá mong muốn (VNĐ)</label>
+                            <input id="price" type="number" min="0" step="1000" placeholder="VD: 150000">
+                        </div>
+                        <div class="form-group">
+                            <label for="shipping">Nhà bạn có gần đơn vị vận chuyển nào?</label>
+                            <select id="shipping">
+                                <option value="">Chọn đơn vị vận chuyển</option>
+                                <option value="viettel">Viettel Post</option>
+                                <option value="ghn">Giao Hàng Nhanh (GHN)</option>
+                                <option value="none">Không có đơn vị nào gần</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:.75rem;">
+                        <label for="desc">Mô tả chi tiết (có thể bỏ qua)</label>
+                        <textarea id="desc" placeholder="Dung tích/texture, lần dùng, lý do thanh lý, ghi chú thêm..."></textarea>
+                    </div>
+                    <div class="form-group" style="margin-top:.75rem;">
+                        <label for="images">Ảnh sản phẩm (chỉ cần 1 ảnh)</label>
+                        <input id="images" type="file" accept="image/*" multiple>
+                        <div id="preview" class="preview"></div>
+                    </div>
+                    <div class="form-group" style="margin-top:.75rem;">
+                        <label><input id="agree" type="checkbox" required> Tôi đồng ý phí dịch vụ 20% và sản phẩm còn hạn tối thiểu 3 tháng</label>
+                    </div>
+                    <div class="d-flex gap-2" style="margin-top:1rem;">
+                        <button type="submit" class="btn-primary">Gửi đăng ký</button>
+                        <a class="btn btn-outline-secondary" href="/support">Xem hướng dẫn</a>
+                    </div>
+                </form>
+            </section>
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Quy Trình Duyệt & Bán</div>
+                <div class="steps">
+                    <div class="step"><b>1) Gửi đăng ký</b> — Điền form & ảnh minh họa</div>
+                    <div class="step"><b>2) Duyệt 1–3 ngày</b> — Kiểm tra tình trạng & định giá</div>
+                    <div class="step"><b>3) Đăng bán</b> — Sản phẩm hiển thị trên website</div>
+                    <div class="step"><b>4) Có người mua</b> — Khách thanh toán 100% cho chúng tôi</div>
+                    <div class="step"><b>5) Hoàn tất</b> — Sau 5 ngày người mua xác nhận, thanh toán lại 80%</div>
+                </div>
+            </div>
+            <div class="sidebar-section benefit">
+                <div class="sidebar-title">Lợi Ích</div>
+                <ul style="margin:0; padding-left:1rem;">
+                    <li>Bán nhanh, quy trình minh bạch</li>
+                    <li>Tiếp cận nhiều khách quan tâm mỹ phẩm</li>
+                    <li>Không tốn công chăm sóc đơn</li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Hỗ Trợ</div>
+                <div>Hotline: 0987.789.274</div>
+                <div>Email: buddyskincarevn@gmail.com</div>
+                <div>Zalo: 0987.789.274</div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+(function(){
+  const input = document.getElementById('images');
+  const preview = document.getElementById('preview');
+  input.addEventListener('change', () => {
+    preview.innerHTML = '';
+    const files = Array.from(input.files || []).slice(0,6);
+    files.forEach(f => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const div = document.createElement('div');
+        div.className = 'thumb';
+        div.innerHTML = `<img src="${reader.result}" alt="preview">`;
+        preview.appendChild(div);
+      };
+      reader.readAsDataURL(f);
+    });
+  });
+})();
+</script>
+{% endblock %}
