@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Voucher</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="p-4">
+    <div class="container">
+        <h2>Test Voucher Functionality</h2>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h4>Cart Voucher</h4>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-3">
+                        <h6 class="fw-bold mb-2">
+                            <i class="fas fa-ticket-alt text-success me-2"></i>Mã Giảm Giá
+                        </h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="cartVoucherCode" placeholder="Nhập mã giảm giá (HIBUDDY)" value="">
+                            <button class="btn btn-outline-success" type="button" id="applyCartVoucher">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                        <div id="cartVoucherMessage" class="mt-2 small"></div>
+                        <div id="cartVoucherApplied" class="mt-2 d-none">
+                            <div class="alert alert-success py-2 mb-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-check-circle me-2"></i>Đã áp dụng:</span>
+                                    <span class="fw-bold" id="cartVoucherName">HIBUDDY</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+                                    <span>Giảm giá:</span>
+                                    <span class="text-success fw-bold" id="cartVoucherDiscount">-10.000đ</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Cart Summary -->
+                <div class="card mt-3">
+                    <div class="card-body">
+                        <h6>Tóm tắt đơn hàng</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tạm tính</span>
+                            <span class="cart-subtotal">100.000đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Phí vận chuyển</span>
+                            <span class="cart-shipping">30.000đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2" id="cartVoucherLine" style="display: none !important;">
+                            <span class="text-success"><i class="fas fa-ticket-alt me-1"></i>Mã giảm giá</span>
+                            <span class="text-success cart-voucher-discount">-0đ</span>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold">Tổng cộng</span>
+                            <span class="fw-bold cart-total">130.000đ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Voucher data
+        const VOUCHERS = {
+            'HIBUDDY': {
+                code: 'HIBUDDY',
+                discount: 10000,
+                type: 'fixed',
+                minOrder: 0,
+                maxUses: 100,
+                description: 'Giảm 10.000đ cho đơn hàng'
+            }
+        };
+
+        // Test voucher directly
+        function testApplyVoucher() {
+            console.log('=== TESTING DIRECT VOUCHER APPLICATION ===');
+            
+            const code = 'HIBUDDY';
+            const voucherData = VOUCHERS[code.toUpperCase()];
+            console.log('Voucher found:', voucherData);
+            
+            if (voucherData) {
+                // Update UI elements
+                const messageEl = document.getElementById('cartVoucherMessage');
+                const appliedEl = document.getElementById('cartVoucherApplied');
+                const nameEl = document.getElementById('cartVoucherName');
+                const discountEl = document.getElementById('cartVoucherDiscount');
+                const voucherLineEl = document.getElementById('cartVoucherLine');
+                const voucherDiscountEl = document.querySelector('.cart-voucher-discount');
+                const totalEl = document.querySelector('.cart-total');
+                
+                console.log('Elements found:');
+                console.log('- messageEl:', !!messageEl);
+                console.log('- appliedEl:', !!appliedEl);
+                console.log('- nameEl:', !!nameEl);
+                console.log('- discountEl:', !!discountEl);
+                console.log('- voucherLineEl:', !!voucherLineEl);
+                
+                if (messageEl) messageEl.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Áp dụng thành công!</span>';
+                if (nameEl) nameEl.textContent = voucherData.code;
+                if (discountEl) discountEl.textContent = `-${voucherData.discount.toLocaleString('vi-VN')}đ`;
+                if (appliedEl) appliedEl.classList.remove('d-none');
+                if (voucherLineEl) voucherLineEl.style.display = 'flex';
+                if (voucherDiscountEl) voucherDiscountEl.textContent = `-${voucherData.discount.toLocaleString('vi-VN')}đ`;
+                
+                // Update total
+                const newTotal = 130000 - voucherData.discount;
+                if (totalEl) totalEl.textContent = `${newTotal.toLocaleString('vi-VN')}đ`;
+                
+                console.log('Voucher applied successfully!');
+            } else {
+                console.log('Voucher not found!');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const applyBtn = document.getElementById('applyCartVoucher');
+            const codeInput = document.getElementById('cartVoucherCode');
+            
+            if (applyBtn && codeInput) {
+                console.log('Event listeners attached');
+                
+                applyBtn.addEventListener('click', function() {
+                    console.log('Button clicked!');
+                    const code = codeInput.value.trim();
+                    console.log('Code entered:', code);
+                    
+                    if (code === 'HIBUDDY') {
+                        testApplyVoucher();
+                    } else {
+                        const messageEl = document.getElementById('cartVoucherMessage');
+                        if (messageEl) messageEl.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>Mã giảm giá không hợp lệ</span>';
+                    }
+                });
+                
+                codeInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        applyBtn.click();
+                    }
+                });
+            } else {
+                console.log('Elements not found');
+            }
+        });
+    </script>
+</body>
+</html>

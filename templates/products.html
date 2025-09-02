@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sản Phẩm - BeautySale{% endblock %}
+{% block title %}Sản Phẩm - BuddySkincare{% endblock %}
 
 {% block content %}
 <!-- Page Header -->
@@ -168,83 +168,18 @@
                     </div>
                     <div class="d-flex align-items-center">
                         <span class="me-3">Sắp xếp:</span>
-                        <select class="form-select form-select-sm" style="width: auto;">
-                            <option>Mới nhất</option>
-                            <option>Giá thấp đến cao</option>
-                            <option>Giá cao đến thấp</option>
-                            <option>Bán chạy nhất</option>
-                            <option>Giảm giá nhiều nhất</option>
+                        <select id="products-sort" class="form-select form-select-sm" style="width: auto;">
+                            <option value="newest" selected>Mới nhất</option>
+                            <option value="price_asc">Giá thấp đến cao</option>
+                            <option value="price_desc">Giá cao đến thấp</option>
+                            <option value="sales">Bán chạy nhất</option>
+                            <option value="discount">Giảm giá nhiều nhất</option>
                         </select>
                     </div>
                 </div>
                 
                 <!-- Products Grid -->
-                <div class="row g-4">
-                    {% for product in products %}
-                    <div class="col-lg-4 col-md-6">
-                        <div class="product-card card h-100 border-0 shadow-sm">
-                            <div class="position-relative">
-                                <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none">
-                                    <img src="/{{ product.image }}" class="card-img-top" alt="{{ product.name }}">
-                                </a>
-                                <!-- Condition Badge -->
-                                {% if product.specifications.condition != 'Mới 100%' %}
-                                <div class="badge bg-warning position-absolute top-0 start-0 m-2">
-                                    <i class="fas fa-recycle me-1"></i>{{ product.specifications.condition }}
-                                </div>
-                                {% endif %}
-                                <!-- Discount Badge -->
-                                <div class="badge bg-danger position-absolute top-0 end-0 m-2">-{{ product.discount }}%</div>
-                                <!-- Stock Badge -->
-                                {% if product.stock <= 5 %}
-                                <div class="badge bg-warning position-absolute bottom-0 start-0 m-2">Còn {{ product.stock }}</div>
-                                {% endif %}
-                            </div>
-                            <div class="card-body d-flex flex-column">
-                                <h6 class="card-title">
-                                    <a href="{{ url_for('product_detail', product_id=product.id) }}" class="text-decoration-none text-dark">
-                                        {{ product.name }}
-                                    </a>
-                                </h6>
-                                <p class="text-muted small">{{ product.brand }}</p>
-                                <div class="price-section d-flex align-items-center mb-2">
-                                    <span class="text-decoration-line-through text-muted me-2">{{ "{:,.0f}".format(product.original_price) }}đ</span>
-                                    <span class="text-danger fw-bold fs-5">{{ "{:,.0f}".format(product.sale_price) }}đ</span>
-                                </div>
-                                <div class="rating-section d-flex align-items-center mb-3">
-                                    <div class="stars text-warning me-2">
-                                        {% for i in range(5) %}
-                                            {% if i < product.rating|int %}
-                                                <i class="fas fa-star"></i>
-                                            {% elif product.rating - i >= 0.5 %}
-                                                <i class="fas fa-star-half-alt"></i>
-                                            {% else %}
-                                                <i class="far fa-star"></i>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                    <small class="text-muted">({{ product.reviews }})</small>
-                                </div>
-                                <!-- Usage Note for Used Products -->
-                                {% if product.specifications.condition != 'Mới 100%' and product.specifications.usage_note %}
-                                <div class="alert alert-info py-1 px-2 mb-3 small">
-                                    <i class="fas fa-info-circle me-1"></i>{{ product.specifications.usage_note }}
-                                </div>
-                                {% endif %}
-                                <div class=" d-flex gap-3">
-                                    <a href="{{ url_for('product_detail', product_id=product.id) }}" class="btn btn-outline-primary">
-                                        Xem chi tiết
-                                    </a>
-                                    <button class="btn btn-primary add-to-cart-btn" data-product-id="{{ product.id }}">
-                                        Thêm vào giỏ
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                    
-                </div>
+                <div id="products-page-grid" class="row g-4"></div>
                 
                 <!-- Pagination -->
                 <nav aria-label="Product pagination" class="mt-5">

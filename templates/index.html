@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}BeautySale - Mỹ Phẩm Thanh Lý Giá Tốt Nhất{% endblock %}
+{% block title %}BuddySkincare - Mỹ Phẩm Thanh Lý Giá Tốt Nhất{% endblock %}
 
 {% block content %}
 <style>
@@ -50,35 +50,90 @@
 <!-- Flash Sale Section -->
 <section class="flash-sale section-padding">
     <div class="container">
-        <div class="section-header">
-            <h3 class="section-title section-title-glow"><i class="fas fa-bolt icon-bolt"></i> FLASH SALE </h3>
-            <a href="#" class="btn btn-outline-dark btn-sm">Xem tất cả</a>
-        </div>
-
-        <!-- Countdown -->
-        <div class="timer">
-            <div class="time-pill">
-                <span class="count countdown-number">00</span>
-                <div class="label">NGÀY</div>
-            </div>
-            <div class="time-pill">
-                <span class="count countdown-number">00</span>
-                <div class="label">GIỜ</div>
-            </div>
-            <div class="time-pill">
-                <span class="count countdown-number">00</span>
-                <div class="label">PHÚT</div>
-            </div>
-            <div class="time-pill">
-                <span class="count countdown-number">00</span>
-                <div class="label">GIÂY</div>
-            </div>
-        </div>
-
-        <!-- Products -->
-         <div class="row g-3 homepage-products" id="flash-sale-products">
+        <style>
+            .flash-sale-wrapper{background:linear-gradient(135deg,#fff7f7 0%,#ffe9e9 100%);border-radius:18px;padding:18px 16px;box-shadow:0 10px 30px rgba(68, 68, 68, 0.139);position:relative;overflow:hidden}
+            .flash-sale-ribbon{position:absolute;top:22px;left:-38px;transform:rotate(-30deg);background:#ff4d4f;color:#fff;padding:6px 48px;font-weight:700;letter-spacing:.5px;border-radius:6px;box-shadow:0 6px 16px rgba(255,77,79,.35);font-size:12px;z-index:0;pointer-events:none}
+            .flash-sale-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+            .flash-sale-title{display:flex;align-items:center;gap:10px;margin:0;position:relative;z-index:1}
+            .flash-sale-title .icon-bolt{color:#ff4d4f;text-shadow:0 4px 10px rgba(255,77,79,.35)}
+            .flash-sale-title-text{font-weight:900;letter-spacing:1px;font-size:clamp(20px,4vw,28px);background:linear-gradient(90deg,#ff4d4f 0%,#ff9aa2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 2px 8px rgba(255,77,79,.25);}
+            .flash-sale-badges{display:flex;flex-wrap:wrap;gap:8px}
+            .fs-pill{background:#fff;border:1px solid #ffe1e1;color:#ff4d4f;border-radius:999px;padding:6px 10px;font-weight:600;font-size:12px}
+            .fs-viewall{text-align:center;margin:-6px 0 10px;position:relative;z-index:1}
+            .fs-viewall .btn{border-radius:999px;padding:8px 16px;font-weight:700;border:1px solid #ff4d4f;color:#ff4d4f;background:#fff;box-shadow:0 6px 16px rgba(255,77,79,.15)}
+            .fs-viewall .btn:hover{background:#ff4d4f;color:#fff}
+            .fs-info{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 6px;position:relative;z-index:1;justify-content: center;}
+            .fs-info .item{display:flex;align-items:center;gap:6px;color:#6b7280;font-size:12px}
+            .fs-info .item i{color:#22c55e}
+            .flash-sale-header .timer{margin:0;position:relative;z-index:1}
+            .flash-sale-wrapper .time-pill{background:linear-gradient(135deg,rgba(255,255,255,.7),rgba(255,255,255,.45));backdrop-filter:blur(6px);border:1px solid rgba(255,77,79,.15);border-radius:12px;padding:10px 12px;min-width:72px;box-shadow:0 8px 20px rgba(255,77,79,.12);text-align:center}
+            .flash-sale-wrapper .time-pill .count{font-weight:800;font-size:22px;color:#ff4d4f;line-height:1}
+            .flash-sale-wrapper .time-pill .label{font-size:10px;letter-spacing:.5px;color:#6b7280;margin-top:4px;text-transform:uppercase}
+            @media (max-width:576px){
+                .flash-sale-wrapper .time-pill{min-width:60px;padding:8px 10px}
+                .flash-sale-wrapper .time-pill .count{font-size:18px}
+            }
+            .flash-sale-wrapper .homepage-products{position:relative;z-index:1}
+            @media (max-width:576px){.flash-sale-wrapper{padding:14px 10px}.fs-pill{font-size:11px;padding:5px 8px}.fs-info{gap:8px}}
+            @media (max-width:576px){
+                .flash-sale-wrapper{padding:14px 10px 12px}
+                .flash-sale-ribbon{top:10px;left:-28px;transform:rotate(-28deg);font-size:10px;padding:4px 40px;display:none}
+                .flash-sale-header{flex-direction:column;align-items:center;gap:8px;margin-bottom:12px}
+                .flash-sale-title-text{font-size:22px}
+                .flash-sale-header .timer{order:2;margin-top:2px}
+                .flash-sale-badges{justify-content:center}
+                .fs-pill{font-size:11px;padding:5px 8px}
+                .flash-sale-wrapper .time-pill{min-width:56px;padding:6px 8px}
+                .flash-sale-wrapper .time-pill .count{font-size:16px}
+                .fs-viewall{margin:8px 0 6px}
+            }
+        </style>
+        <div class="flash-sale-wrapper">
+            <div class="flash-sale-ribbon">GIÁ SỐC HÔM NAY</div>
+            <div class="flash-sale-header">
+                <div></div>
+                <h3 class="flash-sale-title"><i class="fas fa-bolt icon-bolt"></i><span class="flash-sale-title-text">FLASH SALE</span></h3>
+                <div class="timer">
+                    <div class="time-pill">
+                        <span class="count countdown-number">00</span>
+                        <div class="label">NGÀY</div>
                     </div>
+                    <div class="time-pill">
+                        <span class="count countdown-number">00</span>
+                        <div class="label">GIỜ</div>
+                    </div>
+                    <div class="time-pill">
+                        <span class="count countdown-number">00</span>
+                        <div class="label">PHÚT</div>
+                    </div>
+                    <div class="time-pill">
+                        <span class="count countdown-number">00</span>
+                        <div class="label">GIÂY</div>
+                    </div>
+                </div>
+                <div class="flash-sale-badges">
+                    <span class="fs-pill"><i class="fas fa-clock me-1"></i>Mỗi ngày</span>
+                    <span class="fs-pill"><i class="fas fa-shield-alt me-1"></i>Chính hãng</span>
+                    <span class="fs-pill"><i class="fas fa-rotate me-1"></i>Đổi trả 5 ngày</span>
+                </div>
+            </div>
+
+            
+            <!-- Products -->
+            <div class="row g-3 homepage-products" id="flash-sale-products"></div>
+            <div class="fs-viewall" style="margin-top: 12px;">
+                <a href="/products" class="btn">Xem tất cả sản phẩm FLASH SALE</a>
+            </div>
+
+            <!-- Countdown -->
+     <div class="fs-info">
+        <div class="item"><i class="fas fa-check-circle"></i><span>Cam kết hàng auth</span></div>
+        <div class="item"><i class="fas fa-truck-fast"></i><span>Giao nhanh TP.HCM 4–8h</span></div>
+        <div class="item"><i class="fas fa-coins"></i><span>Tiết kiệm đến 80%</span></div>
     </div>
+        </div> 
+    </div>
+    
 </section>
 
 <!-- Brands Section -->
@@ -87,46 +142,34 @@
 <!-- Categories Section -->
 <section class="categories-section section-padding">
     <div class="container">
+        <style>
+            .most-search-title { text-transform: uppercase; font-weight: 800; letter-spacing: .5px; color: #222; }
+            .search-tags { gap: 16px; }
+            .search-pill { display: inline-block; padding: 5px 20px; border-radius: 999px; background: #f2f3f5; color: #1f2937; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: all .2s ease; }
+            .search-pill:hover { background: #e9ecef; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
+            @media (max-width: 576px) { .search-pill { padding: 8px 14px; font-weight: 600; } }
+        </style>
         <div class="row">
             <div class="col-12 text-center mb-4">
-                <h3 class="fw-bold text-primary">Tìm kiếm nhiều nhất</h3>
-                <p class="text-muted">Những từ khóa được tìm kiếm nhiều nhất</p>
+                <h3 class="most-search-title">Tìm kiếm nhiều nhất</h3>
             </div>
         </div>
-        <div class="row g-3">
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="category-card text-center p-3 rounded border">
-                    <h6 class="mb-0">Vitamin C serum</h6>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="category-card text-center p-3 rounded border">
-                    <h6 class="mb-0">Son lì New Bold</h6>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="category-card text-center p-3 rounded border">
-                    <h6 class="mb-0">Real Nature</h6>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="category-card text-center p-3 rounded border">
-                    <h6 class="mb-0">Mặt nạ</h6>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="category-card text-center p-3 rounded border">
-                    <h6 class="mb-0">Kem chống nắng</h6>
-                </div>
-            </div>
-            <div class="col-lg-2 col-md-4 col-6">
-                <div class="category-card text-center p-3 rounded border">
-                    <h6 class="mb-0">Cushion</h6>
-                </div>
-            </div>
+        <div class="d-flex flex-wrap justify-content-center search-tags">
+            <a href="/products?query=Vitamin%20C%20serum" class="search-pill">Vitamin C serum</a>
+            <a href="/products?query=Nuoc%20hoa" class="search-pill">Nước hoa</a>
+            <a href="/products?query=Zo" class="search-pill">Zo</a>
+            <a href="/products?query=m%E1%BA%B7t%20n%E1%BA%A1" class="search-pill">mặt nạ</a>
+            <a href="/products?query=Kem%20ch%E1%BB%91ng%20n%E1%BA%AFng" class="search-pill">Kem chống nắng</a>
+            <a href="/products?query=cushion" class="search-pill">cushion</a>
+            <a href="/products?query=rice%20water%20bright" class="search-pill">rice water bright</a>
+            <a href="/products?query=obagi" class="search-pill">obgai</a>
+            <a href="/products?query=Ch%E1%BB%91ng%20l%C3%A3o%20h%C3%B3a" class="search-pill">Chống lão hóa</a>
+            <a href="/products?query=freshian" class="search-pill">freshian</a>
+            <a href="/products?query=T%E1%BA%A9y%20trang" class="search-pill">Tẩy trang</a>
+            <a href="/products?query=Mat%20na%20dat%20set" class="search-pill">Mặt nạ đất sét</a>
+            <a href="/products?query=son%20d%C6%B0%E1%BB%A1ng%20c%C3%B3%20m%C3%A0u" class="search-pill">son dưỡng có màu</a>
         </div>
     </div>
-
 </section>
 
 <!-- New Product Section -->
@@ -136,9 +179,10 @@
             <div class="col-12 text-center mb-4">
                 <h3 class="fw-bold text-primary">Sản Phẩm Mới Về</h3>
                 <p class="text-muted">Những sản phẩm mới được cập nhật</p>
+                
             </div>
         </div>
-        <div class="row g-3 homepage-products" id="new-product-products">
+        <div class="row g-3 homepage-products" id="new-product-products" style="padding-top: 10px !important;">
                     </div>
     </div>
 </section>
@@ -152,147 +196,8 @@
                 <p class="text-muted">Những sản phẩm được yêu thích nhất</p>
             </div>
         </div>
-        <div class="row g-4 homepage-products">
-            <!-- Featured Product 1 -->
-            <div class="col-lg-2 col-md-6 col-6">
-                <div class="product-card card h-100 border-0 shadow-sm">
-                    <div class="position-relative">
-                        <img src="/static/image/demo/z6945395685617_d0df38206d0bf09155a54b1ed964c329.jpg" class="card-img-top" alt="Kem Dưỡng">
-                        <div class="badge bg-success position-absolute top-0 start-0 m-2">Bán chạy</div>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title">Kem Dưỡng Ẩm La Mer</h6>
-                        <p class="text-muted small">La Mer</p>
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="text-primary fw-bold fs-5">3.500.000đ</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="stars text-warning me-2">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <small class="text-muted">(156)</small>
-                        </div>
-                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Featured Product 2 -->
-            <div class="col-lg-2 col-md-6 col-6">
-                <div class="product-card card h-100 border-0 shadow-sm">
-                    <div class="position-relative">
-                        <img src="/static/image/demo/z6945395685617_d0df38206d0bf09155a54b1ed964c329.jpg" class="card-img-top" alt="Phấn Phủ">
-                        <div class="badge bg-info position-absolute top-0 start-0 m-2">Mới</div>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title">Phấn Phủ Laura Mercier</h6>
-                        <p class="text-muted small">Laura Mercier</p>
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="text-primary fw-bold fs-5">1.800.000đ</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="stars text-warning me-2">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star-half-alt"></i>
-                            </div>
-                            <small class="text-muted">(89)</small>
-                        </div>
-                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Featured Product 3 -->
-            <div class="col-lg-2 col-md-6 col-6">
-                <div class="product-card card h-100 border-0 shadow-sm">
-                    <div class="position-relative">
-                        <img src="/static/image/demo/z6945395708832_75208e7b905c3aafc997c7db19894dfd.jpg" class="card-img-top" alt="Son Lì">
-                        <div class="badge bg-warning position-absolute top-0 start-0 m-2">Hot</div>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title">Son Lì Dior 999</h6>
-                        <p class="text-muted small">Dior</p>
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="text-primary fw-bold fs-5">950.000đ</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="stars text-warning me-2">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <small class="text-muted">(203)</small>
-                        </div>
-                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Featured Product 4 -->
-            <div class="col-lg-2 col-md-6 col-6">
-                <div class="product-card card h-100 border-0 shadow-sm">
-                    <div class="position-relative">
-                        <img src="/static/image/demo/z6951681460333_d0c5ff7bd749318a55c54e03facd5b47.jpg" class="card-img-top" alt="Toner">
-                        <div class="badge bg-secondary position-absolute top-0 start-0 m-2">Giảm giá</div>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title">Toner SK-II</h6>
-                        <p class="text-muted small">SK-II</p>
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="text-decoration-line-through text-muted me-2">2.200.000đ</span>
-                            <span class="text-danger fw-bold fs-5">1.650.000đ</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="stars text-warning me-2">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <small class="text-muted">(178)</small>
-                        </div>
-                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Featured Product 5 -->
-            <div class="col-lg-2 col-md-6 col-6">
-                <div class="product-card card h-100 border-0 shadow-sm">
-                    <div class="position-relative">
-                        <img src="/static/image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg" class="card-img-top" alt="Nước tẩy trang Bioderma">
-                        <div class="badge bg-primary position-absolute top-0 start-0 m-2">Top</div>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title">Nước Tẩy Trang Bioderma</h6>
-                        <p class="text-muted small">Bioderma</p>
-                        <div class="d-flex align-items-center mb-2">
-                            <span class="text-primary fw-bold fs-5">390.000đ</span>
-                        </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="stars text-warning me-2">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <small class="text-muted">(245)</small>
-                        </div>
-                        <button class="btn btn-outline-primary w-100">Thêm vào giỏ</button>
-                    </div>
-                </div>
-            </div>
+        <div id="featured-products-container">
+            <!-- Sản phẩm sẽ được load động từ PythonAnywhere -->
         </div>
     </div>
 </section>
@@ -380,7 +285,7 @@
                 <div class="testimonial-card card border-0 shadow-sm h-100">
                     <div class="card-body text-center">
                         <div class="mb-3">
-                            <img src="{{ url_for('static', filename='image/khach/anh-avatar-nguoi-that-dep-nu-6.jpg') }}" alt="Khách hàng" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
+                            <img src="{{ url_for('static', filename='image/khach/img20171211150728496.jpg') }}" alt="Khách hàng" class="rounded-circle" style="width:80px;height:80px;object-fit:cover;">
                         </div>
                         <h6 class="fw-bold">Phạm Thu Trang</h6>
                         <div class="stars text-warning mb-3">
@@ -402,47 +307,52 @@
 <!-- Features Section -->
 <section class="features-section section-padding bg-primary text-white">
     <div class="container">
+        <style>
+            .feature-card{background:rgba(221, 221, 221, 0.642);border-radius:14px}
+            .feature-icon i{font-size:28px}
+            .feature-card p{margin:0;opacity:.9}
+        </style>
         <div class="row">
             <div class="col-12 text-center mb-4">
-                <h3 class="fw-bold">Tại Sao Chọn BeautySale?</h3>
-                <p class="lead">Những lý do khiến chúng tôi trở thành lựa chọn hàng đầu</p>
+                <h3 class="fw-bold">Tại Sao Chọn BuddySkincare?</h3>
+                <p class="mb-0 small">Nhanh hơn, tiết kiệm hơn, chăm sóc tận tâm</p>
             </div>
         </div>
         <div class="row g-3">
             <div class="col-lg-3 col-md-6">
-                <div class="feature-card text-center p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-shield-alt fa-3x"></i>
+                <div class="feature-card text-center p-3">
+                    <div class="feature-icon mb-2">
+                        <i class="fas fa-shield-alt"></i>
                     </div>
-                    <h5 class="mb-3">Miễn phí đổi trả</h5>
-                    <p class="mb-0">Miễn phí đổi trả nếu sản phẩm gặp vấn đề</p>
+                    <h6 class="mb-1">Đổi trả 5 ngày</h6>
+                    <p class="small">An tâm mua sắm</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="feature-card text-center p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-truck fa-3x"></i>
+                <div class="feature-card text-center p-3">
+                    <div class="feature-icon mb-2">
+                        <i class="fas fa-truck"></i>
                     </div>
-                    <h5 class="mb-3">Giao Hàng Toàn Quốc</h5>
-                    <p class="mb-0">Giao hàng nhanh chóng đến mọi tỉnh thành, hỗ trợ COD</p>
+                    <h6 class="mb-1">Giao nhanh toàn quốc</h6>
+                    <p class="small">Hỗ trợ COD</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="feature-card text-center p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-percentage fa-3x"></i>
+                <div class="feature-card text-center p-3">
+                    <div class="feature-icon mb-2">
+                        <i class="fas fa-percentage"></i>
                     </div>
-                    <h5 class="mb-3">Giá Tốt Nhất</h5>
-                    <p class="mb-0">Giá thanh lý cực sốc, tiết kiệm đến 70% so với giá gốc</p>
+                    <h6 class="mb-1">Giá tốt – Tiết kiệm</h6>
+                    <p class="small">Lên đến 80%</p>
                 </div>
             </div>
             <div class="col-lg-3 col-md-6">
-                <div class="feature-card text-center p-4">
-                    <div class="feature-icon mb-3">
-                        <i class="fas fa-headset fa-3x"></i>
+                <div class="feature-card text-center p-3">
+                    <div class="feature-icon mb-2">
+                        <i class="fas fa-headset"></i>
                     </div>
-                    <h5 class="mb-3">Hỗ Trợ 24/7</h5>
-                    <p class="mb-0">Đội ngũ tư vấn chuyên nghiệp, hỗ trợ khách hàng mọi lúc</p>
+                    <h6 class="mb-1">Tư vấn 24/7</h6>
+                    <p class="small">Thân thiện – tận tâm</p>
                 </div>
             </div>
         </div>
@@ -467,7 +377,7 @@
                     <div class="card-body">
                         <div class="blog-meta text-muted small mb-2">
                             <i class="fas fa-calendar me-2"></i>25/08/2024
-                            <i class="fas fa-user ms-3 me-2"></i>BeautySale
+                            <i class="fas fa-user ms-3 me-2"></i>BuddySkincare
                         </div>
                         <h5 class="card-title">Cách Chọn Kem Chống Nắng Phù Hợp</h5>
                         <p class="card-text text-muted">Hướng dẫn chi tiết cách chọn kem chống nắng phù hợp với từng loại da và mục đích sử dụng...</p>
@@ -481,7 +391,7 @@
                     <div class="card-body">
                         <div class="blog-meta text-muted small mb-2">
                             <i class="fas fa-calendar me-2"></i>24/08/2024
-                            <i class="fas fa-user ms-3 me-2"></i>BeautySale
+                            <i class="fas fa-user ms-3 me-2"></i>BuddySkincare
                         </div>
                         <h5 class="card-title">Quy Trình Chăm Sóc Da Buổi Tối</h5>
                         <p class="card-text text-muted">Quy trình chăm sóc da buổi tối chuẩn giúp da khỏe mạnh và trẻ trung hơn...</p>
@@ -495,7 +405,7 @@
                     <div class="card-body">
                         <div class="blog-meta text-muted small mb-2">
                             <i class="fas fa-calendar me-2"></i>23/08/2024
-                            <i class="fas fa-user ms-3 me-2"></i>BeautySale
+                            <i class="fas fa-user ms-3 me-2"></i>BuddySkincare
                         </div>
                         <h5 class="card-title">Top 5 Serum Vitamin C Tốt Nhất</h5>
                         <p class="card-text text-muted">Danh sách 5 serum vitamin C được đánh giá cao nhất trong năm 2024...</p>

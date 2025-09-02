@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = 'beautysale_secret_key_2024'
+app.secret_key = 'buddyskincare_secret_key_2024'
 
 # Dữ liệu demo cho sản phẩm
 products_data = [
@@ -708,7 +708,7 @@ if __name__ == '__main__':
     os.makedirs('static/js', exist_ok=True)
     os.makedirs('static/image', exist_ok=True)
     
-    print("🚀 BeautySale Website đang khởi động...")
+    print("🚀 BuddySkincare Website đang khởi động...")
     print("📱 Truy cập: http://localhost:8000")
     print("🛍️ Trang chủ: http://localhost:8000/")
     print("📦 Sản phẩm: http://localhost:8000/products")

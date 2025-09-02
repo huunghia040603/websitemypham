@@ -1,9 +1,70 @@
 {% extends "base.html" %}
 
-{% block title %}Giỏ Hàng - BeautySale{% endblock %}
+{% block title %}Giỏ Hàng - BuddySkincare{% endblock %}
 
 {% block content %}
-{% set has_items = (cart_items or [])|length > 0 %}
+<style>
+    /* Custom voucher close button styling */
+    .voucher-close-btn {
+        background: white !important;
+        border: 1px solid #dc3545 !important;
+        color: #dc3545 !important;
+        border-radius: 50% !important;
+        width: 18px !important;
+        height: 18px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
+        transition: all 0.2s ease !important;
+        z-index: 10 !important;
+        top: -8px !important;
+        right: -8px !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+    }
+    
+    .voucher-close-btn:hover {
+        background: #dc3545 !important;
+        color: white !important;
+        /* transform: scale(1.1) !important; */
+        box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    /* Hide Bootstrap's default close button */
+    .btn-close::before,
+    .btn-close::after {
+        display: none !important;
+    }
+    
+    /* Improve voucher alert styling */
+    .alert-success {
+        border-left: 4px solid #198754 !important;
+        background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%) !important;
+        padding: 12px !important;
+    }
+    
+    /* Bank transfer instructions styling */
+    .bank-transfer-note {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+        border-left: 4px solid #ffc107 !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        margin-top: 8px !important;
+    }
+    
+    .bank-transfer-note .text-warning {
+        color: #5d4000 !important;
+        font-weight: 500 !important;
+    }
+    
+    /* Ensure content doesn't overlap with close button */
+    .pe-4 {
+        padding-right: 2rem !important;
+    }
+</style>
 <section class="page-header bg-light py-5">
     <div class="container">
         <div class="row">
@@ -24,105 +85,147 @@
 <section class="py-5">
     <div class="container">
         <div class="row g-4">
-            <div class="col-lg-8">
-                {% if has_items %}
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="width: 70px;"></th>
-                                        <th>Sản phẩm</th>
-                                        <th class="text-center" style="width: 120px;">Số lượng</th>
-                                        <th class="text-end" style="width: 150px;">Đơn giá</th>
-                                        <th class="text-end" style="width: 150px;">Thành tiền</th>
-                                        <th class="text-end" style="width: 60px;"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in (cart_items or []) %}
-                                    <tr>
-                                        <td>
-                                            <img src="/{{ item.product.image }}" alt="{{ item.product.name }}" class="img-fluid rounded" style="width:60px;height:60px;object-fit:cover;">
-                                        </td>
-                                        <td>
-                                            <div class="fw-semibold">{{ item.product.name }}</div>
-                                            <div class="text-muted small">{{ item.product.brand }}</div>
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="d-inline-flex align-items-center justify-content-center gap-2 cart-qty" style="max-width:160px;">
-                                                <button class="btn btn-outline-secondary btn-sm cart-qty-decrease" type="button" aria-label="Giảm">-</button>
-                                                <input type="text" class="form-control form-control-sm text-center cart-qty-input" value="{{ item.quantity }}" style="width:64px;">
-                                                <button class="btn btn-outline-secondary btn-sm cart-qty-increase" type="button" aria-label="Tăng">+</button>
-                                            </div>
-                                        </td>
-                                        <td class="text-end cart-price" data-price="{{ item.product.sale_price }}">{{ "{:,.0f}".format(item.product.sale_price) }}đ</td>
-                                        <td class="text-end fw-semibold cart-line-total">{{ "{:,.0f}".format(item.total) }}đ</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-danger cart-remove-btn" aria-label="Xóa sản phẩm"><i class="fas fa-trash"></i></button>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            <div class="col-lg-8 ">
+                <!-- Cart items will be loaded here by JavaScript -->
+                <div id="cart-items-container" >
+                    <!-- Loading state -->
+                    <div class="card border-0 shadow-md">
+                        <div class="card-body text-center py-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted">Đang tải giỏ hàng...</p>
                         </div>
                     </div>
                 </div>
-                {% else %}
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body text-center py-5">
-                        <img src="/static/image/gif/khoc.gif" alt="empty" class="mx-auto mb-3" style="width: 120px; height: 120px; object-fit: cover; display:block;">
-                        <h5 class="fw-bold mb-2">Giỏ hàng trống</h5>
-                        <p class="text-muted mb-4">Bạn chưa thêm sản phẩm nào. Khám phá sản phẩm và thêm vào giỏ nhé!</p>
-                        <a href="/products" class="btn btn-primary"><i class="fas fa-shopping-bag me-2"></i>Mua sắm ngay</a>
-                    </div>
-                </div>
-                {% endif %}
-                {% if has_items %}
-                <div class="mt-3 d-flex gap-2">
-                    <a href="/products" class="btn btn-outline-secondary" style="padding: 10px 20px;"><i class="fas fa-arrow-left me-2"></i>Tiếp tục mua sắm</a>
-                    <a href="/checkout" class="btn btn-primary"><i class="fas fa-credit-card me-2"></i>Thanh toán</a>
-                </div>
-                {% endif %}
             </div>
             <div class="col-lg-4">
-                {% if has_items %}
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="fw-bold mb-3">Tóm Tắt Đơn Hàng</h5>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Tạm tính</span>
-                            <span class="cart-subtotal">{{ "{:,.0f}".format(subtotal) }}đ</span>
+                <!-- Cart summary will be updated by JavaScript -->
+                <div id="cart-summary-container">
+                    <!-- Loading state -->
+                    <div class="card border-0 shadow">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Tóm Tắt Đơn Hàng</h5><hr>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Tạm tính</span>
+                                <span class="cart-subtotal">0đ</span>
+                            </div>
+                           
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Phí vận chuyển</span>
+                                <span class="cart-shipping">0đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" id="cartVoucherLine" style="display: none !important;">
+                                <span class="text-success">Mã giảm giá</span>
+                                <span class="text-success cart-voucher-discount">-0đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-success fw-semibold"><i class="fas fa-piggy-bank me-1"></i>Tiết kiệm được</span>
+                                <span class="text-success fw-semibold cart-savings">0đ</span>
+                            </div>
+                            <div class="text-muted small  mb-2" style="font-size: 10px; font-style: italic;">
+                                <i class="fas fa-info-circle me-1"></i>Tiết kiệm gồm: Giá gốc + Voucher + Giảm phí ship
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">Tổng cộng</span>
+                                <span class="fs-5 fw-bold text-danger cart-total">0đ</span>
+                            </div>
+                            
+                            <!-- Payment Method Selection -->
+                            <hr class="my-3">
+                            <h6 class="fw-bold mb-3">Phương Thức Thanh Toán</h6>
+                            <div class="mb-3">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="cod" checked>
+                                    <label class="form-check-label" for="cod">
+                                        <i class="fas fa-money-bill-wave text-success me-2"></i>
+                                        <strong>Tiền mặt khi nhận hàng (COD)</strong>
+                                        <div class="text-muted small">Nhân viên sẽ gọi điện xác nhận trước khi giao hàng</div>
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="paymentMethod" id="bankTransfer" value="bankTransfer">
+                                    <label class="form-check-label" for="bankTransfer">
+                                        <i class="fas fa-university text-primary me-2"></i>
+                                        <strong>Chuyển khoản ngân hàng</strong>
+                                        <div class="text-muted small">Giảm 50% phí vận chuyển</div>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Payment Info for Bank Transfer -->
+                            <div id="bankTransferInfo" class="d-none">
+                                <div class="alert alert-info py-2 px-3 mb-3 small">
+                                    <div class="row align-items-center">
+                                        <div class="col-8">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <strong>Thông tin chuyển khoản:</strong><br>
+                                            <strong>Ngân hàng:</strong> Saccombank<br>
+                                            <strong>Số tài khoản:</strong> 0701 1991 0003<br>
+                                            <strong>Chủ tài khoản:</strong> NGUYEN HUU NGHIA
+                                        </div>
+                                        <div class="col-4 text-center">
+                                            <img src="{{ url_for('static', filename='image/qr.jpg') }}" alt="QR Code chuyển khoản" class="img-fluid border rounded" style="max-width: 80px; height: auto;">
+                                            <div class="text-muted small mt-1">Quét mã QR</div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-2">
+                                    <div class="text-warning small">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        <strong>Lưu ý:</strong> Sau khi chuyển khoản xong, vui lòng chụp ảnh lại và bấm "Thanh toán & Điền thông tin" để up ảnh chuyển khoản.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted">Phí vận chuyển</span>
-                            <span class="cart-shipping">{{ "{:,.0f}".format(shipping) }}đ</span>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="fw-bold">Tổng cộng</span>
-                            <span class="fs-5 fw-bold text-danger cart-total">{{ "{:,.0f}".format(total) }}đ</span>
-                        </div>
-                        <div class="mt-3">
-                            <a href="/checkout" class="btn btn-danger w-100">Tiến hành thanh toán</a>
+                    </div>
+                    
+                    <!-- Checkout Button -->
+                    <div class="mt-3">
+                        <a href="/checkout" class="btn btn-primary w-100" id="checkoutBtn">
+                            <i class="fas fa-credit-card me-2"></i>Thanh toán & Điền thông tin
+                        </a>
+                    </div>
+                    
+                    <!-- Voucher Section -->
+                    <div class="mt-3">
+                        <div class="card border-0 shadow">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold mb-2">
+                                    <i class="fas fa-ticket-alt text-success me-2"></i>Mã Giảm Giá
+                                </h6>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="cartVoucherCode" placeholder="Nhập mã giảm giá" value="">
+                                    <button class="btn btn-outline-success" type="button" id="applyCartVoucher">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                                <div id="cartVoucherMessage" class="mt-2 small"></div>
+                                <div id="cartVoucherApplied" class="mt-2 d-none">
+                                    <div class="alert alert-success py-3 mb-0 position-relative">
+                                        <!-- Close button - small and properly positioned -->
+                                        <button type="button" class="btn-close position-absolute voucher-close-btn" id="removeCartVoucher">
+                                            <span aria-hidden="true" style="font-weight: bold;">×</span>
+                                        </button>
+                                        
+                                        <!-- Voucher content -->
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="fw-semibold"><i class="fas fa-check-circle me-2 text-success"></i>Đã áp dụng:</span>
+                                            <span class="fw-bold text-success" id="cartVoucherName">HIBUDDY</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">Giảm giá:</span>
+                                            <span class="text-success fw-bold fs-6" id="cartVoucherDiscount">-10.000đ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="card border-0 shadow-sm mt-3">
-                    <div class="card-body">
-                        <h6 class="fw-bold">Mã giảm giá</h6>
-                        <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Nhập mã khuyến mãi">
-                            <button class="btn promo-apply-btn" type="button">Áp dụng</button>
-                        </div>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
-    
 </section>
 {% endblock %}
 
@@ -147,4 +250,15 @@
     </div>
 </div>
 {% endblock %}
+
+<script>
+// Load cart data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize cart display
+    updateCartDisplay();
+    
+    // Update cart summary
+    updateCartSummary();
+});
+</script>
 
