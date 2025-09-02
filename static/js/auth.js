@@ -8,7 +8,8 @@ function saveLoginState(data) {
             name: data.name,
             address: data.address,
             dob: data.dob,
-            email: data.email
+            email: data.email,
+            avatar: data.avatar
         };
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
         localStorage.setItem('isLoggedIn', 'true');

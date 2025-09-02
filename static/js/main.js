@@ -1482,25 +1482,53 @@ function initLazyLoading() {
 }
 
 // Smooth scrolling for anchor links
+// Smooth scrolling for anchor links
 function initSmoothScrolling() {
     const anchorLinks = document.querySelectorAll('a[href^="#"]');
-    
+
     anchorLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            e.preventDefault();
-            
+            // Lấy href của thẻ <a>
             const targetId = this.getAttribute('href');
+
+            // --- Cải thiện xử lý lỗi ---
+            // 1. Kiểm tra nếu href chỉ là "#"
+            // 2. Kiểm tra nếu href là chuỗi rỗng
+            if (targetId === '#' || targetId === '') {
+                // Nếu chỉ có "#", ngăn chặn hành vi mặc định và trở về đầu trang
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                return; // Ngừng thực thi
+            }
+
+            // Ngăn chặn hành vi mặc định
+            e.preventDefault();
+
+            // Lấy element từ ID
             const targetElement = document.querySelector(targetId);
-            
+
+            // Kiểm tra xem element có tồn tại không
             if (targetElement) {
                 targetElement.scrollIntoView({
                     behavior: 'smooth',
                     block: 'start'
                 });
+            } else {
+                console.error('Không tìm thấy phần tử với selector:', targetId);
             }
         });
     });
 }
+
+// Initialize additional features
+document.addEventListener('DOMContentLoaded', function() {
+    initSearch();
+    initLazyLoading();
+    initSmoothScrolling();
+});
 
 // Utility function to format currency
 function formatCurrency(amount) {

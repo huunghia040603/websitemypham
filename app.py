@@ -637,62 +637,6 @@ def news():
 def support():
     return render_template('support.html')
 
-@app.route('/live-chat')
-def live_chat():
-    return render_template('live-chat.html')
-
-@app.route('/skincare')
-def skincare():
-    return render_template('skincare.html')
-
-# Demo metadata for skincare steps (frontend content demo)
-SKINCARE_STEPS = {
-    "1": {
-        "title": "Bước 1: Làm sạch",
-        "desc": "Loại bỏ bụi bẩn, dầu thừa và lớp trang điểm để da thông thoáng.",
-        "how": [
-            "Làm ướt mặt với nước ấm",
-            "Lấy lượng sữa rửa mặt vừa đủ, tạo bọt và massage 30–60 giây",
-            "Rửa sạch, lau khô bằng khăn mềm"
-        ],
-        "tips": [
-            "Buổi tối nên tẩy trang trước khi rửa mặt",
-            "Chọn pH dịu nhẹ ~5.5 cho mọi loại da"
-        ],
-        "products": [
-            {"name": "Sữa rửa mặt dịu nhẹ", "price": "128.000₫", "old": "320.000₫", "img": "image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg"}
-        ]
-    },
-    "2": {
-        "title": "Bước 2: Cân bằng",
-        "desc": "Phục hồi pH và cấp ẩm nhẹ, chuẩn bị cho serum.",
-        "how": ["Thấm toner ra bông, lau nhẹ nhàng hoặc vỗ trực tiếp"],
-        "tips": ["Tránh cồn khô nếu da nhạy cảm"],
-        "products": []
-    },
-    "3": {
-        "title": "Bước 3: Serum điều trị",
-        "desc": "Tập trung giải quyết vấn đề da: ẩm, dầu, nám, mụn...",
-        "how": ["Dùng 2–3 giọt, vỗ nhẹ đến khi thấm"],
-        "tips": ["Không trộn quá nhiều hoạt chất mạnh cùng lúc"],
-        "products": []
-    },
-    "4": {"title": "Bước 4: Khóa ẩm", "desc": "Giữ ẩm cho da suốt nhiều giờ.", "how": ["Thoa kem dưỡng vừa đủ"], "tips": [], "products": []},
-    "5": {"title": "Bước 5: Chống nắng", "desc": "Bảo vệ da ban ngày.", "how": ["SPF 30+ phổ rộng, đủ 2 ngón tay"], "tips": ["Thoa lại sau 2–3 giờ"], "products": []},
-    "6": {"title": "Bước 6: Mask/Peel", "desc": "Bổ sung theo tuần.", "how": ["1–2 lần/tuần tùy da"], "tips": [], "products": []}
-}
-
-@app.route('/skincare/step/<step_id>')
-def skincare_step(step_id):
-    data = SKINCARE_STEPS.get(step_id)
-    if not data:
-        return render_template('skincare-step.html', not_found=True, step_id=step_id)
-    return render_template('skincare-step.html', data=data, step_id=step_id)
-
-@app.route('/consign')
-def consign():
-    return render_template('consign.html')
-
 @app.errorhandler(404)
 def not_found(error):
     return render_template('404.html'), 404

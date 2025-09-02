@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}BeautySale - Thông tin cá nhân{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container {
+        max-width: 600px;
+        margin: 50px auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        padding: 40px;
+    }
+    .profile-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background-color: #f0f2f5;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 3rem;
+        color: #6c757d;
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden; /* Quan trọng để ảnh không bị tràn */
+    }
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Đảm bảo ảnh vừa khung mà không bị méo */
+    }
+    .profile-info .list-group-item {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+        padding: 15px 0;
+    }
+    .profile-info .list-group-item:last-child {
+        border-bottom: none;
+    }
+    .profile-info .list-group-item .info-label {
+        font-weight: 500;
+        color: #6c757d;
+    }
+    .profile-info .list-group-item .info-value {
+        color: #343a40;
+    }
+    /* Thêm CSS cho input trong chế độ chỉnh sửa */
+    .profile-info .list-group-item input {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px 10px;
+        width: 60%;
+    }
+    .btn-edit-profile, .btn-save-profile {
+        width: 100%;
+        padding: 12px;
+        margin-top: 20px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="profile-container">
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <img id="user-avatar" src="" alt="Avatar người dùng" class="d-none">
+                <i id="user-avatar-icon" class="fas fa-user-circle"></i>
+            </div>
+            <h2 id="user-name" class="fw-bold"></h2>
+            <p id="user-email" class="text-muted"></p>
+        </div>
+
+        <div class="profile-info">
+            <form id="profile-edit-form">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="info-label">Số điện thoại</span>
+                        <span id="user-phone" class="info-value"></span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="info-label">Họ và tên</span>
+                        <span id="user-name-field" class="info-value"></span>
+                        <input type="text" id="edit-name" name="name" class="form-control d-none">
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="info-label">Email</span>
+                        <span id="user-email-field" class="info-value"></span>
+                        <input type="email" id="edit-email" name="email" class="form-control d-none">
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="info-label">Ngày sinh</span>
+                        <span id="user-dob-field" class="info-value"></span>
+                        <input type="date" id="edit-dob" name="dob" class="form-control d-none">
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="info-label">Địa chỉ</span>
+                        <span id="user-address-field" class="info-value"></span>
+                        <input type="text" id="edit-address" name="address" class="form-control d-none">
+                    </li>
+                </ul>
+                <div id="profile-alert" class="alert d-none mt-3" role="alert"></div>
+                <button type="submit" class="btn btn-success btn-save-profile d-none" id="save-btn">
+                    <i class="fas fa-save me-2"></i>Lưu thay đổi
+                </button>
+            </form>
+        </div>
+        <button class="btn btn-primary btn-edit-profile" id="edit-btn">
+            <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+        </button>
+    </div>
+</div>
+{% endblock %} 
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script>
+    const userDisplayFields = {
+        name: document.getElementById('user-name-field'),
+        email: document.getElementById('user-email-field'),
+        dob: document.getElementById('user-dob-field'),
+        address: document.getElementById('user-address-field'),
+        phone: document.getElementById('user-phone')
+    };
+
+    const editInputFields = {
+        name: document.getElementById('edit-name'),
+        email: document.getElementById('edit-email'),
+        dob: document.getElementById('edit-dob'),
+        address: document.getElementById('edit-address')
+    };
+
+    const editBtn = document.getElementById('edit-btn');
+    const saveBtn = document.getElementById('save-btn');
+    const profileAlert = document.getElementById('profile-alert');
+    const pageHeaderName = document.getElementById('user-name');
+    const pageHeaderEmail = document.getElementById('user-email');
+    const profileEditForm = document.getElementById('profile-edit-form');
+    
+    // Thêm biến mới cho avatar
+    const userAvatarImg = document.getElementById('user-avatar');
+    const userAvatarIcon = document.getElementById('user-avatar-icon');
+
+    // Hàm hiển thị thông tin người dùng
+    function displayUserProfile(userProfile) {
+        pageHeaderName.textContent = userProfile.name || 'Người dùng';
+        pageHeaderEmail.textContent = userProfile.email || 'Chưa cập nhật';
+        userDisplayFields.phone.textContent = userProfile.phone_number || 'Chưa cập nhật';
+        userDisplayFields.name.textContent = userProfile.name || 'Chưa cập nhật';
+        userDisplayFields.email.textContent = userProfile.email || 'Chưa cập nhật';
+        userDisplayFields.dob.textContent = userProfile.dob || 'Chưa cập nhật';
+        userDisplayFields.address.textContent = userProfile.address || 'Chưa cập nhật';
+        
+        // Cập nhật logic hiển thị ảnh đại diện
+        if (userProfile.avatar_url && userProfile.avatar !== 'null') {
+            userAvatarImg.src = userProfile.avatar;
+            userAvatarImg.classList.remove('d-none');
+            userAvatarIcon.classList.add('d-none');
+        } else {
+            userAvatarImg.classList.add('d-none');
+            userAvatarIcon.classList.remove('d-none');
+        }
+    }
+
+    // Hàm chuyển đổi sang chế độ chỉnh sửa
+    function enableEditMode(userProfile) {
+        editBtn.classList.add('d-none');
+        saveBtn.classList.remove('d-none');
+        
+        // Hiện input và ẩn span
+        userDisplayFields.name.classList.add('d-none');
+        editInputFields.name.classList.remove('d-none');
+        userDisplayFields.email.classList.add('d-none');
+        editInputFields.email.classList.remove('d-none');
+        userDisplayFields.dob.classList.add('d-none');
+        editInputFields.dob.classList.remove('d-none');
+        userDisplayFields.address.classList.add('d-none');
+        editInputFields.address.classList.remove('d-none');
+
+        // Điền dữ liệu cũ vào input
+        editInputFields.name.value = userProfile.name || '';
+        editInputFields.email.value = userProfile.email || '';
+        editInputFields.dob.value = userProfile.dob || '';
+        editInputFields.address.value = userProfile.address || '';
+    }
+
+    // Hàm chuyển đổi sang chế độ xem
+    function disableEditMode() {
+        editBtn.classList.remove('d-none');
+        saveBtn.classList.add('d-none');
+        
+        // Ẩn input và hiện span
+        userDisplayFields.name.classList.remove('d-none');
+        editInputFields.name.classList.add('d-none');
+        userDisplayFields.email.classList.remove('d-none');
+        editInputFields.email.classList.add('d-none');
+        userDisplayFields.dob.classList.remove('d-none');
+        editInputFields.dob.classList.add('d-none');
+        userDisplayFields.address.classList.remove('d-none');
+        editInputFields.address.classList.add('d-none');
+    }
+
+    // Hàm hiển thị thông báo
+    function showProfileAlert(message, type) {
+        profileAlert.textContent = message;
+        profileAlert.className = `alert mt-3 alert-${type}`;
+        profileAlert.classList.remove('d-none');
+    }
+
+    // Hàm refresh token, giả định auth.js có hàm refreshAccessToken()
+    async function refreshAccessToken() {
+        const refreshToken = getRefreshToken();
+        if (!refreshToken) {
+            return null;
+        }
+
+        try {
+            const response = await fetch('https://buddyskincare.pythonanywhere.com/api/token/refresh/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ refresh: refreshToken })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                localStorage.setItem('accessToken', data.access);
+                return data.access;
+            } else {
+                return null;
+            }
+        } catch (error) {
+            console.error('Lỗi khi refresh token:', error);
+            return null;
+        }
+    }
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const userProfile = getUserProfile();
+        if (isLoggedIn() && userProfile) {
+            displayUserProfile(userProfile);
+        } else {
+            console.warn('Người dùng chưa đăng nhập hoặc token đã hết hạn. Chuyển hướng về trang chủ.');
+            logout();
+            alert('Vui lòng đăng nhập để xem thông tin cá nhân.');
+            window.location.href = '/';
+        }
+
+        editBtn.addEventListener('click', function() {
+            const currentProfile = getUserProfile();
+            if (currentProfile) {
+                enableEditMode(currentProfile);
+            }
+        });
+
+        profileEditForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang lưu...';
+            profileAlert.classList.add('d-none');
+
+            let accessToken = getAccessToken();
+            const formData = new FormData(profileEditForm);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                let response = await fetch('https://buddyskincare.pythonanywhere.com/profile/', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // Kiểm tra nếu token hết hạn (status 401)
+                if (response.status === 401) {
+                    const newAccessToken = await refreshAccessToken();
+                    if (newAccessToken) {
+                        accessToken = newAccessToken;
+                        // Thử lại yêu cầu với token mới
+                        response = await fetch('https://buddyskincare.pythonanywhere.com/profile/', {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${accessToken}`
+                            },
+                            body: JSON.stringify(data)
+                        });
+                    } else {
+                        // Refresh token cũng hết hạn, yêu cầu đăng nhập lại
+                        showProfileAlert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.', 'danger');
+                        setTimeout(() => {
+                            logout();
+                            window.location.href = '/login';
+                        }, 2000);
+                        return;
+                    }
+                }
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    const updatedProfile = { ...getUserProfile(), ...result.user };
+                    localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+                    
+                    displayUserProfile(updatedProfile);
+                    disableEditMode();
+                    
+                    showProfileAlert('Thông tin cá nhân đã được cập nhật thành công!', 'success');
+                    setTimeout(() => {
+                        profileAlert.classList.add('d-none');
+                    }, 2000);
+                } else {
+                    const errorData = await response.json();
+                    let errorMessage = 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+                    
+                    if (errorData) {
+                        errorMessage = Object.values(errorData).join(' ');
+                    }
+                    
+                    showProfileAlert(errorMessage, 'danger');
+                }
+            } catch (error) {
+                console.error('Lỗi khi gửi yêu cầu:', error);
+                showProfileAlert('Lỗi kết nối. Vui lòng kiểm tra lại đường truyền.', 'danger');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save me-2"></i>Lưu thay đổi';
+            }
+        });
+    });
+</script>
+{% endblock %}
