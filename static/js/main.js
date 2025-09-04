@@ -980,7 +980,7 @@ function createProductCard(product) {
     const imageUrl = thumbnailImage || firstImage || '/static/image/default-product.jpg';
 
     // Lấy thương hiệu
-    const brandName = product.brand ? product.brand.name : 'Không rõ';
+    const brandName = product.brand_name? product.brand_name : 'Không rõ';
 
     // Giá/đánh giá
     const originalPrice = mainVariant ? mainVariant.original_price * 1000 : null;
