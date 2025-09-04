@@ -98,13 +98,28 @@
                     </div>
                     
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label for="productPrice" class="form-label">Giá gốc (VND) *</label>
                             <input type="number" class="form-control" id="productPrice" required>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label for="productSalePrice" class="form-label">Giá bán (VND)</label>
+                            <input type="number" class="form-control" id="productSalePrice">
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label for="productStock" class="form-label">Số lượng tồn kho *</label>
                             <input type="number" class="form-control" id="productStock" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="productSold" class="form-label">Đã bán (sold_quantity)</label>
+                            <input type="number" class="form-control" id="productSold" min="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="productRating" class="form-label">Đánh giá (rating)</label>
+                            <input type="number" class="form-control" id="productRating" step="0.1" min="0" max="5">
                         </div>
                     </div>
                     
@@ -176,6 +191,17 @@
                         </div>
                     </div>
                     
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editProductSold" class="form-label">Đã bán (sold_quantity)</label>
+                            <input type="number" class="form-control" id="editProductSold" min="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editProductRating" class="form-label">Đánh giá (rating)</label>
+                            <input type="number" class="form-control" id="editProductRating" step="0.1" min="0" max="5">
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="editProductDescription" class="form-label">Mô tả sản phẩm</label>
                         <textarea class="form-control" id="editProductDescription" rows="3"></textarea>
@@ -234,11 +260,10 @@ function renderProducts() {
     }
     
     let html = '<div class="table-responsive"><table class="table table-admin">';
-    html += '<thead><tr><th>Hình Ảnh</th><th>Tên Sản Phẩm</th><th>Giá</th><th>Giá bán</th><th>Tồn Kho</th><th>Trạng Thái</th><th>Thao Tác</th></tr></thead><tbody>';
+    html += '<thead><tr><th>Hình Ảnh</th><th>Tên Sản Phẩm</th><th>Giá bán</th><th>Tồn Kho</th><th>Trạng Thái</th><th>Thao Tác</th></tr></thead><tbody>';
     
     filteredProducts.forEach(product => {
         const imageUrl = product.image || '/static/image/default-product.jpg';
-        const price = AdminAPI.formatPrice(product.original_price);
         const salePrice = AdminAPI.formatPrice(product.discounted_price);
         const statusClass = product.status === 'new' ? 'status-confirmed' : 'status-pending';
         const statusText = product.status === 'new' ? 'Mới' : 'Đã sử dụng';
@@ -252,7 +277,6 @@ function renderProducts() {
                     <strong>${product.name}</strong>
                     <br><small class="text-muted">ID: ${product.id} • ${product.brand_name || 'N/A'}</small>
                 </td>
-                <td>${price}</td>
                 <td>${salePrice || '-'}</td>
                 <td>
                     <span class="badge ${product.stock_quantity > 0 ? 'bg-success' : 'bg-danger'}">
@@ -351,6 +375,8 @@ function editProduct(productId) {
     document.getElementById('editProductSalePrice').value = product.discounted_price || '';
     document.getElementById('editProductStock').value = product.stock_quantity || 0;
     document.getElementById('editProductStatus').value = product.status || 'new';
+    document.getElementById('editProductSold').value = product.sold_quantity || 0;
+    document.getElementById('editProductRating').value = product.rating || 0;
     document.getElementById('editProductDescription').value = product.description || '';
     document.getElementById('editProductImage').value = product.image || '';
     
@@ -367,6 +393,8 @@ async function updateProduct() {
         discounted_price: document.getElementById('editProductSalePrice').value === '' ? null : parseFloat(document.getElementById('editProductSalePrice').value),
         stock_quantity: parseInt(document.getElementById('editProductStock').value),
         status: document.getElementById('editProductStatus').value,
+        sold_quantity: parseInt(document.getElementById('editProductSold').value || '0'),
+        rating: document.getElementById('editProductRating').value === '' ? null : parseFloat(document.getElementById('editProductRating').value),
         description: document.getElementById('editProductDescription').value,
         image: document.getElementById('editProductImage').value
     };
@@ -389,7 +417,10 @@ async function addNewProduct() {
         name: document.getElementById('productName').value,
         brand_name: document.getElementById('productBrand').value,
         original_price: parseFloat(document.getElementById('productPrice').value),
+        discounted_price: document.getElementById('productSalePrice').value === '' ? null : parseFloat(document.getElementById('productSalePrice').value),
         stock_quantity: parseInt(document.getElementById('productStock').value),
+        sold_quantity: parseInt(document.getElementById('productSold').value || '0'),
+        rating: document.getElementById('productRating').value === '' ? null : parseFloat(document.getElementById('productRating').value),
         status: 'new',
         description: document.getElementById('productDescription').value,
         image: document.getElementById('productImage').value

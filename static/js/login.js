@@ -3,79 +3,89 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const loginForm = document.getElementById('loginForm');
     const forgotForm = document.getElementById('forgotForm');
+    const registerForm = document.getElementById('registerForm');
     const loginFormContainer = document.getElementById('loginFormContainer');
     const forgotPasswordFormContainer = document.getElementById('forgotPasswordFormContainer');
+    const registerFormContainer = document.getElementById('registerFormContainer');
     const forgotPasswordTrigger = document.getElementById('forgotPasswordTrigger');
     const backToLoginTrigger = document.getElementById('backToLoginTrigger');
+    const openRegisterTrigger = document.getElementById('openRegisterTrigger');
+    const backToLoginFromRegister = document.getElementById('backToLoginFromRegister');
 
-    // Chuyển đổi từ form Đăng nhập sang Quên mật khẩu
+    // Toggle password visibility buttons (login + register)
+    document.querySelectorAll('[data-toggle-password]')?.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = document.querySelector(btn.getAttribute('data-toggle-password'));
+            if (!input) return;
+            const isPwd = input.getAttribute('type') === 'password';
+            input.setAttribute('type', isPwd ? 'text' : 'password');
+            btn.innerHTML = isPwd ? '<i class="far fa-eye-slash"></i>' : '<i class="far fa-eye"></i>';
+        });
+    });
+
+    // Chuyển đổi Đăng nhập -> Quên mật khẩu
     if (forgotPasswordTrigger && loginFormContainer && forgotPasswordFormContainer) {
         forgotPasswordTrigger.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Link "Quên mật khẩu" đã được click. Chuyển đổi form...');
             loginFormContainer.style.display = 'none';
+            registerFormContainer && (registerFormContainer.style.display = 'none');
             forgotPasswordFormContainer.style.display = 'block';
-            console.log('Đã chuyển đổi thành công.');
         });
-    } else {
-        console.error('Không thể thiết lập sự kiện click cho "Quên mật khẩu?". Một trong các phần tử sau không tồn tại: forgotPasswordTrigger, loginFormContainer, forgotPasswordFormContainer.');
     }
 
-    // Quay lại form Đăng nhập từ form Quên mật khẩu
+    // Quay lại Đăng nhập từ Quên mật khẩu
     if (backToLoginTrigger && forgotPasswordFormContainer && loginFormContainer) {
         backToLoginTrigger.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('Link "Quay lại đăng nhập" đã được click. Quay lại form đăng nhập...');
             forgotPasswordFormContainer.style.display = 'none';
+            registerFormContainer && (registerFormContainer.style.display = 'none');
             loginFormContainer.style.display = 'block';
-            console.log('Đã quay lại thành công.');
         });
-    } else {
-        console.error('Không thể thiết lập sự kiện click cho "Quay lại đăng nhập". Một trong các phần tử sau không tồn tại: backToLoginTrigger, forgotPasswordFormContainer, loginFormContainer.');
+    }
+
+    // Mở form Đăng ký
+    if (openRegisterTrigger && registerFormContainer && loginFormContainer) {
+        openRegisterTrigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginFormContainer.style.display = 'none';
+            forgotPasswordFormContainer && (forgotPasswordFormContainer.style.display = 'none');
+            registerFormContainer.style.display = 'block';
+        });
+    }
+
+    // Quay lại Đăng nhập từ Đăng ký
+    if (backToLoginFromRegister && registerFormContainer && loginFormContainer) {
+        backToLoginFromRegister.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerFormContainer.style.display = 'none';
+            forgotPasswordFormContainer && (forgotPasswordFormContainer.style.display = 'none');
+            loginFormContainer.style.display = 'block';
+        });
     }
 
     // Xử lý logic đăng nhập
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Form đăng nhập đã được submit.');
-            const phoneNumber = document.getElementById('modalPhone').value;
+            const phoneNumber = document.getElementById('modalPhone').value.trim();
             const password = document.getElementById('modalPassword').value;
-
             if (!phoneNumber || !password) {
                 alert('Vui lòng nhập đầy đủ số điện thoại và mật khẩu.');
                 return;
             }
-
             const apiUrl = 'https://buddyskincare.pythonanywhere.com/auth/login/';
-            const data = {
-                phone_number: phoneNumber,
-                password: password
-            };
-
+            const data = { phone_number: phoneNumber, password: password };
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
                 if (response.ok) {
                     const result = await response.json();
-                    console.log('Đăng nhập bằng số điện thoại thành công:', result);
                     saveLoginState(result);
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 100);
+                    setTimeout(() => { window.location.href = '/'; }, 100);
                 } else {
                     const error = await response.json();
-                    console.error('Đăng nhập thất bại:', error);
                     alert(`Đăng nhập thất bại: ${error.detail || 'Có lỗi xảy ra.'}`);
                 }
             } catch (error) {
-                console.error('Lỗi khi gửi yêu cầu:', error);
                 alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
             }
         });
@@ -85,28 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (forgotForm) {
         forgotForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Form quên mật khẩu đã được submit.');
-            const email = document.getElementById('modalEmail').value;
-
-            if (!email) {
-                alert('Vui lòng nhập địa chỉ email.');
-                return;
-            }
-
+            const email = document.getElementById('modalEmail').value.trim();
+            if (!email) { alert('Vui lòng nhập địa chỉ email.'); return; }
             const apiUrl = 'https://buddyskincare.pythonanywhere.com/users/forgot-password/';
-            const data = {
-                email: email
-            };
-
             try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
                 if (response.ok) {
                     const result = await response.json();
                     alert(result.detail || 'Một mã đặt lại mật khẩu đã được gửi đến email của bạn.');
@@ -115,7 +108,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     alert(`Gửi yêu cầu thất bại: ${error.detail || 'Có lỗi xảy ra.'}`);
                 }
             } catch (error) {
-                console.error('Lỗi khi gửi yêu cầu quên mật khẩu:', error);
+                alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
+            }
+        });
+    }
+
+    // Xử lý logic đăng ký
+    if (registerForm) {
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('regName').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const password = document.getElementById('regPassword').value;
+            const email = document.getElementById('regEmail').value.trim() || null;
+            if (!name || !phone || !password) {
+                alert('Vui lòng điền Tên, Số điện thoại và Mật khẩu.');
+                return;
+            }
+            const apiUrl = 'https://buddyskincare.pythonanywhere.com/users/register/';
+            const data = { name, phone_number: phone, password, email };
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('Đăng ký thành công!');
+                    // Auto-login or switch back to login
+                    registerFormContainer.style.display = 'none';
+                    loginFormContainer.style.display = 'block';
+                    // Prefill phone to ease login
+                    document.getElementById('modalPhone').value = phone;
+                } else {
+                    const error = await response.json();
+                    alert(`Đăng ký thất bại: ${error.detail || 'Có lỗi xảy ra.'}`);
+                }
+            } catch (error) {
                 alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
             }
         });
@@ -168,6 +194,30 @@ async function handleCredentialResponse(response) {
         alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
     }
 }
+
+// Render Google button with cleaner style once script is available
+window.addEventListener('load', () => {
+    if (window.google && document.getElementById('googleCustomContainer')) {
+        try {
+            google.accounts.id.initialize({
+                client_id: '821773612134-su4afp8ac99s2l6cpvsmf0ti7p2d61aq.apps.googleusercontent.com',
+                callback: handleCredentialResponse
+            });
+            google.accounts.id.renderButton(
+                document.getElementById('googleCustomContainer'),
+                {
+                    type: 'standard',
+                    theme: 'outline',
+                    size: 'large',
+                    width: 360,
+                    text: 'signin_with',
+                    shape: 'rectangular',
+                    logo_alignment: 'left'
+                }
+            );
+        } catch (e) {}
+    }
+});
 
 
 

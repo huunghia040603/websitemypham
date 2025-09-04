@@ -3027,3 +3027,29 @@ html {
         font-size: 0.9rem !important;
     }
 }
+
+/* Minimal style for password visibility toggle */
+[data-toggle-password] {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    color: #6c757d !important;
+}
+[data-toggle-password]:hover,
+[data-toggle-password]:focus {
+    background: transparent !important;
+    color: #495057 !important;
+}
+
+/* Google sign-in button wrapper */
+.google-btn-wrapper{
+    display:flex;justify-content:center
+}
+.google-btn-wrapper .abcRioButton,.google-btn-wrapper .nsm7Bb-HzV7m-LgbsSe{ /* old/new renderers */
+    width:100% !important;max-width:360px;min-height:44px;border-radius:10px !important;
+    box-shadow:0 4px 14px rgba(0,0,0,.08) !important;border:1px solid #e6e8eb !important;
+}
+.google-btn-wrapper .nsm7Bb-HzV7m-LgbsSe .nsm7Bb-HzV7m-LgbsSe-Bz112c{font-weight:600}
+.google-btn-wrapper .nsm7Bb-HzV7m-LgbsSe:hover{box-shadow:0 6px 18px rgba(0,0,0,.12) !important}
+.divider{position:relative;text-align:center}
+.divider .divider-text{background:#fff;padding:0 10px;color:#6b7280;font-weight:600}

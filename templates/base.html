@@ -54,7 +54,10 @@
                                     <span class="input-group-text bg-light border-end-0">
                                         <i class="fas fa-lock text-muted"></i>
                                     </span>
-                                    <input type="password" class="form-control border-start-0" id="modalPassword" placeholder="Nhập mật khẩu" required>
+                                    <div class="position-relative flex-grow-1">
+                                        <input type="password" class="form-control border-start-0 pe-5" id="modalPassword" placeholder="Nhập mật khẩu" required>
+                                        <button class="btn btn-link p-0 border-0 text-muted position-absolute top-50 end-0 translate-middle-y me-2" type="button" data-toggle-password="#modalPassword"><i class="far fa-eye"></i></button>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -71,29 +74,14 @@
                             </div>
                             
                             <div class="d-grid mb-3">
-                                <div id="google-login-container">
-                                    <div id="g_id_onload"
-                                        data-client_id="821773612134-su4afp8ac99s2l6cpvsmf0ti7p2d61aq.apps.googleusercontent.com"
-                                        data-context="signin"
-                                        data-ux_mode="popup"
-                                        data-callback="handleCredentialResponse"
-                                        data-auto_prompt="false">
-                                    </div>
-                                    
-                                    <div class="g_id_signin"
-                                        data-type="standard"
-                                        data-size="large"
-                                        data-text="signin_with"
-                                        data-shape="rectangular"
-                                        data-logo_alignment="left"
-                                        data-width="280">
-                                    </div>
+                                <div id="google-login-container" class="google-btn-wrapper">
+                                    <div id="googleCustomContainer"></div>
                                 </div>
                             </div>
                             
                             <div class="text-center">
                                 <a href="#" id="forgotPasswordTrigger" class="text-decoration-none text-muted me-3">Quên mật khẩu?</a>
-                                <a href="#" class="text-decoration-none text-primary">Đăng ký</a>
+                                <a href="#" id="openRegisterTrigger" class="text-decoration-none text-primary">Đăng ký</a>
                             </div>
                         </form>
                     </div>
@@ -121,6 +109,57 @@
                             </div>
                             <div class="text-center">
                                 <a href="#" class="text-decoration-none text-primary" id="backToLoginTrigger">Quay lại đăng nhập</a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div id="registerFormContainer" style="display:none;">
+                        <div class="text-center mb-4">
+                            <img src="{{ url_for('static', filename='image/logo.png') }}" alt="BuddySkincare Logo" class="modal-logo mb-3" style="max-height: 50px; width: auto;">
+                            <h4 class="fw-bold text-dark mb-2">Đăng ký</h4>
+                            <p class="text-muted">Tạo tài khoản mới</p>
+                        </div>
+                        <form id="registerForm">
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0" id="regName" placeholder="Tên của bạn" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-phone-alt text-muted"></i>
+                                    </span>
+                                    <input type="tel" class="form-control border-start-0" id="regPhone" placeholder="Số điện thoại" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-lock text-muted"></i>
+                                    </span>
+                                    <div class="position-relative flex-grow-1">
+                                        <input type="password" class="form-control border-start-0 pe-5" id="regPassword" placeholder="Mật khẩu" required>
+                                        <button class="btn btn-link p-0 border-0 text-muted position-absolute top-50 end-0 translate-middle-y me-2" type="button" data-toggle-password="#regPassword"><i class="far fa-eye"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-envelope text-muted"></i>
+                                    </span>
+                                    <input type="email" class="form-control border-start-0" id="regEmail" placeholder="Email (không bắt buộc)">
+                                </div>
+                            </div>
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary btn-lg fw-semibold" style="font-size: 1.0rem;">Đăng ký</button>
+                            </div>
+                            <div class="text-center">
+                                <a href="#" class="text-decoration-none text-primary" id="backToLoginFromRegister">Đã có tài khoản? Đăng nhập</a>
                             </div>
                         </form>
                     </div>
