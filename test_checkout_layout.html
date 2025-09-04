@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Checkout Layout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .suggested-product-card {
+            transition: transform 0.2s;
+        }
+        .suggested-product-card:hover {
+            transform: translateY(-2px);
+        }
+        .flash-sale-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🧪 Test Checkout Layout</h1>
+        
+        <div class="card border-0 shadow mb-3">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-fire text-danger me-2"></i>
+                    Sản Phẩm Gợi Ý Đang Giảm Mạnh
+                </h5>
+                <p class="text-muted small mb-3">Khám phá thêm các sản phẩm flash-sale hấp dẫn!</p>
+                
+                <!-- Test Layout -->
+                <div id="test-layout">
+                    <div class="row g-2" style="margin-bottom: 10px !important;">
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 1" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-30%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 1</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">100,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 2" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-25%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 2</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">150,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 3" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-40%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 3</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">200,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 4" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-35%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 4</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">120,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 5" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-50%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 5</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">80,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2" style="margin-bottom: 10px !important;">
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 6" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-20%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 6</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">90,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 7" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-45%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 7</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">110,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 8" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-60%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 8</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">70,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 9" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-15%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 9</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">180,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg" style="flex: 0 0 20%; max-width: 20%;">
+                            <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                                <div class="position-relative">
+                                    <img src="/static/image/logo.png" class="card-img-top" alt="Product 10" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                                    <div class="flash-sale-badge">-55%</div>
+                                </div>
+                                <div class="card-body p-1">
+                                    <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Product 10</h6>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="text-danger fw-bold" style="font-size: 10px;">95,000đ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="/products" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-eye me-2"></i>Xem tất cả sản phẩm
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <h5>📋 Layout Test Results:</h5>
+            <ul>
+                <li>✅ <strong>Desktop:</strong> 2 hàng, mỗi hàng 5 sản phẩm (20% width mỗi sản phẩm)</li>
+                <li>✅ <strong>Mobile:</strong> 3 hàng, mỗi hàng 2 sản phẩm (50% width mỗi sản phẩm)</li>
+                <li>✅ <strong>Spacing:</strong> Gap 2 giữa các sản phẩm, 10px giữa các hàng</li>
+                <li>✅ <strong>Cards:</strong> Equal height với shadow</li>
+            </ul>
+        </div>
+        
+        <div class="alert alert-warning">
+            <h5>📱 Mobile Layout Demo (Width ≤ 767px):</h5>
+            <div class="row g-2" style="margin-bottom: 10px !important;">
+                <div class="col-6" style="flex: 0 0 50%; max-width: 50%;">
+                    <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="/static/image/logo.png" class="card-img-top" alt="Mobile Product 1" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                            <div class="flash-sale-badge">-30%</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Mobile Product 1</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="text-danger fw-bold" style="font-size: 10px;">150,000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6" style="flex: 0 0 50%; max-width: 50%;">
+                    <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="/static/image/logo.png" class="card-img-top" alt="Mobile Product 2" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                            <div class="flash-sale-badge">-25%</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Mobile Product 2</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="text-danger fw-bold" style="font-size: 10px;">180,000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2" style="margin-bottom: 10px !important;">
+                <div class="col-6" style="flex: 0 0 50%; max-width: 50%;">
+                    <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="/static/image/logo.png" class="card-img-top" alt="Mobile Product 3" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                            <div class="flash-sale-badge">-40%</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Mobile Product 3</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="text-danger fw-bold" style="font-size: 10px;">120,000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6" style="flex: 0 0 50%; max-width: 50%;">
+                    <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="/static/image/logo.png" class="card-img-top" alt="Mobile Product 4" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                            <div class="flash-sale-badge">-35%</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Mobile Product 4</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="text-danger fw-bold" style="font-size: 10px;">200,000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2" style="margin-bottom: 10px !important;">
+                <div class="col-6" style="flex: 0 0 50%; max-width: 50%;">
+                    <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="/static/image/logo.png" class="card-img-top" alt="Mobile Product 5" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                            <div class="flash-sale-badge">-50%</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Mobile Product 5</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="text-danger fw-bold" style="font-size: 10px;">80,000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6" style="flex: 0 0 50%; max-width: 50%;">
+                    <div class="card suggested-product-card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <img src="/static/image/logo.png" class="card-img-top" alt="Mobile Product 6" style="height: 150px; object-fit: cover; border-radius: 4px;">
+                            <div class="flash-sale-badge">-45%</div>
+                        </div>
+                        <div class="card-body p-1">
+                            <h6 class="card-title small fw-bold mb-1" style="font-size: 9px;">Mobile Product 6</h6>
+                            <div class="d-flex align-items-center mb-1">
+                                <span class="text-danger fw-bold" style="font-size: 10px;">90,000đ</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

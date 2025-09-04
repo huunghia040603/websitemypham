@@ -5,294 +5,8 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 app.secret_key = 'buddyskincare_secret_key_2024'
 
-# Dữ liệu demo cho sản phẩm
-products_data = [
-    {
-        'id': 1,
-        'name': 'Combo Nước Cân Bằng Sen Hậu Giang',
-        'brand': 'TheFaceShop',
-        'category': 'Chăm Sóc Da',
-        'original_price': 450000,
-        'sale_price': 315000,
-        'discount': 30,
-        'stock': 8,
-        'rating': 5.0,
-        'reviews': 156,
-        'image': 'static/image/demo/facebook-dynamic-combo-cocoon-nuoc-can-bang-sen-hau-giang-310ml-nuoc-tay-trang-bi-dao-500ml-1741320900_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Combo nước cân bằng sen hậu giang và nước tẩy trang bi đào, giúp làm sạch và cân bằng da hiệu quả.',
-        'features': [
-            'Làm sạch sâu',
-            'Cân bằng pH',
-            'Dưỡng ẩm',
-            'Dịu nhẹ cho da'
-        ],
-        'specifications': {
-            'brand': 'TheFaceShop',
-            'origin': 'Hàn Quốc',
-            'volume': '310ml + 500ml',
-            'expiry': '36 tháng',
-            'ingredients': 'Sen hậu giang, Bi đào',
-            'skin_type': 'Mọi loại da',
-            'condition': 'Mới 100%'
-        }
-    },
-    {
-        'id': 2,
-        'name': 'Sữa Rửa Mặt Cetaphil Dịu Nhẹ',
-        'brand': 'Cetaphil',
-        'category': 'Chăm Sóc Da',
-        'original_price': 320000,
-        'sale_price': 240000,
-        'discount': 25,
-        'stock': 12,
-        'rating': 5.0,
-        'reviews': 203,
-        'image': 'static/image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Sữa rửa mặt dịu nhẹ không xà phòng, phù hợp cho mọi loại da, đặc biệt là da nhạy cảm.',
-        'features': [
-            'Không xà phòng',
-            'Dịu nhẹ cho da',
-            'Làm sạch hiệu quả',
-            'Không gây kích ứng'
-        ],
-        'specifications': {
-            'brand': 'Cetaphil',
-            'origin': 'Mỹ',
-            'volume': '500ml',
-            'expiry': '36 tháng',
-            'skin_type': 'Mọi loại da',
-            'condition': 'Mới 100%'
-        }
-    },
-    {
-        'id': 3,
-        'name': 'Nước Tẩy Trang Bioderma',
-        'brand': 'Bioderma',
-        'category': 'Chăm Sóc Da',
-        'original_price': 280000,
-        'sale_price': 224000,
-        'discount': 20,
-        'stock': 15,
-        'rating': 5.0,
-        'reviews': 178,
-        'image': 'static/image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Nước tẩy trang chuyên biệt cho da dầu hỗn hợp, giúp làm sạch sâu và cân bằng da.',
-        'features': [
-            'Tẩy trang hiệu quả',
-            'Cân bằng da dầu',
-            'Không gây mụn',
-            'Dịu nhẹ cho da'
-        ],
-        'specifications': {
-            'brand': 'Bioderma',
-            'origin': 'Pháp',
-            'volume': '500ml',
-            'expiry': '36 tháng',
-            'skin_type': 'Da dầu hỗn hợp',
-            'condition': 'Mới 100%'
-        }
-    },
-    {
-        'id': 4,
-        'name': 'Kem Chống Nắng L\'Oreal Paris',
-        'brand': 'L\'Oreal Paris',
-        'category': 'Chăm Sóc Da',
-        'original_price': 350000,
-        'sale_price': 245000,
-        'discount': 30,
-        'stock': 6,
-        'rating': 5.0,
-        'reviews': 134,
-        'image': 'static/image/demo/facebook-dynamic-kem-chong-nang-l-oreal-paris-x20-thoang-da-mong-nhe-50ml-1738898716_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Kem chống nắng x20 thoáng da mỏng nhẹ, bảo vệ da khỏi tác hại của tia UV.',
-        'features': [
-            'Chống nắng SPF 50+',
-            'Thoáng da mỏng nhẹ',
-            'Không gây nhờn rít',
-            'Bảo vệ toàn diện'
-        ],
-        'specifications': {
-            'brand': 'L\'Oreal Paris',
-            'origin': 'Pháp',
-            'volume': '50ml',
-            'expiry': '36 tháng',
-            'spf': 'SPF 50+',
-            'condition': 'Mới 100%'
-        }
-    },
-    {
-        'id': 5,
-        'name': 'Son Lì New Bold TheFaceShop',
-        'brand': 'TheFaceShop',
-        'category': 'Son Môi',
-        'original_price': 280000,
-        'sale_price': 196000,
-        'discount': 30,
-        'stock': 10,
-        'rating': 4.8,
-        'reviews': 98,
-        'image': 'static/image/demo/facebook-dynamic-422211183-1696227431_img_300x300_b798dd_fit_center.png',
-        'description': 'Son lì New Bold với màu sắc nổi bật và độ bền màu lâu, phù hợp cho mọi dịp.',
-        'features': [
-            'Màu sắc nổi bật',
-            'Độ bền màu lâu',
-            'Không khô môi',
-            'Dễ thoa đều'
-        ],
-        'specifications': {
-            'brand': 'TheFaceShop',
-            'origin': 'Hàn Quốc',
-            'volume': '3.5g',
-            'expiry': '36 tháng',
-            'texture': 'Matte',
-            'condition': 'Mới 100%'
-        }
-    },
-    {
-        'id': 6,
-        'name': 'Mặt Nạ Real Nature',
-        'brand': 'TheFaceShop',
-        'category': 'Chăm Sóc Da',
-        'original_price': 150000,
-        'sale_price': 105000,
-        'discount': 30,
-        'stock': 25,
-        'rating': 4.7,
-        'reviews': 145,
-        'image': 'static/image/demo/facebook-dynamic-206400019-1696052291_img_300x300_b798dd_fit_center.png',
-        'description': 'Mặt nạ Real Nature với thành phần tự nhiên, giúp dưỡng ẩm và làm sáng da hiệu quả.',
-        'features': [
-            'Thành phần tự nhiên',
-            'Dưỡng ẩm sâu',
-            'Làm sáng da',
-            'Dịu nhẹ cho da'
-        ],
-        'specifications': {
-            'brand': 'TheFaceShop',
-            'origin': 'Hàn Quốc',
-            'volume': '1 miếng',
-            'expiry': '36 tháng',
-            'skin_type': 'Mọi loại da',
-            'condition': 'Mới 100%'
-        }
-    },
-    {
-        'id': 7,
-        'name': 'Son Mac Ruby Woo (Đã sử dụng)',
-        'brand': 'Mac Cosmetics',
-        'category': 'Son Môi',
-        'original_price': 850000,
-        'sale_price': 255000,
-        'discount': 70,
-        'stock': 3,
-        'rating': 4.9,
-        'reviews': 67,
-        'image': 'static/image/demo/facebook-dynamic-combo-cocoon-nuoc-can-bang-sen-hau-giang-310ml-nuoc-tay-trang-bi-dao-500ml-1741320900_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Son Mac Ruby Woo đã sử dụng 1-2 lần, màu đỏ nổi bật, độ bền màu tuyệt vời.',
-        'features': [
-            'Màu đỏ nổi bật',
-            'Độ bền màu cao',
-            'Kết cấu mượt mà',
-            'Phù hợp mọi tông da'
-        ],
-        'specifications': {
-            'brand': 'Mac Cosmetics',
-            'origin': 'Canada',
-            'volume': '3g',
-            'expiry': '24 tháng',
-            'texture': 'Matte',
-            'condition': 'Đã sử dụng 1-2 lần',
-            'usage_note': 'Còn 95% sản phẩm'
-        }
-    },
-    {
-        'id': 8,
-        'name': 'Kem Dưỡng Ẩm Cetaphil (Đã mở)',
-        'brand': 'Cetaphil',
-        'category': 'Chăm Sóc Da',
-        'original_price': 450000,
-        'sale_price': 180000,
-        'discount': 60,
-        'stock': 5,
-        'rating': 4.6,
-        'reviews': 89,
-        'image': 'static/image/demo/facebook-dynamic-sua-rua-mat-cetaphil-diu-nhe-khong-xa-phong-500ml-moi-1741235596_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Kem dưỡng ẩm Cetaphil đã mở nhưng chưa sử dụng, phù hợp cho da khô và nhạy cảm.',
-        'features': [
-            'Dưỡng ẩm sâu',
-            'Dịu nhẹ cho da',
-            'Không gây mụn',
-            'Phù hợp da nhạy cảm'
-        ],
-        'specifications': {
-            'brand': 'Cetaphil',
-            'origin': 'Mỹ',
-            'volume': '100ml',
-            'expiry': '18 tháng',
-            'skin_type': 'Da khô, nhạy cảm',
-            'condition': 'Đã mở, chưa sử dụng',
-            'usage_note': 'Còn 100% sản phẩm'
-        }
-    },
-    {
-        'id': 9,
-        'name': 'Nước Hoa Chanel N°5 (Test)',
-        'brand': 'Chanel',
-        'category': 'Nước Hoa',
-        'original_price': 3500000,
-        'sale_price': 1050000,
-        'discount': 70,
-        'stock': 2,
-        'rating': 5.0,
-        'reviews': 23,
-        'image': 'static/image/demo/facebook-dynamic-nuoc-tay-trang-bioderma-danh-cho-da-dau-hon-hop-500ml-1745303871_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Nước hoa Chanel N°5 tester, hương thơm sang trọng và quyến rũ.',
-        'features': [
-            'Hương thơm sang trọng',
-            'Độ bền hương lâu',
-            'Thiết kế tinh tế',
-            'Phù hợp mọi lứa tuổi'
-        ],
-        'specifications': {
-            'brand': 'Chanel',
-            'origin': 'Pháp',
-            'volume': '50ml',
-            'expiry': '60 tháng',
-            'fragrance_type': 'Floral',
-            'condition': 'Tester - Đã test',
-            'usage_note': 'Còn 90% sản phẩm'
-        }
-    },
-    {
-        'id': 10,
-        'name': 'Kem Nền Mac Studio Fix (Đã sử dụng)',
-        'brand': 'Mac Cosmetics',
-        'category': 'Trang Điểm',
-        'original_price': 1200000,
-        'sale_price': 360000,
-        'discount': 70,
-        'stock': 4,
-        'rating': 4.8,
-        'reviews': 45,
-        'image': 'static/image/demo/facebook-dynamic-kem-chong-nang-l-oreal-paris-x20-thoang-da-mong-nhe-50ml-1738898716_img_300x300_b798dd_fit_center.jpg',
-        'description': 'Kem nền Mac Studio Fix đã sử dụng vài lần, độ che phủ cao và bền màu.',
-        'features': [
-            'Độ che phủ cao',
-            'Bền màu lâu',
-            'Kiểm soát dầu tốt',
-            'Phù hợp nhiều tông da'
-        ],
-        'specifications': {
-            'brand': 'Mac Cosmetics',
-            'origin': 'Canada',
-            'volume': '30ml',
-            'expiry': '24 tháng',
-            'coverage': 'Full Coverage',
-            'condition': 'Đã sử dụng vài lần',
-            'usage_note': 'Còn 85% sản phẩm'
-        }
-    }
-]
+# API URL for PythonAnywhere
+API_BASE_URL = 'https://buddyskincare.pythonanywhere.com'
 
 # Dữ liệu danh mục
 categories_data = [
@@ -364,8 +78,32 @@ testimonials_data = [
 @app.route('/')
 def index():
     """Trang chủ"""
-    flash_sale_products = [p for p in products_data if p['discount'] > 0][:4]
-    featured_products = [p for p in products_data if p['discount'] == 0][:4]
+    import requests
+    
+    try:
+        # Fetch products from API
+        api_url = f'{API_BASE_URL}/products/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            all_products = response.json()
+            print(f"✅ Fetched {len(all_products)} products for homepage")
+            
+            # Filter flash sale products (có discount > 0)
+            flash_sale_products = [p for p in all_products if float(p.get('discount_rate', 0)) > 0][:4]
+            
+            # Filter featured products (không có discount hoặc discount thấp)
+            featured_products = [p for p in all_products if float(p.get('discount_rate', 0)) <= 10][:4]
+            
+        else:
+            print(f"❌ API returned status {response.status_code}")
+            flash_sale_products = []
+            featured_products = []
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching products for homepage: {e}")
+        flash_sale_products = []
+        featured_products = []
     
     # Tính thời gian flash sale (2 ngày từ hiện tại)
     flash_sale_end = datetime.now() + timedelta(days=2, hours=15, minutes=30, seconds=45)
@@ -380,55 +118,73 @@ def index():
 @app.route('/products')
 def products():
     """Trang danh sách sản phẩm"""
+    import requests
+    
+    try:
+        # Fetch products from API
+        api_url = f'{API_BASE_URL}/products/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            all_products = response.json()
+            print(f"✅ Fetched {len(all_products)} products from API")
+        else:
+            print(f"❌ API returned status {response.status_code}")
+            all_products = []
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching products from API: {e}")
+        all_products = []
+    
     # Lấy tham số filter
     category = request.args.get('category')
     brand = request.args.get('brand')
     price_range = request.args.get('price')
     discount = request.args.get('discount')
     sort_by = request.args.get('sort', 'newest')
-    condition = request.args.get('condition', 'all')  # Thêm filter theo tình trạng
+    condition = request.args.get('condition', 'all')
     
     # Filter sản phẩm
-    filtered_products = products_data.copy()
+    filtered_products = all_products.copy()
     
     if category:
-        filtered_products = [p for p in filtered_products if p['category'] == category]
+        filtered_products = [p for p in filtered_products if p.get('category', {}).get('name') == category]
     
     if brand:
-        filtered_products = [p for p in filtered_products if p['brand'] == brand]
+        filtered_products = [p for p in filtered_products if p.get('brand_name') == brand]
     
     if condition != 'all':
-        filtered_products = [p for p in filtered_products if p['specifications']['condition'] == condition]
+        filtered_products = [p for p in filtered_products if p.get('status') == condition]
     
     if price_range:
         if price_range == 'under_500k':
-            filtered_products = [p for p in filtered_products if p['sale_price'] < 500000]
+            filtered_products = [p for p in filtered_products if (p.get('discounted_price', 0) * 1000) < 500000]
         elif price_range == '500k_1m':
-            filtered_products = [p for p in filtered_products if 500000 <= p['sale_price'] < 1000000]
+            filtered_products = [p for p in filtered_products if 500000 <= (p.get('discounted_price', 0) * 1000) < 1000000]
         elif price_range == '1m_2m':
-            filtered_products = [p for p in filtered_products if 1000000 <= p['sale_price'] < 2000000]
+            filtered_products = [p for p in filtered_products if 1000000 <= (p.get('discounted_price', 0) * 1000) < 2000000]
         elif price_range == 'over_2m':
-            filtered_products = [p for p in filtered_products if p['sale_price'] >= 2000000]
+            filtered_products = [p for p in filtered_products if (p.get('discounted_price', 0) * 1000) >= 2000000]
     
     if discount:
         if discount == 'over_50':
-            filtered_products = [p for p in filtered_products if p['discount'] >= 50]
+            filtered_products = [p for p in filtered_products if float(p.get('discount_rate', 0)) >= 50]
         elif discount == '30_50':
-            filtered_products = [p for p in filtered_products if 30 <= p['discount'] < 50]
+            filtered_products = [p for p in filtered_products if 30 <= float(p.get('discount_rate', 0)) < 50]
         elif discount == 'under_30':
-            filtered_products = [p for p in filtered_products if p['discount'] < 30]
+            filtered_products = [p for p in filtered_products if float(p.get('discount_rate', 0)) < 30]
     
     # Sort sản phẩm
     if sort_by == 'price_low':
-        filtered_products.sort(key=lambda x: x['sale_price'])
+        filtered_products.sort(key=lambda x: x.get('discounted_price', 0) * 1000)
     elif sort_by == 'price_high':
-        filtered_products.sort(key=lambda x: x['sale_price'], reverse=True)
+        filtered_products.sort(key=lambda x: x.get('discounted_price', 0) * 1000, reverse=True)
     elif sort_by == 'popular':
-        filtered_products.sort(key=lambda x: x['reviews'], reverse=True)
+        filtered_products.sort(key=lambda x: x.get('sold_quantity', 0), reverse=True)
     elif sort_by == 'discount':
-        filtered_products.sort(key=lambda x: x['discount'], reverse=True)
+        filtered_products.sort(key=lambda x: float(x.get('discount_rate', 0)), reverse=True)
     else:  # newest
-        filtered_products.sort(key=lambda x: x['id'], reverse=True)
+        filtered_products.sort(key=lambda x: x.get('id', 0), reverse=True)
     
     return render_template('products.html',
                          products=filtered_products,
@@ -439,46 +195,86 @@ def products():
 @app.route('/products/new')
 def products_new():
     """Trang sản phẩm mới 100%"""
-    filtered_products = [p for p in products_data if p['specifications']['condition'] == 'Mới 100%']
+    import requests
+    
+    try:
+        # Fetch products from API
+        api_url = f'{API_BASE_URL}/products/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            all_products = response.json()
+            # Filter products with status 'new'
+            filtered_products = [p for p in all_products if p.get('status') == 'new']
+        else:
+            filtered_products = []
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching new products: {e}")
+        filtered_products = []
     
     return render_template('products.html',
                          products=filtered_products,
                          categories=categories_data,
                          brands=brands_data,
-                         current_condition='Mới 100%',
+                         current_condition='new',
                          page_title='Sản Phẩm Mới 100%')
 
 @app.route('/products/used')
 def products_used():
     """Trang sản phẩm đã sử dụng"""
-    filtered_products = [p for p in products_data if p['specifications']['condition'] != 'Mới 100%']
+    import requests
+    
+    try:
+        # Fetch products from API
+        api_url = f'{API_BASE_URL}/products/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            all_products = response.json()
+            # Filter products that are not 'new'
+            filtered_products = [p for p in all_products if p.get('status') != 'new']
+        else:
+            filtered_products = []
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching used products: {e}")
+        filtered_products = []
     
     return render_template('products.html',
                          products=filtered_products,
                          categories=categories_data,
                          brands=brands_data,
-                         current_condition='Đã sử dụng',
+                         current_condition='used',
                          page_title='Sản Phẩm Đã Sử Dụng')
 
 @app.route('/product/<int:product_id>')
 def product_detail(product_id):
     """Trang chi tiết sản phẩm"""
-    product = next((p for p in products_data if p['id'] == product_id), None)
+    import requests
     
-    if not product:
+    try:
+        # Fetch product data from API
+        api_url = f'{API_BASE_URL}/products/{product_id}/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            product = response.json()
+            print(f"✅ Fetched product {product_id} from API: {product.get('name', 'Unknown')}")
+        else:
+            print(f"❌ API returned status {response.status_code} for product {product_id}")
+            return redirect(url_for('products'))
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching product {product_id} from API: {e}")
         return redirect(url_for('products'))
     
-    # Lấy đánh giá của sản phẩm
-    product_reviews = [r for r in reviews_data if r['product_id'] == product_id]
+    # Lấy đánh giá của sản phẩm (tạm thời để trống)
+    product_reviews = []
+    avg_rating = product.get('rating', 0)
     
-    # Tính rating trung bình
-    if product_reviews:
-        avg_rating = sum(r['rating'] for r in product_reviews) / len(product_reviews)
-    else:
-        avg_rating = 0
-    
-    # Sản phẩm liên quan (cùng danh mục)
-    related_products = [p for p in products_data if p['category'] == product['category'] and p['id'] != product_id][:4]
+    # Sản phẩm liên quan (tạm thời để trống)
+    related_products = []
     
     return render_template('product-detail.html',
                          product=product,
@@ -489,26 +285,36 @@ def product_detail(product_id):
 @app.route('/api/add-to-cart', methods=['POST'])
 def add_to_cart():
     """API thêm vào giỏ hàng"""
+    import requests
+    
     data = request.get_json()
     product_id = data.get('product_id')
     quantity = data.get('quantity', 1)
     
-    # Tìm sản phẩm
-    product = next((p for p in products_data if p['id'] == product_id), None)
-    
-    if not product:
-        return jsonify({'success': False, 'message': 'Sản phẩm không tồn tại'})
-    
-    if product['stock'] < quantity:
-        return jsonify({'success': False, 'message': 'Số lượng không đủ'})
-    
-    # Ở đây sẽ lưu vào session hoặc database
-    # Hiện tại chỉ trả về thành công
-    return jsonify({
-        'success': True, 
-        'message': f'Đã thêm {quantity} {product["name"]} vào giỏ hàng',
-        'cart_count': 3  # Demo
-    })
+    try:
+        # Fetch product from API
+        api_url = f'{API_BASE_URL}/products/{product_id}/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            product = response.json()
+            
+            if product.get('stock_quantity', 0) < quantity:
+                return jsonify({'success': False, 'message': 'Số lượng không đủ'})
+            
+            # Ở đây sẽ lưu vào session hoặc database
+            # Hiện tại chỉ trả về thành công
+            return jsonify({
+                'success': True, 
+                'message': f'Đã thêm {quantity} {product.get("name", "sản phẩm")} vào giỏ hàng',
+                'cart_count': 3  # Demo
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Sản phẩm không tồn tại'})
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching product for cart: {e}")
+        return jsonify({'success': False, 'message': 'Lỗi khi tải thông tin sản phẩm'})
 
 @app.route('/api/newsletter', methods=['POST'])
 def newsletter_subscribe():
@@ -525,26 +331,42 @@ def newsletter_subscribe():
 @app.route('/api/search')
 def search_products():
     """API tìm kiếm sản phẩm"""
+    import requests
+    
     query = request.args.get('q', '').lower()
     
     if len(query) < 2:
         return jsonify([])
     
-    # Tìm kiếm theo tên sản phẩm hoặc thương hiệu
-    results = []
-    for product in products_data:
-        if (query in product['name'].lower() or 
-            query in product['brand'].lower() or
-            query in product['category'].lower()):
-            results.append({
-                'id': product['id'],
-                'name': product['name'],
-                'brand': product['brand'],
-                'price': product['sale_price'],
-                'image': product['image']
-            })
-    
-    return jsonify(results[:5])  # Giới hạn 5 kết quả
+    try:
+        # Fetch products from API
+        api_url = f'{API_BASE_URL}/products/'
+        response = requests.get(api_url, timeout=10)
+        
+        if response.status_code == 200:
+            all_products = response.json()
+            
+            # Tìm kiếm theo tên sản phẩm hoặc thương hiệu
+            results = []
+            for product in all_products:
+                if (query in product.get('name', '').lower() or 
+                    query in product.get('brand_name', '').lower() or
+                    query in product.get('category', {}).get('name', '').lower()):
+                    results.append({
+                        'id': product.get('id'),
+                        'name': product.get('name'),
+                        'brand': product.get('brand_name'),
+                        'price': product.get('discounted_price', 0) * 1000,
+                        'image': product.get('image')
+                    })
+            
+            return jsonify(results[:5])  # Giới hạn 5 kết quả
+        else:
+            return jsonify([])
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error searching products: {e}")
+        return jsonify([])
 
 @app.route('/cart')
 def cart():
@@ -636,6 +458,196 @@ def news():
 @app.route('/support')
 def support():
     return render_template('support.html')
+
+@app.route('/skincare')
+def skincare():
+    return render_template('skincare.html')
+
+# Admin Routes
+@app.route('/admin')
+def admin_dashboard():
+    """Admin Dashboard"""
+    return render_template('admin_dashboard.html')
+
+@app.route('/admin/products/new')
+def admin_products_new():
+    """Admin - Quản lý sản phẩm mới"""
+    return render_template('admin_products_new.html')
+
+@app.route('/admin/products/used')
+def admin_products_used():
+    """Admin - Quản lý sản phẩm đã sử dụng"""
+    return render_template('admin_products_used.html')
+
+@app.route('/admin/products/flash-sale')
+def admin_products_flash_sale():
+    """Admin - Quản lý flash sale"""
+    return render_template('admin_products_flash_sale.html')
+
+@app.route('/admin/orders')
+def admin_orders():
+    """Admin - Quản lý đơn hàng"""
+    return render_template('admin_orders.html')
+
+@app.route('/admin/orders/<int:order_id>')
+def admin_order_detail(order_id):
+    """Admin - Chi tiết đơn hàng"""
+    return render_template('admin_orders.html')
+
+# Admin API Endpoints
+@app.route('/admin/api/orders', methods=['GET'])
+def admin_api_orders():
+    """API lấy danh sách đơn hàng cho admin"""
+    import requests
+    
+    try:
+        response = requests.get(f'{API_BASE_URL}/orders/', timeout=10)
+        if response.status_code == 200:
+            orders = response.json()
+            return jsonify(orders)
+        else:
+            return jsonify({'error': 'Không thể lấy danh sách đơn hàng'}), 500
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/admin/api/orders/<int:order_id>', methods=['GET', 'PATCH'])
+def admin_api_order_detail(order_id):
+    """API chi tiết đơn hàng cho admin"""
+    import requests
+    
+    try:
+        if request.method == 'GET':
+            response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=10)
+            if response.status_code == 200:
+                return jsonify(response.json())
+            else:
+                return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
+                
+        elif request.method == 'PATCH':
+            data = request.get_json()
+            response = requests.patch(f'{API_BASE_URL}/orders/{order_id}/', 
+                                    json=data, timeout=10)
+            if response.status_code == 200:
+                return jsonify(response.json())
+            else:
+                return jsonify({'error': 'Không thể cập nhật đơn hàng'}), 500
+                
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/admin/api/orders/<int:order_id>/confirm', methods=['POST'])
+def admin_api_confirm_order(order_id):
+    """API xác nhận đơn hàng"""
+    import requests
+    
+    try:
+        # Lấy thông tin đơn hàng
+        order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=10)
+        if order_response.status_code != 200:
+            return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
+            
+        order = order_response.json()
+        
+        # Cập nhật trạng thái xác nhận
+        confirm_response = requests.patch(f'{API_BASE_URL}/orders/{order_id}/', 
+                                        json={'is_confirmed': True}, timeout=10)
+        if confirm_response.status_code != 200:
+            return jsonify({'error': 'Không thể xác nhận đơn hàng'}), 500
+            
+        # Cập nhật số lượng tồn kho cho từng sản phẩm
+        for item in order.get('items', []):
+            product_id = item.get('product_id')
+            quantity = item.get('quantity', 0)
+            
+            # Lấy thông tin sản phẩm hiện tại
+            product_response = requests.get(f'{API_BASE_URL}/products/{product_id}/', timeout=10)
+            if product_response.status_code == 200:
+                product = product_response.json()
+                new_stock = product.get('stock_quantity', 0) - quantity
+                
+                # Cập nhật số lượng tồn kho
+                requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
+                             json={'stock_quantity': new_stock}, timeout=10)
+        
+        return jsonify({'success': True, 'message': 'Đã xác nhận đơn hàng và cập nhật tồn kho'})
+        
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/admin/api/orders/<int:order_id>/cancel', methods=['POST'])
+def admin_api_cancel_order(order_id):
+    """API hủy đơn hàng"""
+    import requests
+    
+    try:
+        # Lấy thông tin đơn hàng
+        order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=10)
+        if order_response.status_code != 200:
+            return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
+            
+        order = order_response.json()
+        
+        # Nếu đơn hàng đã được xác nhận, khôi phục số lượng tồn kho
+        if order.get('is_confirmed'):
+            for item in order.get('items', []):
+                product_id = item.get('product_id')
+                quantity = item.get('quantity', 0)
+                
+                # Lấy thông tin sản phẩm hiện tại
+                product_response = requests.get(f'{API_BASE_URL}/products/{product_id}/', timeout=10)
+                if product_response.status_code == 200:
+                    product = product_response.json()
+                    new_stock = product.get('stock_quantity', 0) + quantity
+                    
+                    # Cập nhật số lượng tồn kho
+                    requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
+                                 json={'stock_quantity': new_stock}, timeout=10)
+        
+        # Cập nhật trạng thái đơn hàng thành cancelled
+        cancel_response = requests.patch(f'{API_BASE_URL}/orders/{order_id}/', 
+                                       json={'status': 'cancelled'}, timeout=10)
+        if cancel_response.status_code == 200:
+            return jsonify({'success': True, 'message': 'Đã hủy đơn hàng và khôi phục tồn kho'})
+        else:
+            return jsonify({'error': 'Không thể hủy đơn hàng'}), 500
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/admin/api/products/<int:product_id>', methods=['PATCH'])
+def admin_api_update_product(product_id):
+    """API cập nhật sản phẩm cho admin"""
+    import requests
+    
+    try:
+        data = request.get_json()
+        response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
+                                json=data, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            return jsonify({'error': 'Không thể cập nhật sản phẩm'}), 500
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/api/product-stock/<int:product_id>')
+def api_product_stock(product_id):
+    """API lấy thông tin stock của sản phẩm"""
+    import requests
+    
+    try:
+        response = requests.get(f'{API_BASE_URL}/products/{product_id}/', timeout=10)
+        if response.status_code == 200:
+            product = response.json()
+            return jsonify({
+                'id': product.get('id'),
+                'name': product.get('name'),
+                'stock_quantity': product.get('stock_quantity', 0)
+            })
+        else:
+            return jsonify({'error': 'Không tìm thấy sản phẩm'}), 404
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
 
 @app.errorhandler(404)
 def not_found(error):

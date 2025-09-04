@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Product Detail</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Product Detail Page</h1>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        function addTestResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = message;
+            resultsDiv.appendChild(div);
+        }
+        
+        // Test 1: Check if we can access product data
+        addTestResult('🔍 Testing product data access...', 'info');
+        
+        if (typeof window.productData !== 'undefined') {
+            addTestResult('✅ Product data is available', 'success');
+            addTestResult(`📦 Product: ${window.productData.name}`, 'info');
+            addTestResult(`💰 Price: ${window.productData.sale_price} VND`, 'info');
+            addTestResult(`📸 Image: ${window.productData.image}`, 'info');
+        } else {
+            addTestResult('❌ Product data is not available', 'error');
+        }
+        
+        // Test 2: Check if init function exists
+        addTestResult('🔍 Testing init function...', 'info');
+        
+        if (typeof window.initProductDetailPageGlobal === 'function') {
+            addTestResult('✅ Init function is available', 'success');
+        } else {
+            addTestResult('❌ Init function is not available', 'error');
+        }
+        
+        // Test 3: Check if populateDetail function exists
+        addTestResult('🔍 Testing populateDetail function...', 'info');
+        
+        if (typeof populateDetail === 'function') {
+            addTestResult('✅ populateDetail function is available', 'success');
+        } else {
+            addTestResult('❌ populateDetail function is not available', 'error');
+        }
+        
+        // Test 4: Try to initialize
+        addTestResult('🔍 Testing initialization...', 'info');
+        
+        try {
+            if (typeof window.initProductDetailPageGlobal === 'function') {
+                window.initProductDetailPageGlobal();
+                addTestResult('✅ Initialization completed without errors', 'success');
+            }
+        } catch (error) {
+            addTestResult(`❌ Initialization failed: ${error.message}`, 'error');
+        }
+        
+        addTestResult('🏁 Test completed!', 'info');
+    </script>
+</body>
+</html>

@@ -68,6 +68,18 @@
                         </div>
                     </div>
                     
+                    <!-- Product Tags -->
+                    <div class="product-tags mb-4" id="detailTags" style="display:none">
+                        <h6 class="fw-semibold mb-2">Tags:</h6>
+                        <div id="detailTagsList"></div>
+                    </div>
+                    
+                    <!-- Product Gifts -->
+                    <div class="product-gifts mb-4" id="detailGifts" style="display:none">
+                        <h6 class="fw-semibold mb-2">Quà tặng kèm:</h6>
+                        <div id="detailGiftsList"></div>
+                    </div>
+                    
                     <!-- Quantity -->
                     <div class="quantity-section mb-4">
                         <label class="form-label fw-semibold">Số lượng:</label>
@@ -102,13 +114,13 @@
                     </div>
                     
                     <!-- Product Features -->
-                    <div class="product-features mb-4">
+                    <div class="product-features mb-4" id="detailFeatures">
                         <h6 class="fw-semibold mb-3">Đặc điểm nổi bật:</h6>
-                        <ul class="list-unstyled">
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Chính hãng Mac Cosmetics</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Màu sắc bền lâu</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Không khô môi</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Phù hợp mọi tông da</li>
+                        <ul class="list-unstyled" id="detailFeaturesList">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Chính hãng <span id="detailBrandFeature"></span></li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Chất lượng cao</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Giá tốt nhất thị trường</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Giao hàng nhanh</li>
                         </ul>
                     </div>
                 </div>
@@ -221,6 +233,21 @@
 
 {% block extra_js %}
 <script>
+// Pass product data to JavaScript
+window.productData = {{ product | tojson | safe }};
+
+// Initialize product detail page after data is loaded
+console.log('🔍 Template script loaded');
+console.log('📦 Product data available:', !!window.productData);
+console.log('🔧 Init function available:', typeof window.initProductDetailPageGlobal);
+
+if (typeof window.initProductDetailPageGlobal === 'function') {
+    console.log('✅ Calling initProductDetailPageGlobal...');
+    window.initProductDetailPageGlobal();
+} else {
+    console.log('❌ initProductDetailPageGlobal function not found');
+}
+
 // Keep helper functions
 function changeMainImage(src) { document.getElementById('mainImage').src = src; }
 function changeQuantity(delta) {
