@@ -980,12 +980,12 @@ function createProductCard(product) {
     const imageUrl = thumbnailImage || firstImage || '/static/image/default-product.jpg';
 
     // Lấy thương hiệu
-    const brandName = product.brand_name? product.brand_name : 'Không rõ';
+    const brandName = product.brand ? product.brand.name : 'Không rõ';
 
-    // Giá/đánh giá
-    const originalPrice = mainVariant ? mainVariant.original_price * 1000 : null;
-    const discountedPrice = mainVariant ? mainVariant.discounted_price * 1000 : null;
-    const rating = mainVariant ? mainVariant.rating : 0;
+    // Prices in model are in thousands → convert to VND
+    const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
+    const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
+    const rating = typeof product.rating === 'number' ? product.rating : (parseFloat(product.rating) || 0);
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5 && rating % 1 < 1;
 
@@ -994,8 +994,10 @@ function createProductCard(product) {
     if (hasHalfStar) starsHTML += '<i class="fas fa-star-half-alt"></i>';
     for (let i = fullStars + (hasHalfStar ? 1 : 0); i < 5; i++) starsHTML += '<i class="far fa-star"></i>';
 
-    const discountRate = (originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0;
-    const stockQuantity = mainVariant ? mainVariant.stock_quantity : 0;
+    const discountRate = (typeof product.discount_rate === 'number')
+        ? Math.round(product.discount_rate)
+        : ((originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0);
+    const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
 
     const productName = product.name;
 
@@ -1038,27 +1040,24 @@ function createProductCard(product) {
 
 // Hàm tạo HTML cho Flash Sale (không bọc cột)
 function createFlashSaleProductCard(product) {
-    const mainVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-    const albumObject = product.album; 
-    const imagesArray = albumObject && Array.isArray(albumObject.images) ? albumObject.images : [];
-    const thumbnailImage = imagesArray.find(img => img.is_thumbnail)?.image;
-    const firstImage = imagesArray.length > 0 ? imagesArray[0].image : null;
-    const imageUrl = thumbnailImage || firstImage || '/static/image/default-product.jpg';
-    const brandName = product.brand ? product.brand.name : 'Không rõ';
+    const imageUrl = (product.image && String(product.image).trim()) || '/static/image/default-product.jpg';
+    const brandName = product.brand_name ? (product.brand_name || 'Không rõ') : 'Không rõ';
 
-    const originalPrice = mainVariant ? mainVariant.original_price * 1000 : null;
-    const discountedPrice = mainVariant ? mainVariant.discounted_price * 1000 : null;
-    const rating = mainVariant ? mainVariant.rating : 0;
-    const reviews = mainVariant && typeof mainVariant.reviews !== 'undefined' ? mainVariant.reviews : rating;
+    const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
+    const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
+    const rating = typeof product.rating === 'number' ? product.rating : (parseFloat(product.rating) || 0);
+    const reviews = typeof product.rating !== 'undefined' ? rating : 0;
 
     let starsHTML = '';
     for (let i = 0; i < Math.floor(rating); i++) starsHTML += '<i class="fas fa-star"></i>';
     if (rating % 1 >= 0.5) starsHTML += '<i class="fas fa-star-half-alt"></i>';
     for (let i = Math.ceil(rating); i < 5; i++) starsHTML += '<i class="far fa-star"></i>';
 
-    const discountRate = (originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0;
-    const stockQuantity = mainVariant ? mainVariant.stock_quantity : 0;
-    const soldQuantity = mainVariant ? (mainVariant.sold_quantity || 0) : 0;
+    const discountRate = (typeof product.discount_rate === 'number')
+        ? Math.round(product.discount_rate)
+        : ((originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0);
+    const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
+    const soldQuantity = typeof product.sold_quantity === 'number' ? product.sold_quantity : 0;
     const totalStock = stockQuantity + soldQuantity;
     const progressPercentage = totalStock > 0 ? (soldQuantity / totalStock) * 100 : 0;
 
@@ -1383,8 +1382,7 @@ function isValidEmail(email) {
 function showNotification(message, type = 'info') {
     // Create notification element
     const notification = document.createElement('div');
-    notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show notification-fixed`;
     notification.innerHTML = `
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
@@ -1628,34 +1626,92 @@ function initCartQuantityControls() {
         
         // Toggle empty cart UI if cart is now empty
         toggleCartEmptyUI(totalQuantity === 0);
+        
+        // Update checkout button state
+        updateCheckoutButtonState();
+    }
+
+    // Function to check stock and update quantity
+    async function checkStockAndUpdateQuantity(productId, newQuantity, input, lineTotalEl, unitPrice) {
+        try {
+            const response = await fetch(`/api/product-stock/${productId}`);
+            let stockQuantity = 999; // Default fallback
+            
+            if (response.ok) {
+                const productData = await response.json();
+                stockQuantity = productData.stock_quantity || 0;
+            }
+            
+            // Check if new quantity exceeds stock
+            if (newQuantity > stockQuantity) {
+                showNotification(`Chỉ còn ${stockQuantity} sản phẩm trong kho!`, 'warning');
+                newQuantity = stockQuantity;
+            }
+            
+            // Update UI
+            input.value = newQuantity;
+            const newLineTotal = unitPrice * newQuantity;
+            lineTotalEl.textContent = new Intl.NumberFormat('vi-VN').format(newLineTotal) + 'đ';
+            
+            // Update quantity in localStorage
+            await updateProductQuantity(productId, newQuantity);
+            
+        } catch (error) {
+            console.error('Error checking stock:', error);
+            showNotification('Lỗi khi kiểm tra số lượng tồn kho!', 'error');
+        }
     }
 
     // Function to update product quantity in localStorage
-    function updateProductQuantity(productId, newQuantity) {
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const productIndex = cart.findIndex(item => item.id === productId);
-        
-        if (productIndex !== -1) {
-            if (newQuantity <= 0) {
-                // Do not remove here while user is typing; defer to change/confirm handler
-                return;
-            } else {
+    async function updateProductQuantity(productId, newQuantity) {
+        try {
+            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            const productIndex = cart.findIndex(item => item.id === productId);
+            
+            if (productIndex !== -1) {
+                if (newQuantity <= 0) {
+                    // Do not remove here while user is typing; defer to change/confirm handler
+                    return;
+                }
+                
+                // Check stock availability before updating
+                const response = await fetch(`/api/product-stock/${productId}`);
+                let stockQuantity = 999; // Default fallback
+                
+                if (response.ok) {
+                    const productData = await response.json();
+                    stockQuantity = productData.stock_quantity || 0;
+                }
+                
+                // Check if new quantity exceeds stock
+                if (newQuantity > stockQuantity) {
+                    showNotification(`Chỉ còn ${stockQuantity} sản phẩm trong kho!`, 'warning');
+                    // Reset to stock quantity
+                    newQuantity = stockQuantity;
+                }
+                
                 // Update quantity
                 cart[productIndex].quantity = newQuantity;
+                
+                localStorage.setItem('cart', JSON.stringify(cart));
+                
+                // Update cart count
+                const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
+                localStorage.setItem('cartCount', totalQuantity.toString());
+                
+                // Update cart display
+                updateCartDisplay();
+                updateCartCount();
+                
+                // Toggle empty cart UI if cart is now empty
+                toggleCartEmptyUI(totalQuantity === 0);
+                
+                // Update checkout button state
+                updateCheckoutButtonState();
             }
-            
-            localStorage.setItem('cart', JSON.stringify(cart));
-            
-            // Update cart count
-            const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
-            localStorage.setItem('cartCount', totalQuantity.toString());
-            
-            // Update cart display
-            updateCartDisplay();
-            updateCartCount();
-            
-            // Toggle empty cart UI if cart is now empty
-            toggleCartEmptyUI(totalQuantity === 0);
+        } catch (error) {
+            console.error('Error updating product quantity:', error);
+            showNotification('Lỗi khi cập nhật số lượng sản phẩm!', 'error');
         }
     }
 
@@ -1682,11 +1738,14 @@ function initCartQuantityControls() {
         }
 
         let qty = parseInt(input.value, 10) || 1;
+        const productId = input.getAttribute('data-product-id');
+        
         if (increaseBtn) {
-            qty = qty + 1;
+            // Check stock before increasing
+            checkStockAndUpdateQuantity(productId, qty + 1, input, lineTotalEl, unitPrice);
+            return;
         } else if (decreaseBtn) {
             if (qty - 1 <= 0) {
-                const productId = input.getAttribute('data-product-id');
                 const name = row.querySelector('td:nth-child(2) .fw-semibold')?.textContent?.trim() || 'sản phẩm này';
                 showCartConfirm(`Số lượng về 0. Bạn có muốn xóa ${name} khỏi giỏ hàng không?`, () => {
                     removeProductFromCart(productId);
@@ -1696,13 +1755,12 @@ function initCartQuantityControls() {
                 qty = qty - 1;
             }
         }
+        
         input.value = qty;
-
         const newLineTotal = unitPrice * qty;
         lineTotalEl.textContent = new Intl.NumberFormat('vi-VN').format(newLineTotal) + 'đ';
 
         // Update quantity in localStorage
-        const productId = input.getAttribute('data-product-id');
         updateProductQuantity(productId, qty);
     });
 
@@ -1726,7 +1784,8 @@ function initCartQuantityControls() {
         // Do not persist while empty; wait for change/blur
         if (qty !== null) {
             const productId = input.getAttribute('data-product-id');
-            updateProductQuantity(productId, qty);
+            // Check stock before updating
+            checkStockAndUpdateQuantity(productId, qty, input, lineTotalEl, unitPrice);
         }
     });
 
@@ -1767,38 +1826,79 @@ function initCartQuantityControls() {
 }
 
 // Add product to cart
-function addProductToCart(productId, productName, productPrice, productImg, originalPrice = null, quantity = 1) {
-    // Get current cart from localStorage
-    let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    
-    // Normalize quantity
-    const qty = Math.max(1, parseInt(quantity, 10) || 1);
-    
-    // Check if product already exists in cart
-    const existingProductIndex = cart.findIndex(item => item.id === productId);
-    
-    if (existingProductIndex !== -1) {
-        // Product exists, increment quantity
-        cart[existingProductIndex].quantity += qty;
-    } else {
-        // Product doesn't exist, add new item
-        cart.push({
-            id: productId,
-            name: productName,
-            price: productPrice,
-            image: productImg,
-            originalPrice: originalPrice, // Lưu giá gốc để tính tiết kiệm
-            quantity: qty
-        });
+async function addProductToCart(productId, productName, productPrice, productImg, originalPrice = null, quantity = 1) {
+    try {
+        // Get current cart from localStorage
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        
+        // Normalize quantity
+        const qty = Math.max(1, parseInt(quantity, 10) || 1);
+        
+        // Fetch product stock information from API
+        const response = await fetch(`/api/product-stock/${productId}`);
+        let stockQuantity = 999; // Default fallback
+        
+        if (response.ok) {
+            const productData = await response.json();
+            stockQuantity = productData.stock_quantity || 0;
+        }
+        
+        // Check if product already exists in cart
+        const existingProductIndex = cart.findIndex(item => item.id === productId);
+        
+        let newTotalQuantity = qty;
+        if (existingProductIndex !== -1) {
+            // Product exists, calculate new total quantity
+            newTotalQuantity = cart[existingProductIndex].quantity + qty;
+        }
+        
+        // Check stock availability
+        if (newTotalQuantity > stockQuantity) {
+            const availableQuantity = stockQuantity - (existingProductIndex !== -1 ? cart[existingProductIndex].quantity : 0);
+            
+            if (availableQuantity <= 0) {
+                showNotification(`Sản phẩm "${productName}" đã hết hàng!`, 'error');
+                return false;
+            } else {
+                showNotification(`Chỉ còn ${availableQuantity} sản phẩm "${productName}" trong kho!`, 'warning');
+                return false;
+            }
+        }
+        
+        // Add/update product in cart
+        if (existingProductIndex !== -1) {
+            // Product exists, increment quantity
+            cart[existingProductIndex].quantity += qty;
+        } else {
+            // Product doesn't exist, add new item
+            cart.push({
+                id: productId,
+                name: productName,
+                price: productPrice,
+                image: productImg,
+                originalPrice: originalPrice, // Lưu giá gốc để tính tiết kiệm
+                quantity: qty
+            });
+        }
+        
+        // Save updated cart to localStorage
+        localStorage.setItem('cart', JSON.stringify(cart));
+        
+        // Update all cart-related displays automatically
+        updateAllCartDisplays();
+        
+        // Update checkout button state
+        updateCheckoutButtonState();
+        
+        showNotification(`Đã thêm ${qty} x "${productName}" vào giỏ hàng!`, 'success');
+        console.log(`Đã thêm ${qty} x "${productName}" vào giỏ. Tổng mặt hàng: ${cart.length}`);
+        return true;
+        
+    } catch (error) {
+        console.error('Error adding product to cart:', error);
+        showNotification('Lỗi khi thêm sản phẩm vào giỏ hàng!', 'error');
+        return false;
     }
-    
-    // Save updated cart to localStorage
-    localStorage.setItem('cart', JSON.stringify(cart));
-    
-    // Update all cart-related displays automatically
-    updateAllCartDisplays();
-    
-    console.log(`Đã thêm ${qty} x "${productName}" vào giỏ. Tổng mặt hàng: ${cart.length}`);
 }
 
 // Update cart display
@@ -2120,10 +2220,14 @@ function toggleCartEmptyUI(isEmpty) {
             a.classList.add('disabled');
             a.setAttribute('aria-disabled', 'true');
             a.setAttribute('tabindex', '-1');
+            a.style.pointerEvents = 'none';
+            a.style.opacity = '0.6';
         } else {
             a.classList.remove('disabled');
             a.removeAttribute('aria-disabled');
             a.removeAttribute('tabindex');
+            a.style.pointerEvents = 'auto';
+            a.style.opacity = '1';
         }
     });
 
@@ -2286,13 +2390,32 @@ function updateCartSummary() {
     const shippingEl = document.querySelector('.cart-shipping');
     const totalEl = document.querySelector('.cart-total');
     const savingsEl = document.querySelector('.cart-savings');
+    const checkoutBtn = document.getElementById('checkoutBtn');
     
     if (cart.length === 0) {
         if (subtotalEl) subtotalEl.textContent = '0đ';
         if (shippingEl) shippingEl.textContent = '0đ';
         if (totalEl) totalEl.textContent = '0đ';
         if (savingsEl) savingsEl.textContent = '0đ';
+        
+        // Disable checkout button when cart is empty
+        if (checkoutBtn) {
+            checkoutBtn.classList.add('disabled');
+            checkoutBtn.setAttribute('aria-disabled', 'true');
+            checkoutBtn.setAttribute('tabindex', '-1');
+            checkoutBtn.style.pointerEvents = 'none';
+            checkoutBtn.style.opacity = '0.6';
+        }
         return;
+    }
+    
+    // Enable checkout button when cart has items
+    if (checkoutBtn) {
+        checkoutBtn.classList.remove('disabled');
+        checkoutBtn.removeAttribute('aria-disabled');
+        checkoutBtn.removeAttribute('tabindex');
+        checkoutBtn.style.pointerEvents = 'auto';
+        checkoutBtn.style.opacity = '1';
     }
     
     let subtotal = 0;
@@ -2377,6 +2500,32 @@ function updateCartSummary() {
     console.log('Shipping savings (50% off):', originalShipping - shipping);
     console.log('Total savings:', totalSavings);
     console.log('=== END CART SUMMARY ===');
+}
+
+// Update checkout button state based on cart content
+function updateCheckoutButtonState() {
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    
+    if (!checkoutBtn) return;
+    
+    if (cart.length === 0) {
+        // Disable checkout button when cart is empty
+        checkoutBtn.classList.add('disabled');
+        checkoutBtn.setAttribute('aria-disabled', 'true');
+        checkoutBtn.setAttribute('tabindex', '-1');
+        checkoutBtn.style.pointerEvents = 'none';
+        checkoutBtn.style.opacity = '0.6';
+        console.log('Checkout button disabled - cart is empty');
+    } else {
+        // Enable checkout button when cart has items
+        checkoutBtn.classList.remove('disabled');
+        checkoutBtn.removeAttribute('aria-disabled');
+        checkoutBtn.removeAttribute('tabindex');
+        checkoutBtn.style.pointerEvents = 'auto';
+        checkoutBtn.style.opacity = '1';
+        console.log('Checkout button enabled - cart has items');
+    }
 }
 
 // Save payment method to localStorage
@@ -2494,33 +2643,40 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
             return;
         }
 
-        // Tạo grid layout cho sản phẩm gợi ý (responsive theo thiết bị)
-        let productsHTML = '<div class="row g-2">';
+        // Tạo grid layout cho sản phẩm gợi ý (2 hàng, mỗi hàng 5 sản phẩm)
+        let productsHTML = '';
         
         // Xác định số lượng tối đa theo thiết bị
         const isMobile = window.innerWidth <= 767;
-        const maxItems = isMobile ? 4 : 10;
+        const maxItems = isMobile ? 6 : 10;
         const count = Math.min(products.length, maxItems);
         
-        for (let i = 0; i < count; i++) {
+        // Tạo layout responsive
+        const itemsPerRow = isMobile ? 2 : 5;
+        const rows = Math.ceil(count / itemsPerRow);
+        
+        for (let row = 0; row < rows; row++) {
+            productsHTML += '<div class="row g-2" style="margin-bottom: 10px !important;">';
+            
+            const startIndex = row * itemsPerRow;
+            const endIndex = Math.min(startIndex + itemsPerRow, count);
+            
+            for (let i = startIndex; i < endIndex; i++) {
             const product = products[i];
             
             if (product) {
-                // Có sản phẩm - hiển thị thông tin
-                const mainVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
-                const albumObject = product.album; 
-                const imagesArray = albumObject && Array.isArray(albumObject.images) ? albumObject.images : [];
-                const thumbnailImage = imagesArray.find(img => img.is_thumbnail)?.image;
-                const firstImage = imagesArray.length > 0 ? imagesArray[0].image : null;
-                const imageUrl = thumbnailImage || firstImage || '/static/image/default-product.jpg';
-                
-                const originalPrice = mainVariant ? mainVariant.original_price * 1000 : null;
-                const discountedPrice = mainVariant ? mainVariant.discounted_price * 1000 : null;
-                const discountRate = (originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0;
-                const stockQuantity = mainVariant ? mainVariant.stock_quantity : 0;
+                // Map sang Product model (không dùng variants/album)
+                const imageUrl = (product.image && String(product.image).trim()) || '/static/image/default-product.jpg';
+                const brandName = product.brand_name || (product.brand ? product.brand.name : '');
+                const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
+                const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
+                const discountRate = (typeof product.discount_rate === 'number')
+                    ? Math.round(product.discount_rate)
+                    : ((originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0);
+                const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
 
                 productsHTML += `
-                    <div class="col-6 col-lg">
+                    <div class="col-6 col-lg" style="flex: 0 0 ${isMobile ? '50%' : '20%'}; max-width: ${isMobile ? '50%' : '20%'};">
                         <div class="card suggested-product-card h-100 border-0 shadow-sm">
                             <div class="position-relative">
                                 <a href="/product/${product.id}" class="text-decoration-none">
@@ -2550,9 +2706,11 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
                     </div>
                 `;
             }
+            }
+            
+            productsHTML += '</div>'; // Đóng row
         }
         
-        productsHTML += '</div>';
         container.innerHTML = productsHTML;
 
         // Re-initialize Product Cards with new DOM elements
@@ -2580,6 +2738,9 @@ function updateAllCartDisplays() {
     // Update summaries if they exist
     updateCartSummary();
     updateCheckoutSummary();
+    
+    // Update checkout button state
+    updateCheckoutButtonState();
     
     console.log('=== ALL CART DISPLAYS UPDATED ===');
 }
@@ -2710,56 +2871,151 @@ defineProductDetailInit = (function(){
     }
 
     function populateDetail(p) {
-        const mainVariant = p.variants && p.variants.length ? p.variants[0] : null;
-        const album = p.album && Array.isArray(p.album.images) ? p.album.images : [];
-        const thumb = album.find(img => img.is_thumbnail)?.image || (album[0]?.image);
-        const brandName = p.brand ? p.brand.name : '';
-        const original = mainVariant ? mainVariant.original_price * 1000 : null;
-        const discounted = mainVariant ? mainVariant.discounted_price * 1000 : null;
-        const rating = mainVariant ? mainVariant.rating : 0;
-        const stock = mainVariant ? mainVariant.stock_quantity : 0;
+        console.log('🎯 populateDetail called with data:', p);
+        console.log('📦 Product name:', p.name);
+        console.log('💰 Product price:', p.sale_price || p.discounted_price);
+        
+        // Xử lý cả dữ liệu cũ (Flask demo) và mới (API)
+        let imageUrl, brandName, original, discounted, rating, stock, soldQuantity;
+        
+        if (p.image && p.image.startsWith('http')) {
+            // Dữ liệu mới từ API
+            imageUrl = (p.image && String(p.image).trim()) || '/static/image/default-product.jpg';
+            brandName = p.brand_name || (p.brand ? p.brand.name : '');
+            original = typeof p.original_price === 'number' ? p.original_price * 1000 : null;
+            discounted = typeof p.discounted_price === 'number' ? p.discounted_price * 1000 : null;
+            rating = typeof p.rating === 'number' ? p.rating : (parseFloat(p.rating) || 0);
+            stock = typeof p.stock_quantity === 'number' ? p.stock_quantity : 0;
+            soldQuantity = typeof p.sold_quantity === 'number' ? p.sold_quantity : 0;
+        } else {
+            // Dữ liệu từ API PythonAnywhere
+            imageUrl = (p.image && String(p.image).trim()) || '/static/image/default-product.jpg';
+            brandName = p.brand_name || (p.brand ? p.brand.name : '');
+            original = typeof p.original_price === 'number' ? p.original_price * 1000 : null;
+            discounted = typeof p.discounted_price === 'number' ? p.discounted_price * 1000 : null;
+            rating = typeof p.rating === 'number' ? p.rating : (parseFloat(p.rating) || 0);
+            stock = typeof p.stock_quantity === 'number' ? p.stock_quantity : 0;
+            soldQuantity = typeof p.sold_quantity === 'number' ? p.sold_quantity : 0;
+        }
 
+        console.log('🖼️ Setting image URL:', imageUrl);
         const mainImage = document.getElementById('mainImage');
-        if (mainImage && thumb) mainImage.src = thumb;
+        if (mainImage) {
+            mainImage.src = imageUrl;
+            console.log('✅ Main image updated');
+        } else {
+            console.log('❌ Main image element not found');
+        }
 
         const thumbnailContainer = document.getElementById('thumbnailContainer');
         if (thumbnailContainer) {
             thumbnailContainer.innerHTML = '';
-            album.slice(0,6).forEach(img => {
-                const el = document.createElement('img');
-                el.src = img.image;
-                el.alt = 'Thumbnail';
-                el.className = 'img-thumbnail cursor-pointer';
-                el.style.width = '80px';
-                el.style.height = '80px';
-                el.style.objectFit = 'cover';
-                el.addEventListener('click', () => changeMainImage(img.image));
-                thumbnailContainer.appendChild(el);
-            });
+            // For now, just show the main image as thumbnail since we don't have album
+            const el = document.createElement('img');
+            el.src = imageUrl;
+            el.alt = 'Thumbnail';
+            el.className = 'img-thumbnail cursor-pointer';
+            el.style.width = '80px';
+            el.style.height = '80px';
+            el.style.objectFit = 'cover';
+            el.addEventListener('click', () => changeMainImage(imageUrl));
+            thumbnailContainer.appendChild(el);
         }
 
-        const nameEl = document.getElementById('detailName'); if (nameEl) nameEl.textContent = p.name || 'Sản phẩm';
+        const nameEl = document.getElementById('detailName'); 
+        if (nameEl) {
+            nameEl.textContent = p.name || 'Sản phẩm';
+            console.log('✅ Product name updated:', p.name);
+        } else {
+            console.log('❌ Product name element not found');
+        }
         const brandEl = document.getElementById('detailBrand'); if (brandEl) brandEl.textContent = brandName;
+        const brandFeatureEl = document.getElementById('detailBrandFeature'); if (brandFeatureEl) brandFeatureEl.textContent = brandName;
         setStars(document.getElementById('detailStars'), rating);
-        const reviewsEl = document.getElementById('detailReviews'); if (reviewsEl) reviewsEl.textContent = `(${mainVariant?.reviews || 0} đánh giá)`;
-        const stockEl = document.getElementById('detailStock'); if (stockEl) stockEl.textContent = stock > 0 ? 'Còn hàng' : 'Hết hàng';
+        const reviewsEl = document.getElementById('detailReviews'); if (reviewsEl) reviewsEl.textContent = `(${soldQuantity} đã bán)`;
+        const stockEl = document.getElementById('detailStock'); if (stockEl) stockEl.textContent = stock > 0 ? `Còn ${stock} sản phẩm` : 'Hết hàng';
 
         const oEl = document.getElementById('detailOriginalPrice'); if (oEl && original) oEl.textContent = formatPrice(original);
         const dEl = document.getElementById('detailDiscountedPrice'); if (dEl && discounted) dEl.textContent = formatPrice(discounted);
         const badge = document.getElementById('detailDiscountBadge');
         if (badge && original && discounted && original > discounted) {
-            const rate = Math.round(((original - discounted) / original) * 100);
+            const rate = typeof p.discount_rate === 'number' 
+                ? Math.round(p.discount_rate) 
+                : Math.round(((original - discounted) / original) * 100);
             badge.style.display = '';
             badge.textContent = `-${rate}%`;
         }
         const saveEl = document.getElementById('detailSavings');
-        if (saveEl && original && discounted) saveEl.textContent = `Tiết kiệm: ${formatPrice(original - discounted)}`;
+        if (saveEl && original && discounted) {
+            const savings = original - discounted;
+            saveEl.textContent = `Tiết kiệm: ${formatPrice(savings)}`;
+        }
 
-        const descEl = document.getElementById('detailDescription'); if (descEl) descEl.textContent = p.description || 'Chưa có mô tả.';
-        const specEl = document.getElementById('detailSpecifications'); if (specEl) specEl.textContent = p.specifications?.note || 'Chưa có thông số.';
+        const descEl = document.getElementById('detailDescription'); 
+        if (descEl) descEl.innerHTML = p.description || 'Chưa có mô tả.';
+        
+        const specEl = document.getElementById('detailSpecifications'); 
+        if (specEl) {
+            // Create specifications from API data
+            let specsHTML = '<div class="row">';
+            
+            // Xử lý dữ liệu từ API PythonAnywhere
+            if (p.volume) specsHTML += `<div class="col-md-6"><strong>Dung tích:</strong> ${p.volume}</div>`;
+            if (p.unit) specsHTML += `<div class="col-md-6"><strong>Đơn vị:</strong> ${p.unit}</div>`;
+            if (p.status) {
+                const statusText = {
+                    'new': 'Mới 100%',
+                    'test': 'Đã test 1-2 lần',
+                    '30': 'Còn 30%',
+                    '50': 'Còn 50%',
+                    '70': 'Còn 70%',
+                    '80': 'Còn 80%',
+                    '90': 'Còn 90%',
+                    '95': 'Còn 95%',
+                    'newmh': 'Mới nhưng mất hộp',
+                    'newrt': 'Mới nhưng rách tem',
+                    'newx': 'Mới nhưng hộp bị xước',
+                    'chiet': 'Sản phẩm chiết'
+                }[p.status] || p.status;
+                specsHTML += `<div class="col-md-6"><strong>Tình trạng:</strong> ${statusText}</div>`;
+            }
+            if (p.ingredients) specsHTML += `<div class="col-12"><strong>Thành phần:</strong><br>${p.ingredients}</div>`;
+            
+            specsHTML += '</div>';
+            specEl.innerHTML = specsHTML || 'Chưa có thông số.';
+        }
 
         const crumb = document.getElementById('detailBreadcrumb'); if (crumb) crumb.textContent = p.name || '';
         const catEl = document.getElementById('detailCategory'); if (catEl) catEl.textContent = p.category?.name || 'Danh mục';
+
+        // Display tags
+        const tagsContainer = document.getElementById('detailTags');
+        const tagsList = document.getElementById('detailTagsList');
+        if (tagsContainer && tagsList && p.tags && p.tags.length > 0) {
+            tagsContainer.style.display = '';
+            tagsList.innerHTML = p.tags.map(tag => 
+                `<span class="badge bg-primary me-2 mb-2">${tag.name || tag}</span>`
+            ).join('');
+        }
+
+        // Display gifts
+        const giftsContainer = document.getElementById('detailGifts');
+        const giftsList = document.getElementById('detailGiftsList');
+        if (giftsContainer && giftsList && p.gifts && p.gifts.length > 0) {
+            giftsContainer.style.display = '';
+            giftsList.innerHTML = p.gifts.map(gift => 
+                `<div class="d-flex align-items-center mb-2">
+                    <img src="${gift.image || '/static/image/default-product.jpg'}" 
+                         alt="${gift.name}" 
+                         class="me-2" 
+                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
+                    <div>
+                        <div class="fw-semibold">${gift.name}</div>
+                        <small class="text-muted">${gift.description || ''}</small>
+                    </div>
+                </div>`
+            ).join('');
+        }
 
         // Wire add to cart
         const addBtn = document.getElementById('detailAddToCartBtn');
@@ -2767,7 +3023,7 @@ defineProductDetailInit = (function(){
             addBtn.addEventListener('click', () => {
                 const qty = Math.max(1, parseInt(document.getElementById('quantity')?.value || '1', 10) || 1);
                 const productPriceText = formatPrice(discounted || original || 0);
-                addProductToCart(String(p.id), p.name, productPriceText, (thumb || ''), original ? formatPrice(original) : null, qty);
+                addProductToCart(String(p.id), p.name, productPriceText, imageUrl, original ? formatPrice(original) : null, qty);
                 const imgEl = document.getElementById('mainImage');
                 flyToCart(imgEl, () => {
                     updateCartCount();
@@ -2780,7 +3036,7 @@ defineProductDetailInit = (function(){
             buyBtn.addEventListener('click', () => {
                 const qty = parseInt(document.getElementById('quantity')?.value || '1', 10) || 1;
                 const productPriceText = formatPrice(discounted || original || 0);
-                addProductToCart(String(p.id), p.name, productPriceText, (thumb || ''), original ? formatPrice(original) : null);
+                addProductToCart(String(p.id), p.name, productPriceText, imageUrl, original ? formatPrice(original) : null);
                 window.location.href = '/checkout';
             });
         }
@@ -2800,11 +3056,23 @@ defineProductDetailInit = (function(){
         if (!document.getElementById('product-detail-page')) return;
         const id = parseProductIdFromPath();
         if (!id) return;
+        
+        // Kiểm tra xem có dữ liệu từ Flask template không
+        const productData = window.productData;
+        if (productData) {
+            console.log('Using product data from Flask template:', productData);
+            populateDetail(productData);
+            return;
+        }
+        
+        // Fallback: fetch từ API PythonAnywhere
         const apiUrl = `https://buddyskincare.pythonanywhere.com/products/${id}/`;
+        console.log('Fetching product from API:', apiUrl);
         fetch(apiUrl)
             .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
             .then(populateDetail)
-            .catch(() => {
+            .catch((error) => {
+                console.error('API fetch failed:', error);
                 showNotification('Không tìm thấy sản phẩm hoặc xảy ra lỗi khi tải dữ liệu.', 'error');
             });
     }
@@ -2990,4 +3258,60 @@ function initRelatedProducts() {
             container.innerHTML = '<p class="text-center text-danger">Không thể tải sản phẩm liên quan.</p>';
         });
 }
+
+// Global function to initialize product detail page
+window.initProductDetailPageGlobal = function() {
+    console.log('🔍 initProductDetailPageGlobal called');
+    
+    if (!document.getElementById('product-detail-page')) {
+        console.log('❌ product-detail-page element not found');
+        return;
+    }
+    
+    const id = parseProductIdFromPath();
+    if (!id) {
+        console.log('❌ Product ID not found in URL');
+        return;
+    }
+    
+    console.log('✅ Product ID found:', id);
+    
+    // Kiểm tra xem có dữ liệu từ Flask template không
+    const productData = window.productData;
+    if (productData) {
+        console.log('✅ Using product data from Flask template:', productData);
+        console.log('📦 Product name:', productData.name);
+        console.log('💰 Product price:', productData.sale_price);
+        
+        try {
+            populateDetail(productData);
+            console.log('✅ populateDetail called successfully');
+        } catch (error) {
+            console.error('❌ Error in populateDetail:', error);
+        }
+        return;
+    }
+    
+    console.log('⚠️ No product data from Flask template, trying API...');
+    
+    // Fallback: fetch từ API PythonAnywhere
+    const apiUrl = `https://buddyskincare.pythonanywhere.com/products/${id}/`;
+    console.log('Fetching product from API:', apiUrl);
+    fetch(apiUrl)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
+        .then(populateDetail)
+        .catch((error) => {
+            console.error('API fetch failed:', error);
+            showNotification('Không tìm thấy sản phẩm hoặc xảy ra lỗi khi tải dữ liệu.', 'error');
+        });
+};
+
+// Initialize product detail page when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize product detail page if we're on a product detail page
+    if (document.getElementById('product-detail-page')) {
+        console.log('Initializing product detail page...');
+        window.initProductDetailPageGlobal();
+    }
+});
 

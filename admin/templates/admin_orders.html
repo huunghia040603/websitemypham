@@ -1,0 +1,532 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Quản Lý Đơn Hàng - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-shopping-cart me-2"></i>Quản Lý Đơn Hàng
+            </h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="exportOrders()">
+                    <i class="fas fa-download me-2"></i>Xuất Excel
+                </button>
+                <button class="btn btn-primary" onclick="refreshOrders()">
+                    <i class="fas fa-sync me-2"></i>Làm Mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="orderSearch" class="form-label">Tìm kiếm đơn hàng</label>
+                        <input type="text" class="form-control" id="orderSearch" placeholder="ID, tên khách hàng...">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="statusFilter" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Tất cả</option>
+                            <option value="pending">Chờ xử lý</option>
+                            <option value="confirmed">Đã xác nhận</option>
+                            <option value="shipped">Đã giao</option>
+                            <option value="delivered">Đã nhận</option>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="confirmationFilter" class="form-label">Xác nhận</label>
+                        <select class="form-select" id="confirmationFilter">
+                            <option value="">Tất cả</option>
+                            <option value="true">Đã xác nhận</option>
+                            <option value="false">Chưa xác nhận</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="dateFilter" class="form-label">Ngày tạo</label>
+                        <input type="date" class="form-control" id="dateFilter">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-outline-secondary w-100" onclick="clearOrderFilters()">
+                            <i class="fas fa-times me-1"></i>Xóa Lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Orders Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Danh Sách Đơn Hàng
+                    <span class="badge bg-primary ms-2" id="orderCount">0</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="ordersContainer">
+                    <div class="loading-spinner show">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Đang tải danh sách đơn hàng...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Detail Modal -->
+<div class="modal fade" id="orderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye me-2"></i>Chi Tiết Đơn Hàng #<span id="orderDetailId"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="orderDetailContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning" id="cancelOrderBtn" onclick="cancelOrder()" style="display: none;">
+                    <i class="fas fa-times me-2"></i>Hủy Đơn Hàng
+                </button>
+                <button type="button" class="btn btn-success" id="confirmOrderBtn" onclick="confirmOrder()" style="display: none;">
+                    <i class="fas fa-check me-2"></i>Xác Nhận Đơn Hàng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Order Modal -->
+<div class="modal fade" id="editOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Chỉnh Sửa Đơn Hàng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editOrderForm">
+                    <input type="hidden" id="editOrderId">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerName" class="form-label">Tên khách hàng</label>
+                            <input type="text" class="form-control" id="editCustomerName">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerPhone" class="form-label">Số điện thoại</label>
+                            <input type="text" class="form-control" id="editCustomerPhone">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editCustomerAddress" class="form-label">Địa chỉ giao hàng</label>
+                        <textarea class="form-control" id="editCustomerAddress" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editOrderStatus" class="form-label">Trạng thái đơn hàng</label>
+                            <select class="form-select" id="editOrderStatus">
+                                <option value="pending">Chờ xử lý</option>
+                                <option value="confirmed">Đã xác nhận</option>
+                                <option value="shipped">Đã giao</option>
+                                <option value="delivered">Đã nhận</option>
+                                <option value="cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editOrderConfirmed" class="form-label">Xác nhận đơn hàng</label>
+                            <select class="form-select" id="editOrderConfirmed">
+                                <option value="false">Chưa xác nhận</option>
+                                <option value="true">Đã xác nhận</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editOrderNotes" class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="editOrderNotes" rows="2"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="updateOrder()">
+                    <i class="fas fa-save me-2"></i>Cập Nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allOrders = [];
+let filteredOrders = [];
+let currentOrderId = null;
+
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadOrders();
+    setupEventListeners();
+});
+
+async function loadOrders() {
+    try {
+        AdminAPI.showLoading('ordersContainer');
+        allOrders = await AdminAPI.fetchOrders();
+        filteredOrders = [...allOrders];
+        
+        renderOrders();
+        updateOrderCount();
+        
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        document.getElementById('ordersContainer').innerHTML = 
+            '<p class="text-danger text-center py-4">Lỗi khi tải danh sách đơn hàng</p>';
+    }
+}
+
+function renderOrders() {
+    const container = document.getElementById('ordersContainer');
+    
+    if (filteredOrders.length === 0) {
+        container.innerHTML = '<p class="text-muted text-center py-4">Không có đơn hàng nào</p>';
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-admin">';
+    html += '<thead><tr><th>ID</th><th>Khách Hàng</th><th>Sản Phẩm</th><th>Tổng Tiền</th><th>Trạng Thái</th><th>Xác Nhận</th><th>Ngày Tạo</th><th>Thao Tác</th></tr></thead><tbody>';
+    
+    filteredOrders.forEach(order => {
+        const statusClass = {
+            'pending': 'status-pending',
+            'confirmed': 'status-confirmed',
+            'shipped': 'status-shipped',
+            'delivered': 'status-delivered',
+            'cancelled': 'status-cancelled'
+        }[order.status] || 'status-pending';
+        
+        const statusText = {
+            'pending': 'Chờ xử lý',
+            'confirmed': 'Đã xác nhận',
+            'shipped': 'Đã giao',
+            'delivered': 'Đã nhận',
+            'cancelled': 'Đã hủy'
+        }[order.status] || order.status;
+        
+        const confirmationBadge = order.is_confirmed ? 
+            '<span class="badge bg-success">Đã xác nhận</span>' : 
+            '<span class="badge bg-warning">Chưa xác nhận</span>';
+        
+        const itemCount = order.items ? order.items.length : 0;
+        const totalAmount = AdminAPI.formatPrice(order.total_amount);
+        const createdDate = AdminAPI.formatDate(order.created_at);
+        
+        html += `
+            <tr>
+                <td><strong>#${order.id}</strong></td>
+                <td>
+                    <div>${order.customer_name || 'N/A'}</div>
+                    <small class="text-muted">${order.customer_phone || 'N/A'}</small>
+                </td>
+                <td>
+                    <span class="badge bg-info">${itemCount} sản phẩm</span>
+                </td>
+                <td><strong>${totalAmount}</strong></td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>${confirmationBadge}</td>
+                <td>${createdDate}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="viewOrderDetail(${order.id})" data-bs-toggle="tooltip" title="Xem chi tiết">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="editOrder(${order.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    
+    // Re-initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+function setupEventListeners() {
+    document.getElementById('orderSearch').addEventListener('input', filterOrders);
+    document.getElementById('statusFilter').addEventListener('change', filterOrders);
+    document.getElementById('confirmationFilter').addEventListener('change', filterOrders);
+    document.getElementById('dateFilter').addEventListener('change', filterOrders);
+}
+
+function filterOrders() {
+    const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const confirmationFilter = document.getElementById('confirmationFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    filteredOrders = allOrders.filter(order => {
+        const matchesSearch = 
+            order.id.toString().includes(searchTerm) ||
+            (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm));
+        
+        const matchesStatus = !statusFilter || order.status === statusFilter;
+        const matchesConfirmation = !confirmationFilter || order.is_confirmed.toString() === confirmationFilter;
+        
+        let matchesDate = true;
+        if (dateFilter) {
+            const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+            matchesDate = orderDate === dateFilter;
+        }
+        
+        return matchesSearch && matchesStatus && matchesConfirmation && matchesDate;
+    });
+    
+    renderOrders();
+    updateOrderCount();
+}
+
+function clearOrderFilters() {
+    document.getElementById('orderSearch').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('confirmationFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    filterOrders();
+}
+
+function updateOrderCount() {
+    document.getElementById('orderCount').textContent = filteredOrders.length;
+}
+
+async function viewOrderDetail(orderId) {
+    currentOrderId = orderId;
+    const order = allOrders.find(o => o.id === orderId);
+    
+    if (!order) {
+        AdminAPI.showNotification('Không tìm thấy đơn hàng', 'error');
+        return;
+    }
+    
+    // Show modal
+    document.getElementById('orderDetailId').textContent = orderId;
+    new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
+    
+    // Load order detail content
+    await loadOrderDetail(order);
+}
+
+async function loadOrderDetail(order) {
+    const container = document.getElementById('orderDetailContent');
+    
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6><i class="fas fa-user me-2"></i>Thông Tin Khách Hàng</h6>
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>Tên:</strong> ${order.customer_name || 'N/A'}</p>
+                        <p><strong>SĐT:</strong> ${order.customer_phone || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${order.customer_email || 'N/A'}</p>
+                        <p><strong>Địa chỉ:</strong> ${order.customer_address || 'N/A'}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6><i class="fas fa-info-circle me-2"></i>Thông Tin Đơn Hàng</h6>
+                <div class="card">
+                    <div class="card-body">
+                        <p><strong>ID:</strong> #${order.id}</p>
+                        <p><strong>Trạng thái:</strong> 
+                            <span class="badge ${order.status === 'pending' ? 'status-pending' : order.status === 'confirmed' ? 'status-confirmed' : 'status-cancelled'}">
+                                ${order.status}
+                            </span>
+                        </p>
+                        <p><strong>Xác nhận:</strong> 
+                            <span class="badge ${order.is_confirmed ? 'bg-success' : 'bg-warning'}">
+                                ${order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận'}
+                            </span>
+                        </p>
+                        <p><strong>Ngày tạo:</strong> ${AdminAPI.formatDate(order.created_at)}</p>
+                        <p><strong>Tổng tiền:</strong> <strong>${AdminAPI.formatPrice(order.total_amount)}</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    if (order.items && order.items.length > 0) {
+        html += `
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h6><i class="fas fa-box me-2"></i>Chi Tiết Sản Phẩm</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Sản Phẩm</th>
+                                    <th>Số Lượng</th>
+                                    <th>Giá</th>
+                                    <th>Thành Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+        `;
+        
+        order.items.forEach(item => {
+            html += `
+                <tr>
+                    <td>${item.product_name || 'N/A'}</td>
+                    <td>${item.quantity}</td>
+                    <td>${AdminAPI.formatPrice(item.price)}</td>
+                    <td>${AdminAPI.formatPrice(item.price * item.quantity)}</td>
+                </tr>
+            `;
+        });
+        
+        html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    container.innerHTML = html;
+    
+    // Show/hide action buttons based on order status
+    const confirmBtn = document.getElementById('confirmOrderBtn');
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+    
+    if (order.status === 'pending' && !order.is_confirmed) {
+        confirmBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    } else if (order.status === 'confirmed' && !order.is_confirmed) {
+        confirmBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
+    } else {
+        confirmBtn.style.display = 'none';
+        cancelBtn.style.display = 'none';
+    }
+}
+
+async function confirmOrder() {
+    if (!currentOrderId) return;
+    
+    if (!confirm('Bạn có chắc chắn muốn xác nhận đơn hàng này? Số lượng tồn kho sẽ được giảm tương ứng.')) {
+        return;
+    }
+    
+    try {
+        await AdminAPI.confirmOrder(currentOrderId);
+        await loadOrders(); // Reload orders
+        bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+        
+    } catch (error) {
+        console.error('Error confirming order:', error);
+    }
+}
+
+async function cancelOrder() {
+    if (!currentOrderId) return;
+    
+    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng tồn kho sẽ được khôi phục nếu đã xác nhận.')) {
+        return;
+    }
+    
+    try {
+        await AdminAPI.cancelOrder(currentOrderId);
+        await loadOrders(); // Reload orders
+        bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+        
+    } catch (error) {
+        console.error('Error cancelling order:', error);
+    }
+}
+
+function editOrder(orderId) {
+    const order = allOrders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Populate edit form
+    document.getElementById('editOrderId').value = order.id;
+    document.getElementById('editCustomerName').value = order.customer_name || '';
+    document.getElementById('editCustomerPhone').value = order.customer_phone || '';
+    document.getElementById('editCustomerAddress').value = order.customer_address || '';
+    document.getElementById('editOrderStatus').value = order.status || 'pending';
+    document.getElementById('editOrderConfirmed').value = order.is_confirmed ? 'true' : 'false';
+    document.getElementById('editOrderNotes').value = order.notes || '';
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('editOrderModal')).show();
+}
+
+async function updateOrder() {
+    const orderId = document.getElementById('editOrderId').value;
+    const formData = {
+        customer_name: document.getElementById('editCustomerName').value,
+        customer_phone: document.getElementById('editCustomerPhone').value,
+        customer_address: document.getElementById('editCustomerAddress').value,
+        status: document.getElementById('editOrderStatus').value,
+        is_confirmed: document.getElementById('editOrderConfirmed').value === 'true',
+        notes: document.getElementById('editOrderNotes').value
+    };
+    
+    try {
+        await AdminAPI.updateOrder(orderId, formData);
+        AdminAPI.showNotification('Cập nhật đơn hàng thành công!', 'success');
+        
+        // Close modal and reload data
+        bootstrap.Modal.getInstance(document.getElementById('editOrderModal')).hide();
+        await loadOrders();
+        
+    } catch (error) {
+        console.error('Error updating order:', error);
+    }
+}
+
+function refreshOrders() {
+    loadOrders();
+}
+
+function exportOrders() {
+    AdminAPI.showNotification('Tính năng xuất Excel cần được implement', 'info');
+}
+</script>
+{% endblock %}
