@@ -968,9 +968,19 @@ function formatPrice(price) {
 
 // Hàm tạo HTML cho một sản phẩm (không bọc cột)
 function createProductCard(product) {
-    // Map to backend Product model (no variants/album)
-    const imageUrl = (product.image && String(product.image).trim()) || '/static/image/default-product.jpg';
-    const brandName = product.brand_name ? (product.brand_name || 'Không rõ') : 'Không rõ';
+    // Lấy variant đầu tiên để hiển thị thông tin chính
+    const mainVariant = product.variants && product.variants.length > 0 ? product.variants[0] : null;
+
+    // Lấy ảnh thumbnail và xử lý trường hợp album không phải là mảng
+    const albumObject = product.album; 
+    const imagesArray = albumObject && Array.isArray(albumObject.images) ? albumObject.images : [];
+
+    const thumbnailImage = imagesArray.find(img => img.is_thumbnail)?.image;
+    const firstImage = imagesArray.length > 0 ? imagesArray[0].image : null;
+    const imageUrl = thumbnailImage || firstImage || '/static/image/default-product.jpg';
+
+    // Lấy thương hiệu
+    const brandName = product.brand ? product.brand.name : 'Không rõ';
 
     // Prices in model are in thousands → convert to VND
     const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
