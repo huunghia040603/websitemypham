@@ -37,97 +37,61 @@
             <div class="col-lg-3">
                 <div class="filters-sidebar">
                     <h5 class="fw-bold mb-4">Bộ Lọc</h5>
-                    
-                    <!-- Category Filter -->
-                    <div class="filter-group mb-4">
-                        <h6 class="fw-semibold mb-3">Danh Mục</h6>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="category1" checked>
-                            <label class="form-check-label" for="category1">Son Môi (50)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="category2">
-                            <label class="form-check-label" for="category2">Kem Nền (30)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="category3">
-                            <label class="form-check-label" for="category3">Chăm Sóc Da (80)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="category4">
-                            <label class="form-check-label" for="category4">Nước Hoa (25)</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="category5">
-                            <label class="form-check-label" for="category5">Trang Điểm Mắt (40)</label>
-                        </div>
-                    </div>
-                    
                     <!-- Brand Filter -->
                     <div class="filter-group mb-4">
                         <h6 class="fw-semibold mb-3">Thương Hiệu</h6>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brand1">
-                            <label class="form-check-label" for="brand1">Mac Cosmetics</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brand2">
-                            <label class="form-check-label" for="brand2">Estee Lauder</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brand3">
-                            <label class="form-check-label" for="brand3">Dior</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brand4">
-                            <label class="form-check-label" for="brand4">Chanel</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="brand5">
-                            <label class="form-check-label" for="brand5">The Ordinary</label>
-                        </div>
+                        <div id="filterBrands" class="d-flex flex-column gap-2" style="max-height: 280px; overflow:auto;"></div>
                     </div>
                     
+                    <!-- Tags Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Tags</h6>
+                        <div id="filterTags" class="d-flex flex-column gap-2" style="max-height: 200px; overflow:auto;"></div>
+                    </div>
+                
+                   
                     <!-- Price Filter -->
                     <div class="filter-group mb-4">
                         <h6 class="fw-semibold mb-3">Khoảng Giá</h6>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="price" id="price1">
-                            <label class="form-check-label" for="price1">Dưới 500.000đ</label>
+                            <input class="form-check-input" type="radio" name="price_range" id="pr_under_200" value="under_200k">
+                            <label class="form-check-label" for="pr_under_200">Dưới 200.000đ</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="price" id="price2">
-                            <label class="form-check-label" for="price2">500.000đ - 1.000.000đ</label>
+                            <input class="form-check-input" type="radio" name="price_range" id="pr_200_500" value="200_500">
+                            <label class="form-check-label" for="pr_200_500">200.000đ - 500.000đ</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="price" id="price3">
-                            <label class="form-check-label" for="price3">1.000.000đ - 2.000.000đ</label>
+                            <input class="form-check-input" type="radio" name="price_range" id="pr_500_1m" value="500_1m">
+                            <label class="form-check-label" for="pr_500_1m">500.000đ - 1.000.000đ</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="price" id="price4">
-                            <label class="form-check-label" for="price4">Trên 2.000.000đ</label>
+                            <input class="form-check-input" type="radio" name="price_range" id="pr_over_1m" value="over_1m">
+                            <label class="form-check-label" for="pr_over_1m">Trên 1.000.000đ</label>
                         </div>
                     </div>
+
+                    
                     
                     <!-- Condition Filter -->
                     <div class="filter-group mb-4">
                         <h6 class="fw-semibold mb-3">Tình Trạng Sản Phẩm</h6>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="condition" id="condition1" value="all" {% if current_condition == 'all' %}checked{% endif %}>
-                            <label class="form-check-label" for="condition1">
-                                <i class="fas fa-th-large text-primary"></i> Tất cả
+                            <input class="form-check-input" type="radio" name="condition" id="condition_all" value="all" {% if current_condition == 'all' %}checked{% endif %}>
+                            <label class="form-check-label" for="condition_all">
+                                <i class="fas fa-th-large text-primary"></i> Tất cả sản phẩm
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="condition" id="condition2" value="Mới 100%" {% if current_condition == 'Mới 100%' %}checked{% endif %}>
-                            <label class="form-check-label" for="condition2">
-                                <i class="fas fa-tag text-success"></i> Mới 100% <small class="text-muted">(Chính hãng)</small>
+                            <input class="form-check-input" type="radio" name="condition" id="condition_new" value="new" {% if current_condition == 'new' %}checked{% endif %}>
+                            <label class="form-check-label" for="condition_new">
+                                <i class="fas fa-tag text-success"></i> Sản phẩm mới 100%
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="condition" id="condition3" value="Đã sử dụng" {% if current_condition == 'Đã sử dụng' %}checked{% endif %}>
-                            <label class="form-check-label" for="condition3">
-                                <i class="fas fa-recycle text-warning"></i> Đã sử dụng <small class="text-muted">(Tiết kiệm 50-80%)</small>
+                            <input class="form-check-input" type="radio" name="condition" id="condition_used" value="used" {% if current_condition == 'used' %}checked{% endif %}>
+                            <label class="form-check-label" for="condition_used">
+                                <i class="fas fa-recycle text-warning"></i> Sản phẩm đã sử dụng
                             </label>
                         </div>
                     </div>
@@ -136,21 +100,27 @@
                     <div class="filter-group mb-4">
                         <h6 class="fw-semibold mb-3">Giảm Giá</h6>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="discount1">
-                            <label class="form-check-label" for="discount1">Trên 50%</label>
+                            <input class="form-check-input" type="radio" name="discount_range" id="dis_under_30" value="under_30">
+                            <label class="form-check-label" for="dis_under_30">Dưới 30%</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="discount2">
-                            <label class="form-check-label" for="discount2">30% - 50%</label>
+                            <input class="form-check-input" type="radio" name="discount_range" id="dis_50_70" value="50_70">
+                            <label class="form-check-label" for="dis_50_70">50% - 70%</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="discount3">
-                            <label class="form-check-label" for="discount3">Dưới 30%</label>
+                            <input class="form-check-input" type="radio" name="discount_range" id="dis_over_70" value="over_70">
+                            <label class="form-check-label" for="dis_over_70">Trên 70%</label>
                         </div>
+                    </div>
+
+                    <!-- Category Filter -->
+                    <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Danh Mục</h6>
+                        <div id="filterCategories" class="d-flex flex-column gap-2" style="max-height: 280px; overflow:auto;"></div>
                     </div>
                     
                     <!-- Clear Filters -->
-                    <button class="btn btn-outline-secondary w-100">Xóa Bộ Lọc</button>
+                    <a class="btn btn-outline-secondary w-100" href="/products">Xóa Bộ Lọc</a>
                 </div>
             </div>
             
@@ -199,4 +169,134 @@
         </div>
     </div>
 </section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+    const params = new URLSearchParams(window.location.search);
+    // Preselect price and discount
+    const pr = params.get('price_range') || params.get('price');
+    if (pr) {
+        const el = document.querySelector(`input[name="price_range"][value="${pr}"]`);
+        if (el) el.checked = true;
+    }
+    const dr = params.get('discount_range') || params.get('discount');
+    if (dr) {
+        const el = document.querySelector(`input[name="discount_range"][value="${dr}"]`);
+        if (el) el.checked = true;
+    }
+    const cond = params.get('condition');
+    if (cond) {
+        const el = document.querySelector(`input[name="condition"][value="${cond}"]`);
+        if (el) el.checked = true;
+    }
+
+    // Bind change events -> update URL
+    function updateParam(key, value) {
+        const p = new URLSearchParams(window.location.search);
+        if (!value) p.delete(key); else p.set(key, value);
+        // Reset to page 1 behavior by removing unrelated pagination params (if any)
+        p.delete('page');
+        const qs = p.toString();
+        window.location.href = `/products${qs ? ('?' + qs) : ''}`;
+    }
+
+    document.querySelectorAll('input[name="price_range"]').forEach(r => {
+        r.addEventListener('change', () => updateParam('price_range', r.checked ? r.value : ''));
+    });
+    document.querySelectorAll('input[name="discount_range"]').forEach(r => {
+        r.addEventListener('change', () => updateParam('discount_range', r.checked ? r.value : ''));
+    });
+    document.querySelectorAll('input[name="condition"]').forEach(r => {
+        r.addEventListener('change', () => updateParam('condition', r.checked ? r.value : ''));
+    });
+
+    // Render dynamic categories, brands, and tags
+    const catWrap = document.getElementById('filterCategories');
+    const brandWrap = document.getElementById('filterBrands');
+    const tagsWrap = document.getElementById('filterTags');
+    const selectedCat = params.get('category_name') || '';
+    const selectedBrand = params.get('brands_name') || '';
+    const selectedTag = params.get('tags') || '';
+
+    function makeFilterLink(label, key, value, isActive) {
+        const a = document.createElement('a');
+        a.href = '#';
+        a.className = `d-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded ${isActive ? 'bg-light' : ''}`;
+        a.innerHTML = `<span class="text-dark">${label}</span>${isActive ? '<i class="fas fa-check text-primary"></i>' : ''}`;
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const p = new URLSearchParams(window.location.search);
+            if (value) p.set(key, value); else p.delete(key);
+            p.delete('page');
+            window.location.href = `/products?${p.toString()}`;
+        });
+        return a;
+    }
+
+    // Fetch categories
+    fetch('https://buddyskincare.pythonanywhere.com/category/')
+      .then(r => r.ok ? r.json() : [])
+      .then(list => {
+        if (!Array.isArray(list)) return;
+        catWrap.innerHTML = '';
+        list.forEach(item => {
+            const name = item.name || item.title || '';
+            if (!name) return;
+            catWrap.appendChild(makeFilterLink(name, 'category_name', name, name === selectedCat));
+        });
+      }).catch(()=>{});
+
+    // Fetch brands
+    fetch('https://buddyskincare.pythonanywhere.com/brands/')
+      .then(r => r.ok ? r.json() : [])
+      .then(list => {
+        if (!Array.isArray(list)) return;
+        brandWrap.innerHTML = '';
+        
+        // Sort brands alphabetically by name
+        const sortedBrands = list
+          .map(item => ({
+            name: item.name || item.title || '',
+            item: item
+          }))
+          .filter(brand => brand.name)
+          .sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
+        
+        sortedBrands.forEach(brand => {
+            brandWrap.appendChild(makeFilterLink(brand.name, 'brands_name', brand.name, brand.name === selectedBrand));
+        });
+      }).catch(()=>{});
+
+    // Fetch tags from products
+    fetch('https://buddyskincare.pythonanywhere.com/products/')
+      .then(r => r.ok ? r.json() : [])
+      .then(products => {
+        if (!Array.isArray(products)) return;
+        tagsWrap.innerHTML = '';
+        
+        // Extract all unique tags from products
+        const allTags = new Set();
+        products.forEach(product => {
+          const tags = product?.tags || [];
+          if (Array.isArray(tags)) {
+            tags.forEach(tag => {
+              if (typeof tag === 'string' && tag.trim()) {
+                allTags.add(tag.trim());
+              } else if (tag && typeof tag === 'object' && tag.name && tag.name.trim()) {
+                allTags.add(tag.name.trim());
+              }
+            });
+          }
+        });
+        
+        // Sort tags alphabetically
+        const sortedTags = Array.from(allTags).sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
+        
+        sortedTags.forEach(tag => {
+            tagsWrap.appendChild(makeFilterLink(tag, 'tags', tag, tag === selectedTag));
+        });
+      }).catch(()=>{});
+})();
+</script>
 {% endblock %} 

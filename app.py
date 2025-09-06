@@ -75,6 +75,29 @@ testimonials_data = [
     }
 ]
 
+# Helper to classify product condition based on status keyword
+
+def _is_new_status(status: str) -> bool:
+    try:
+        if not status:
+            return False
+        s = str(status).lower()
+        return ('new' in s) or ('chiet' in s)
+    except Exception:
+        return False
+
+def _extract_category_name(product: dict) -> str:
+    try:
+        if not isinstance(product, dict):
+            return ''
+        cat = product.get('category')
+        if isinstance(cat, dict):
+            return (cat.get('name') or cat.get('title') or '').strip()
+        # Fallbacks if API provides flat fields
+        return (product.get('category_name') or product.get('category') or '').strip()
+    except Exception:
+        return ''
+
 @app.route('/')
 def index():
     """Trang chủ"""
@@ -143,36 +166,86 @@ def products():
     discount = request.args.get('discount')
     sort_by = request.args.get('sort', 'newest')
     condition = request.args.get('condition', 'all')
+
+    # Hỗ trợ tên tham số mới theo yêu cầu
+    category_name = request.args.get('category_name') or category
+    brands_name = request.args.get('brands_name') or brand
+    new_price_range = request.args.get('price_range') or price_range
+    new_discount = request.args.get('discount_range') or discount
+    tags_filter = request.args.get('tags')
     
     # Filter sản phẩm
     filtered_products = all_products.copy()
     
-    if category:
-        filtered_products = [p for p in filtered_products if p.get('category', {}).get('name') == category]
+    if category_name:
+        target = category_name.strip().lower()
+        filtered_products = [p for p in filtered_products if _extract_category_name(p).lower() == target]
     
-    if brand:
-        filtered_products = [p for p in filtered_products if p.get('brand_name') == brand]
+    if brands_name:
+        filtered_products = [p for p in filtered_products if (p.get('brand_name') or (p.get('brand') or {}).get('name') or '').strip() == brands_name]
     
     if condition != 'all':
         filtered_products = [p for p in filtered_products if p.get('status') == condition]
     
-    if price_range:
-        if price_range == 'under_500k':
-            filtered_products = [p for p in filtered_products if (p.get('discounted_price', 0) * 1000) < 500000]
-        elif price_range == '500k_1m':
-            filtered_products = [p for p in filtered_products if 500000 <= (p.get('discounted_price', 0) * 1000) < 1000000]
-        elif price_range == '1m_2m':
-            filtered_products = [p for p in filtered_products if 1000000 <= (p.get('discounted_price', 0) * 1000) < 2000000]
-        elif price_range == 'over_2m':
-            filtered_products = [p for p in filtered_products if (p.get('discounted_price', 0) * 1000) >= 2000000]
+    # Filter by tags
+    if tags_filter:
+        def has_tag(product, target_tag):
+            try:
+                tags = product.get('tags', [])
+                if not isinstance(tags, list):
+                    return False
+                return any(
+                    (isinstance(t, str) and t.lower() == target_tag.lower()) or
+                    (isinstance(t, dict) and t.get('name', '').lower() == target_tag.lower())
+                    for t in tags
+                )
+            except Exception:
+                return False
+        
+        filtered_products = [p for p in filtered_products if has_tag(p, tags_filter)]
     
-    if discount:
-        if discount == 'over_50':
-            filtered_products = [p for p in filtered_products if float(p.get('discount_rate', 0)) >= 50]
-        elif discount == '30_50':
-            filtered_products = [p for p in filtered_products if 30 <= float(p.get('discount_rate', 0)) < 50]
-        elif discount == 'under_30':
-            filtered_products = [p for p in filtered_products if float(p.get('discount_rate', 0)) < 30]
+    # Khoảng giá mới (VND)
+    if new_price_range:
+        def price_vnd(x):
+            return (x.get('discounted_price', 0) or 0) * 1000
+        if new_price_range == 'under_200k':
+            filtered_products = [p for p in filtered_products if price_vnd(p) < 200_000]
+        elif new_price_range == '200_500':
+            filtered_products = [p for p in filtered_products if 200_000 <= price_vnd(p) < 500_000]
+        elif new_price_range == '500_1m':
+            filtered_products = [p for p in filtered_products if 500_000 <= price_vnd(p) < 1_000_000]
+        elif new_price_range == 'over_1m':
+            filtered_products = [p for p in filtered_products if price_vnd(p) >= 1_000_000]
+        # Giữ tương thích cũ
+        elif new_price_range == 'under_500k':
+            filtered_products = [p for p in filtered_products if price_vnd(p) < 500_000]
+        elif new_price_range == '500k_1m':
+            filtered_products = [p for p in filtered_products if 500_000 <= price_vnd(p) < 1_000_000]
+        elif new_price_range == '1m_2m':
+            filtered_products = [p for p in filtered_products if 1_000_000 <= price_vnd(p) < 2_000_000]
+        elif new_price_range == 'over_2m':
+            filtered_products = [p for p in filtered_products if price_vnd(p) >= 2_000_000]
+    
+    # Giảm giá mới
+    if new_discount:
+        def rate(x):
+            try:
+                return float(x.get('discount_rate', 0) or 0)
+            except Exception:
+                return 0.0
+        if new_discount == 'under_30':
+            filtered_products = [p for p in filtered_products if rate(p) < 30]
+        elif new_discount == '50_70':
+            filtered_products = [p for p in filtered_products if 50 <= rate(p) <= 70]
+        elif new_discount == 'over_70':
+            filtered_products = [p for p in filtered_products if rate(p) > 70]
+        # Giữ tương thích cũ
+        elif new_discount == 'over_50':
+            filtered_products = [p for p in filtered_products if rate(p) >= 50]
+        elif new_discount == '30_50':
+            filtered_products = [p for p in filtered_products if 30 <= rate(p) < 50]
+        elif new_discount == 'under_30_old':
+            filtered_products = [p for p in filtered_products if rate(p) < 30]
     
     # Sort sản phẩm
     if sort_by == 'price_low':
@@ -204,8 +277,8 @@ def products_new():
         
         if response.status_code == 200:
             all_products = response.json()
-            # Filter products with status 'new'
-            filtered_products = [p for p in all_products if p.get('status') == 'new']
+            # Filter products with status treated as 'new' (contains 'new' or 'chiet')
+            filtered_products = [p for p in all_products if _is_new_status(p.get('status'))]
         else:
             filtered_products = []
             
@@ -232,8 +305,8 @@ def products_used():
         
         if response.status_code == 200:
             all_products = response.json()
-            # Filter products that are not 'new'
-            filtered_products = [p for p in all_products if p.get('status') != 'new']
+            # Filter products treated as 'used' (not new by our rule)
+            filtered_products = [p for p in all_products if not _is_new_status(p.get('status'))]
         else:
             filtered_products = []
             
@@ -298,12 +371,11 @@ def add_to_cart():
         
         if response.status_code == 200:
             product = response.json()
-            
+            # Check stock
             if product.get('stock_quantity', 0) < quantity:
                 return jsonify({'success': False, 'message': 'Số lượng không đủ'})
             
-            # Ở đây sẽ lưu vào session hoặc database
-            # Hiện tại chỉ trả về thành công
+            # Ở đây sẽ lưu vào session hoặc database (tạm thời trả về thành công)
             return jsonify({
                 'success': True, 
                 'message': f'Đã thêm {quantity} {product.get("name", "sản phẩm")} vào giỏ hàng',
@@ -621,13 +693,21 @@ def admin_api_update_product(product_id):
     
     try:
         data = request.get_json()
+        print(f"🔧 Updating product {product_id} with data: {data}")
+        
         response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
                                 json=data, timeout=10)
+        
+        print(f"📡 API Response status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"❌ API Error response: {response.text}")
+            
         if response.status_code == 200:
             return jsonify(response.json())
         else:
-            return jsonify({'error': 'Không thể cập nhật sản phẩm'}), 500
+            return jsonify({'error': f'Không thể cập nhật sản phẩm. API trả về: {response.status_code} - {response.text}'}), 500
     except requests.exceptions.RequestException as e:
+        print(f"❌ Request error: {e}")
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
 
 @app.route('/api/product-stock/<int:product_id>')

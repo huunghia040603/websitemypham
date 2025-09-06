@@ -138,8 +138,17 @@ async function loadDashboardStats() {
         const products = await AdminAPI.fetchProducts();
         document.getElementById('totalProducts').textContent = products.length;
         
-        // Count flash sale products
-        const flashSaleCount = products.filter(p => parseFloat(p.discount_rate || 0) > 0).length;
+        // Count flash sale products by tag 'FlashSale'
+        const hasFlashTag = (p) => {
+            const tags = p?.tags || [];
+            if (!Array.isArray(tags)) return false;
+            return tags.some(t => {
+                if (typeof t === 'string') return t.toLowerCase() === 'flashsale';
+                if (t && typeof t === 'object') return (t.name || '').toLowerCase() === 'flashsale';
+                return false;
+            });
+        };
+        const flashSaleCount = products.filter(hasFlashTag).length;
         document.getElementById('flashSaleProducts').textContent = flashSaleCount;
         
         // Load orders

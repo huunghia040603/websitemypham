@@ -3053,3 +3053,73 @@ html {
 .google-btn-wrapper .nsm7Bb-HzV7m-LgbsSe:hover{box-shadow:0 6px 18px rgba(0,0,0,.12) !important}
 .divider{position:relative;text-align:center}
 .divider .divider-text{background:#fff;padding:0 10px;color:#6b7280;font-weight:600}
+
+/* Remaining percent info box for used products */
+.remaining-info{
+    background:#eaf4ff; /* light blue */
+    border:1px solid #b8d4ff; /* soft blue border */
+    color:#1e56a0;
+    font-size:12px;
+    padding:6px 10px;
+    border-radius:8px;
+}
+
+/* Responsive product info/discount badges */
+.discount-badge-left{ z-index: 2; }
+.product-info-badge{ z-index: 2; }
+@media (max-width: 576px){
+  .discount-badge-left{ top: 6px !important; left: 7px !important; font-size: 9px !important; padding: 1px 6px !important; }
+  .product-info-badge{
+    top: 6px !important;
+    left: calc(8px + 3px + 6ch) !important; /* fallback if width unknown */
+    right: auto !important;
+    font-size: 7px !important; padding: 0px 4px !important;
+    padding-bottom: 1px !important;
+    margin-left: 6px !important;
+  }
+}
+
+/* Desktop alignment: place info badge on same row as discount */
+.product-info-badge{
+  top: 8px !important;
+  left: auto !important;
+  right: 10px !important;
+  font-size: 10px;
+}
+
+.product-badges-row{ gap:6px }
+@media (max-width: 576px){
+  .product-badges-row{ top:6px !important; left:7px !important; gap:4px !important }
+  .discount-badge-left{ font-size: 9px !important; padding: 1px 6px !important; }
+  .product-info-badge{ font-size: 7px !important; padding: 0 4px 1px 4px !important; }
+}
+
+/* Flash-sale: stack discount and status vertically */
+.flash-sale-card .product-badges-row{
+  display:flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap:4px !important;
+}
+
+/* Flash-sale status left indent */
+.flash-sale-card .product-info-badge{ margin-left: 2px !important; }
+
+/* FlashSale products styling in products page */
+.flash-sale-card {
+    border: 2px solid #ffc107 !important;
+    box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2) !important;
+}
+
+.flash-sale-card .btn-warning {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #000 !important;
+    font-weight: 600 !important;
+}
+
+.flash-sale-card .btn-warning:hover {
+    background-color: #e0a800 !important;
+    border-color: #d39e00 !important;
+    color: #000 !important;
+}

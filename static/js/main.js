@@ -761,7 +761,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // --- Dynamic Products Section ---
 
 // Hàm chung để fetch và render sản phẩm
-async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = createProductCard) {
+async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = createProductCard, viewAllButton = null) {
     const container = document.querySelector(containerSelector);
     if (!container) {
         console.error(`Không tìm thấy container với selector: ${containerSelector}`);
@@ -836,14 +836,15 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
             carouselWrapper.appendChild(rightBtn);
 
             // Thêm nút "Xem tất cả" ở cuối
-            const viewAllButton = `
+            const defaultButton = `
                 <div class="col-12 text-center mt-4">
                     <a href="/products" class="btn btn-outline-primary">
-                        <i class="fas fa-eye me-2"></i>Xem tất cả (${products.length} sản phẩm)
+                        <i class="fas fa-eye me-2"></i>Xem tất cả sản phẩm
                     </a>
                 </div>
             `;
-            container.insertAdjacentHTML('beforeend', viewAllButton);
+            const buttonHTML = viewAllButton || defaultButton;
+            container.insertAdjacentHTML('beforeend', buttonHTML);
 
             // Cập nhật trạng thái ban đầu
             updateNavigationButtons(containerSelector, 0);
@@ -869,7 +870,10 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
 function initFlashSaleProducts() {
     const flashSaleApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?tags=FlashSale';
     const containerSelector = '#flash-sale-products';
-    fetchAndRenderProducts(flashSaleApiUrl, containerSelector, createFlashSaleProductCard);
+    const flashSaleButton = `
+        
+    `;
+    fetchAndRenderProducts(flashSaleApiUrl, containerSelector, createFlashSaleProductCard, flashSaleButton);
 }
 
 // Hàm khởi tạo cho sản phẩm mới
@@ -967,10 +971,54 @@ function formatPrice(price) {
 }
 
 // Hàm tạo HTML cho một sản phẩm (không bọc cột)
+// Helper function to check if product has FlashSale tag
+function isFlashSaleProduct(product) {
+    try {
+        const tags = product?.tags || [];
+        if (Array.isArray(tags)) {
+            return tags.some(t => {
+                if (typeof t === 'string') return t.toLowerCase() === 'flashsale';
+                if (t && typeof t === 'object') return (t.name || '').toLowerCase() === 'flashsale';
+                return false;
+            });
+        }
+        return false;
+    } catch (error) {
+        return false;
+    }
+}
+
 function createProductCard(product) {
     // Map to backend Product model (no variants/album)
     const imageUrl = (product.image && String(product.image).trim()) || '/static/image/default-product.jpg';
     const brandName = product.brand_name || (product.brand ? product.brand.name : 'Không rõ');
+    
+    // Check if product has FlashSale tag
+    const isFlashSale = isFlashSaleProduct(product);
+
+    // Determine if product is new by status; otherwise it's used
+    const statusText = (product.status || '').toString().toLowerCase();
+    const isNewByStatus = statusText.includes('new') || statusText.includes('chiet');
+    let remainingPercent = null;
+    if (!isNewByStatus) {
+        const m = statusText.match(/(\d{2})/);
+        remainingPercent = m ? m[1] : null;
+    }
+    const usedLabel = !isNewByStatus
+        ? (statusText.includes('test') ? 'Test 1-2 lần' : (remainingPercent ? `Còn ${remainingPercent}%` : null))
+        : null;
+    const newLabel = isNewByStatus ? (function(){
+        if (statusText.includes('chiet')) return 'Chiết';
+        if (statusText === 'new') return 'New nguyên';
+        if (statusText.includes('newmh')) return 'New mất hộp';
+        if (statusText.includes('newm')) return 'New móp hộp';
+        if (statusText.includes('newrt')) return 'New rách tem';
+        if (statusText.includes('newmn')) return 'New móp nhẹ';
+        if (statusText.includes('newx')) return 'New xước nhẹ';
+        if (statusText.includes('newspx')) return 'New xước';
+        return 'New';
+    })() : null;
+    const infoLabel = isNewByStatus ? newLabel : usedLabel;
 
     const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
     const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
@@ -991,7 +1039,7 @@ function createProductCard(product) {
     const productName = product.name;
 
     const cardHTML = `
-        <div class="product-card card h-100 border-0 shadow-sm">
+        <div class="product-card card h-100 border-0 shadow-sm ${isFlashSale ? 'flash-sale-card' : ''}" style="${isFlashSale ? 'border: 2px solid #ffc107 !important;' : ''}">
             <div class="position-relative">
                 <a href="/product/${product.id}" class="text-decoration-none">
                     <img src="${imageUrl}" class="card-img-top" alt="${productName}" style="height: 220px; object-fit: cover;">
@@ -1002,13 +1050,16 @@ function createProductCard(product) {
                 <div class="position-absolute bottom-0 start-0 m-1">
                     <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
                 </div>
-                ${discountRate > 0 ? `<div class="badge bg-danger position-absolute" style="top: 8px; left: 10px; font-size: 11px; padding: 4px 8px;">-${discountRate}%</div>` : ''}
+                <div class="product-badges-row position-absolute" style="top:8px;left:10px;display:flex;gap:6px;align-items:center;z-index:2;">
+                    ${discountRate > 0 ? `<div class=\"badge bg-danger discount-badge-left\" style=\"font-size: 11px; padding: 4px 8px;\">-${discountRate}%</div>` : ''}
+                    ${infoLabel ? `<div class=\"product-info-badge\" style=\"font-size: 10px; padding: 1px 6px; background:#eaf4ff; border:1px solid #b8d4ff; color:#1e56a0; border-radius:6px;\"><i class="fas fa-circle-info me-1"></i>${infoLabel}</div>` : ''}
+                </div>
             </div>
             <div class="card-body d-flex flex-column">
                 <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
                     <a href="/product/${product.id}" class="text-decoration-none text-dark">${productName}</a>
                 </h6>
-                <p class="text-muted small mb-2" style="font-size: 12px;">${brandName}</p>
+                <p class="text-muted small mb-2" style="font-size: 10px;">${brandName}${infoLabel ? ` • ${infoLabel}` : ''}</p>
                 <div class="d-flex align-items-center mb-1">
                     ${originalPrice ? `<span class="text-decoration-line-through text-muted me-1" style="font-size: 11px;">${formatPrice(originalPrice)}</span>` : ''}
                     <span class="text-danger fw-bold" style="font-size: 15px;">${formatPrice(discountedPrice)}</span>
@@ -1020,7 +1071,7 @@ function createProductCard(product) {
                     <small class="text-muted" style="font-size: 11px;">(${rating})</small>
                     <span class="badge bg-success" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">Còn ${stockQuantity}</span>
                 </div>
-                <button class="btn btn-light w-100 text-dark border add-to-cart-btn" data-product-id="${product.id}" style="font-size: 13px; padding: 8px;">Thêm vào giỏ</button>
+                <button class="btn w-100 add-to-cart-btn ${isFlashSale ? 'btn-warning text-dark' : 'btn-light text-dark border'}" data-product-id="${product.id}" style="font-size: 13px; padding: 8px;">Thêm vào giỏ</button>
             </div>
         </div>
     `;
@@ -1036,6 +1087,30 @@ function createFlashSaleProductCard(product) {
     const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
     const rating = typeof product.rating === 'number' ? product.rating : (parseFloat(product.rating) || 0);
     const reviews = typeof product.rating !== 'undefined' ? rating : 0;
+
+    // Map status to info label (new/used like regular cards)
+    const statusText = (product.status || '').toString().toLowerCase();
+    const isNewByStatus = statusText.includes('new') || statusText.includes('chiet');
+    let remainingPercentFS = null;
+    if (!isNewByStatus) {
+        const m = statusText.match(/(\d{2})/);
+        remainingPercentFS = m ? m[1] : null;
+    }
+    const usedLabelFS = !isNewByStatus
+        ? (statusText.includes('test') ? 'Test 1-2 lần' : (remainingPercentFS ? `Còn ${remainingPercentFS}%` : null))
+        : null;
+    const newLabelFS = isNewByStatus ? (function(){
+        if (statusText.includes('chiet')) return 'Chiết';
+        if (statusText === 'new') return 'New nguyên';
+        if (statusText.includes('newmh')) return 'New mất hộp';
+        if (statusText.includes('newm')) return 'New móp hộp';
+        if (statusText.includes('newrt')) return 'New rách tem';
+        if (statusText.includes('newmn')) return 'New móp nhẹ';
+        if (statusText.includes('newx')) return 'New xước nhẹ';
+        if (statusText.includes('newspx')) return 'New xước';
+        return 'New';
+    })() : null;
+    const infoLabelFS = isNewByStatus ? newLabelFS : usedLabelFS;
 
     let starsHTML = '';
     for (let i = 0; i < Math.floor(rating); i++) starsHTML += '<i class="fas fa-star"></i>';
@@ -1065,7 +1140,11 @@ function createFlashSaleProductCard(product) {
                     <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
                 </div>
                 <div>
-                <div class="badge bg-warning text-dark position-absolute" style="top: 8px; left: 10px; font-size: 10px; padding: 4px 6px;"><i class="fas fa-bolt me-1"></i>FLASH SALE</div>
+                <div class="product-badges-row position-absolute" style="top: 8px; left: 10px; display:flex; gap:6px; align-items:center; z-index:2;">
+                    <div class="badge bg-warning text-dark discount-badge-left" style="font-size: 10px; padding: 4px 6px;"><i class="fas fa-bolt me-1"></i>FLASH SALE</div>
+                    ${infoLabelFS ? `<div class="product-info-badge" style="font-size: 10px; padding: 1px 6px; background:#eaf4ff; border:1px solid #b8d4ff; color:#1e56a0; border-radius:6px;"><i class="fas fa-circle-info me-1"></i>${infoLabelFS}</div>` : ''}
+                </div>
+                </div>
             </div>
             <div class="card-body d-flex flex-column">
                 <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
@@ -2741,7 +2820,18 @@ function initProductsPage() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const query = urlParams.get('query') || urlParams.get('q') || '';
-    const condition = urlParams.get('condition') || '';
+    let condition = urlParams.get('condition') || '';
+    const categoryName = urlParams.get('category_name') || urlParams.get('category') || '';
+    const brandsName = urlParams.get('brands_name') || urlParams.get('brand') || '';
+    const priceRange = urlParams.get('price_range') || urlParams.get('price') || '';
+    const discountRange = urlParams.get('discount_range') || urlParams.get('discount') || '';
+    const tagsFilter = urlParams.get('tags') || '';
+    // Infer condition from pathname if not provided via query string
+    if (!condition) {
+        const path = window.location.pathname || '';
+        if (path.includes('/products/new')) condition = 'new';
+        else if (path.includes('/products/used')) condition = 'used';
+    }
 
     let apiUrl = 'https://buddyskincare.pythonanywhere.com/products/';
     const qs = [];
@@ -2762,6 +2852,102 @@ function initProductsPage() {
             if (!Array.isArray(products) || products.length === 0) {
                 grid.innerHTML = '<div class="col-12"><p class="text-center text-muted py-4 mb-0">Không có sản phẩm để hiển thị.</p></div>';
                 return;
+            }
+
+            // Client-side filter by condition (new/used) using status
+            if (condition) {
+                const isNewStatus = s => {
+                    if (!s) return false;
+                    const x = String(s).toLowerCase();
+                    return x.includes('new') || x.includes('chiet');
+                };
+                if (condition === 'new') {
+                    products = products.filter(p => isNewStatus(p.status));
+                } else if (condition === 'used') {
+                    products = products.filter(p => !isNewStatus(p.status));
+                }
+            }
+
+            // Filter by category and brand names
+            const getCategoryName = (p) => {
+                if (p && typeof p === 'object') {
+                    if (p.category && typeof p.category === 'object') {
+                        return (p.category.name || p.category.title || '').toString().trim();
+                    }
+                    return (p.category_name || p.category || '').toString().trim();
+                }
+                return '';
+            };
+            if (categoryName) {
+                const target = categoryName.toString().trim().toLowerCase();
+                products = products.filter(p => getCategoryName(p).toLowerCase() === target);
+            }
+            if (brandsName) {
+                const getBrandName = (p) => (p.brand_name || (p.brand && p.brand.name) || '').toString().trim();
+                const btarget = brandsName.toString().trim();
+                products = products.filter(p => getBrandName(p) === btarget);
+            }
+
+            // Helpers
+            const priceVnd = p => ((p.discounted_price || 0) * 1000);
+            const rate = p => parseFloat(p.discount_rate || 0) || 0;
+
+            // Price ranges
+            switch (priceRange) {
+                case 'under_200k':
+                    products = products.filter(p => priceVnd(p) < 200000); break;
+                case '200_500':
+                    products = products.filter(p => 200000 <= priceVnd(p) && priceVnd(p) < 500000); break;
+                case '500_1m':
+                    products = products.filter(p => 500000 <= priceVnd(p) && priceVnd(p) < 1000000); break;
+                case 'over_1m':
+                    products = products.filter(p => priceVnd(p) >= 1000000); break;
+                // Backward compatibility
+                case 'under_500k':
+                    products = products.filter(p => priceVnd(p) < 500000); break;
+                case '500k_1m':
+                    products = products.filter(p => 500000 <= priceVnd(p) && priceVnd(p) < 1000000); break;
+                case '1m_2m':
+                    products = products.filter(p => 1000000 <= priceVnd(p) && priceVnd(p) < 2000000); break;
+                case 'over_2m':
+                    products = products.filter(p => priceVnd(p) >= 2000000); break;
+            }
+
+            // Discount ranges
+            switch (discountRange) {
+                case 'under_30':
+                    products = products.filter(p => rate(p) < 30); break;
+                case '50_70':
+                    products = products.filter(p => rate(p) >= 50 && rate(p) <= 70); break;
+                case 'over_70':
+                    products = products.filter(p => rate(p) > 70); break;
+                // Backward compatibility
+                case 'over_50':
+                    products = products.filter(p => rate(p) >= 50); break;
+                case '30_50':
+                    products = products.filter(p => rate(p) >= 30 && rate(p) < 50); break;
+            }
+
+            // Tags filter
+            if (tagsFilter) {
+                console.log(`🔍 JavaScript filtering by tag: ${tagsFilter}`);
+                const hasTag = (product, targetTag) => {
+                    try {
+                        const tags = product?.tags || [];
+                        if (!Array.isArray(tags)) return false;
+                        return tags.some(t => {
+                            if (typeof t === 'string') return t.toLowerCase() === targetTag.toLowerCase();
+                            if (t && typeof t === 'object') return (t.name || '').toLowerCase() === targetTag.toLowerCase();
+                            return false;
+                        });
+                    } catch (error) {
+                        return false;
+                    }
+                };
+                const beforeCount = products.length;
+                products = products.filter(p => hasTag(p, tagsFilter));
+                const afterCount = products.length;
+                console.log(`📊 JavaScript tags filter: ${beforeCount} -> ${afterCount} products`);
             }
 
             function render(list) {
@@ -2791,43 +2977,46 @@ function attachProductsSorting(products, renderCallback) {
     const sortSelect = document.getElementById('products-sort');
     if (!sortSelect) return;
 
-    function keyNumbersafe(v) { return typeof v === 'number' ? v : (parseFloat(v) || 0); }
-
-    function getMainVariant(p) {
-        return (p.variants && p.variants.length > 0) ? p.variants[0] : null;
-    }
+    const getOriginal = (p) => {
+        const v = typeof p.original_price === 'number' ? p.original_price : parseFloat(p.original_price || '0');
+        return isNaN(v) ? 0 : v;
+    };
+    const getDiscounted = (p) => {
+        const v = typeof p.discounted_price === 'number' ? p.discounted_price : parseFloat(p.discounted_price || '0');
+        return isNaN(v) ? 0 : v;
+    };
+    const getRating = (p) => {
+        const v = typeof p.rating === 'number' ? p.rating : parseFloat(p.rating || '0');
+        return isNaN(v) ? 0 : v;
+    };
+    const getSold = (p) => {
+        const v = typeof p.sold_quantity === 'number' ? p.sold_quantity : parseFloat(p.sold_quantity || '0');
+        return isNaN(v) ? 0 : v;
+    };
+    const getDiscountRate = (p) => {
+        const r = typeof p.discount_rate === 'number' ? p.discount_rate : parseFloat(p.discount_rate || '0');
+        if (!isNaN(r) && r > 0) return r;
+        const o = getOriginal(p), d = getDiscounted(p);
+        if (o > 0 && d >= 0 && d <= o) return ((o - d) / o) * 100;
+        return 0;
+    };
 
     function applySort() {
         const mode = sortSelect.value;
         const sorted = [...products];
         sorted.sort((a, b) => {
-            const va = getMainVariant(a);
-            const vb = getMainVariant(b);
-            const oa = va ? keyNumbersafe(va.original_price) : 0;
-            const da = va ? keyNumbersafe(va.discounted_price) : 0;
-            const ra = va ? keyNumbersafe(va.rating) : 0;
-            const sa = va ? keyNumbersafe(va.sold_quantity) : 0;
-            const ob = vb ? keyNumbersafe(vb.original_price) : 0;
-            const db = vb ? keyNumbersafe(vb.discounted_price) : 0;
-            const rb = vb ? keyNumbersafe(vb.rating) : 0;
-            const sb = vb ? keyNumbersafe(vb.sold_quantity) : 0;
-
             switch (mode) {
                 case 'price_asc':
-                    return (da || oa) - (db || ob);
+                    return getDiscounted(a) - getDiscounted(b);
                 case 'price_desc':
-                    return (db || ob) - (da || oa);
+                    return getDiscounted(b) - getDiscounted(a);
                 case 'sales':
-                    return sb - sa; // many sold first
-                case 'discount': {
-                    const disA = oa && da ? (oa - da) / oa : 0;
-                    const disB = ob && db ? (ob - db) / ob : 0;
-                    return disB - disA;
-                }
+                    return getSold(b) - getSold(a);
+                case 'discount':
+                    return getDiscountRate(b) - getDiscountRate(a);
                 case 'newest':
                 default:
-                    // Fall back to id desc if created date not present
-                    return keyNumbersafe(b.id) - keyNumbersafe(a.id);
+                    return (Number(b.id) || 0) - (Number(a.id) || 0);
             }
         });
         renderCallback(sorted);

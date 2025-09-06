@@ -98,6 +98,8 @@ async function fetchProducts(status = null, flashSale = false) {
 
 async function updateProduct(productId, data) {
     try {
+        console.log(`🔧 Updating product ${productId} with data:`, data);
+        
         const response = await fetch(`${FLASK_API_BASE}/admin/api/products/${productId}`, {
             method: 'PATCH',
             headers: {
@@ -106,11 +108,17 @@ async function updateProduct(productId, data) {
             body: JSON.stringify(data)
         });
 
+        console.log(`📡 Response status: ${response.status}`);
+        
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('❌ API Error:', errorData);
+            throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
         }
 
-        return await response.json();
+        const result = await response.json();
+        console.log('✅ Update successful:', result);
+        return result;
     } catch (error) {
         console.error('Error updating product:', error);
         showNotification('Lỗi khi cập nhật sản phẩm: ' + error.message, 'error');
