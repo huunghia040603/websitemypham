@@ -343,9 +343,28 @@ function renderProducts() {
     tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
 }
 
+async function fetchBrandsFromAPI() {
+    try {
+        const response = await fetch('https://buddyskincare.pythonanywhere.com/brands/');
+        if (response.ok) {
+            const brands = await response.json();
+            return brands.map(brand => brand.name || brand).filter(Boolean);
+        }
+    } catch (error) {
+        console.error('Error fetching brands from API:', error);
+    }
+    
+    // Fallback to local brands if API fails
+    return [...new Set(allProducts.map(p => p.brand_name).filter(Boolean))];
+}
+
 async function populateFilters() {
     // Populate brand filter
-    const brands = [...new Set(allProducts.map(p => p.brand_name).filter(Boolean))];
+    const brands = await fetchBrandsFromAPI();
+    
+    // Sort brands alphabetically
+    brands.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
+    
     const brandSelect = document.getElementById('brandFilter');
     brandSelect.innerHTML = '<option value="">Tất cả thương hiệu</option>';
     brands.forEach(brand => {

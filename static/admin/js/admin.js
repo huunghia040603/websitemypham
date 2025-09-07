@@ -2,6 +2,78 @@
 const API_BASE_URL = 'https://buddyskincare.pythonanywhere.com';
 const FLASK_API_BASE = ''; // Use relative URLs for Flask API
 
+// AdminAPI Object
+const AdminAPI = {
+    // Orders
+    async getOrders() {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    async getOrder(orderId) {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    async confirmOrder(orderId) {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    async cancelOrder(orderId) {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}/cancel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    // Products
+    async getProducts() {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/products`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    async updateProduct(productId, data) {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/products/${productId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    // Customers
+    async getCustomers() {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/customers`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    // Utility functions
+    formatPrice,
+    formatDate,
+    showNotification,
+    
+    // Alias functions for compatibility
+    fetchProducts: function() { return this.getProducts(); },
+    fetchOrders: function() { return this.getOrders(); },
+    fetchCustomers: function() { return this.getCustomers(); },
+    addProduct: function(data) { return this.updateProduct(null, data); },
+    updateOrder: function(orderId, data) { return this.getOrder(orderId); },
+    updateCustomer: function(customerId, data) { return this.getCustomers(); },
+    showLoading: function() { return Promise.resolve(); }
+};
+
 // Utility Functions
 function formatPrice(price) {
     if (typeof price === 'number') {
@@ -9,6 +81,15 @@ function formatPrice(price) {
             style: 'currency',
             currency: 'VND'
         }).format(price * 1000);
+    }
+    if (typeof price === 'string') {
+        const numPrice = parseFloat(price);
+        if (!isNaN(numPrice)) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(numPrice * 1000);
+        }
     }
     return '0đ';
 }
@@ -96,6 +177,36 @@ async function fetchProducts(status = null, flashSale = false) {
     }
 }
 
+async function addProduct(data) {
+    try {
+        console.log('🔧 Adding new product with data:', data);
+        
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/products`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        console.log(`📡 Response status: ${response.status}`);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('❌ API Error:', errorData);
+            throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Add successful:', result);
+        return result;
+    } catch (error) {
+        console.error('Error adding product:', error);
+        showNotification('Lỗi khi thêm sản phẩm: ' + error.message, 'error');
+        throw error;
+    }
+}
+
 async function updateProduct(productId, data) {
     try {
         console.log(`🔧 Updating product ${productId} with data:`, data);
@@ -174,11 +285,23 @@ async function confirmOrder(orderId) {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            if (response.status === 503) {
+                showNotification(errorData.error || 'Tính năng xác nhận đơn hàng tạm thời không khả dụng. Vui lòng liên hệ quản trị viên.', 'warning');
+            } else {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return;
         }
 
         const result = await response.json();
         showNotification(result.message || 'Đã xác nhận đơn hàng và cập nhật số lượng tồn kho', 'success');
+        
+        // Reload orders to update UI
+        if (typeof loadOrders === 'function') {
+            await loadOrders();
+        }
+        
         return result;
     } catch (error) {
         console.error('Error confirming order:', error);
@@ -197,11 +320,23 @@ async function cancelOrder(orderId) {
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            if (response.status === 503) {
+                showNotification(errorData.error || 'Tính năng hủy đơn hàng tạm thời không khả dụng. Vui lòng liên hệ quản trị viên.', 'warning');
+            } else {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return;
         }
 
         const result = await response.json();
         showNotification(result.message || 'Đã hủy đơn hàng và khôi phục số lượng tồn kho', 'success');
+        
+        // Reload orders to update UI
+        if (typeof loadOrders === 'function') {
+            await loadOrders();
+        }
+        
         return result;
     } catch (error) {
         console.error('Error cancelling order:', error);
@@ -226,16 +361,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Export functions for use in other scripts
-window.AdminAPI = {
-    fetchProducts,
-    updateProduct,
-    fetchOrders,
-    updateOrder,
-    confirmOrder,
-    cancelOrder,
-    formatPrice,
-    formatDate,
-    showNotification,
-    showLoading
-};
+// Customer Management Functions
+async function fetchCustomers() {
+    try {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/customers`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching customers:', error);
+        showNotification('Lỗi khi tải danh sách khách hàng: ' + error.message, 'error');
+        return [];
+    }
+}
+
+async function updateCustomer(customerId, data) {
+    try {
+        console.log('🔧 Updating customer', customerId, 'with data:', data);
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/customers/${customerId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        console.log(`📡 Response status: ${response.status}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('❌ API Error:', errorData);
+            throw new Error(`HTTP ${response.status}: ${errorData.error || 'Unknown error'}`);
+        }
+        const result = await response.json();
+        console.log('✅ Update successful:', result);
+        return result;
+    } catch (error) {
+        console.error('Error updating customer:', error);
+        showNotification('Lỗi khi cập nhật khách hàng: ' + error.message, 'error');
+        throw error;
+    }
+}
+
+// Export AdminAPI to window for global access
+window.AdminAPI = AdminAPI;

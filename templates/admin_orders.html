@@ -2,6 +2,112 @@
 
 {% block title %}Quản Lý Đơn Hàng - Admin{% endblock %}
 
+{% block extra_css %}
+<style>
+    .table-light {
+        background-color: #e3f2fd !important;
+    }
+    .table-light:hover {
+        background-color: #bbdefb !important;
+    }
+    
+    /* Bank transfer badge clickable styling */
+    .badge[onclick] {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .badge[onclick]:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .badge[onclick]:active {
+        transform: scale(0.95);
+    }
+    
+    /* Bank transfer image modal styling */
+    #bankTransferImageDisplay {
+        border: 2px solid #e9ecef;
+        transition: transform 0.2s ease;
+    }
+    
+    #bankTransferImageDisplay:hover {
+        transform: scale(1.02);
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    /* Button states */
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .btn-success:disabled {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+    
+    .btn-danger:disabled {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+    
+    .status-processing {
+        background-color: #17a2b8 !important;
+        color: white !important;
+    }
+    
+    .status-shipped {
+        background-color: #28a745 !important;
+        color: white !important;
+    }
+    
+    /* Statistics styling */
+    .stat-item {
+        padding: 10px 5px;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .stat-item:hover .stat-number {
+        transform: scale(1.1);
+        transition: transform 0.2s ease;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -23,42 +129,145 @@
 
 <!-- Filter and Search -->
 <div class="row mb-4">
-    <div class="col-12">
+    <!-- Left Sidebar Filters -->
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Bộ Lọc</h5>
+            </div>
+            <div class="card-body">
+                <!-- Payment Method Filter -->
+                <div class="mb-3">
+                    <label for="paymentFilter" class="form-label fw-semibold">Phương thức thanh toán</label>
+                    <select class="form-select" id="paymentFilter">
+                        <option value="">Tất cả</option>
+                        <option value="cod">Thanh toán khi nhận hàng</option>
+                        <option value="bank">Chuyển khoản ngân hàng</option>
+                    </select>
+                </div>
+                
+                <!-- Order Status Filter -->
+                <div class="mb-3">
+                    <label for="statusFilter" class="form-label fw-semibold">Trạng thái đơn hàng</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">Tất cả</option>
+                        <option value="pending">Chờ xử lý</option>
+                        <option value="processing">Đang xử lý</option>
+                        <option value="shipped">Đã giao hàng</option>
+                        <option value="completed">Hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+                
+                <!-- Confirmation Filter -->
+                <div class="mb-3">
+                    <label for="confirmationFilter" class="form-label fw-semibold">Xác nhận</label>
+                    <select class="form-select" id="confirmationFilter">
+                        <option value="">Tất cả</option>
+                        <option value="true">Đã xác nhận</option>
+                        <option value="false">Chưa xác nhận</option>
+                    </select>
+                </div>
+                
+                <!-- Clear Filters Button -->
+                <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                    <i class="fas fa-times me-2"></i>Xóa bộ lọc
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <!-- Order Statistics - Desktop Only -->
+        <div class="row d-none d-md-block mb-3">
+            <div class="col-12">
+                <div class="card bg-light">
+                    <div class="card-body py-3">
+                        <h6 class="card-title mb-3">
+                            <i class="fas fa-chart-bar me-2"></i>Thống Kê Đơn Hàng
+                        </h6>
+                        <div class="row text-center">
+                            <div class="col-md-2">
+                                <div class="stat-item">
+                                    <div class="stat-number text-primary" id="totalOrders">0</div>
+                                    <div class="stat-label">Tổng đơn hàng</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="stat-item">
+                                    <div class="stat-number text-warning" id="pendingOrders">0</div>
+                                    <div class="stat-label">Chờ xử lý</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="stat-item">
+                                    <div class="stat-number text-info" id="processingOrders">0</div>
+                                    <div class="stat-label">Đang xử lý</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="stat-item">
+                                    <div class="stat-number text-success" id="shippedOrders">0</div>
+                                    <div class="stat-label">Đã giao hàng</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="stat-item">
+                                    <div class="stat-number text-secondary" id="completedOrders">0</div>
+                                    <div class="stat-label">Hoàn thành</div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="stat-item">
+                                    <div class="stat-number text-danger" id="cancelledOrders">0</div>
+                                    <div class="stat-label">Đã hủy</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Revenue Statistics -->
+                        <div class="row mt-3 pt-3 border-top">
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <div class="stat-number text-success" id="totalRevenue">0đ</div>
+                                    <div class="stat-label">Tổng doanh thu</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <div class="stat-number text-primary" id="codOrders">0</div>
+                                    <div class="stat-label">Thanh toán COD</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <div class="stat-number text-info" id="bankOrders">0</div>
+                                    <div class="stat-label">Chuyển khoản</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="stat-item">
+                                    <div class="stat-number text-warning" id="confirmedOrders">0</div>
+                                    <div class="stat-label">Đã xác nhận</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="card">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label for="orderSearch" class="form-label">Tìm kiếm đơn hàng</label>
                         <input type="text" class="form-control" id="orderSearch" placeholder="ID, tên khách hàng...">
                     </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="statusFilter" class="form-label">Trạng thái</label>
-                        <select class="form-select" id="statusFilter">
-                            <option value="">Tất cả</option>
-                            <option value="pending">Chờ xử lý</option>
-                            <option value="confirmed">Đã xác nhận</option>
-                            <option value="shipped">Đã giao</option>
-                            <option value="delivered">Đã nhận</option>
-                            <option value="cancelled">Đã hủy</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="confirmationFilter" class="form-label">Xác nhận</label>
-                        <select class="form-select" id="confirmationFilter">
-                            <option value="">Tất cả</option>
-                            <option value="true">Đã xác nhận</option>
-                            <option value="false">Chưa xác nhận</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label for="dateFilter" class="form-label">Ngày tạo</label>
                         <input type="date" class="form-control" id="dateFilter">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button class="btn btn-outline-secondary w-100" onclick="clearOrderFilters()">
-                            <i class="fas fa-times me-1"></i>Xóa Lọc
-                        </button>
                     </div>
                 </div>
             </div>
@@ -113,6 +322,9 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 <button type="button" class="btn btn-warning" id="cancelOrderBtn" onclick="cancelOrder()" style="display: none;">
                     <i class="fas fa-times me-2"></i>Hủy Đơn Hàng
+                </button>
+                <button type="button" class="btn btn-info" id="shipOrderBtn" onclick="shipOrder()" style="display: none;">
+                    <i class="fas fa-truck me-2"></i>Đã Giao Hàng
                 </button>
                 <button type="button" class="btn btn-success" id="confirmOrderBtn" onclick="confirmOrder()" style="display: none;">
                     <i class="fas fa-check me-2"></i>Xác Nhận Đơn Hàng
@@ -191,6 +403,191 @@
 
 {% block extra_js %}
 <script>
+// Utility functions
+function formatPrice(price) {
+    console.log('formatPrice input:', price, 'type:', typeof price);
+    if (typeof price === 'number') {
+        const formatted = new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(price * 1000);
+        console.log('Number formatted:', formatted);
+        return formatted;
+    }
+    if (typeof price === 'string') {
+        const numPrice = parseFloat(price);
+        console.log('String parsed to number:', numPrice);
+        if (!isNaN(numPrice)) {
+            const formatted = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(numPrice * 1000);
+            console.log('String formatted:', formatted);
+            return formatted;
+        }
+    }
+    console.log('Returning default 0đ');
+    return '0đ';
+}
+
+function formatShippingFee(price) {
+    console.log('formatShippingFee called with:', price, typeof price);
+    if (typeof price === 'number') {
+        const formatted = new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(price * 1000);
+        console.log('Shipping fee formatted:', formatted);
+        return formatted;
+    }
+    if (typeof price === 'string') {
+        const numPrice = parseFloat(price);
+        console.log('Shipping fee parsed to number:', numPrice);
+        if (!isNaN(numPrice)) {
+            const formatted = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(numPrice * 1000);
+            console.log('Shipping fee formatted:', formatted);
+            return formatted;
+        }
+    }
+    console.log('Returning default 0đ for shipping');
+    return '0đ';
+}
+
+function formatTotalAmount(order) {
+    console.log('formatTotalAmount called with order:', order);
+    const totalAmount = parseFloat(order.total_amount || 0);
+    const shippingFee = parseFloat(order.shipping_fee || 0);
+    const finalTotal = (totalAmount + shippingFee);
+    
+    console.log('Total amount (products):', totalAmount);
+    console.log('Shipping fee:', shippingFee);
+    console.log('Final total (totalAmount + shippingFee):', finalTotal);
+    
+    const formatted = new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+    }).format(finalTotal);
+    
+    console.log('Final total formatted:', formatted);
+    return formatted;
+}
+
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Use modern clipboard API
+        navigator.clipboard.writeText(text).then(() => {
+            showCopySuccess();
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            fallbackCopyTextToClipboard(text);
+        });
+    } else {
+        // Fallback for older browsers
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showCopySuccess();
+        } else {
+            showCopyError();
+        }
+    } catch (err) {
+        console.error('Fallback: Oops, unable to copy', err);
+        showCopyError();
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function showCopySuccess() {
+    // Create a temporary toast notification
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = '<i class="fas fa-check-circle me-2"></i>Đã copy vào clipboard!';
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 9999;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 2000);
+}
+
+function showCopyError() {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Không thể copy!';
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #dc3545;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 6px;
+        z-index: 9999;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOutRight 0.3s ease-in';
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 2000);
+}
+
 let allOrders = [];
 let filteredOrders = [];
 let currentOrderId = null;
@@ -198,71 +595,167 @@ let currentOrderId = null;
 document.addEventListener('DOMContentLoaded', async function() {
     await loadOrders();
     setupEventListeners();
+    
+    // Auto-complete orders that have been shipped for 5+ days
+    await autoCompleteShippedOrders();
 });
 
 async function loadOrders() {
     try {
-        AdminAPI.showLoading('ordersContainer');
-        allOrders = await AdminAPI.fetchOrders();
+        showLoading('ordersContainer');
+        
+        // Use cache if available and not too old (5 minutes)
+        const cacheKey = 'orders_cache';
+        const cacheTime = 5 * 60 * 1000; // 5 minutes
+        const cached = localStorage.getItem(cacheKey);
+        
+        if (cached) {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < cacheTime) {
+                console.log('Using cached orders data');
+                allOrders = data;
+                filteredOrders = [...allOrders];
+                renderOrders();
+                updateOrderCount();
+                hideLoading('ordersContainer');
+                return;
+            }
+        }
+        
+        const response = await fetch('/admin/api/orders');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        allOrders = await response.json();
+        
+        // Cache the data
+        localStorage.setItem(cacheKey, JSON.stringify({
+            data: allOrders,
+            timestamp: Date.now()
+        }));
+        
+        console.log('Loaded orders:', allOrders);
         filteredOrders = [...allOrders];
+        
+        // Sort orders by order_date descending (newest first)
+        filteredOrders.sort((a, b) => {
+            const dateA = new Date(a.order_date || a.created_at || 0);
+            const dateB = new Date(b.order_date || b.created_at || 0);
+            return dateB - dateA; // Descending order (newest first)
+        });
         
         renderOrders();
         updateOrderCount();
         
     } catch (error) {
         console.error('Error loading orders:', error);
+        let errorMessage = 'Lỗi khi tải danh sách đơn hàng';
+        
+        if (error.message && error.message.includes('401')) {
+            errorMessage = 'API yêu cầu xác thực để truy cập danh sách đơn hàng. Vui lòng liên hệ quản trị viên.';
+        } else if (error.message && error.message.includes('500')) {
+            errorMessage = 'Lỗi server khi tải danh sách đơn hàng. Vui lòng thử lại sau.';
+        }
+        
         document.getElementById('ordersContainer').innerHTML = 
-            '<p class="text-danger text-center py-4">Lỗi khi tải danh sách đơn hàng</p>';
+            `<div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+                <p class="text-danger">${errorMessage}</p>
+                <button class="btn btn-outline-primary" onclick="loadOrders()">
+                    <i class="fas fa-sync me-2"></i>Thử lại
+                </button>
+            </div>`;
+    }
+}
+
+function showLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `
+            <div class="loading-spinner show">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Đang tải danh sách đơn hàng...</p>
+            </div>
+        `;
     }
 }
 
 function renderOrders() {
     const container = document.getElementById('ordersContainer');
     
+    // Sort orders by order_date descending (newest first)
+    filteredOrders.sort((a, b) => {
+        const dateA = new Date(a.order_date || a.created_at || 0);
+        const dateB = new Date(b.order_date || b.created_at || 0);
+        return dateB - dateA; // Descending order (newest first)
+    });
+    
     if (filteredOrders.length === 0) {
-        container.innerHTML = '<p class="text-muted text-center py-4">Không có đơn hàng nào</p>';
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-shopping-cart text-muted mb-3" style="font-size: 3rem;"></i>
+                <p class="text-muted">Không có đơn hàng nào</p>
+                <p class="text-muted small">Có thể API yêu cầu xác thực hoặc chưa có đơn hàng nào được tạo</p>
+            </div>`;
         return;
     }
     
     let html = '<div class="table-responsive"><table class="table table-admin">';
-    html += '<thead><tr><th>ID</th><th>Khách Hàng</th><th>Sản Phẩm</th><th>Tổng Tiền</th><th>Trạng Thái</th><th>Xác Nhận</th><th>Ngày Tạo</th><th>Thao Tác</th></tr></thead><tbody>';
+    html += '<thead><tr><th>ID</th><th>Khách Hàng</th><th>Sản Phẩm</th><th>Tổng Tiền</th><th>Thanh Toán</th><th>Trạng Thái</th><th>Xác Nhận</th><th>Ngày Tạo</th><th>Thao Tác</th></tr></thead><tbody>';
     
     filteredOrders.forEach(order => {
         const statusClass = {
             'pending': 'status-pending',
             'confirmed': 'status-confirmed',
+            'processing': 'status-processing',
             'shipped': 'status-shipped',
             'delivered': 'status-delivered',
-            'cancelled': 'status-cancelled'
+            'cancelled': 'status-cancelled',
+            'completed': 'status-delivered'
         }[order.status] || 'status-pending';
         
         const statusText = {
             'pending': 'Chờ xử lý',
             'confirmed': 'Đã xác nhận',
+            'processing': 'Đang xử lý',
             'shipped': 'Đã giao',
             'delivered': 'Đã nhận',
-            'cancelled': 'Đã hủy'
+            'cancelled': 'Đã hủy',
+            'completed': 'Hoàn thành'
         }[order.status] || order.status;
         
         const confirmationBadge = order.is_confirmed ? 
             '<span class="badge bg-success">Đã xác nhận</span>' : 
             '<span class="badge bg-warning">Chưa xác nhận</span>';
         
+        const paymentMethod = order.payment_method === 'bank' ? 'Ngân hàng' : 'Thu COD';
+        const rowClass = order.payment_method === 'bank' ? 'table-light' : '';
+        
         const itemCount = order.items ? order.items.length : 0;
-        const totalAmount = AdminAPI.formatPrice(order.total_amount);
-        const createdDate = AdminAPI.formatDate(order.created_at);
+        console.log('Order total_amount:', order.total_amount, 'Type:', typeof order.total_amount);
+        const totalAmount = formatTotalAmount(order);
+        console.log('Formatted totalAmount:', totalAmount);
+        const createdDate = formatDate(order.order_date);
         
         html += `
-            <tr>
+            <tr class="${rowClass}">
                 <td><strong>#${order.id}</strong></td>
                 <td>
                     <div>${order.customer_name || 'N/A'}</div>
-                    <small class="text-muted">${order.customer_phone || 'N/A'}</small>
+                    <small class="text-muted">${order.phone_number || 'N/A'}</small>
                 </td>
                 <td>
                     <span class="badge bg-info">${itemCount} sản phẩm</span>
                 </td>
-                <td><strong>${totalAmount}</strong></td>
+                <td><strong>${formatPrice(order.total_amount || 0)}</strong></td>
+                <td>
+                    ${order.payment_method === 'bank' && order.bank_transfer_image ? 
+                        `<span class="badge bg-primary" style="cursor: pointer;" onclick="showBankTransferImage('${order.bank_transfer_image}', ${order.id})" data-bs-toggle="tooltip" title="Click để xem ảnh chuyển khoản">${paymentMethod}</span>` :
+                        `<span class="badge ${order.payment_method === 'bank' ? 'bg-primary' : 'bg-secondary'}">${paymentMethod}</span>`
+                    }
+                </td>
                 <td><span class="badge ${statusClass}">${statusText}</span></td>
                 <td>${confirmationBadge}</td>
                 <td>${createdDate}</td>
@@ -289,9 +782,16 @@ function renderOrders() {
 }
 
 function setupEventListeners() {
-    document.getElementById('orderSearch').addEventListener('input', filterOrders);
+    // Debounced search for better performance
+    let searchTimeout;
+    document.getElementById('orderSearch').addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(filterOrders, 300);
+    });
+    
     document.getElementById('statusFilter').addEventListener('change', filterOrders);
     document.getElementById('confirmationFilter').addEventListener('change', filterOrders);
+    document.getElementById('paymentFilter').addEventListener('change', filterOrders);
     document.getElementById('dateFilter').addEventListener('change', filterOrders);
 }
 
@@ -299,6 +799,7 @@ function filterOrders() {
     const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
     const statusFilter = document.getElementById('statusFilter').value;
     const confirmationFilter = document.getElementById('confirmationFilter').value;
+    const paymentFilter = document.getElementById('paymentFilter').value;
     const dateFilter = document.getElementById('dateFilter').value;
     
     filteredOrders = allOrders.filter(order => {
@@ -309,13 +810,23 @@ function filterOrders() {
         const matchesStatus = !statusFilter || order.status === statusFilter;
         const matchesConfirmation = !confirmationFilter || order.is_confirmed.toString() === confirmationFilter;
         
+        // Payment method filter
+        let matchesPayment = true;
+        if (paymentFilter) {
+            if (paymentFilter === 'cod') {
+                matchesPayment = order.payment_method === 'cod';
+            } else if (paymentFilter === 'bank') {
+                matchesPayment = order.payment_method === 'bank';
+            }
+        }
+        
         let matchesDate = true;
         if (dateFilter) {
-            const orderDate = new Date(order.created_at).toISOString().split('T')[0];
+            const orderDate = new Date(order.order_date).toISOString().split('T')[0];
             matchesDate = orderDate === dateFilter;
         }
         
-        return matchesSearch && matchesStatus && matchesConfirmation && matchesDate;
+        return matchesSearch && matchesStatus && matchesConfirmation && matchesPayment && matchesDate;
     });
     
     renderOrders();
@@ -326,12 +837,152 @@ function clearOrderFilters() {
     document.getElementById('orderSearch').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('confirmationFilter').value = '';
+    document.getElementById('paymentFilter').value = '';
     document.getElementById('dateFilter').value = '';
     filterOrders();
 }
 
+function clearFilters() {
+    clearOrderFilters();
+}
+
 function updateOrderCount() {
     document.getElementById('orderCount').textContent = filteredOrders.length;
+    updateOrderStatistics();
+}
+
+function updateOrderStatistics() {
+    // Calculate statistics from filtered orders
+    const stats = {
+        total: filteredOrders.length,
+        pending: 0,
+        processing: 0,
+        shipped: 0,
+        completed: 0,
+        cancelled: 0,
+        totalRevenue: 0,
+        codOrders: 0,
+        bankOrders: 0,
+        confirmedOrders: 0
+    };
+    
+    filteredOrders.forEach(order => {
+        // Count by status
+        switch(order.status) {
+            case 'pending':
+                stats.pending++;
+                break;
+            case 'processing':
+                stats.processing++;
+                break;
+            case 'shipped':
+                stats.shipped++;
+                break;
+            case 'completed':
+                stats.completed++;
+                break;
+            case 'cancelled':
+                stats.cancelled++;
+                break;
+        }
+        
+        // Count by payment method
+        if (order.payment_method === 'cod') {
+            stats.codOrders++;
+        } else if (order.payment_method === 'bank') {
+            stats.bankOrders++;
+        }
+        
+        // Count confirmed orders
+        if (order.is_confirmed) {
+            stats.confirmedOrders++;
+        }
+        
+        // Calculate total revenue (only for non-cancelled orders)
+        if (order.status !== 'cancelled' && order.total_amount) {
+            stats.totalRevenue += parseFloat(order.total_amount) || 0;
+        }
+    });
+    
+    // Update UI
+    document.getElementById('totalOrders').textContent = stats.total;
+    document.getElementById('pendingOrders').textContent = stats.pending;
+    document.getElementById('processingOrders').textContent = stats.processing;
+    document.getElementById('shippedOrders').textContent = stats.shipped;
+    document.getElementById('completedOrders').textContent = stats.completed;
+    document.getElementById('cancelledOrders').textContent = stats.cancelled;
+    document.getElementById('totalRevenue').textContent = formatPrice(stats.totalRevenue);
+    document.getElementById('codOrders').textContent = stats.codOrders;
+    document.getElementById('bankOrders').textContent = stats.bankOrders;
+    document.getElementById('confirmedOrders').textContent = stats.confirmedOrders;
+}
+
+function updateOrderRow(orderId) {
+    const order = allOrders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Find the row in the table
+    const rows = document.querySelectorAll('#ordersTable tbody tr');
+    rows.forEach(row => {
+        const idCell = row.querySelector('td:first-child');
+        if (idCell && idCell.textContent.trim() === orderId.toString()) {
+            // Update status cell
+            const statusCell = row.querySelector('td:nth-child(6)');
+            if (statusCell) {
+                const statusText = getStatusText(order.status);
+                const statusClass = getStatusClass(order.status);
+                statusCell.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
+            }
+            
+            // Update confirmation cell
+            const confirmCell = row.querySelector('td:nth-child(7)');
+            if (confirmCell) {
+                const confirmText = order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận';
+                const confirmClass = order.is_confirmed ? 'bg-success' : 'bg-warning';
+                confirmCell.innerHTML = `<span class="badge ${confirmClass}">${confirmText}</span>`;
+            }
+        }
+    });
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'pending': 'Chờ xử lý',
+        'processing': 'Đang xử lý',
+        'shipped': 'Đã giao hàng',
+        'delivered': 'Đã nhận hàng',
+        'cancelled': 'Đã hủy'
+    };
+    return statusMap[status] || status;
+}
+
+function getStatusClass(status) {
+    const classMap = {
+        'pending': 'bg-warning',
+        'processing': 'bg-info',
+        'shipped': 'bg-success',
+        'delivered': 'bg-primary',
+        'cancelled': 'bg-danger'
+    };
+    return classMap[status] || 'bg-secondary';
+}
+
+function updateOrdersCache() {
+    const cacheKey = 'orders_cache';
+    localStorage.setItem(cacheKey, JSON.stringify({
+        data: allOrders,
+        timestamp: Date.now()
+    }));
+}
+
+function hideLoading(elementId) {
+    const element = document.getElementById(elementId);
+    if (element) {
+        const loadingEl = element.querySelector('.loading-spinner');
+        if (loadingEl) {
+            loadingEl.remove();
+        }
+    }
 }
 
 async function viewOrderDetail(orderId) {
@@ -361,9 +1012,16 @@ async function loadOrderDetail(order) {
                 <div class="card">
                     <div class="card-body">
                         <p><strong>Tên:</strong> ${order.customer_name || 'N/A'}</p>
-                        <p><strong>SĐT:</strong> ${order.customer_phone || 'N/A'}</p>
-                        <p><strong>Email:</strong> ${order.customer_email || 'N/A'}</p>
-                        <p><strong>Địa chỉ:</strong> ${order.customer_address || 'N/A'}</p>
+                        <p><strong>SĐT:</strong> ${order.phone_number || 'N/A'} 
+                            ${order.phone_number ? `<button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('${order.phone_number}')" data-bs-toggle="tooltip" title="Copy số điện thoại"><i class="fas fa-copy"></i></button>` : ''}
+                        </p>
+                        <p><strong>Email:</strong> ${order.email || 'N/A'}</p>
+                        <p><strong>Địa chỉ:</strong> ${order.street || ''} ${order.ward || ''} ${order.district || ''} ${order.province || ''} 
+                            ${order.street ? `<button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('${order.street} ${order.ward || ''} ${order.district || ''} ${order.province || ''}')" data-bs-toggle="tooltip" title="Copy địa chỉ"><i class="fas fa-copy"></i></button>` : ''}
+                        </p>
+                        <p><strong>Phương thức thanh toán:</strong> ${order.payment_method || 'N/A'}</p>
+                        ${order.bank_transfer_image ? `<p><strong>Ảnh chuyển khoản:</strong> <a href="${order.bank_transfer_image}" target="_blank" class="btn btn-sm btn-outline-primary ms-2"><i class="fas fa-external-link-alt me-1"></i>Xem ảnh</a></p>` : ''}
+                        ${order.notes ? `<p><strong>Ghi chú:</strong> ${order.notes}</p>` : ''}
                     </div>
                 </div>
             </div>
@@ -373,8 +1031,8 @@ async function loadOrderDetail(order) {
                     <div class="card-body">
                         <p><strong>ID:</strong> #${order.id}</p>
                         <p><strong>Trạng thái:</strong> 
-                            <span class="badge ${order.status === 'pending' ? 'status-pending' : order.status === 'confirmed' ? 'status-confirmed' : 'status-cancelled'}">
-                                ${order.status}
+                            <span class="badge ${order.status === 'pending' ? 'status-pending' : order.status === 'confirmed' ? 'status-confirmed' : order.status === 'processing' ? 'status-processing' : order.status === 'shipped' ? 'status-shipped' : order.status === 'completed' ? 'status-delivered' : 'status-cancelled'}">
+                                ${order.status === 'pending' ? 'Chờ xử lý' : order.status === 'confirmed' ? 'Đã xác nhận' : order.status === 'processing' ? 'Đang xử lý' : order.status === 'shipped' ? 'Đã giao hàng' : order.status === 'completed' ? 'Hoàn thành' : order.status === 'cancelled' ? 'Đã hủy' : order.status}
                             </span>
                         </p>
                         <p><strong>Xác nhận:</strong> 
@@ -382,8 +1040,10 @@ async function loadOrderDetail(order) {
                                 ${order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận'}
                             </span>
                         </p>
-                        <p><strong>Ngày tạo:</strong> ${AdminAPI.formatDate(order.created_at)}</p>
-                        <p><strong>Tổng tiền:</strong> <strong>${AdminAPI.formatPrice(order.total_amount)}</strong></p>
+                        <p><strong>Ngày tạo:</strong> ${formatDate(order.order_date)}</p>
+                        <p><strong>Tổng tiền:</strong> <strong>${formatPrice(order.total_amount || 0)}</strong></p>
+                        <p><strong>Phí ship:</strong> <strong>${formatShippingFee(order.shipping_fee || 0)}</strong></p>
+                        ${order.discount_applied ? `<p><strong>Giảm giá:</strong> ${formatPrice(order.discount_applied)}</p>` : ''}
                     </div>
                 </div>
             </div>
@@ -409,12 +1069,26 @@ async function loadOrderDetail(order) {
         `;
         
         order.items.forEach(item => {
+            const product = item.product || {};
+            const productName = product.name || 'N/A';
+            const productImage = product.image ? `<img src="${product.image}" alt="${productName}" class="me-2" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">` : '';
+            const priceAtPurchase = parseFloat(item.price_at_purchase) || 0;
+            const totalPrice = priceAtPurchase * item.quantity;
+            
             html += `
                 <tr>
-                    <td>${item.product_name || 'N/A'}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            ${productImage}
+                            <div>
+                                <div class="fw-bold">${productName}</div>
+                                <small class="text-muted">${product.brand_name || ''} - ${product.category_name || ''}</small>
+                            </div>
+                        </div>
+                    </td>
                     <td>${item.quantity}</td>
-                    <td>${AdminAPI.formatPrice(item.price)}</td>
-                    <td>${AdminAPI.formatPrice(item.price * item.quantity)}</td>
+                    <td>${formatPrice(priceAtPurchase)}</td>
+                    <td><strong>${formatPrice(totalPrice)}</strong></td>
                 </tr>
             `;
         });
@@ -430,19 +1104,56 @@ async function loadOrderDetail(order) {
     
     container.innerHTML = html;
     
-    // Show/hide action buttons based on order status
+    // Show/hide and enable/disable action buttons based on order status
     const confirmBtn = document.getElementById('confirmOrderBtn');
     const cancelBtn = document.getElementById('cancelOrderBtn');
+    const shipBtn = document.getElementById('shipOrderBtn');
+    
+    // Reset button states
+    confirmBtn.style.display = 'inline-block';
+    cancelBtn.style.display = 'inline-block';
+    shipBtn.style.display = 'inline-block';
+    confirmBtn.disabled = false;
+    cancelBtn.disabled = false;
+    shipBtn.disabled = false;
     
     if (order.status === 'pending' && !order.is_confirmed) {
-        confirmBtn.style.display = 'inline-block';
-        cancelBtn.style.display = 'inline-block';
-    } else if (order.status === 'confirmed' && !order.is_confirmed) {
-        confirmBtn.style.display = 'inline-block';
-        cancelBtn.style.display = 'inline-block';
+        // Ban đầu: Xác nhận enable, Hủy và Giao hàng disable
+        confirmBtn.disabled = false;
+        cancelBtn.disabled = true;
+        shipBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i>Xác nhận đơn hàng';
+        cancelBtn.innerHTML = '<i class="fas fa-times me-1"></i>Hủy đơn hàng';
+        shipBtn.innerHTML = '<i class="fas fa-truck me-1"></i>Đã giao hàng';
+    } else if (order.status === 'processing' || (order.status === 'confirmed' && order.is_confirmed)) {
+        // Sau khi xác nhận: Xác nhận disable, Hủy và Giao hàng enable (chỉ chọn 1)
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = false;
+        shipBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i>Đã xác nhận';
+        cancelBtn.innerHTML = '<i class="fas fa-times me-1"></i>Hủy đơn hàng';
+        shipBtn.innerHTML = '<i class="fas fa-truck me-1"></i>Đã giao hàng';
+    } else if (order.status === 'shipped') {
+        // Đã giao hàng: Tất cả disable
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        shipBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i>Đã xác nhận';
+        cancelBtn.innerHTML = '<i class="fas fa-times me-1"></i>Hủy đơn hàng';
+        shipBtn.innerHTML = '<i class="fas fa-truck me-1"></i>Đã giao hàng';
+    } else if (order.status === 'cancelled') {
+        // Đã hủy: Tất cả disable
+        confirmBtn.disabled = true;
+        cancelBtn.disabled = true;
+        shipBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-check me-1"></i>Xác nhận đơn hàng';
+        cancelBtn.innerHTML = '<i class="fas fa-times me-1"></i>Đã hủy';
+        shipBtn.innerHTML = '<i class="fas fa-truck me-1"></i>Đã giao hàng';
     } else {
+        // Các trạng thái khác: Ẩn tất cả nút
         confirmBtn.style.display = 'none';
         cancelBtn.style.display = 'none';
+        shipBtn.style.display = 'none';
     }
 }
 
@@ -453,13 +1164,113 @@ async function confirmOrder() {
         return;
     }
     
+    // Show loading state and disable immediately
+    const confirmBtn = document.getElementById('confirmOrderBtn');
+    if (!confirmBtn) return;
+    
+    const originalText = confirmBtn.innerHTML;
+    confirmBtn.disabled = true;
+    confirmBtn.style.pointerEvents = 'none';
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
+    
     try {
-        await AdminAPI.confirmOrder(currentOrderId);
-        await loadOrders(); // Reload orders
-        bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+        // Check stock availability first
+        const order = allOrders.find(o => o.id === currentOrderId);
+        if (!order || !order.items) {
+            throw new Error('Không tìm thấy thông tin đơn hàng');
+        }
+        
+        console.log('Order items for stock check:', order.items);
+        
+        // Try to check stock availability (optional - skip if API fails)
+        try {
+            const stockCheckPromises = order.items.map(async (item) => {
+                // Get product ID - handle both object and number cases
+                const productId = typeof item.product === 'object' ? item.product.id : item.product;
+                const productName = item.product_name || (typeof item.product === 'object' ? item.product.name : `Sản phẩm ${productId}`);
+                
+                console.log(`Checking stock for product ${productId}: ${productName}`);
+                
+                const response = await fetch(`/api/product-stock/${productId}`);
+                if (!response.ok) {
+                    console.warn(`Stock check failed for product ${productId}: ${response.status}`);
+                    return null; // Skip this product
+                }
+                const data = await response.json();
+                return {
+                    product_id: productId,
+                    product_name: productName,
+                    requested: item.quantity,
+                    available: data.stock_quantity || 0
+                };
+            });
+            
+            const stockResults = await Promise.all(stockCheckPromises);
+            const validResults = stockResults.filter(result => result !== null);
+            
+            if (validResults.length > 0) {
+                const insufficientStock = validResults.filter(item => item.available < item.requested);
+                
+                if (insufficientStock.length > 0) {
+                    const insufficientList = insufficientStock.map(item => 
+                        `- ${item.product_name}: Cần ${item.requested}, Còn ${item.available}`
+                    ).join('\n');
+                    
+                    showNotification(`Không đủ tồn kho cho các sản phẩm sau:\n${insufficientList}`, 'error');
+                    return;
+                }
+            } else {
+                console.log('Stock check skipped - no valid results');
+            }
+        } catch (stockError) {
+            console.warn('Stock check failed, proceeding without stock validation:', stockError);
+        }
+        
+        // Direct API call
+        const response = await fetch(`/admin/api/orders/${currentOrderId}/confirm`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        showNotification(result.message || 'Đã xác nhận đơn hàng thành công', 'success');
+        
+        // Close modals
+        const orderModal = document.getElementById('orderDetailModal');
+        if (orderModal && window.bootstrap) {
+            const modalInstance = bootstrap.Modal.getInstance(orderModal) || new bootstrap.Modal(orderModal);
+            modalInstance.hide();
+        }
+        
+        // Also close edit modal if open
+        const editModal = document.getElementById('editOrderModal');
+        if (editModal && window.bootstrap) {
+            const editModalInstance = bootstrap.Modal.getInstance(editModal);
+            if (editModalInstance) {
+                editModalInstance.hide();
+            }
+        }
+        
+        // Reload orders list
+        await refreshOrders();
         
     } catch (error) {
         console.error('Error confirming order:', error);
+        showNotification('Lỗi khi xác nhận đơn hàng: ' + error.message, 'error');
+    } finally {
+        // Restore button state
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.style.pointerEvents = 'auto';
+            confirmBtn.innerHTML = originalText;
+        }
     }
 }
 
@@ -470,13 +1281,142 @@ async function cancelOrder() {
         return;
     }
     
+    // Disable both buttons during processing
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+    const shipBtn = document.getElementById('shipOrderBtn');
+    if (!cancelBtn || !shipBtn) return;
+    
+    const originalCancelText = cancelBtn.innerHTML;
+    const originalShipText = shipBtn.innerHTML;
+    
+    cancelBtn.disabled = true;
+    shipBtn.disabled = true;
+    cancelBtn.style.pointerEvents = 'none';
+    shipBtn.style.pointerEvents = 'none';
+    cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
+    
     try {
-        await AdminAPI.cancelOrder(currentOrderId);
-        await loadOrders(); // Reload orders
-        bootstrap.Modal.getInstance(document.getElementById('orderDetailModal')).hide();
+        // Direct API call
+        const response = await fetch(`/admin/api/orders/${currentOrderId}/cancel`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        showNotification(result.message || 'Đã hủy đơn hàng thành công', 'success');
+        
+        // Close modals
+        const orderModal = document.getElementById('orderDetailModal');
+        if (orderModal && window.bootstrap) {
+            const modalInstance = bootstrap.Modal.getInstance(orderModal) || new bootstrap.Modal(orderModal);
+            modalInstance.hide();
+        }
+        
+        // Also close edit modal if open
+        const editModal = document.getElementById('editOrderModal');
+        if (editModal && window.bootstrap) {
+            const editModalInstance = bootstrap.Modal.getInstance(editModal);
+            if (editModalInstance) {
+                editModalInstance.hide();
+            }
+        }
+        
+        // Reload orders list
+        await refreshOrders();
         
     } catch (error) {
         console.error('Error cancelling order:', error);
+        showNotification('Lỗi khi hủy đơn hàng: ' + error.message, 'error');
+    } finally {
+        // Restore button states
+        if (cancelBtn && shipBtn) {
+            cancelBtn.disabled = false;
+            shipBtn.disabled = false;
+            cancelBtn.style.pointerEvents = 'auto';
+            shipBtn.style.pointerEvents = 'auto';
+            cancelBtn.innerHTML = originalCancelText;
+            shipBtn.innerHTML = originalShipText;
+        }
+    }
+}
+
+async function shipOrder() {
+    if (!currentOrderId) return;
+    
+    if (!confirm('Bạn có chắc chắn muốn đánh dấu đơn hàng này là đã giao hàng?')) {
+        return;
+    }
+    
+    // Disable both buttons during processing
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+    const shipBtn = document.getElementById('shipOrderBtn');
+    if (!cancelBtn || !shipBtn) return;
+    
+    const originalCancelText = cancelBtn.innerHTML;
+    const originalShipText = shipBtn.innerHTML;
+    
+    cancelBtn.disabled = true;
+    shipBtn.disabled = true;
+    cancelBtn.style.pointerEvents = 'none';
+    shipBtn.style.pointerEvents = 'none';
+    shipBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
+    
+    try {
+        // Direct API call to update status to 'shipped'
+        const response = await fetch(`/admin/api/orders/${currentOrderId}/ship`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        showNotification(result.message || 'Đã đánh dấu đơn hàng là giao hàng thành công', 'success');
+        
+        // Close modals
+        const orderModal = document.getElementById('orderDetailModal');
+        if (orderModal && window.bootstrap) {
+            const modalInstance = bootstrap.Modal.getInstance(orderModal) || new bootstrap.Modal(orderModal);
+            modalInstance.hide();
+        }
+        
+        // Also close edit modal if open
+        const editModal = document.getElementById('editOrderModal');
+        if (editModal && window.bootstrap) {
+            const editModalInstance = bootstrap.Modal.getInstance(editModal);
+            if (editModalInstance) {
+                editModalInstance.hide();
+            }
+        }
+        
+        // Reload orders list
+        await refreshOrders();
+        
+    } catch (error) {
+        console.error('Error shipping order:', error);
+        showNotification('Lỗi khi đánh dấu giao hàng: ' + error.message, 'error');
+    } finally {
+        // Restore button states
+        if (cancelBtn && shipBtn) {
+            cancelBtn.disabled = false;
+            shipBtn.disabled = false;
+            cancelBtn.style.pointerEvents = 'auto';
+            shipBtn.style.pointerEvents = 'auto';
+            cancelBtn.innerHTML = originalCancelText;
+            shipBtn.innerHTML = originalShipText;
+        }
     }
 }
 
@@ -522,11 +1462,219 @@ async function updateOrder() {
 }
 
 function refreshOrders() {
+    // Xóa cache trước khi load lại
+    localStorage.removeItem('orders_cache');
     loadOrders();
 }
 
 function exportOrders() {
     AdminAPI.showNotification('Tính năng xuất Excel cần được implement', 'info');
 }
+
+function showBankTransferImage(imageUrl, orderId) {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('bankTransferImageModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = 'bankTransferImageModal';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-image me-2"></i>Ảnh Chuyển Khoản - Đơn Hàng #${orderId}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <div class="mb-3">
+                            <img id="bankTransferImageDisplay" src="" alt="Ảnh chuyển khoản" class="img-fluid rounded shadow" style="max-height: 70vh; max-width: 100%;">
+                        </div>
+                        <div class="mt-3">
+                            <a id="downloadBankTransferImage" href="" download class="btn btn-outline-primary me-2">
+                                <i class="fas fa-download me-1"></i>Tải xuống
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary" onclick="openImageInNewTab()">
+                                <i class="fas fa-external-link-alt me-1"></i>Mở trong tab mới
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Update image source and download link
+    document.getElementById('bankTransferImageDisplay').src = imageUrl;
+    document.getElementById('downloadBankTransferImage').href = imageUrl;
+    
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+function openImageInNewTab() {
+    const imageUrl = document.getElementById('bankTransferImageDisplay').src;
+    window.open(imageUrl, '_blank');
+}
 </script>
+
+<!-- Bank Transfer Image Modal -->
+<div class="modal fade" id="bankTransferImageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-image me-2"></i>Ảnh Chuyển Khoản
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <img id="bankTransferImageDisplay" src="" alt="Ảnh chuyển khoản" class="img-fluid rounded shadow" style="max-height: 70vh; max-width: 100%;">
+                </div>
+                <div class="mt-3">
+                    <a id="downloadBankTransferImage" href="" download class="btn btn-outline-primary me-2">
+                        <i class="fas fa-download me-1"></i>Tải xuống
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="openImageInNewTab()">
+                        <i class="fas fa-external-link-alt me-1"></i>Mở trong tab mới
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Notification function
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} notification`;
+    
+    // Custom styling based on type
+    let customStyle = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        max-width: 500px;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    // Add light red background for error notifications
+    if (type === 'error' || type === 'danger') {
+        customStyle += `
+            background-color: #f8d7da !important;
+            border-color: #f5c6cb !important;
+            color: #721c24 !important;
+        `;
+    }
+    
+    notification.style.cssText = customStyle;
+    
+    notification.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+            <div style="white-space: pre-line; flex: 1; margin-right: 10px;">${message}</div>
+            <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    // Add to body
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Add CSS for animation and styling
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .notification .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+    
+    .notification .btn-close:hover {
+        opacity: 1;
+    }
+    
+    .notification .btn-close::before {
+        content: '×';
+        font-weight: bold;
+    }
+`;
+document.head.appendChild(style);
+
+// Auto-complete orders that have been shipped for 5+ days
+async function autoCompleteShippedOrders() {
+    try {
+        console.log('🔄 Checking for orders to auto-complete...');
+        
+        const response = await fetch('/admin/api/orders/auto-complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            if (result.updated_orders && result.updated_orders.length > 0) {
+                console.log(`✅ Auto-completed ${result.updated_orders.length} orders:`, result.updated_orders);
+                
+                // Show notification
+                showNotification(
+                    `Đã tự động hoàn thành ${result.updated_orders.length} đơn hàng:\n` +
+                    result.updated_orders.map(order => `- Đơn hàng #${order.id} (${order.customer_name})`).join('\n'),
+                    'success'
+                );
+                
+                // Refresh orders list to show updated status
+                await refreshOrders();
+            } else {
+                console.log('ℹ️ No orders to auto-complete');
+            }
+        } else {
+            const error = await response.json();
+            console.error('❌ Auto-complete failed:', error);
+        }
+    } catch (error) {
+        console.error('❌ Error in auto-complete:', error);
+    }
+}
+
+// Set up periodic auto-complete check (every 2 minutes for testing)
+setInterval(async () => {
+    await autoCompleteShippedOrders();
+}, 2 * 60 * 1000); // 2 minutes for testing
+
+</script>
+
 {% endblock %}

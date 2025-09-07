@@ -48,6 +48,34 @@
 }
 
 /* Override any gradient styles applied to input-group buttons */
+
+/* Out of Stock Overlay Styles */
+#outOfStockOverlay {
+    transition: all 0.3s ease !important;
+    backdrop-filter: blur(2px) !important;
+    z-index: 10 !important;
+}
+
+#outOfStockOverlay i {
+    color: #dc3545;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+#outOfStockOverlay h4 {
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-weight: 700;
+}
+
+/* Disabled button styles */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Grayscale transition for out of stock images */
+#mainImage {
+    transition: filter 0.3s ease;
+}
 .input-group .promo-apply-btn {
     background-image: none !important;
     background: #009a38 !important;
@@ -3107,8 +3135,16 @@ html {
 
 /* FlashSale products styling in products page */
 .flash-sale-card {
-    border: 2px solid #ffc107 !important;
+    border: 1px solid #ffc107 !important;
     box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2) !important;
+}
+
+.flash-sale-card .card-body {
+    border: none !important;
+}
+
+.flash-sale-card .card-img-top {
+    border: none !important;
 }
 
 .flash-sale-card .btn-warning {
@@ -3123,3 +3159,35 @@ html {
     border-color: #d39e00 !important;
     color: #000 !important;
 }
+
+/* Flash Sale Container Card - No border */
+.flash-sale-container-card .product-badges-row{
+  display:flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap:4px !important;
+}
+
+.flash-sale-container-card .product-info-badge{ margin-left: 2px !important; }
+
+.flash-sale-container-card .card-body {
+    border: none !important;
+}
+
+.flash-sale-container-card .card-img-top {
+    border: none !important;
+}
+
+.flash-sale-container-card .btn-warning {
+    background-color: #ffc107 !important;
+    border-color: #ffc107 !important;
+    color: #000 !important;
+    font-weight: 600 !important;
+}
+
+.flash-sale-container-card .btn-warning:hover {
+    background-color: #e0a800 !important;
+    border-color: #d39e00 !important;
+    color: #000 !important;
+}
+/* Cache bust: 1757233601 */

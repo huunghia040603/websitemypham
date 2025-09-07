@@ -1,0 +1,494 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Quản Lý Khách Hàng - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-users me-2"></i>Quản Lý Khách Hàng
+            </h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" onclick="exportCustomers()">
+                    <i class="fas fa-download me-2"></i>Xuất Excel
+                </button>
+                <button class="btn btn-primary" onclick="refreshCustomers()">
+                    <i class="fas fa-sync me-2"></i>Làm Mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter and Search -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="customerSearch" class="form-label">Tìm kiếm khách hàng</label>
+                        <input type="text" class="form-control" id="customerSearch" placeholder="Tên, email, số điện thoại...">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="statusFilter" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Tất cả</option>
+                            <option value="active">Hoạt động</option>
+                            <option value="inactive">Không hoạt động</option>
+                            <option value="blocked">Bị khóa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="dateFilter" class="form-label">Ngày đăng ký</label>
+                        <select class="form-select" id="dateFilter">
+                            <option value="">Tất cả</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="week">Tuần này</option>
+                            <option value="month">Tháng này</option>
+                            <option value="year">Năm nay</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                            <i class="fas fa-times me-1"></i>Xóa Lọc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customers Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Danh Sách Khách Hàng
+                    <span class="badge bg-primary ms-2" id="customerCount">0</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="customersContainer">
+                    <div class="loading-spinner show">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Đang tải danh sách khách hàng...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Customer Modal -->
+<div class="modal fade" id="editCustomerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-edit me-2"></i>Chỉnh Sửa Khách Hàng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCustomerForm">
+                    <input type="hidden" id="editCustomerId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerName" class="form-label">Họ và tên *</label>
+                            <input type="text" class="form-control" id="editCustomerName" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerEmail" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="editCustomerEmail" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerPhone" class="form-label">Số điện thoại *</label>
+                            <input type="tel" class="form-control" id="editCustomerPhone" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerStatus" class="form-label">Trạng thái</label>
+                            <select class="form-select" id="editCustomerStatus">
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Không hoạt động</option>
+                                <option value="blocked">Bị khóa</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="editCustomerAddress" class="form-label">Địa chỉ</label>
+                            <textarea class="form-control" id="editCustomerAddress" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerBirthday" class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" id="editCustomerBirthday">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editCustomerGender" class="form-label">Giới tính</label>
+                            <select class="form-select" id="editCustomerGender">
+                                <option value="">Chọn giới tính</option>
+                                <option value="male">Nam</option>
+                                <option value="female">Nữ</option>
+                                <option value="other">Khác</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="updateCustomerBtn">
+                    <i class="fas fa-save me-2"></i>Cập Nhật
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Mobile responsive styles for customer table */
+@media (max-width: 768px) {
+    .table-admin {
+        font-size: 0.75rem;
+    }
+    
+    .table-admin th,
+    .table-admin td {
+        padding: 0.25rem 0.5rem;
+        vertical-align: middle;
+    }
+    
+    .table-admin .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+    
+    .table-admin .badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.4rem;
+    }
+    
+    .table-admin strong {
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    
+    .table-admin small {
+        font-size: 0.65rem;
+    }
+}
+
+/* Mobile phone styles (≤576px) */
+@media (max-width: 576px) {
+    .table-admin strong {
+        font-size: 0.4rem;
+        font-weight: 500;
+    }
+}
+
+/* Status badges */
+.status-active {
+    background: #d4edda !important;
+    color: #155724 !important;
+    border: 1px solid #c3e6cb !important;
+}
+
+.status-inactive {
+    background: #f8d7da !important;
+    color: #721c24 !important;
+    border: 1px solid #f5c6cb !important;
+}
+
+.status-blocked {
+    background: #d1ecf1 !important;
+    color: #0c5460 !important;
+    border: 1px solid #bee5eb !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allCustomers = [];
+let filteredCustomers = [];
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadCustomers();
+    setupEventListeners();
+});
+
+async function loadCustomers() {
+    try {
+        AdminAPI.showLoading('customersContainer');
+        allCustomers = await AdminAPI.getCustomers();
+        filteredCustomers = [...allCustomers];
+        
+        renderCustomers();
+        updateCustomerCount();
+        
+    } catch (error) {
+        console.error('Error loading customers:', error);
+        let errorMessage = 'Lỗi khi tải danh sách khách hàng';
+        
+        if (error.message && error.message.includes('401')) {
+            errorMessage = 'API yêu cầu xác thực để truy cập danh sách khách hàng. Vui lòng liên hệ quản trị viên.';
+        } else if (error.message && error.message.includes('500')) {
+            errorMessage = 'Lỗi server khi tải danh sách khách hàng. Vui lòng thử lại sau.';
+        }
+        
+        document.getElementById('customersContainer').innerHTML = 
+            `<div class="text-center py-4">
+                <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+                <p class="text-danger">${errorMessage}</p>
+                <button class="btn btn-outline-primary" onclick="loadCustomers()">
+                    <i class="fas fa-sync me-2"></i>Thử lại
+                </button>
+            </div>`;
+    }
+}
+
+function renderCustomers() {
+    const container = document.getElementById('customersContainer');
+    
+    if (filteredCustomers.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-users text-muted mb-3" style="font-size: 3rem;"></i>
+                <p class="text-muted">Không có khách hàng nào</p>
+                <p class="text-muted small">Có thể API yêu cầu xác thực hoặc chưa có khách hàng nào được tạo</p>
+            </div>`;
+        return;
+    }
+    
+    let html = '<div class="table-responsive"><table class="table table-admin">';
+    html += '<thead><tr><th>ID</th><th>Thông Tin</th><th>Liên Hệ</th><th>Trạng Thái</th><th>Ngày Đăng Ký</th><th>Thao Tác</th></tr></thead><tbody>';
+    
+    filteredCustomers.forEach(customer => {
+        const statusClass = getStatusClass(customer.status || 'active');
+        const statusText = getStatusText(customer.status || 'active');
+        const registrationDate = customer.created_at ? AdminAPI.formatDate(customer.created_at) : 'N/A';
+        const customerLevel = customer.level ? `Level ${customer.level}` : 'N/A';
+        const customerPoints = customer.points || 0;
+        
+        html += `
+            <tr>
+                <td><strong>#${customer.id}</strong></td>
+                <td>
+                    <div>
+                        <strong>${customer.name || 'N/A'}</strong>
+                        ${customer.level ? `<br><small class="text-muted">${customerLevel}</small>` : ''}
+                        ${customer.points ? `<br><small class="text-muted">${customerPoints} điểm</small>` : ''}
+                        ${customer.dob ? `<br><small class="text-muted">Sinh: ${AdminAPI.formatDate(customer.dob)}</small>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <i class="fas fa-envelope me-1"></i>${customer.email || 'N/A'}<br>
+                        <i class="fas fa-phone me-1"></i>${customer.phone_number || 'N/A'}
+                        ${customer.address ? `<br><i class="fas fa-map-marker-alt me-1"></i><small>${customer.address}</small>` : ''}
+                    </div>
+                </td>
+                <td><span class="badge ${statusClass}">${statusText}</span></td>
+                <td>${registrationDate}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editCustomer(${customer.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-info" onclick="viewCustomerDetails(${customer.id})" data-bs-toggle="tooltip" title="Xem chi tiết">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+    
+    // Re-initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+}
+
+function getStatusClass(status) {
+    const statusMap = {
+        'active': 'status-active',
+        'inactive': 'status-inactive',
+        'blocked': 'status-blocked'
+    };
+    return statusMap[status] || 'status-active';
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        'active': 'Hoạt động',
+        'inactive': 'Không hoạt động',
+        'blocked': 'Bị khóa'
+    };
+    return statusMap[status] || 'Hoạt động';
+}
+
+function getGenderText(gender) {
+    const genderMap = {
+        'male': 'Nam',
+        'female': 'Nữ',
+        'other': 'Khác'
+    };
+    return genderMap[gender] || gender;
+}
+
+function updateCustomerCount() {
+    document.getElementById('customerCount').textContent = filteredCustomers.length;
+}
+
+function setupEventListeners() {
+    // Search functionality
+    document.getElementById('customerSearch').addEventListener('input', filterCustomers);
+    document.getElementById('statusFilter').addEventListener('change', filterCustomers);
+    document.getElementById('dateFilter').addEventListener('change', filterCustomers);
+    
+    // Update customer
+    document.getElementById('updateCustomerBtn').addEventListener('click', updateCustomer);
+}
+
+function filterCustomers() {
+    const searchTerm = document.getElementById('customerSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    filteredCustomers = allCustomers.filter(customer => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+            (customer.name && customer.name.toLowerCase().includes(searchTerm)) ||
+            (customer.email && customer.email.toLowerCase().includes(searchTerm)) ||
+            (customer.phone_number && customer.phone_number.toLowerCase().includes(searchTerm));
+        
+        // Status filter
+        const matchesStatus = !statusFilter || (customer.status || 'active') === statusFilter;
+        
+        // Date filter
+        let matchesDate = true;
+        if (dateFilter && customer.created_at) {
+            const customerDate = new Date(customer.created_at);
+            const now = new Date();
+            
+            switch (dateFilter) {
+                case 'today':
+                    matchesDate = customerDate.toDateString() === now.toDateString();
+                    break;
+                case 'week':
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    matchesDate = customerDate >= weekAgo;
+                    break;
+                case 'month':
+                    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    matchesDate = customerDate >= monthAgo;
+                    break;
+                case 'year':
+                    const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                    matchesDate = customerDate >= yearAgo;
+                    break;
+            }
+        }
+        
+        return matchesSearch && matchesStatus && matchesDate;
+    });
+    
+    renderCustomers();
+    updateCustomerCount();
+}
+
+function clearFilters() {
+    document.getElementById('customerSearch').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('dateFilter').value = '';
+    filterCustomers();
+}
+
+function editCustomer(customerId) {
+    const customer = allCustomers.find(c => c.id === customerId);
+    if (!customer) return;
+    
+    // Populate form
+    document.getElementById('editCustomerId').value = customer.id;
+    document.getElementById('editCustomerName').value = customer.name || '';
+    document.getElementById('editCustomerEmail').value = customer.email || '';
+    document.getElementById('editCustomerPhone').value = customer.phone_number || '';
+    document.getElementById('editCustomerStatus').value = customer.status || 'active';
+    document.getElementById('editCustomerAddress').value = customer.address || '';
+    document.getElementById('editCustomerBirthday').value = customer.dob ? customer.dob.split('T')[0] : '';
+    document.getElementById('editCustomerGender').value = customer.gender || '';
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('editCustomerModal')).show();
+}
+
+async function updateCustomer() {
+    const customerId = document.getElementById('editCustomerId').value;
+    const formData = {
+        name: document.getElementById('editCustomerName').value,
+        email: document.getElementById('editCustomerEmail').value,
+        phone_number: document.getElementById('editCustomerPhone').value,
+        status: document.getElementById('editCustomerStatus').value,
+        address: document.getElementById('editCustomerAddress').value,
+        dob: document.getElementById('editCustomerBirthday').value || null,
+        gender: document.getElementById('editCustomerGender').value || null
+    };
+    
+    try {
+        await AdminAPI.updateCustomer(customerId, formData);
+        AdminAPI.showNotification('Cập nhật khách hàng thành công!', 'success');
+        
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById('editCustomerModal')).hide();
+        
+        // Reload customers
+        await loadCustomers();
+    } catch (error) {
+        console.error('Error updating customer:', error);
+    }
+}
+
+function viewCustomerDetails(customerId) {
+    const customer = allCustomers.find(c => c.id === customerId);
+    if (!customer) return;
+    
+    // Create a simple alert for now - you can enhance this with a proper modal
+    let details = `Thông tin khách hàng #${customer.id}\n\n`;
+    details += `Tên: ${customer.name || 'N/A'}\n`;
+    details += `Email: ${customer.email || 'N/A'}\n`;
+    details += `Số điện thoại: ${customer.phone_number || 'N/A'}\n`;
+    details += `Địa chỉ: ${customer.address || 'N/A'}\n`;
+    details += `Giới tính: ${getGenderText(customer.gender) || 'N/A'}\n`;
+    details += `Ngày sinh: ${customer.dob ? AdminAPI.formatDate(customer.dob) : 'N/A'}\n`;
+    details += `Level: ${customer.level || 'N/A'}\n`;
+    details += `Điểm: ${customer.points || 0}\n`;
+    details += `Trạng thái: ${getStatusText(customer.status)}\n`;
+    details += `Ngày đăng ký: ${customer.created_at ? AdminAPI.formatDate(customer.created_at) : 'N/A'}`;
+    
+    alert(details);
+}
+
+function refreshCustomers() {
+    loadCustomers();
+}
+
+function exportCustomers() {
+    AdminAPI.showNotification('Tính năng xuất Excel đang được phát triển', 'info');
+}
+</script>
+{% endblock %}
+ 
+
+
+

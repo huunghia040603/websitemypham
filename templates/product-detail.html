@@ -25,11 +25,20 @@
             <div class="col-lg-6">
                 <div class="product-images">
                     <!-- Main Image -->
-                    <div class="main-image mb-3">
+                    <div class="main-image mb-3 position-relative">
                         <img src="/static/image/default-product.jpg" 
                              alt="Hình sản phẩm" 
                              class="img-fluid rounded" 
                              id="mainImage">
+                        <!-- Out of Stock Overlay -->
+                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                             id="outOfStockOverlay" 
+                             style="display: none; background-color: rgba(0,0,0,0.7); border-radius: 0.375rem;">
+                            <div class="text-center text-white">
+                                <i class="fas fa-times-circle fa-3x mb-2"></i>
+                                <h4 class="fw-bold">HẾT HÀNG</h4>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- Thumbnail Images -->
@@ -46,6 +55,7 @@
                     <!-- Rating -->
                     <div class="d-flex align-items-center mb-3">
                         <div class="stars text-warning me-2" id="detailStars"></div>
+                        <span class="fw-bold text-warning me-2" id="detailRating">0.0</span>
                         <span class="text-muted me-2" id="detailReviews">(0 đánh giá)</span>
                         <span class="text-success" id="detailStock"></span>
                     </div>
@@ -55,7 +65,7 @@
                         <div class="d-flex align-items-center">
                             <span class="text-decoration-line-through text-muted fs-5 me-3" id="detailOriginalPrice"></span>
                             <span class="text-danger fw-bold fs-2" id="detailDiscountedPrice"></span>
-                            <span class="badge bg-danger ms-2 fs-6" id="detailDiscountBadge" style="display:none"></span>
+                            <span class="badge bg-danger fs-6" id="detailDiscountBadge" style="display:none; margin-left: 8px;"></span>
                         </div>
                         <small class="text-muted" id="detailSavings"></small>
                     </div>
@@ -85,7 +95,7 @@
                         <label class="form-label fw-semibold">Số lượng:</label>
                         <div class="d-flex align-items-center">
                             <button class="btn btn-outline-secondary" onclick="changeQuantity(-1)">-</button>
-                            <input type="number" class="form-control mx-2" value="1" min="1" id="quantity" style="width: 80px;">
+                            <input type="number" class="form-control mx-2" value="1" min="1" id="quantity" style="width: 80px;" onchange="validateQuantityInput()" oninput="validateQuantityInput()" max="999">
                             <button class="btn btn-outline-secondary" onclick="changeQuantity(1)">+</button>
                         </div>
                     </div>
@@ -157,7 +167,7 @@
                 <div class="tab-content" id="productTabsContent">
                     <!-- Description Tab -->
                     <div class="tab-pane fade show active" id="description" role="tabpanel">
-                        <div class="p-4" id="detailDescription">Đang cập nhật mô tả sản phẩm...</div>
+                        <div class="p-4" id="detailDescription" style="line-height: 1.6; text-align: justify;">Đang cập nhật mô tả sản phẩm...</div>
                     </div>
                     
                     <!-- Specifications Tab -->
@@ -254,7 +264,61 @@ function changeQuantity(delta) {
     const quantityInput = document.getElementById('quantity');
     let currentValue = parseInt(quantityInput.value) || 1;
     let newValue = currentValue + delta;
-    if (newValue >= 1) { quantityInput.value = newValue; }
+    
+    // Get stock quantity from the page
+    const stockText = document.getElementById('detailStock').textContent;
+    const stockMatch = stockText.match(/Còn (\d+) sản phẩm/);
+    const stockQuantity = stockMatch ? parseInt(stockMatch[1]) : 0;
+    
+    // Limit quantity to stock and minimum 1
+    if (newValue >= 1 && newValue <= stockQuantity) { 
+        quantityInput.value = newValue; 
+    } else if (newValue > stockQuantity) {
+        // Show notification if trying to exceed stock
+        showStockLimitNotification(stockQuantity);
+    }
+}
+
+// Show stock limit notification
+function showStockLimitNotification(maxStock) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-warning alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Số lượng vượt quá tồn kho!</strong><br>
+        Chỉ còn ${maxStock} sản phẩm trong kho.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Validate quantity input when user types directly
+function validateQuantityInput() {
+    const quantityInput = document.getElementById('quantity');
+    let inputValue = parseInt(quantityInput.value) || 1;
+    
+    // Get stock quantity from the page
+    const stockText = document.getElementById('detailStock').textContent;
+    const stockMatch = stockText.match(/Còn (\d+) sản phẩm/);
+    const stockQuantity = stockMatch ? parseInt(stockMatch[1]) : 0;
+    
+    // Validate and correct input
+    if (inputValue < 1) {
+        quantityInput.value = 1;
+    } else if (inputValue > stockQuantity) {
+        quantityInput.value = stockQuantity;
+        showStockLimitNotification(stockQuantity);
+    }
 }
 
 // Add to cart

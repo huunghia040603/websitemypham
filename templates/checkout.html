@@ -122,7 +122,7 @@
     }
     
     /* Responsive adjustments for small mobile (2 products per row) */
-    @media (max-width: 576px) {
+    @media (max-width: 767px) {
         .suggested-product-card {
             min-height: 160px !important;
             height: 160px !important;
@@ -149,6 +149,12 @@
         }
         .product-logo img{
             height: 24px !important;
+        }
+        
+        /* Ensure 2 columns on mobile */
+        #checkout-suggested-products .col-6 {
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
         }
     }
     
@@ -372,10 +378,10 @@
                                 <input id="fullName" name="fullName" type="text" class="form-control checkout-required" placeholder="Nhập tên" required>
                             </div>
                             <div class="col-md-6">
-                                <input id="phone" name="phone" type="tel" class="form-control checkout-required" placeholder="Nhập số điện thoại" required>
+                                <input id="phone" name="phone" type="tel" class="form-control checkout-required" placeholder="Nhập số điện thoại nhận hàng nên để sđt có Zalo" required>
                             </div>
                             <div class="col-md-6">
-                                <input id="email" name="email" type="email" class="form-control" placeholder="Nhập email">
+                                <input id="email" name="email" type="email" class="form-control" placeholder="Nhập email để nhận hoá đơn chi tiết">
                             </div>
                 
                             <div class="col-md-6">
@@ -465,6 +471,8 @@
                             <span class="text-muted">Phí vận chuyển</span>
                             <span class="checkout-shipping">0đ</span>
                         </div>
+                        <!-- Hidden input for shipping fee -->
+                        <input type="hidden" id="checkout-shipping" name="checkout-shipping" value="0">
                         <div class="d-flex justify-content-between mb-2" id="checkoutVoucherLine" style="display: none !important;">
                             <span class="text-success">Mã giảm giá</span>
                             <span class="text-success checkout-voucher-discount">-0đ</span>
@@ -482,7 +490,7 @@
                         </div>
                        
                                                  <div class="mt-3">
-                            <button class="btn btn-primary w-100" id="place-order-btn">Đặt hàng</button>
+                            <button class="btn btn-primary w-100" id="place-order-btn" onclick="handlePlaceOrder()" type="button">Đặt hàng</button>
                         </div>
                         
                         
@@ -515,6 +523,7 @@
                             
                         </div>
                         
+                       
                         <!-- Bank Transfer Information -->
                         <div id="bankTransferSection" class="d-none">
                             <hr class="my-3">
@@ -566,21 +575,62 @@
                                     <i class="fas fa-upload me-2"></i>Upload Ảnh Chuyển Khoản
                                 </label>
                                 <div class="input-group">
-                                    <input type="file" class="form-control" id="transferProof" accept="image/*" required>
+                                    <input type="file" class="form-control" id="transferProof" accept="image/*" required onchange="previewBankTransferImage(this)">
                                     <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('transferProof').click()">
                                         <i class="fas fa-folder-open"></i>
                                     </button>
                                 </div>
                                 <div class="form-text">
                                     <i class="fas fa-info-circle me-1"></i>
-                                    <strong>Bắt buộc:</strong> Vui lòng upload ảnh chụp màn hình hoặc biên lai chuyển khoản để xác nhận thanh toán. Không có ảnh chuyển khoản, đơn hàng sẽ không được xử lý.
+                                    <strong>Bắt buộc:</strong> Vui lòng upload ảnh chụp màn hình hoặc biên lai chuyển khoản để xác nhận thanh toán. Không có ảnh chuyển khoản, đơn hàng sẽ không được xử lý.<br>
+                                    <i class="fas fa-compress-alt me-1"></i>
+                                    <strong>Lưu ý:</strong> Ảnh sẽ được tự động nén để giảm dung lượng. Kích thước tối đa: 10MB. Định dạng: PNG, JPG, JPEG, GIF, WEBP.
+                                </div>
+                                <!-- Image Preview -->
+                                <div id="bankTransferPreview" class="mt-3" style="display: none;">
+                                    <div class="card">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span class="fw-semibold"><i class="fas fa-image me-2"></i>Ảnh chuyển khoản</span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeBankTransferImage()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <div class="card-body p-2">
+                                            <img id="bankTransferImage" src="" alt="Ảnh chuyển khoản" class="img-fluid rounded" style="max-height: 200px; width: 100%; object-fit: contain;">
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
                            
                         </div>
+                         <!-- Order Processing Notice -->
+                         <div class="alert alert-info border-0 shadow-sm mb-3" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3 !important;">
+                            <div class="d-flex align-items-start">
+                                <div class="me-3">
+                                </div>
+                                <div>
+                                    <h6 class="alert-heading mb-2 text-primary fw-bold">
+                                        <i class="fas fa-heart me-1"></i>Tin nhắn dễ thương từ shop 
+                                    </h6>
+                                    <p class="mb-2 small">
+                                        🌸 <strong>Xin chào các bạn yêu quý!</strong> Shop mình có một tin nhắn nhỏ muốn gửi đến các bạn ạ! Do số lượng hàng có hạn nên shop sẽ ưu tiên xử lý các đơn chuyển khoản trước, sau đó mới đến các đơn COD nha 
+                                    </p>
+                                    <p class="mb-2 small">
+                                        ⏰ <strong>Nhân viên shop sẽ check đơn hàng mỗi 1-2 tiếng</strong> một lần để đảm bảo xử lý nhanh nhất có thể cho các bạn ạ! 
+                                    </p>
+                                    <p class="mb-0 small">
+                                        🥺 <strong>Nếu hết hàng, shop xin lỗi các bạn nhiều lắm!</strong> Chúng mình sẽ cố gắng bổ sung hàng sớm nhất để phục vụ các bạn tốt hơn nha! Mong các bạn thông cảm cho shop nhé 
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
                     </div>
+                    
                 </div>
+
+                
                 <!-- Voucher Section -->
                 <div class="mt-3" style="margin-bottom: 14px;">
                     <div class="card border-0 shadow">
@@ -638,5 +688,64 @@
         </div>
     </div>
 </section>
+
+<script>
+function previewBankTransferImage(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        // Check file size
+        if (file.size > maxSize) {
+            alert('File quá lớn! Kích thước tối đa là 10MB. Vui lòng chọn file khác.');
+            input.value = '';
+            return;
+        }
+        
+        // Check file type
+        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Định dạng file không được hỗ trợ! Vui lòng chọn file PNG, JPG, JPEG, GIF hoặc WEBP.');
+            input.value = '';
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('bankTransferImage').src = e.target.result;
+            document.getElementById('bankTransferPreview').style.display = 'block';
+            
+            // Show file size info
+            const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'text-muted small mt-2';
+            fileInfo.innerHTML = `<i class="fas fa-info-circle me-1"></i>Kích thước file: ${fileSizeMB}MB`;
+            
+            // Remove existing file info if any
+            const existingInfo = document.querySelector('.file-size-info');
+            if (existingInfo) {
+                existingInfo.remove();
+            }
+            
+            fileInfo.className += ' file-size-info';
+            document.getElementById('bankTransferPreview').appendChild(fileInfo);
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function removeBankTransferImage() {
+    document.getElementById('transferProof').value = '';
+    document.getElementById('bankTransferPreview').style.display = 'none';
+    document.getElementById('bankTransferImage').src = '';
+    
+    // Remove file size info
+    const existingInfo = document.querySelector('.file-size-info');
+    if (existingInfo) {
+        existingInfo.remove();
+    }
+}
+</script>
+
 {% endblock %}
 

@@ -234,33 +234,65 @@
         return a;
     }
 
-    // Fetch categories
-    fetch('https://buddyskincare.pythonanywhere.com/category/')
-      .then(r => r.ok ? r.json() : [])
-      .then(list => {
-        if (!Array.isArray(list)) return;
+    // Fetch categories - only show categories with products in stock
+    Promise.all([
+      fetch('https://buddyskincare.pythonanywhere.com/category/').then(r => r.ok ? r.json() : []),
+      fetch('https://buddyskincare.pythonanywhere.com/products/').then(r => r.ok ? r.json() : [])
+    ])
+      .then(([categoriesList, productsList]) => {
+        if (!Array.isArray(categoriesList) || !Array.isArray(productsList)) return;
         catWrap.innerHTML = '';
-        list.forEach(item => {
+        
+        // Get categories that have products with stock > 0
+        const categoriesWithStock = new Set();
+        productsList.forEach(product => {
+          const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
+          if (stockQuantity > 0) {
+            const categoryName = product.category_name || (product.category && product.category.name) || '';
+            if (categoryName) {
+              categoriesWithStock.add(categoryName);
+            }
+          }
+        });
+        
+        categoriesList.forEach(item => {
             const name = item.name || item.title || '';
             if (!name) return;
-            catWrap.appendChild(makeFilterLink(name, 'category_name', name, name === selectedCat));
+            // Only show categories that have products in stock
+            if (categoriesWithStock.has(name)) {
+              catWrap.appendChild(makeFilterLink(name, 'category_name', name, name === selectedCat));
+            }
         });
       }).catch(()=>{});
 
-    // Fetch brands
-    fetch('https://buddyskincare.pythonanywhere.com/brands/')
-      .then(r => r.ok ? r.json() : [])
-      .then(list => {
-        if (!Array.isArray(list)) return;
+    // Fetch brands - only show brands with products in stock
+    Promise.all([
+      fetch('https://buddyskincare.pythonanywhere.com/brands/').then(r => r.ok ? r.json() : []),
+      fetch('https://buddyskincare.pythonanywhere.com/products/').then(r => r.ok ? r.json() : [])
+    ])
+      .then(([brandsList, productsList]) => {
+        if (!Array.isArray(brandsList) || !Array.isArray(productsList)) return;
         brandWrap.innerHTML = '';
         
-        // Sort brands alphabetically by name
-        const sortedBrands = list
+        // Get brands that have products with stock > 0
+        const brandsWithStock = new Set();
+        productsList.forEach(product => {
+          const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
+          if (stockQuantity > 0) {
+            const brandName = product.brand_name || (product.brand && product.brand.name) || '';
+            if (brandName) {
+              brandsWithStock.add(brandName);
+            }
+          }
+        });
+        
+        // Sort brands alphabetically by name, only include those with stock
+        const sortedBrands = brandsList
           .map(item => ({
             name: item.name || item.title || '',
             item: item
           }))
-          .filter(brand => brand.name)
+          .filter(brand => brand.name && brandsWithStock.has(brand.name))
           .sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
         
         sortedBrands.forEach(brand => {
@@ -268,25 +300,28 @@
         });
       }).catch(()=>{});
 
-    // Fetch tags from products
+    // Fetch tags from products - only show tags with products in stock
     fetch('https://buddyskincare.pythonanywhere.com/products/')
       .then(r => r.ok ? r.json() : [])
       .then(products => {
         if (!Array.isArray(products)) return;
         tagsWrap.innerHTML = '';
         
-        // Extract all unique tags from products
+        // Extract all unique tags from products that have stock > 0
         const allTags = new Set();
         products.forEach(product => {
-          const tags = product?.tags || [];
-          if (Array.isArray(tags)) {
-            tags.forEach(tag => {
-              if (typeof tag === 'string' && tag.trim()) {
-                allTags.add(tag.trim());
-              } else if (tag && typeof tag === 'object' && tag.name && tag.name.trim()) {
-                allTags.add(tag.name.trim());
-              }
-            });
+          const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
+          if (stockQuantity > 0) {
+            const tags = product?.tags || [];
+            if (Array.isArray(tags)) {
+              tags.forEach(tag => {
+                if (typeof tag === 'string' && tag.trim()) {
+                  allTags.add(tag.trim());
+                } else if (tag && typeof tag === 'object' && tag.name && tag.name.trim()) {
+                  allTags.add(tag.name.trim());
+                }
+              });
+            }
           }
         });
         

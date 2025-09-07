@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Admin Login - BuddySkincare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .test-card { margin-bottom: 20px; }
+        .test-result { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4"><i class="fas fa-shield-alt me-2"></i>Test Admin Login System</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card test-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-link me-2"></i>Admin Login Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Trang đăng nhập admin:</strong></p>
+                        <a href="http://localhost:8000/admin/login" class="btn btn-primary me-2" target="_blank">
+                            <i class="fas fa-sign-in-alt me-1"></i>Admin Login
+                        </a>
+                        
+                        <hr>
+                        
+                        <p><strong>Thông tin đăng nhập:</strong></p>
+                        <div class="alert alert-info">
+                            <strong>Username:</strong> admin<br>
+                            <strong>Password:</strong> admin123
+                        </div>
+                        
+                        <hr>
+                        
+                        <p><strong>Trang admin (cần đăng nhập):</strong></p>
+                        <a href="http://localhost:8000/admin" class="btn btn-success me-2" target="_blank">
+                            <i class="fas fa-tachometer-alt me-1"></i>Admin Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card test-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-cogs me-2"></i>API Test</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-success me-2" onclick="testLogin()">
+                            <i class="fas fa-check me-1"></i>Test Login API
+                        </button>
+                        <button class="btn btn-danger me-2" onclick="testWrongLogin()">
+                            <i class="fas fa-times me-1"></i>Test Wrong Login
+                        </button>
+                        <button class="btn btn-warning" onclick="testLogout()">
+                            <i class="fas fa-sign-out-alt me-1"></i>Test Logout
+                        </button>
+                        
+                        <div id="testResult" class="test-result"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card test-card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Hướng dẫn sử dụng</h5>
+            </div>
+            <div class="card-body">
+                <ol>
+                    <li><strong>Truy cập trang đăng nhập:</strong> Click vào "Admin Login" để mở trang đăng nhập</li>
+                    <li><strong>Đăng nhập:</strong> Sử dụng username: <code>admin</code> và password: <code>admin123</code></li>
+                    <li><strong>Kiểm tra redirect:</strong> Sau khi đăng nhập thành công, sẽ được chuyển hướng đến Admin Dashboard</li>
+                    <li><strong>Kiểm tra bảo mật:</strong> Thử truy cập trực tiếp <code>/admin</code> mà không đăng nhập sẽ bị redirect về trang login</li>
+                    <li><strong>Đăng xuất:</strong> Click nút "Đăng Xuất" trong admin panel để đăng xuất</li>
+                </ol>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Lưu ý:</strong> Đây là hệ thống đăng nhập đơn giản sử dụng localStorage. 
+                    Trong môi trường production, cần sử dụng session management và authentication phức tạp hơn.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.innerHTML = `
+                <div class="alert alert-${type}">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'times-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                </div>
+            `;
+        }
+        
+        async function testLogin() {
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin123' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('✅ Login API hoạt động bình thường!', 'success');
+                } else {
+                    showResult('❌ Login API trả về lỗi: ' + data.message, 'danger');
+                }
+            } catch (error) {
+                showResult('❌ Lỗi kết nối: ' + error.message, 'danger');
+            }
+        }
+        
+        async function testWrongLogin() {
+            try {
+                const response = await fetch('/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'wrong' })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    showResult('✅ Wrong login được xử lý đúng: ' + data.message, 'success');
+                } else {
+                    showResult('❌ Wrong login không được xử lý đúng!', 'danger');
+                }
+            } catch (error) {
+                showResult('❌ Lỗi kết nối: ' + error.message, 'danger');
+            }
+        }
+        
+        function testLogout() {
+            localStorage.removeItem('adminLoggedIn');
+            showResult('✅ Logout thành công! localStorage đã được xóa.', 'success');
+        }
+    </script>
+</body>
+</html>
+ 
+ 
+ 
+ 
