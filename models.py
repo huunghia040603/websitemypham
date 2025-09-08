@@ -6,6 +6,7 @@ from ckeditor.fields import RichTextField
 from django.contrib.auth.models import UserManager as BaseUserManager
 from django.utils import timezone
 import uuid
+from django.db.models import JSONField
 
 # Helper functions
 def calculate_discount_rate(original_price, discounted_price):
@@ -202,6 +203,35 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class AnalyticsSnapshot(models.Model):
+    PERIOD_DAY = 'day'
+    PERIOD_WEEK = 'week'
+    PERIOD_MONTH = 'month'
+    PERIOD_YEAR = 'year'
+
+    PERIOD_CHOICES = [
+        (PERIOD_DAY, 'Day'),
+        (PERIOD_WEEK, 'Week'),
+        (PERIOD_MONTH, 'Month'),
+        (PERIOD_YEAR, 'Year'),
+    ]
+
+    period = models.CharField(max_length=10, choices=PERIOD_CHOICES)
+    period_key = models.CharField(max_length=32, help_text="Key of the period, e.g. 2025-09-07 or 2025-09 or 2025W36 or 2025")
+    total_revenue = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    total_profit = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    data = JSONField(default=dict, help_text="Arbitrary analytics payload: labels, series, top lists")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Analytics Snapshot"
+        verbose_name_plural = "Analytics Snapshots"
+        unique_together = ('period', 'period_key')
+
+    def __str__(self):
+        return f"Analytics {self.period}:{self.period_key} - {self.total_revenue}"
 
 
 class Tag(models.Model):

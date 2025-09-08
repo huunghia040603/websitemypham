@@ -33,8 +33,15 @@
 <section class="products-section py-5">
     <div class="container">
         <div class="row">
+            <!-- Mobile Filter Button -->
+            <div class="col-12 d-lg-none mb-3">
+                <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="offcanvas" data-bs-target="#filtersOffcanvas" aria-controls="filtersOffcanvas">
+                    <i class="fas fa-filter me-2"></i>Bộ Lọc Sản Phẩm
+                </button>
+            </div>
+            
             <!-- Sidebar Filters -->
-            <div class="col-lg-3">
+            <div class="col-lg-3 d-none d-lg-block">
                 <div class="filters-sidebar">
                     <h5 class="fw-bold mb-4">Bộ Lọc</h5>
                     <!-- Brand Filter -->
@@ -126,18 +133,30 @@
             
             <!-- Products Grid -->
             <div class="col-lg-9">
-                <!-- Sort and View Options -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
+                <!-- Desktop: Search + Per-page + Sort on one row -->
+                <div class="d-none d-md-flex align-items-center justify-content-between gap-3 mb-4">
+                    <div class="position-relative flex-grow-1" style="max-width: 520px;">
+                        <div class="search-pill">
+                            <!-- <i class="fas fa-search"></i> -->
+                            <input type="text" 
+                                   id="products-search" 
+                                   class="form-control" 
+                                   placeholder="Tìm kiếm sản phẩm..." 
+                                   autocomplete="off">
+                        </div>
+                        <!-- Search suggestions dropdown -->
+                        <div id="search-suggestions" class="position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; margin-top: 5px;"></div>
+                    </div>
                     <div class="d-flex align-items-center">
-                        <span class="me-3">Hiển thị:</span>
-                        <select class="form-select form-select-sm" style="width: auto;">
-                            <option>12 sản phẩm</option>
-                            <option>24 sản phẩm</option>
-                            <option>48 sản phẩm</option>
+                        <span class="me-2">Hiển thị:</span>
+                        <select id="products-per-page" class="form-select form-select-sm" style="width: auto;">
+                            <option value="12">12 sản phẩm</option>
+                            <option value="24">24 sản phẩm</option>
+                            <option value="48">48 sản phẩm</option>
                         </select>
                     </div>
                     <div class="d-flex align-items-center">
-                        <span class="me-3">Sắp xếp:</span>
+                        <span class="me-2">Sắp xếp:</span>
                         <select id="products-sort" class="form-select form-select-sm" style="width: auto;">
                             <option value="newest" selected>Mới nhất</option>
                             <option value="price_asc">Giá thấp đến cao</option>
@@ -146,6 +165,52 @@
                             <option value="discount">Giảm giá nhiều nhất</option>
                         </select>
                     </div>
+                    
+                </div>
+
+                <!-- Mobile: search on top, filters on one row -->
+                <div class="d-md-none mb-3">
+                    <div class="position-relative">
+                        <div class="search-pill">
+                            <i class="fas fa-search"></i>
+                            <input type="text" 
+                                   id="products-search" 
+                                   class="form-control" 
+                                   placeholder="Tìm kiếm sản phẩm..." 
+                                   autocomplete="off">
+                        </div>
+                        <div id="search-suggestions" class="position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; margin-top: 5px;"></div>
+                    </div>
+                </div>
+
+                <div class="d-flex d-md-none align-items-center w-100">
+                    <div class="d-flex d-md-none align-items-center w-100">
+                        <div class="d-flex align-items-center me-3">
+                            <span class="me-2" style="font-size: 0.85rem;">Hiển thị:</span>
+                            <select id="products-per-page-mobile" class="form-select form-select-sm" style="width: auto; min-width: 80px;">
+                                <option value="12">12</option>
+                                <option value="24">24</option>
+                                <option value="48">48</option>
+                            </select>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2" style="font-size: 0.85rem;">Sắp xếp:</span>
+                            <select id="products-sort-mobile" class="form-select form-select-sm" style="width: auto; min-width: 120px;">
+                                <option value="newest" selected>Mới nhất</option>
+                                <option value="price_asc">Giá thấp</option>
+                                <option value="price_desc">Giá cao</option>
+                                <option value="sales">Bán chạy</option>
+                                <option value="discount">Giảm giá</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Products Info -->
+                <div id="products-info" class="mb-3">
+                    <small class="text-muted">
+                        Hiển thị <span id="products-showing">0</span> trong <span id="products-total">0</span> sản phẩm
+                    </small>
                 </div>
                 
                 <!-- Products Grid -->
@@ -153,22 +218,114 @@
                 
                 <!-- Pagination -->
                 <nav aria-label="Product pagination" class="mt-5">
-                    <ul class="pagination justify-content-center">
-                        <li class="page-item disabled">
-                            <a class="page-link" href="#" tabindex="-1">Trước</a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                            <a class="page-link" href="#">Sau</a>
-                        </li>
+                    <ul id="products-pagination" class="pagination justify-content-center">
+                        <!-- Pagination will be generated by JavaScript -->
                     </ul>
                 </nav>
             </div>
         </div>
     </div>
 </section>
+
+<!-- Mobile Filters Offcanvas -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="filtersOffcanvas" aria-labelledby="filtersOffcanvasLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="filtersOffcanvasLabel">
+            <i class="fas fa-filter me-2"></i>Bộ Lọc Sản Phẩm
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <!-- Brand Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Thương Hiệu</h6>
+            <div id="filterBrandsMobile" class="d-flex flex-column gap-2" style="max-height: 200px; overflow:auto;"></div>
+        </div>
+        
+        <!-- Tags Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Tags</h6>
+            <div id="filterTagsMobile" class="d-flex flex-column gap-2" style="max-height: 150px; overflow:auto;"></div>
+        </div>
+        
+        <!-- Price Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Khoảng Giá</h6>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="price_range_mobile" id="pr_under_200_mobile" value="under_200k">
+                <label class="form-check-label" for="pr_under_200_mobile">Dưới 200.000đ</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="price_range_mobile" id="pr_200_500_mobile" value="200_500">
+                <label class="form-check-label" for="pr_200_500_mobile">200.000đ - 500.000đ</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="price_range_mobile" id="pr_500_1m_mobile" value="500_1m">
+                <label class="form-check-label" for="pr_500_1m_mobile">500.000đ - 1.000.000đ</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="price_range_mobile" id="pr_over_1m_mobile" value="over_1m">
+                <label class="form-check-label" for="pr_over_1m_mobile">Trên 1.000.000đ</label>
+            </div>
+        </div>
+        
+        <!-- Condition Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Tình Trạng</h6>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="condition_mobile" id="condition_all_mobile" value="all" {% if current_condition == 'all' %}checked{% endif %}>
+                <label class="form-check-label" for="condition_all_mobile">
+                    <i class="fas fa-th-large text-primary"></i> Tất cả
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="condition_mobile" id="condition_new_mobile" value="new" {% if current_condition == 'new' %}checked{% endif %}>
+                <label class="form-check-label" for="condition_new_mobile">
+                    <i class="fas fa-tag text-success"></i> Mới 100%
+                </label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="condition_mobile" id="condition_used_mobile" value="used" {% if current_condition == 'used' %}checked{% endif %}>
+                <label class="form-check-label" for="condition_used_mobile">
+                    <i class="fas fa-recycle text-warning"></i> Đã sử dụng
+                </label>
+            </div>
+        </div>
+        
+        <!-- Discount Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Giảm Giá</h6>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="discount_range_mobile" id="dis_under_30_mobile" value="under_30">
+                <label class="form-check-label" for="dis_under_30_mobile">Dưới 30%</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="discount_range_mobile" id="dis_50_70_mobile" value="50_70">
+                <label class="form-check-label" for="dis_50_70_mobile">50% - 70%</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="discount_range_mobile" id="dis_over_70_mobile" value="over_70">
+                <label class="form-check-label" for="dis_over_70_mobile">Trên 70%</label>
+            </div>
+        </div>
+        
+        <!-- Category Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Danh Mục</h6>
+            <div id="filterCategoriesMobile" class="d-flex flex-column gap-2" style="max-height: 200px; overflow:auto;"></div>
+        </div>
+        
+        <!-- Apply Filters Button -->
+        <div class="d-grid gap-2 mt-4">
+            <button type="button" class="btn btn-primary" id="applyFiltersMobile">
+                <i class="fas fa-check me-2"></i>Áp Dụng Bộ Lọc
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="clearFiltersMobile">
+                <i class="fas fa-times me-2"></i>Xóa Tất Cả
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -211,6 +368,9 @@
         r.addEventListener('change', () => updateParam('condition', r.checked ? r.value : ''));
     });
 
+    // Initialize smart search
+    initSmartSearch();
+    
     // Render dynamic categories, brands, and tags
     const catWrap = document.getElementById('filterCategories');
     const brandWrap = document.getElementById('filterBrands');
@@ -332,6 +492,287 @@
             tagsWrap.appendChild(makeFilterLink(tag, 'tags', tag, tag === selectedTag));
         });
       }).catch(()=>{});
+
+    // Smart Search Function
+    function initSmartSearch() {
+        const searchInput = document.getElementById('products-search');
+        const suggestionsDiv = document.getElementById('search-suggestions');
+        let allProducts = [];
+        let searchTimeout;
+
+        // Load products for search
+        fetch('https://buddyskincare.pythonanywhere.com/products/')
+            .then(r => r.ok ? r.json() : [])
+            .then(products => {
+                allProducts = products || [];
+            })
+            .catch(() => {});
+
+        // Handle search input
+        searchInput.addEventListener('input', function(e) {
+            const query = e.target.value.trim();
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 2) {
+                hideSuggestions();
+                return;
+            }
+
+            searchTimeout = setTimeout(() => {
+                performSearch(query);
+            }, 300);
+        });
+
+        // Handle search on Enter
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query) {
+                    executeSearch(query);
+                }
+            } else if (e.key === 'Escape') {
+                hideSuggestions();
+            }
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+                hideSuggestions();
+            }
+        });
+
+        function performSearch(query) {
+            const results = searchProducts(query, allProducts);
+            showSuggestions(results, query);
+        }
+
+        function searchProducts(query, products) {
+            const lowerQuery = query.toLowerCase();
+            const results = [];
+
+            products.forEach(product => {
+                const name = (product.name || '').toLowerCase();
+                const brand = (product.brand_name || '').toLowerCase();
+                const category = (product.category_name || '').toLowerCase();
+                const tags = (product.tags || []).map(tag => 
+                    typeof tag === 'string' ? tag.toLowerCase() : (tag.name || '').toLowerCase()
+                );
+
+                let score = 0;
+                let matchType = '';
+
+                // Exact name match (highest priority)
+                if (name.includes(lowerQuery)) {
+                    score += 100;
+                    matchType = 'name';
+                }
+                // Brand match
+                else if (brand.includes(lowerQuery)) {
+                    score += 80;
+                    matchType = 'brand';
+                }
+                // Category match
+                else if (category.includes(lowerQuery)) {
+                    score += 60;
+                    matchType = 'category';
+                }
+                // Tags match
+                else if (tags.some(tag => tag.includes(lowerQuery))) {
+                    score += 40;
+                    matchType = 'tag';
+                }
+
+                if (score > 0) {
+                    results.push({
+                        product,
+                        score,
+                        matchType
+                    });
+                }
+            });
+
+            // Sort by score and return top 8 results
+            return results
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 8);
+        }
+
+        function showSuggestions(results, query) {
+            if (results.length === 0) {
+                hideSuggestions();
+                return;
+            }
+
+            let html = '';
+            results.forEach(result => {
+                const { product, matchType } = result;
+                const imageUrl = product.image || '/static/image/default-product.jpg';
+                const price = product.discounted_price ? (product.discounted_price * 1000).toLocaleString('vi-VN') : 'N/A';
+                
+                html += `
+                    <div class="suggestion-item p-2 border-bottom" style="cursor: pointer;" data-product-id="${product.id}">
+                        <div class="d-flex align-items-center">
+                            <img src="${imageUrl}" alt="${product.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 10px;">
+                            <div class="flex-grow-1">
+                                <div class="fw-bold" style="font-size: 14px;">${product.name}</div>
+                                <div class="text-muted" style="font-size: 12px;">
+                                    ${product.brand_name || 'N/A'} • ${price}đ
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Add "Tìm kiếm tất cả" option
+            html += `
+                <div class="suggestion-item p-2 text-center bg-light" style="cursor: pointer;" data-search-all="true">
+                    <i class="fas fa-search me-2"></i>Tìm kiếm tất cả cho "${query}"
+                </div>
+            `;
+
+            suggestionsDiv.innerHTML = html;
+            suggestionsDiv.style.display = 'block';
+
+            // Add click handlers
+            suggestionsDiv.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    if (this.dataset.searchAll === 'true') {
+                        executeSearch(query);
+                    } else {
+                        const productId = this.dataset.productId;
+                        window.location.href = `/product/${productId}`;
+                    }
+                });
+
+                // Hover effect
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = this.dataset.searchAll === 'true' ? '#f8f9fa' : 'white';
+                });
+            });
+        }
+
+        function hideSuggestions() {
+            suggestionsDiv.style.display = 'none';
+        }
+
+        function executeSearch(query) {
+            hideSuggestions();
+            const p = new URLSearchParams(window.location.search);
+            p.set('search', query);
+            p.delete('page');
+            window.location.href = `/products?${p.toString()}`;
+        }
+
+        // Pre-fill search if coming from nav-search
+        const searchParam = params.get('search') || params.get('q');
+        if (searchParam) {
+            searchInput.value = searchParam;
+        }
+        
+        // Mobile filters functionality
+        initMobileFilters();
+    }
+    
+    function initMobileFilters() {
+        // Sync mobile filters with desktop filters
+        syncMobileFilters();
+        
+        // Apply filters button
+        const applyBtn = document.getElementById('applyFiltersMobile');
+        if (applyBtn) {
+            applyBtn.addEventListener('click', function() {
+                applyMobileFilters();
+                // Close offcanvas
+                const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('filtersOffcanvas'));
+                if (offcanvas) offcanvas.hide();
+            });
+        }
+        
+        // Clear filters button
+        const clearBtn = document.getElementById('clearFiltersMobile');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                clearMobileFilters();
+            });
+        }
+    }
+    
+    function syncMobileFilters() {
+        // Sync price range
+        const priceRange = params.get('price_range');
+        if (priceRange) {
+            const mobilePriceInput = document.querySelector(`input[name="price_range_mobile"][value="${priceRange}"]`);
+            if (mobilePriceInput) mobilePriceInput.checked = true;
+        }
+        
+        // Sync condition
+        const condition = params.get('condition');
+        if (condition) {
+            const mobileConditionInput = document.querySelector(`input[name="condition_mobile"][value="${condition}"]`);
+            if (mobileConditionInput) mobileConditionInput.checked = true;
+        }
+        
+        // Sync discount range
+        const discountRange = params.get('discount_range');
+        if (discountRange) {
+            const mobileDiscountInput = document.querySelector(`input[name="discount_range_mobile"][value="${discountRange}"]`);
+            if (mobileDiscountInput) mobileDiscountInput.checked = true;
+        }
+    }
+    
+    function applyMobileFilters() {
+        const url = new URL(window.location);
+        
+        // Get selected values
+        const priceRange = document.querySelector('input[name="price_range_mobile"]:checked')?.value;
+        const condition = document.querySelector('input[name="condition_mobile"]:checked')?.value;
+        const discountRange = document.querySelector('input[name="discount_range_mobile"]:checked')?.value;
+        
+        // Update URL parameters
+        if (priceRange) url.searchParams.set('price_range', priceRange);
+        else url.searchParams.delete('price_range');
+        
+        if (condition && condition !== 'all') url.searchParams.set('condition', condition);
+        else url.searchParams.delete('condition');
+        
+        if (discountRange) url.searchParams.set('discount_range', discountRange);
+        else url.searchParams.delete('discount_range');
+        
+        // Reset to page 1
+        url.searchParams.set('page', '1');
+        
+        // Navigate
+        window.location.href = url.toString();
+    }
+    
+    function clearMobileFilters() {
+        // Uncheck all mobile filters
+        document.querySelectorAll('input[name="price_range_mobile"]').forEach(input => input.checked = false);
+        document.querySelectorAll('input[name="condition_mobile"]').forEach(input => input.checked = false);
+        document.querySelectorAll('input[name="discount_range_mobile"]').forEach(input => input.checked = false);
+        
+        // Set default condition
+        const defaultCondition = document.querySelector('input[name="condition_mobile"][value="all"]');
+        if (defaultCondition) defaultCondition.checked = true;
+        
+        // Clear URL parameters
+        const url = new URL(window.location);
+        url.searchParams.delete('price_range');
+        url.searchParams.delete('condition');
+        url.searchParams.delete('discount_range');
+        url.searchParams.set('page', '1');
+        
+        // Navigate
+        window.location.href = url.toString();
+    }
 })();
 </script>
 {% endblock %} 

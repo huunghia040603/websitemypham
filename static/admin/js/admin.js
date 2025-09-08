@@ -64,6 +64,29 @@ const AdminAPI = {
     formatDate,
     showNotification,
     
+    // Analytics
+    async getAnalytics(period='month') {
+        // Extract cache busting parameter if present
+        const [basePeriod, cacheParam] = period.split('?t=');
+        const actualPeriod = basePeriod || period;
+        
+        const response = await fetch(`${API_BASE_URL}/analytics/?period=${encodeURIComponent(actualPeriod)}`);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+
+    async computeAnalytics(period='month', start=null, end=null) {
+        const payload = { period };
+        if (start) payload.start = start; if (end) payload.end = end;
+        const response = await fetch(`${API_BASE_URL}/analytics/compute/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
     // Alias functions for compatibility
     fetchProducts: function() { return this.getProducts(); },
     fetchOrders: function() { return this.getOrders(); },

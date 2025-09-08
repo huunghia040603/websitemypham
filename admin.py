@@ -164,6 +164,15 @@ admin_site.register(Voucher, VoucherAdmin)
 admin_site.register(Order, OrderAdmin)
 admin_site.register(OrderItem)
 
+# --- Analytics ---
+class AnalyticsSnapshotAdmin(admin.ModelAdmin):
+    list_display = ('period', 'period_key', 'total_revenue', 'total_profit', 'created_at')
+    list_filter = ('period', 'created_at')
+    search_fields = ('period_key',)
+    readonly_fields = ('created_at',)
+
+admin_site.register(AnalyticsSnapshot, AnalyticsSnapshotAdmin)
+
 
 
 

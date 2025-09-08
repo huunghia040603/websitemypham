@@ -623,6 +623,11 @@ def admin_orders():
     """Admin - Quản lý đơn hàng"""
     return render_template('admin_orders.html')
 
+@app.route('/admin/analytics')
+def admin_analytics():
+    """Admin - Thống kê doanh thu"""
+    return render_template('admin_analytics.html')
+
 @app.route('/admin/orders/<int:order_id>')
 def admin_order_detail(order_id):
     """Admin - Chi tiết đơn hàng"""

@@ -144,30 +144,30 @@
                         <option value="cod">Thanh toán khi nhận hàng</option>
                         <option value="bank">Chuyển khoản ngân hàng</option>
                     </select>
-                </div>
+                    </div>
                 
                 <!-- Order Status Filter -->
                 <div class="mb-3">
                     <label for="statusFilter" class="form-label fw-semibold">Trạng thái đơn hàng</label>
-                    <select class="form-select" id="statusFilter">
-                        <option value="">Tất cả</option>
-                        <option value="pending">Chờ xử lý</option>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Tất cả</option>
+                            <option value="pending">Chờ xử lý</option>
                         <option value="processing">Đang xử lý</option>
                         <option value="shipped">Đã giao hàng</option>
                         <option value="completed">Hoàn thành</option>
-                        <option value="cancelled">Đã hủy</option>
-                    </select>
-                </div>
+                            <option value="cancelled">Đã hủy</option>
+                        </select>
+                    </div>
                 
                 <!-- Confirmation Filter -->
                 <div class="mb-3">
                     <label for="confirmationFilter" class="form-label fw-semibold">Xác nhận</label>
-                    <select class="form-select" id="confirmationFilter">
-                        <option value="">Tất cả</option>
-                        <option value="true">Đã xác nhận</option>
-                        <option value="false">Chưa xác nhận</option>
-                    </select>
-                </div>
+                        <select class="form-select" id="confirmationFilter">
+                            <option value="">Tất cả</option>
+                            <option value="true">Đã xác nhận</option>
+                            <option value="false">Chưa xác nhận</option>
+                        </select>
+                    </div>
                 
                 <!-- Clear Filters Button -->
                 <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
@@ -614,7 +614,7 @@ async function loadOrders() {
             if (Date.now() - timestamp < cacheTime) {
                 console.log('Using cached orders data');
                 allOrders = data;
-                filteredOrders = [...allOrders];
+        filteredOrders = [...allOrders];
                 renderOrders();
                 updateOrderCount();
                 hideLoading('ordersContainer');
@@ -866,6 +866,8 @@ function updateOrderStatistics() {
         confirmedOrders: 0
     };
     
+    const includedIds = [];
+    const excludedIds = [];
     filteredOrders.forEach(order => {
         // Count by status
         switch(order.status) {
@@ -898,9 +900,13 @@ function updateOrderStatistics() {
             stats.confirmedOrders++;
         }
         
-        // Calculate total revenue (only for non-cancelled orders)
-        if (order.status !== 'cancelled' && order.total_amount) {
+        // Calculate total revenue: only confirmed and not cancelled
+        const eligible = order.is_confirmed === true && order.status !== 'cancelled' && order.total_amount;
+        if (eligible) {
             stats.totalRevenue += parseFloat(order.total_amount) || 0;
+            includedIds.push(order.id);
+        } else {
+            excludedIds.push({ id: order.id, is_confirmed: order.is_confirmed, status: order.status, total_amount: order.total_amount });
         }
     });
     
@@ -915,6 +921,13 @@ function updateOrderStatistics() {
     document.getElementById('codOrders').textContent = stats.codOrders;
     document.getElementById('bankOrders').textContent = stats.bankOrders;
     document.getElementById('confirmedOrders').textContent = stats.confirmedOrders;
+
+    // Debug: show which orders were counted
+    try {
+        console.log('🧮 Revenue included IDs:', includedIds);
+        console.log('🚫 Excluded IDs (reason fields):', excludedIds);
+        console.log('↳ Total (raw):', stats.totalRevenue);
+    } catch(e) {}
 }
 
 function updateOrderRow(orderId) {
@@ -1110,8 +1123,8 @@ async function loadOrderDetail(order) {
     const shipBtn = document.getElementById('shipOrderBtn');
     
     // Reset button states
-    confirmBtn.style.display = 'inline-block';
-    cancelBtn.style.display = 'inline-block';
+        confirmBtn.style.display = 'inline-block';
+        cancelBtn.style.display = 'inline-block';
     shipBtn.style.display = 'inline-block';
     confirmBtn.disabled = false;
     cancelBtn.disabled = false;

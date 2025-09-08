@@ -211,6 +211,174 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     serializer_class = OrderItemReadSerializer
 
 
+class AnalyticsViewSet(viewsets.GenericViewSet):
+    queryset = AnalyticsSnapshot.objects.all()
+    serializer_class = AnalyticsSnapshotSerializer
+    permission_classes = [AllowAny]
+
+    def list(self, request):
+        period = request.query_params.get('period', 'month')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+
+        # Get all unique periods from orders
+        from .models import Order
+        from datetime import date, timedelta
+        from django.db.models import Min, Max
+
+        # Get all confirmed orders
+        orders = Order.objects.filter(is_confirmed=True).exclude(status='cancelled')
+        
+        # Apply custom date range if provided
+        if start_date and end_date:
+            try:
+                start_date_obj = date.fromisoformat(start_date)
+                end_date_obj = date.fromisoformat(end_date)
+                orders = orders.filter(order_date__date__gte=start_date_obj, order_date__date__lte=end_date_obj)
+                print(f"🔍 Custom date range: {start_date_obj} to {end_date_obj}")
+                print(f"📊 Orders found: {orders.count()}")
+            except ValueError:
+                return Response({'error': 'Invalid date format'}, status=400)
+
+        if not orders.exists():
+            return Response([])
+
+        # For custom date range, create a single period
+        if start_date and end_date:
+            periods_to_compute = [{
+                'period': 'custom',
+                'start': start_date_obj,
+                'end': end_date_obj,
+                'key': f"{start_date_obj.strftime('%Y-%m-%d')} to {end_date_obj.strftime('%Y-%m-%d')}"
+            }]
+            # For custom range, don't delete existing snapshots, just compute new one
+            period_to_delete = 'custom'
+        else:
+            # Get date range from orders
+            date_range = orders.aggregate(
+                min_date=Min('order_date__date'),
+                max_date=Max('order_date__date')
+            )
+
+            min_date = date_range['min_date']
+            max_date = date_range['max_date']
+
+            if not min_date or not max_date:
+                return Response([])
+
+            # Generate periods based on actual order dates, not date range
+            periods_to_compute = []
+
+            # Get unique dates from orders
+            order_dates = orders.values_list('order_date__date', flat=True).distinct().order_by('order_date__date')
+
+            if period == 'day':
+                # Create one period for each day that has orders
+                for order_date in order_dates:
+                    periods_to_compute.append({
+                        'period': 'day',
+                        'start': order_date,
+                        'end': order_date,
+                        'key': order_date.strftime('%Y-%m-%d')
+                    })
+
+            elif period == 'week':
+                # Group orders by week
+                week_groups = {}
+                for order_date in order_dates:
+                    # Get start of week (Monday)
+                    week_start = order_date - timedelta(days=order_date.weekday())
+                    week_key = f"{week_start.year}-W{week_start.strftime('%W')}"
+                    if week_key not in week_groups:
+                        week_groups[week_key] = {
+                            'start': week_start,
+                            'end': week_start + timedelta(days=6)
+                        }
+
+                for week_key, week_data in week_groups.items():
+                    periods_to_compute.append({
+                        'period': 'week',
+                        'start': week_data['start'],
+                        'end': week_data['end'],
+                        'key': week_key
+                    })
+
+            elif period == 'month':
+                # Group orders by month
+                month_groups = {}
+                for order_date in order_dates:
+                    month_key = order_date.strftime('%Y-%m')
+                    if month_key not in month_groups:
+                        month_start = order_date.replace(day=1)
+                        if order_date.month == 12:
+                            month_end = order_date.replace(year=order_date.year + 1, month=1, day=1) - timedelta(days=1)
+                        else:
+                            month_end = order_date.replace(month=order_date.month + 1, day=1) - timedelta(days=1)
+                        month_groups[month_key] = {
+                            'start': month_start,
+                            'end': month_end
+                        }
+
+                for month_key, month_data in month_groups.items():
+                    periods_to_compute.append({
+                        'period': 'month',
+                        'start': month_data['start'],
+                        'end': month_data['end'],
+                        'key': month_key
+                    })
+
+            elif period == 'year':
+                # Group orders by year
+                year_groups = {}
+                for order_date in order_dates:
+                    year_key = str(order_date.year)
+                    if year_key not in year_groups:
+                        year_groups[year_key] = {
+                            'start': date(order_date.year, 1, 1),
+                            'end': date(order_date.year, 12, 31)
+                        }
+
+                for year_key, year_data in year_groups.items():
+                    periods_to_compute.append({
+                        'period': 'year',
+                        'start': year_data['start'],
+                        'end': year_data['end'],
+                        'key': year_key
+                    })
+            
+            # For regular periods, delete existing snapshots
+            period_to_delete = period
+
+        # Delete all existing snapshots for this period type to avoid confusion
+        AnalyticsSnapshot.objects.filter(period=period_to_delete).delete()
+
+        # Compute snapshots for all periods
+        snapshots = []
+        for period_data in periods_to_compute:
+            # Create new snapshot
+            serializer = ComputeAnalyticsSerializer(data=period_data)
+            if serializer.is_valid():
+                snapshot = serializer.save()
+                snapshots.append(snapshot)
+
+        # Return snapshots sorted by period_key descending (newest first)
+        snapshots.sort(key=lambda x: x.period_key, reverse=True)
+        data = AnalyticsSnapshotSerializer(snapshots, many=True).data
+        
+        # Debug: Log the snapshots being returned
+        print(f"📊 Returning {len(data)} snapshots for period {period}")
+        for snap in data:
+            print(f"  - {snap['period']} {snap['period_key']}: {snap['total_revenue']}đ")
+        
+        return Response(data)
+
+    @action(detail=False, methods=['post'], url_path='compute')
+    def compute(self, request):
+        serializer = ComputeAnalyticsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        snapshot = serializer.save()
+        return Response(AnalyticsSnapshotSerializer(snapshot).data, status=status.HTTP_201_CREATED)
+
 class OrderByCodeView(APIView):
     """
     API để tra cứu đơn hàng bằng mã đơn hàng.

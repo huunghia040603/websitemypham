@@ -86,11 +86,14 @@
                 </nav>
             </div>
 
-            <div class="col-lg-3 col-md-3 d-none d-md-flex justify-content-center">
-                <div class="nav-search">
+            <div class="col-lg-3 col-md-3 d-none d-md-flex justify-content-center" id="nav-search-container">
+                <div class="nav-search position-relative">
                     <div class="search-pill w-130" style="width: 320px;">
                         <i class="fas fa-search"></i>
-                        <input type="text" class="form-control" placeholder="FREESHIP 0Đ đơn từ 499K">
+                        <input type="text" class="form-control" id="nav-search-input" placeholder="Tìm kiếm sản phẩm..." autocomplete="off">
+                    </div>
+                    <!-- Nav search suggestions dropdown -->
+                    <div id="nav-search-suggestions" class="position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; margin-top: 5px;">
                     </div>
                 </div>
             </div>
@@ -157,14 +160,17 @@
         
         <div class="collapse d-md-none" id="mobileNavbar">
             <div class="py-3 border-top">
-                <div class="mb-3">
-                    <div class="nav-search">
+                <div class="mb-3" id="mobile-nav-search-container">
+                    <div class="nav-search position-relative">
                         <div class="search-pill w-100">
                             <i class="fas fa-search"></i>
-                            <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm...">
-                            <button class="btn-icon" type="button">
+                            <input type="text" class="form-control" id="mobile-nav-search-input" placeholder="Tìm kiếm sản phẩm..." autocomplete="off">
+                            <button class="btn-icon" type="button" id="mobile-search-btn">
                                 <i class="fas fa-search"></i>
                             </button>
+                        </div>
+                        <!-- Mobile nav search suggestions dropdown -->
+                        <div id="mobile-nav-search-suggestions" class="position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; margin-top: 5px;">
                         </div>
                     </div>
                 </div>

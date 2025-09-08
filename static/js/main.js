@@ -1232,7 +1232,7 @@ function createProductCard(product) {
 
     // Check if product is out of stock
     const isOutOfStock = stockQuantity <= 0;
-    
+
     const cardHTML = `
         <div class="product-card card h-100 border-0 shadow-sm ${isFlashSale ? 'flash-sale-card' : ''}" style="${isFlashSale ? 'border: 1px solid #ffc107 !important;' : ''}">
             <div class="position-relative">
@@ -3125,13 +3125,17 @@ function initProductsPage() {
     if (!grid) return; // Not on products page
 
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query') || urlParams.get('q') || '';
+    const query = urlParams.get('query') || urlParams.get('q') || urlParams.get('search') || '';
     let condition = urlParams.get('condition') || '';
     const categoryName = urlParams.get('category_name') || urlParams.get('category') || '';
     const brandsName = urlParams.get('brands_name') || urlParams.get('brand') || '';
     const priceRange = urlParams.get('price_range') || urlParams.get('price') || '';
     const discountRange = urlParams.get('discount_range') || urlParams.get('discount') || '';
     const tagsFilter = urlParams.get('tags') || '';
+    
+    // Pagination parameters
+    const currentPage = parseInt(urlParams.get('page')) || 1;
+    const perPage = parseInt(urlParams.get('per_page')) || 12;
     // Infer condition from pathname if not provided via query string
     if (!condition) {
         const path = window.location.pathname || '';
@@ -3257,8 +3261,15 @@ function initProductsPage() {
             }
 
             function render(list) {
+                // Calculate pagination
+                const totalPages = Math.ceil(list.length / perPage);
+                const startIndex = (currentPage - 1) * perPage;
+                const endIndex = startIndex + perPage;
+                const paginatedProducts = list.slice(startIndex, endIndex);
+                
+                // Render products
                 const fragments = document.createDocumentFragment();
-                list.forEach(product => {
+                paginatedProducts.forEach(product => {
                     const col = document.createElement('div');
                     col.className = 'col-6 col-md-4 col-lg-3';
                     col.innerHTML = createProductCard(product);
@@ -3268,20 +3279,152 @@ function initProductsPage() {
                 grid.appendChild(fragments);
                 initProductCards();
                 initAnimations();
+                
+                // Update products info
+                updateProductsInfo(startIndex + 1, Math.min(endIndex, list.length), list.length);
+                
+                // Render pagination
+                renderPagination(currentPage, totalPages, list.length);
             }
 
             // Attach sorting and render first time
             attachProductsSorting(products, render);
+            
+            // Attach per-page filter
+            attachPerPageFilter(products, render);
         })
         .catch(() => {
             grid.innerHTML = '<div class="col-12"><p class="text-center text-danger py-4 mb-0">Không thể tải sản phẩm. Vui lòng thử lại sau.</p></div>';
         });
 }
 
+// Render pagination
+function renderPagination(currentPage, totalPages, totalProducts) {
+    const paginationContainer = document.getElementById('products-pagination');
+    if (!paginationContainer) return;
+    
+    if (totalPages <= 1) {
+        paginationContainer.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '';
+    
+    // Previous button
+    if (currentPage > 1) {
+        paginationHTML += `<li class="page-item">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Trước</a>
+        </li>`;
+    } else {
+        paginationHTML += `<li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1">Trước</a>
+        </li>`;
+    }
+    
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (startPage > 1) {
+        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+        if (startPage > 2) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        if (i === currentPage) {
+            paginationHTML += `<li class="page-item active"><a class="page-link" href="#">${i}</a></li>`;
+        } else {
+            paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+        }
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+    }
+    
+    // Next button
+    if (currentPage < totalPages) {
+        paginationHTML += `<li class="page-item">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Sau</a>
+        </li>`;
+    } else {
+        paginationHTML += `<li class="page-item disabled">
+            <a class="page-link" href="#" tabindex="-1">Sau</a>
+        </li>`;
+    }
+    
+    paginationContainer.innerHTML = paginationHTML;
+    
+    // Add click event listeners
+    paginationContainer.addEventListener('click', function(e) {
+        e.preventDefault();
+        const pageLink = e.target.closest('a[data-page]');
+        if (pageLink) {
+            const page = parseInt(pageLink.dataset.page);
+            updateURL({ page: page });
+        }
+    });
+}
+
+// Attach per-page filter
+function attachPerPageFilter(products, renderCallback) {
+    const perPageSelect = document.getElementById('products-per-page');
+    const perPageSelectMobile = document.getElementById('products-per-page-mobile');
+    
+    // Set current value
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentPerPage = parseInt(urlParams.get('per_page')) || 12;
+    
+    if (perPageSelect) {
+        perPageSelect.value = currentPerPage;
+        perPageSelect.addEventListener('change', function() {
+            const newPerPage = parseInt(this.value);
+            updateURL({ per_page: newPerPage, page: 1 }); // Reset to page 1
+        });
+    }
+    
+    if (perPageSelectMobile) {
+        perPageSelectMobile.value = currentPerPage;
+        perPageSelectMobile.addEventListener('change', function() {
+            const newPerPage = parseInt(this.value);
+            updateURL({ per_page: newPerPage, page: 1 }); // Reset to page 1
+        });
+    }
+}
+
+// Update products info display
+function updateProductsInfo(showing, total) {
+    const showingElement = document.getElementById('products-showing');
+    const totalElement = document.getElementById('products-total');
+    
+    if (showingElement) showingElement.textContent = showing;
+    if (totalElement) totalElement.textContent = total;
+}
+
+// Update URL with new parameters
+function updateURL(params) {
+    const url = new URL(window.location);
+    Object.keys(params).forEach(key => {
+        if (params[key]) {
+            url.searchParams.set(key, params[key]);
+        } else {
+            url.searchParams.delete(key);
+        }
+    });
+    window.location.href = url.toString();
+}
+
 // Sorting logic for products page
 function attachProductsSorting(products, renderCallback) {
     const sortSelect = document.getElementById('products-sort');
-    if (!sortSelect) return;
+    const sortSelectMobile = document.getElementById('products-sort-mobile');
+    
+    if (!sortSelect && !sortSelectMobile) return;
 
     const getOriginal = (p) => {
         const v = typeof p.original_price === 'number' ? p.original_price : parseFloat(p.original_price || '0');
@@ -3308,7 +3451,7 @@ function attachProductsSorting(products, renderCallback) {
     };
 
     function applySort() {
-        const mode = sortSelect.value;
+        const mode = (sortSelect && sortSelect.value) || (sortSelectMobile && sortSelectMobile.value) || 'newest';
         const sorted = [...products];
         sorted.sort((a, b) => {
             switch (mode) {
@@ -3328,7 +3471,13 @@ function attachProductsSorting(products, renderCallback) {
         renderCallback(sorted);
     }
 
+    if (sortSelect) {
     sortSelect.addEventListener('change', applySort);
+    }
+    if (sortSelectMobile) {
+        sortSelectMobile.addEventListener('change', applySort);
+    }
+    
     // First run
     applySort();
 }
@@ -3567,6 +3716,21 @@ defineProductDetailInit = (function(){
                 addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng';
                 addToCartBtn.classList.remove('btn-secondary');
                 addToCartBtn.classList.add('btn-primary');
+            }
+            
+            // Handle Buy Now button
+            const buyNowBtn = document.getElementById('detailBuyNowBtn');
+            if (buyNowBtn) {
+                buyNowBtn.disabled = isOutOfStock;
+                if (isOutOfStock) {
+                    buyNowBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hết hàng';
+                    buyNowBtn.classList.remove('btn-success');
+                    buyNowBtn.classList.add('btn-secondary');
+                } else {
+                    buyNowBtn.innerHTML = '<i class="fas fa-bolt me-2"></i>Mua ngay';
+                    buyNowBtn.classList.remove('btn-secondary');
+                    buyNowBtn.classList.add('btn-success');
+                }
             }
         }
 

@@ -7,6 +7,7 @@ from django.db import transaction
 from django.db.models import F
 from decimal import Decimal
 from django.utils import timezone
+from django.db.models import Sum
 
 
 # --- User Serializers ---
@@ -363,6 +364,304 @@ class ProductSerializer(serializers.ModelSerializer):
             instance.tags.set(tags_data)
 
         return instance
+
+
+# --- Analytics ---
+class AnalyticsSnapshotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnalyticsSnapshot
+        fields = ['id', 'period', 'period_key', 'total_revenue', 'total_profit', 'data', 'created_at']
+
+
+class ComputeAnalyticsSerializer(serializers.Serializer):
+    period = serializers.ChoiceField(choices=['day','week','month','year'])
+    start = serializers.DateField(required=False)
+    end = serializers.DateField(required=False)
+
+    def create(self, validated_data):
+        from .models import Order
+        from datetime import date, timedelta
+        period = validated_data.get('period')
+        start = validated_data.get('start')
+        end = validated_data.get('end')
+
+        # Only count orders that are confirmed and not cancelled
+        orders = Order.objects.filter(is_confirmed=True).exclude(status='cancelled')
+        
+        # Set proper date range based on period
+        today = date.today()
+        if not start and not end:
+            if period == 'day':
+                start = today
+                end = today
+            elif period == 'week':
+                # Get start of current week (Monday)
+                start = today - timedelta(days=today.weekday())
+                end = start + timedelta(days=6)
+            elif period == 'month':
+                # Get start and end of current month
+                start = today.replace(day=1)
+                if today.month == 12:
+                    end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+                else:
+                    end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+            elif period == 'year':
+                # Get start and end of current year
+                start = today.replace(month=1, day=1)
+                end = today.replace(month=12, day=31)
+        
+        if start: orders = orders.filter(order_date__date__gte=start)
+        if end: orders = orders.filter(order_date__date__lte=end)
+
+        # For single period, just calculate total for that period
+        total_revenue = Decimal('0.00')
+        top_selling = {}
+        top_revenue = {}
+        
+        # Create period key based on the date range
+        if period == 'day':
+            period_key = start.strftime('%Y-%m-%d')
+        elif period == 'week':
+            period_key = f"{start.year}-W{start.strftime('%W')}"
+        elif period == 'month':
+            period_key = start.strftime('%Y-%m')
+        else:  # year
+            period_key = str(start.year)
+        
+        # Calculate total revenue for this specific period
+        for o in orders:
+            total_revenue += (o.total_amount or Decimal('0.00'))
+
+            # items for top lists
+            for item in getattr(o, 'items').all():
+                name = getattr(item.product, 'name', f"#{item.product_id}")
+                qty = Decimal(item.quantity or 0)
+                price = item.price_at_purchase or getattr(item.product, 'discounted_price', Decimal('0.00'))
+                revenue = (price or Decimal('0.00')) * qty
+                top_selling[name] = (top_selling.get(name, Decimal('0')) + qty)
+                top_revenue[name] = (top_revenue.get(name, Decimal('0.00')) + revenue)
+
+        # For single period, create simple chart data
+        labels = [period_key]
+        series = [float(total_revenue)]
+        
+        # Debug: Check if revenue needs scaling
+        debug_revenue = []
+        for o in orders:
+            debug_revenue.append({
+                'order_id': o.id,
+                'total_amount': float(o.total_amount or 0),
+                'shipping_fee': float(o.shipping_fee or 0),
+                'order_date': str(o.order_date.date())
+            })
+        
+        # Check if revenue values seem too small (likely in thousands instead of VND)
+        # If average revenue per order is less than 1000, assume it's in thousands
+        needs_scaling = False
+        if orders.exists():
+            avg_revenue = total_revenue / orders.count()
+            if avg_revenue < 1000:
+                needs_scaling = True
+                # Scale up revenue and series by 1000
+                total_revenue = total_revenue * 1000
+                series = [s * 1000 for s in series]
+        
+        # Scale up top_revenue if needed
+        if needs_scaling:
+            for name in top_revenue:
+                top_revenue[name] = top_revenue[name] * 1000
+
+        # Compute import cost and shipping fee totals
+        import_total = Decimal('0.00')
+        shipping_total = Decimal('0.00')
+        shipping_by_order = {}
+        import_by_order = {}
+        debug_import = []
+        
+        for o in orders:
+            # shipping fee may be None
+            ship = Decimal(str(o.shipping_fee or 0))
+            # Check if shipping fee seems too small (likely in thousands instead of VND)
+            if ship > 0 and ship < 1000:
+                ship = ship * 1000
+            shipping_total += ship
+            shipping_by_order[str(o.id)] = float(ship)
+            # sum import costs for each item
+            for item in getattr(o, 'items').all():
+                # Check if import_price needs scaling (likely in thousands instead of VND)
+                unit_import = getattr(item.product, 'import_price', 0) or 0
+                if unit_import > 0 and unit_import < 1000:
+                    # Scale up if seems too small
+                    unit_import_vnd = Decimal(str(unit_import)) * Decimal('1000')
+                else:
+                    unit_import_vnd = Decimal(str(unit_import))
+                qty = Decimal(str(item.quantity or 0))
+                sub = (unit_import_vnd * qty)
+                import_total += sub
+                import_by_order[str(o.id)] = float(Decimal(str(import_by_order.get(str(o.id), 0))) + sub)
+                
+                # Debug info
+                debug_import.append({
+                    'order_id': o.id,
+                    'product_name': getattr(item.product, 'name', f'#{item.product_id}'),
+                    'unit_import_raw': float(unit_import),
+                    'unit_import_vnd': float(unit_import_vnd),
+                    'quantity': float(qty),
+                    'subtotal': float(sub)
+                })
+
+        total_profit = float(Decimal(str(total_revenue)) - import_total - shipping_total)
+
+        # Build top lists (convert to list of dicts and take top 10)
+        ts_list = sorted(
+            [{'name': n, 'qty': float(q)} for n, q in top_selling.items()],
+            key=lambda x: x['qty'], reverse=True
+        )[:10]
+        
+        # Ensure top_revenue is properly scaled
+        tr_list = []
+        for name, revenue in top_revenue.items():
+            # If revenue seems too small (< 1000), scale it up
+            if revenue < 1000:
+                revenue = revenue * 1000
+            tr_list.append({'name': name, 'revenue': float(revenue)})
+        
+        tr_list = sorted(tr_list, key=lambda x: x['revenue'], reverse=True)[:10]
+        
+        # Calculate additional analytics
+        total_orders = orders.count()
+        average_order_value = float(total_revenue / total_orders) if total_orders > 0 else 0
+        
+        # Top customers by revenue
+        customer_revenue = {}
+        customer_phone_revenue = {}
+        for o in orders:
+            customer_name = o.customer_name or 'Khách vãng lai'
+            phone = o.phone_number or 'N/A'
+            order_revenue = float(o.total_amount or 0)
+            
+            if needs_scaling and order_revenue < 1000:
+                order_revenue = order_revenue * 1000
+                
+            customer_revenue[customer_name] = customer_revenue.get(customer_name, 0) + order_revenue
+            customer_phone_revenue[phone] = customer_phone_revenue.get(phone, 0) + order_revenue
+        
+        top_customers = sorted(
+            [{'name': name, 'revenue': float(revenue)} for name, revenue in customer_revenue.items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        top_customer_phone = max(customer_phone_revenue.items(), key=lambda x: x[1])[0] if customer_phone_revenue else '-'
+        
+        # Top products by profit
+        product_profit = {}
+        for o in orders:
+            for item in getattr(o, 'items').all():
+                product_name = getattr(item.product, 'name', f'#{item.product_id}')
+                qty = float(item.quantity or 0)
+                price = float(item.price_at_purchase or 0)
+                import_price = float(getattr(item.product, 'import_price', 0) or 0)
+                
+                if needs_scaling:
+                    if price < 1000:
+                        price = price * 1000
+                    if import_price < 1000:
+                        import_price = import_price * 1000
+                
+                revenue = price * qty
+                cost = import_price * qty
+                profit = revenue - cost
+                
+                product_profit[product_name] = product_profit.get(product_name, 0) + profit
+        
+        top_profit_products = sorted(
+            [{'name': name, 'profit': float(profit)} for name, profit in product_profit.items()],
+            key=lambda x: x['profit'], reverse=True
+        )[:10]
+        
+        # Revenue by region (province)
+        region_revenue = {}
+        for o in orders:
+            region = o.province or 'Không xác định'
+            order_revenue = float(o.total_amount or 0)
+            if needs_scaling and order_revenue < 1000:
+                order_revenue = order_revenue * 1000
+            region_revenue[region] = region_revenue.get(region, 0) + order_revenue
+        
+        revenue_by_region = sorted(
+            [{'region': region, 'revenue': float(revenue)} for region, revenue in region_revenue.items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        # Revenue by category
+        category_revenue = {}
+        for o in orders:
+            for item in getattr(o, 'items').all():
+                category_name = getattr(item.product.category, 'name', 'Không phân loại')
+                qty = float(item.quantity or 0)
+                price = float(item.price_at_purchase or 0)
+                
+                if needs_scaling and price < 1000:
+                    price = price * 1000
+                
+                revenue = price * qty
+                category_revenue[category_name] = category_revenue.get(category_name, 0) + revenue
+        
+        revenue_by_category = sorted(
+            [{'category': category, 'revenue': float(revenue)} for category, revenue in category_revenue.items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        # Revenue by brand
+        brand_revenue = {}
+        for o in orders:
+            for item in getattr(o, 'items').all():
+                brand_name = getattr(item.product.brand, 'name', 'Không xác định')
+                qty = float(item.quantity or 0)
+                price = float(item.price_at_purchase or 0)
+                
+                if needs_scaling and price < 1000:
+                    price = price * 1000
+                
+                revenue = price * qty
+                brand_revenue[brand_name] = brand_revenue.get(brand_name, 0) + revenue
+        
+        revenue_by_brand = sorted(
+            [{'brand': brand, 'revenue': float(revenue)} for brand, revenue in brand_revenue.items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+
+        snapshot = AnalyticsSnapshot.objects.update_or_create(
+            period=period,
+            period_key=period_key,
+            defaults={
+                'total_revenue': Decimal(str(total_revenue)),
+                'total_profit': Decimal(str(total_profit)),
+                'data': {
+                    'labels': labels,
+                    'series': series,
+                    'top_selling': ts_list,
+                    'top_revenue': tr_list,
+                    'import_total': float(import_total),
+                    'shipping_total': float(shipping_total),
+                    'import_by_order': import_by_order,
+                    'shipping_by_order': shipping_by_order,
+                    'debug_import': debug_import[:10],  # Limit to first 10 for debugging
+                    'debug_revenue': debug_revenue[:10],  # Debug revenue data
+                    # Additional analytics
+                    'total_orders': total_orders,
+                    'average_order_value': average_order_value,
+                    'top_customers': top_customers,
+                    'top_customer_phone': top_customer_phone,
+                    'top_profit_products': top_profit_products,
+                    'revenue_by_region': revenue_by_region,
+                    'revenue_by_category': revenue_by_category,
+                    'revenue_by_brand': revenue_by_brand,
+                }
+            }
+        )[0]
+
+        return snapshot
 
 # --- Order-related Serializers ---
 

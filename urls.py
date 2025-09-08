@@ -56,6 +56,7 @@ r.register(r'order-items', views.OrderItemViewSet)
 r.register(r'latest-products', views.LatestProductsViewSet, basename='latest-product')
 r.register(r'carts', CartViewSet, basename='cart')
 r.register(r'admin', views.AdminViewSet, basename='admin')
+r.register(r'analytics', views.AnalyticsViewSet, basename='analytics')
 
 
 
