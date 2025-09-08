@@ -140,8 +140,11 @@
                     <h6 class="mb-0"><i class="fas fa-user me-2"></i>Khách hàng VIP</h6>
                 </div>
                 <div class="card-body text-center">
-                    <h4 id="topCustomerPhone" class="text-primary">-</h4>
-                    <small class="text-muted">Số điện thoại mang lại doanh thu cao nhất</small>
+                    <h4 class="text-primary">
+                        <span id="topCustomerName">-</span>
+                        <small class="text-secondary ms-2" id="topCustomerPhone">-</small>
+                    </h4>
+                    <small class="text-muted">Khách hàng mang lại doanh thu cao nhất</small>
                 </div>
             </div>
         </div>
@@ -318,7 +321,7 @@ function formatDateForAPI(date) {
 async function loadSnapshots(period, customRange = null){
   // Add cache busting to ensure fresh data
   const timestamp = new Date().getTime();
-  let apiUrl = period + '?t=' + timestamp;
+  let apiUrl = `?period=${period}&t=${timestamp}`;
   
   // Add custom date range parameters if provided
   if (customRange && customRange.start && customRange.end) {
@@ -326,8 +329,20 @@ async function loadSnapshots(period, customRange = null){
   }
   
   console.log('🔍 Loading analytics with URL:', apiUrl);
-  const data = await AdminAPI.getAnalytics(apiUrl);
-  console.log('📊 Analytics data received:', data);
+  let data;
+  try {
+    data = await AdminAPI.getAnalytics(apiUrl);
+    console.log('📊 Analytics data received:', data);
+    console.log('📊 Data length:', data ? data.length : 'null');
+    if (data && data.length > 0) {
+      console.log('📊 First item:', data[0]);
+    }
+  } catch (error) {
+    console.error('❌ Error loading analytics:', error);
+    console.error('❌ Error details:', error.response ? error.response.data : error.message);
+    AdminAPI.showNotification('Có lỗi khi tải dữ liệu thống kê: ' + error.message, 'error');
+    return;
+  }
   if(!data || !data.length){
     renderChart([],[]);
     document.getElementById('analyticsRevenue').textContent = '0đ';
@@ -342,14 +357,58 @@ async function loadSnapshots(period, customRange = null){
   const series = [];
   const allSnapshots = data;
   
-  // For custom range, show single data point
+  // For custom range, create detailed chart by day or month
   if (customRange) {
-    if (allSnapshots.length > 0) {
-      const snap = allSnapshots[0];
-      labels.push(snap.period_key);
-      series.push(Number(snap.total_revenue || 0));
+    console.log('📅 Custom range:', customRange.start, 'to', customRange.end);
+    
+    const startDate = new Date(customRange.start);
+    const endDate = new Date(customRange.end);
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    // If range is more than 90 days, show by month (12 points max)
+    if (daysDiff > 90) {
+      console.log('📅 Range > 90 days, showing by month');
+      
+      // Generate all months in the range
+      const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+      const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+      
+      while (currentDate <= endMonth) {
+        const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        labels.push(monthStr);
+        
+        // Find revenue for this specific month
+        const monthData = allSnapshots.find(snap => snap.period_key === monthStr);
+        const revenue = monthData ? Number(monthData.total_revenue || 0) : 0;
+        series.push(revenue);
+        
+        console.log(`📅 ${monthStr}: ${revenue}đ`);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+    } else {
+      console.log('📅 Range <= 90 days, showing by day');
+      
+      // Generate all days in the range
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        labels.push(dateStr);
+        
+        // Find revenue for this specific date
+        const dayData = allSnapshots.find(snap => snap.period_key === dateStr);
+        const revenue = dayData ? Number(dayData.total_revenue || 0) : 0;
+        series.push(revenue);
+        
+        console.log(`📅 ${dateStr}: ${revenue}đ`);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
     }
+    
+    console.log('📊 Custom range - Final labels:', labels.length);
+    console.log('📊 Custom range - Final series:', series.length);
   } else {
+    // For regular periods (day, week, month, year), use existing logic
     // Sort by period_key to get chronological order
     allSnapshots.sort((a, b) => a.period_key.localeCompare(b.period_key));
     
@@ -404,6 +463,10 @@ async function loadSnapshots(period, customRange = null){
   const averageOrderValue = latestSnap.data?.average_order_value || 0;
   const topCustomerPhone = latestSnap.data?.top_customer_phone || '-';
   
+  // Get top customer name and phone
+  const topCustomer = topCustomers.length > 0 ? topCustomers[0] : null;
+  const topCustomerName = topCustomer ? topCustomer.name : '-';
+  
   // Calculate profit margin
   const totalRevenue = latestSnap.total_revenue || 0;
   const totalProfit = latestSnap.total_profit || 0;
@@ -420,6 +483,7 @@ async function loadSnapshots(period, customRange = null){
   
   document.getElementById('totalOrders').textContent = totalOrders;
   document.getElementById('averageOrderValue').textContent = fmt(averageOrderValue);
+  document.getElementById('topCustomerName').textContent = topCustomerName;
   document.getElementById('topCustomerPhone').textContent = topCustomerPhone;
   document.getElementById('profitMargin').textContent = profitMargin + '%';
 }

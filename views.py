@@ -215,6 +215,127 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
     queryset = AnalyticsSnapshot.objects.all()
     serializer_class = AnalyticsSnapshotSerializer
     permission_classes = [AllowAny]
+    
+    def aggregate_snapshots(self, snapshots, period_key):
+        """Helper function to aggregate multiple snapshots"""
+        if not snapshots:
+            return None
+            
+        total_revenue = sum(float(snap.total_revenue or 0) for snap in snapshots)
+        total_profit = sum(float(snap.total_profit or 0) for snap in snapshots)
+        
+        # Aggregate other metrics
+        aggregated_data = {
+            'labels': [snap.period_key for snap in snapshots],
+            'series': [float(snap.total_revenue or 0) for snap in snapshots],
+            'total_orders': sum(snap.data.get('total_orders', 0) for snap in snapshots),
+            'average_order_value': 0,
+            'top_selling': {},
+            'top_revenue': {},
+            'top_customers': {},
+            'top_profit_products': {},
+            'revenue_by_region': {},
+            'revenue_by_category': {},
+            'revenue_by_brand': {},
+            'import_total': sum(snap.data.get('import_total', 0) for snap in snapshots),
+            'shipping_total': sum(snap.data.get('shipping_total', 0) for snap in snapshots),
+        }
+        
+        # Calculate average order value
+        if aggregated_data['total_orders'] > 0:
+            aggregated_data['average_order_value'] = total_revenue / aggregated_data['total_orders']
+        
+        # Aggregate top lists
+        for snap in snapshots:
+            data = snap.data or {}
+            
+            # Top selling
+            for item in data.get('top_selling', []):
+                name = item['name']
+                qty = item['qty']
+                aggregated_data['top_selling'][name] = aggregated_data['top_selling'].get(name, 0) + qty
+            
+            # Top revenue
+            for item in data.get('top_revenue', []):
+                name = item['name']
+                revenue = item['revenue']
+                aggregated_data['top_revenue'][name] = aggregated_data['top_revenue'].get(name, 0) + revenue
+            
+            # Top customers
+            for item in data.get('top_customers', []):
+                name = item['name']
+                revenue = item['revenue']
+                aggregated_data['top_customers'][name] = aggregated_data['top_customers'].get(name, 0) + revenue
+            
+            # Top profit products
+            for item in data.get('top_profit_products', []):
+                name = item['name']
+                profit = item['profit']
+                aggregated_data['top_profit_products'][name] = aggregated_data['top_profit_products'].get(name, 0) + profit
+            
+            # Revenue by region
+            for item in data.get('revenue_by_region', []):
+                region = item['region']
+                revenue = item['revenue']
+                aggregated_data['revenue_by_region'][region] = aggregated_data['revenue_by_region'].get(region, 0) + revenue
+            
+            # Revenue by category
+            for item in data.get('revenue_by_category', []):
+                category = item['category']
+                revenue = item['revenue']
+                aggregated_data['revenue_by_category'][category] = aggregated_data['revenue_by_category'].get(category, 0) + revenue
+            
+            # Revenue by brand
+            for item in data.get('revenue_by_brand', []):
+                brand = item['brand']
+                revenue = item['revenue']
+                aggregated_data['revenue_by_brand'][brand] = aggregated_data['revenue_by_brand'].get(brand, 0) + revenue
+        
+        # Sort and limit top lists
+        aggregated_data['top_selling'] = sorted(
+            [{'name': name, 'qty': qty} for name, qty in aggregated_data['top_selling'].items()],
+            key=lambda x: x['qty'], reverse=True
+        )[:10]
+        
+        aggregated_data['top_revenue'] = sorted(
+            [{'name': name, 'revenue': revenue} for name, revenue in aggregated_data['top_revenue'].items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        aggregated_data['top_customers'] = sorted(
+            [{'name': name, 'revenue': revenue} for name, revenue in aggregated_data['top_customers'].items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        aggregated_data['top_profit_products'] = sorted(
+            [{'name': name, 'profit': profit} for name, profit in aggregated_data['top_profit_products'].items()],
+            key=lambda x: x['profit'], reverse=True
+        )[:10]
+        
+        aggregated_data['revenue_by_region'] = sorted(
+            [{'region': region, 'revenue': revenue} for region, revenue in aggregated_data['revenue_by_region'].items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        aggregated_data['revenue_by_category'] = sorted(
+            [{'category': category, 'revenue': revenue} for category, revenue in aggregated_data['revenue_by_category'].items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        aggregated_data['revenue_by_brand'] = sorted(
+            [{'brand': brand, 'revenue': revenue} for brand, revenue in aggregated_data['revenue_by_brand'].items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        # Find top customer phone
+        top_customer_phone = max(aggregated_data['top_customers'], key=lambda x: x['revenue'])['name'] if aggregated_data['top_customers'] else '-'
+        aggregated_data['top_customer_phone'] = top_customer_phone
+        
+        return {
+            'total_revenue': total_revenue,
+            'total_profit': total_profit,
+            'data': aggregated_data
+        }
 
     def list(self, request):
         period = request.query_params.get('period', 'month')
@@ -241,18 +362,79 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
                 return Response({'error': 'Invalid date format'}, status=400)
 
         if not orders.exists():
+            print(f"❌ No orders found in the specified range")
             return Response([])
 
-        # For custom date range, create a single period
+        # For custom date range, return individual day or month snapshots
         if start_date and end_date:
-            periods_to_compute = [{
-                'period': 'custom',
-                'start': start_date_obj,
-                'end': end_date_obj,
-                'key': f"{start_date_obj.strftime('%Y-%m-%d')} to {end_date_obj.strftime('%Y-%m-%d')}"
-            }]
-            # For custom range, don't delete existing snapshots, just compute new one
-            period_to_delete = 'custom'
+            days_diff = (end_date_obj - start_date_obj).days
+            print(f"🔍 Custom range: {start_date_obj} to {end_date_obj} ({days_diff} days)")
+            
+            if days_diff > 90:
+                # For ranges > 90 days, use month snapshots
+                print("📅 Range > 90 days, using month snapshots")
+                
+                # Get existing month snapshots in the date range
+                month_snapshots = AnalyticsSnapshot.objects.filter(
+                    period='month',
+                    period_key__gte=start_date_obj.strftime('%Y-%m'),
+                    period_key__lte=end_date_obj.strftime('%Y-%m')
+                ).order_by('period_key')
+                
+                print(f"📊 Found {month_snapshots.count()} month snapshots")
+                
+                if month_snapshots.exists():
+                    data = AnalyticsSnapshotSerializer(month_snapshots, many=True).data
+                    print(f"📊 Returning {len(data)} month snapshots for custom range")
+                    return Response(data)
+                else:
+                    # Create month snapshots for the range
+                    current_date = start_date_obj.replace(day=1)
+                    end_month = end_date_obj.replace(day=1)
+                    
+                    while current_date <= end_month:
+                        periods_to_compute.append({
+                            'period': 'month',
+                            'start': current_date,
+                            'end': current_date.replace(month=current_date.month + 1) - timedelta(days=1) if current_date.month < 12 else current_date.replace(year=current_date.year + 1, month=1) - timedelta(days=1),
+                            'key': current_date.strftime('%Y-%m')
+                        })
+                        if current_date.month == 12:
+                            current_date = current_date.replace(year=current_date.year + 1, month=1)
+                        else:
+                            current_date = current_date.replace(month=current_date.month + 1)
+                    
+                    print(f"📅 Created {len(periods_to_compute)} month periods for custom range")
+            else:
+                # For ranges <= 90 days, use day snapshots
+                print("📅 Range <= 90 days, using day snapshots")
+                
+                # Get existing day snapshots in the date range
+                day_snapshots = AnalyticsSnapshot.objects.filter(
+                    period='day',
+                    period_key__gte=start_date_obj.strftime('%Y-%m-%d'),
+                    period_key__lte=end_date_obj.strftime('%Y-%m-%d')
+                ).order_by('period_key')
+                
+                print(f"📊 Found {day_snapshots.count()} day snapshots")
+                
+                if day_snapshots.exists():
+                    data = AnalyticsSnapshotSerializer(day_snapshots, many=True).data
+                    print(f"📊 Returning {len(data)} day snapshots for custom range")
+                    return Response(data)
+                else:
+                    # Create day snapshots for the range
+                    current_date = start_date_obj
+                    while current_date <= end_date_obj:
+                        periods_to_compute.append({
+                            'period': 'day',
+                            'start': current_date,
+                            'end': current_date,
+                            'key': current_date.strftime('%Y-%m-%d')
+                        })
+                        current_date += timedelta(days=1)
+                    
+                    print(f"📅 Created {len(periods_to_compute)} day periods for custom range")
         else:
             # Get date range from orders
             date_range = orders.aggregate(
@@ -273,20 +455,26 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
             order_dates = orders.values_list('order_date__date', flat=True).distinct().order_by('order_date__date')
 
             if period == 'day':
-                # Create one period for each day that has orders
-                for order_date in order_dates:
-                    periods_to_compute.append({
-                        'period': 'day',
-                        'start': order_date,
-                        'end': order_date,
-                        'key': order_date.strftime('%Y-%m-%d')
-                    })
+                # For day period, return existing day snapshots
+                existing_snapshots = AnalyticsSnapshot.objects.filter(period='day').order_by('period_key')
+                if existing_snapshots.exists():
+                    data = AnalyticsSnapshotSerializer(existing_snapshots, many=True).data
+                    print(f"📊 Returning {len(data)} existing day snapshots")
+                    return Response(data)
+                else:
+                    # Create one period for each day that has orders
+                    for order_date in order_dates:
+                        periods_to_compute.append({
+                            'period': 'day',
+                            'start': order_date,
+                            'end': order_date,
+                            'key': order_date.strftime('%Y-%m-%d')
+                        })
 
             elif period == 'week':
                 # Group orders by week
                 week_groups = {}
                 for order_date in order_dates:
-                    # Get start of week (Monday)
                     week_start = order_date - timedelta(days=order_date.weekday())
                     week_key = f"{week_start.year}-W{week_start.strftime('%W')}"
                     if week_key not in week_groups:
@@ -354,12 +542,17 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
 
         # Compute snapshots for all periods
         snapshots = []
+        print(f"🔄 Computing {len(periods_to_compute)} periods...")
         for period_data in periods_to_compute:
+            print(f"📅 Processing period: {period_data}")
             # Create new snapshot
             serializer = ComputeAnalyticsSerializer(data=period_data)
             if serializer.is_valid():
                 snapshot = serializer.save()
                 snapshots.append(snapshot)
+                print(f"✅ Created snapshot: {snapshot.period_key} - Revenue: {snapshot.total_revenue}")
+            else:
+                print(f"❌ Serializer errors: {serializer.errors}")
 
         # Return snapshots sorted by period_key descending (newest first)
         snapshots.sort(key=lambda x: x.period_key, reverse=True)

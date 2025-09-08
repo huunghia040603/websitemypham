@@ -70,7 +70,7 @@ const AdminAPI = {
         const [basePeriod, cacheParam] = period.split('?t=');
         const actualPeriod = basePeriod || period;
         
-        const response = await fetch(`${API_BASE_URL}/analytics/?period=${encodeURIComponent(actualPeriod)}`);
+        const response = await fetch(`${API_BASE_URL}/analytics/${actualPeriod}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     },
