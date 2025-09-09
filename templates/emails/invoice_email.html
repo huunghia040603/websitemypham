@@ -1,0 +1,212 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Hóa đơn #{{ order.id }}</title>
+  <style>
+    /* Base */
+    body { margin:0; padding:0; background:#f6f8fb; color:#2b2f33; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    .container { width:100%; background:#f6f8fb; padding:24px 0; }
+    .wrapper { max-width:720px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(17,24,39,0.08); }
+
+    /* Header */
+    .header { background:linear-gradient(  #ffe9f4 100%); color:#000c8e; padding:20px 24px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand img { height:28px; width:auto; display:block; }
+    .brand-name { font-weight:800; font-size:18px; letter-spacing:.3px; }
+    .invoice-meta { margin:12px auto 0;  display:flex; flex-direction:column; align-items:stretch; justify-content:center; gap:6px; font-size:13px; opacity:.95;margin-bottom:12px;}
+    .invoice-meta .meta-item { white-space:nowrap; color:#111827; display:block; }
+    .invoice-meta strong { font-size:14px; color:#111827; display:inline-block; }
+    /* Card look for meta */
+    .invoice-meta.card { border:1px solid #eef1f6; border-radius:10px; background:#ffffff; padding:12px 16px; }
+
+    /* Content */
+    .content { padding:24px; }
+    .card { border:1px solid #eef1f6; border-radius:10px; padding:16px; background:#ffffff; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    .section-title { font-size:14px; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:.4px; margin:0 0 8px; }
+    .muted { color:#6b7280; }
+    .value { color:#111827; font-weight:600; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px; text-align:left; font-size:14px; }
+    thead th { background:#f9fafb; color:#4b5563; border-bottom:1px solid #eef1f6; }
+    tbody td { border-bottom:1px solid #f1f5f9; }
+    tfoot th { background:#fff; }
+    .text-right { text-align:right; }
+
+    /* Totals */
+    .totals { margin-top:8px; }
+    .total-row th { padding:10px 12px; }
+    .grand { color:#ef4444; font-size:16px; }
+
+    /* Footer */
+    .footer { padding:14px 24px; font-size:12px; color:#6b7280; background:#fbfcfe; border-top:1px solid #eef1f6; }
+
+    /* Badges */
+    .badge { display:inline-block; padding:4px 8px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.3px; }
+    .badge-success { background:#dcfce7; color:#166534; }
+    .badge-warning { background:#fef9c3; color:#854d0e; }
+
+    /* Cute notice */
+    .note { background:#fff7fb; border:1px solid #fde2ef; color:#7a2947; border-radius:10px; padding:14px 16px; line-height:1.55; }
+    .note strong { color:#b61a5a; }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .header { flex-direction:column; align-items:center; gap:8px; padding:16px; text-align:center; }
+      .invoice-meta { font-size:12px; gap:6px; }
+      .brand-name { font-size:16px; }
+      .content { padding:16px; }
+      th, td { padding:10px; font-size:13px; }
+    }
+    @media (max-width: 480px) {
+      .wrapper { border-radius:10px; }
+      .header { padding:14px 16px; }
+      .content { padding:12px; }
+      .section-title { font-size:13px; }
+      .muted, .value { font-size:13px; }
+      thead th { font-size:12px; }
+      .grand { font-size:15px; }
+      .note-text { font-size:10px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="wrapper">
+      <!-- Header -->
+      <div class="header">
+        <div class="brand">
+          <img src="https://res.cloudinary.com/deoknys7k/image/upload/v1756526188/logo_wkypfq.png" alt="BuddySkincare"/>
+          <div class="brand-name"> &emsp; BuddySkincare</div>
+        </div>
+        
+      </div>
+
+      <!-- Body -->
+      <div class="content">
+        
+       
+
+        
+        <!-- Friendly intro -->
+       <div class="note" style="font-size:12px; ">
+
+        <div class="card invoice-meta">
+          <span class="meta-item"><strong>Hóa đơn #{{ order.id }} &emsp;</strong></span>
+          {% set _dt = (order.order_date|string)|replace('T',' ') %}
+          <span class="meta-item">Ngày: {{ _dt[:16] }}&emsp;</span>
+          <span class="meta-item">Thanh toán: {{ 'Chuyển khoản' if order.payment_method == 'bank' else 'COD' }}&emsp;</span>
+        </div>
+       
+
+        <!-- Info -->
+        <div class="grid">
+          <div class="card">
+            <div class="section-title">Thông tin khách hàng</div>
+            <div class="muted">Tên: <span class="value">{{ order.customer_name or 'N/A' }}</span></div>
+            <div class="muted">SĐT: <span class="value">{{ order.phone_number or 'N/A' }}</span></div>
+            <div class="muted">Địa chỉ: <span class="value">{{ (order.street or '') ~ ' ' ~ (order.ward or '') ~ ' ' ~ (order.district or '') ~ ' ' ~ (order.province or '') }}</span></div>
+          </div>
+          <div class="card">
+            <div class="section-title">Thông tin đơn hàng</div>
+            {% set status_map = {
+              'pending':'Chờ xử lý',
+              'processing':'Đang xử lý',
+              'shipped':'Đã giao hàng',
+              'delivered':'Đã nhận hàng',
+              'cancelled':'Đã hủy',
+              'confirmed':'Đã xác nhận',
+              'completed':'Hoàn thành'
+            } %}
+            <div class="muted">Trạng thái: 
+              <span class="value">
+                {{ status_map.get(order.status, order.status) }}
+              </span>
+              <span class="badge {{ 'badge-success' if order.is_confirmed else 'badge-warning' }}" style="margin-left:6px;">
+                {{ 'ĐÃ XÁC NHẬN' if order.is_confirmed else 'CHƯA XÁC NHẬN' }}
+              </span>
+            </div>
+            {% if order.voucher_code or order.voucher %}
+            <div class="muted">Voucher: <span class="value">{{ order.voucher_code or (order.voucher.code if order.voucher) }}</span></div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card" style="margin-top:16px;">
+          <table role="presentation" cellspacing="0" cellpadding="0">
+            <thead>
+              <tr>
+                <th style="width:50%">Sản phẩm</th>
+                <th class="text-right">Đơn giá</th>
+                <th class="text-right">SL</th>
+                <th class="text-right">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set ns = namespace(subtotal=0.0) %}
+              {% for it in order.get('items', []) %}
+                {% set name = it.product.name if it.product else ('#' ~ it.product) %}
+                {% set u = (it.price_at_purchase or (it.product.discounted_price if it.product) or 0)|float %}
+                {% set q = (it.quantity or 0)|float %}
+                {% set line = u*q %}
+                {% set ns.subtotal = ns.subtotal + line %}
+                <tr>
+                  <td style="color:#111827; font-weight:600;">{{ name }}</td>
+                  <td class="text-right">{{ ('{:,.0f}'.format(u*1000)).replace(',', '.') }}đ</td>
+                  <td class="text-right">{{ q|int }}</td>
+                  <td class="text-right">{{ ('{:,.0f}'.format(line*1000)).replace(',', '.') }}đ</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot class="totals">
+              {% set ship = (order.shipping_fee or 0)|float %}
+              {% if ship>0 and ship<1000 %}{% set ship = ship*1000 %}{% endif %}
+              {% set discount = (order.discount_applied or 0)|float %}
+              {% if discount>0 and discount<1000 %}{% set discount = discount*1000 %}{% endif %}
+              {% set grand = ((order.total_amount or 0)|float * 1000) %}
+              <tr class="total-row">
+                <th colspan="3" class="text-right muted">Tạm tính</th>
+                <th class="text-right">{{ ('{:,.0f}'.format(ns.subtotal*1000)).replace(',', '.') }}đ</th>
+              </tr>
+              <tr class="total-row">
+                <th colspan="3" class="text-right muted">Giảm giá</th>
+                <th class="text-right" style="color:#059669">-{{ ('{:,.0f}'.format(discount)).replace(',', '.') }}đ</th>
+              </tr>
+              <tr class="total-row">
+                <th colspan="3" class="text-right muted">Phí vận chuyển</th>
+                <th class="text-right">{{ ('{:,.0f}'.format(ship)).replace(',', '.') }}đ</th>
+              </tr>
+              <tr class="total-row">
+                <th colspan="3" class="text-right muted">Tổng cộng</th>
+                <th class="text-right grand">{{ ('{:,.0f}'.format(grand)).replace(',', '.') }}đ</th>
+              </tr>
+            </tfoot>
+          </table>
+          <br/>
+
+        <span style="font-weight:700; margin-bottom:3px; margin-top:26px; font-style:italic; font-size:11px !important;" class="note-text" >💌 Đây là email hóa đơn</a></span>
+        <span style="font-size:10px; font-style:italic;" class="note-text" >Chúng tôi gửi email này để <strong>xác nhận hóa đơn</strong> cho bạn.<br/></span>
+        <span style="margin-top:2px; font-size:10px !important; font-style:italic;" class="note-text" >Nếu có gì sai sót hoặc chưa đúng, vui lòng liên hệ Zalo <strong>0987 789 274</strong> (nhân viên <strong>Kim Nhi – Buddy</strong>) để được hỗ trợ nhanh nha! <br/></span>
+        <!-- <span style="margin-top:2px; font-size:10px !important; font-style:italic;" class="note-text" >Bạn vui lòng kiểm tra đơn hàng ngay khi nhận. Chúng tôi hỗ trợ các vấn đề trong vòng <strong>5 ngày</strong> kể từ ngày nhận hàng.<br/></span> -->
+        <span style="margin-top:2px; font-size:10px !important; font-style:italic;" class="note-text" >Cảm ơn bạn đã luôn yêu thương <strong>BuddySkincare</strong> 🫶<br/></span>
+        <span style="margin-top:2px; font-size:10px !important; font-style:italic;" class="note-text" >Xem thêm sản phẩm tại: <a href="https://www.buddyskincare.com">www.buddyskincare.com</a></span>
+      
+        </div>
+        
+        
+      </div>
+      </div>
+      <!-- Footer
+      <div class="footer">
+        Cảm ơn quý khách đã mua hàng tại BuddySkincare. Mọi thắc mắc vui lòng liên hệ zalo: 0987 789 274. Truy cập website: <a href="https://www.buddyskincare.com">www.buddyskincare.com</a>
+      </div> -->
+    </div>
+  </div>
+</body>
+</html>

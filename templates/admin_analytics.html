@@ -8,9 +8,9 @@
         <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>Thống kê chi tiết doanh thu</h4>
         <div class="btn-group" id="rangeGroup">
             <button class="btn btn-outline-primary active" data-range="day">Ngày hôm nay</button>
-            <button class="btn btn-outline-primary" data-range="week">Tuần</button>
-            <button class="btn btn-outline-primary" data-range="month">Tháng</button>
-            <button class="btn btn-outline-primary" data-range="year">Năm</button>
+            <button class="btn btn-outline-primary" data-range="week">Tuần này</button>
+            <button class="btn btn-outline-primary" data-range="month">Tháng này</button>
+            <button class="btn btn-outline-primary" data-range="year">Năm nay</button>
             <button class="btn btn-outline-secondary" data-range="custom" id="customRangeBtn">
                 <i class="fas fa-calendar-alt me-1"></i>Tùy chọn
             </button>
@@ -41,9 +41,7 @@
                         <option value="lastMonth">Tháng trước</option>
                         <option value="thisYear">Năm nay</option>
                         <option value="lastYear">Năm trước</option>
-                        <option value="last7days">7 ngày qua</option>
-                        <option value="last30days">30 ngày qua</option>
-                        <option value="last90days">90 ngày qua</option>
+                        
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -98,12 +96,12 @@
         </div>
     </div>
 
-    <!-- Revenue Chart -->
+    <!-- Revenue Charts -->
     <div class="row g-3 mb-4">
-        <div class="col-12">
+        <div class="col-lg-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Biểu đồ doanh thu</h5>
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Biểu đồ doanh thu (Đường)</h5>
                     <button id="btnCompute" class="btn btn-sm btn-outline-primary d-none" aria-hidden="true" tabindex="-1">
                         <i class="fas fa-rotate me-1"></i>Cập nhật dữ liệu
                     </button>
@@ -113,6 +111,7 @@
                 </div>
             </div>
         </div>
+        
     </div>
 
     <!-- Detailed Metrics -->
@@ -130,6 +129,11 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="text-muted">Tổng phí ship</span>
                         <strong id="analyticsShip">0đ</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Tổng giảm giá voucher</span>
+                        <strong id="analyticsVoucher">0đ</strong>
                     </div>
                 </div>
             </div>
@@ -169,7 +173,7 @@
                     <h6 class="mb-0"><i class="fas fa-fire me-2"></i>Sản phẩm bán chạy nhất</h6>
                 </div>
                 <div class="card-body">
-                    <ol id="topSelling" class="small mb-0"></ol>
+                    <ol id="topSelling" class="small mb-0" style="font-size: 0.75rem;"></ol>
                 </div>
             </div>
         </div>
@@ -179,7 +183,7 @@
                     <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Sản phẩm doanh thu cao nhất</h6>
                 </div>
                 <div class="card-body">
-                    <ol id="topRevenue" class="small mb-0"></ol>
+                    <ol id="topRevenue" class="small mb-0" style="font-size: 0.75rem;"></ol>
                 </div>
             </div>
         </div>
@@ -189,7 +193,7 @@
                     <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Sản phẩm lợi nhuận cao nhất</h6>
                 </div>
                 <div class="card-body">
-                    <ol id="topProfitProducts" class="small mb-0"></ol>
+                    <ol id="topProfitProducts" class="small mb-0" style="font-size: 0.75rem;"></ol>
                 </div>
             </div>
         </div>
@@ -220,7 +224,7 @@
     </div>
 
     <!-- Category & Brand Analytics -->
-    <div class="row g-3">
+    <div class="row g-3 mb-4">
         <div class="col-lg-6">
             <div class="card h-100">
                 <div class="card-header">
@@ -242,13 +246,41 @@
             </div>
         </div>
     </div>
+
+    <!-- Quantity Trend Charts -->
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Số lượng bán theo danh mục</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="qtyCategoryPie" height="200" style="height:300px"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Số lượng bán theo hãng</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="qtyBrandBar" height="200" style="height:300px"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
 let chartInst = null;
+let trendChartInst = null;
+let qtyCategoryPieInst = null;
+let qtyBrandBarInst = null;
 let currentPeriod = 'day';
 let customDateRange = null;
 
@@ -345,6 +377,7 @@ async function loadSnapshots(period, customRange = null){
   }
   if(!data || !data.length){
     renderChart([],[]);
+    renderTrendChart([],[]);
     document.getElementById('analyticsRevenue').textContent = '0đ';
     document.getElementById('analyticsProfit').textContent = '0đ';
     document.getElementById('topSelling').innerHTML = '';
@@ -356,6 +389,81 @@ async function loadSnapshots(period, customRange = null){
   const labels = [];
   const series = [];
   const allSnapshots = data;
+
+  // Helper: aggregate snapshots (sum totals and quantities)
+  function aggregateSnapshots(snaps){
+    const agg = {
+      period: 'custom',
+      period_key: 'custom',
+      total_revenue: 0,
+      total_profit: 0,
+      data: {
+        import_total: 0,
+        shipping_total: 0,
+        total_orders: 0,
+        average_order_value: 0,
+        qty_by_category: [],
+        qty_by_brand: [],
+        top_selling: [],
+        top_revenue: [],
+        top_customers: [],
+        top_profit_products: [],
+        revenue_by_region: [],
+        revenue_by_category: [],
+        revenue_by_brand: [],
+        top_customer_phone: '-',
+        top_customers_phone: [],
+        voucher_discount_total: 0
+      }
+    };
+    const catQtyMap = {};
+    const brandQtyMap = {};
+    const topSellingMap = {};
+    const topRevenueMap = {};
+    const topCustomersMap = {};
+    const topProfitMap = {};
+    const regionRevenueMap = {};
+    const categoryRevenueMap = {};
+    const brandRevenueMap = {};
+    const phoneRevenueMap = {};
+    snaps.forEach(s => {
+      agg.total_revenue += Number(s.total_revenue || 0);
+      agg.total_profit += Number(s.total_profit || 0);
+      const d = s.data || {};
+      agg.data.import_total += Number(d.import_total || 0);
+      agg.data.shipping_total += Number(d.shipping_total || 0);
+      agg.data.total_orders += Number(d.total_orders || 0);
+      agg.data.voucher_discount_total += Number(d.voucher_discount_total || 0);
+      (d.qty_by_category || []).forEach(it => { catQtyMap[it.category] = (catQtyMap[it.category] || 0) + Number(it.qty || 0); });
+      (d.qty_by_brand || []).forEach(it => { brandQtyMap[it.brand] = (brandQtyMap[it.brand] || 0) + Number(it.qty || 0); });
+      (d.top_selling || []).forEach(it => { topSellingMap[it.name] = (topSellingMap[it.name] || 0) + Number(it.qty || 0); });
+      (d.top_revenue || []).forEach(it => { topRevenueMap[it.name] = (topRevenueMap[it.name] || 0) + Number(it.revenue || 0); });
+      (d.top_customers || []).forEach(it => { topCustomersMap[it.name] = (topCustomersMap[it.name] || 0) + Number(it.revenue || 0); });
+      (d.top_profit_products || []).forEach(it => { topProfitMap[it.name] = (topProfitMap[it.name] || 0) + Number(it.profit || 0); });
+      (d.revenue_by_region || []).forEach(it => { regionRevenueMap[it.region] = (regionRevenueMap[it.region] || 0) + Number(it.revenue || 0); });
+      (d.revenue_by_category || []).forEach(it => { categoryRevenueMap[it.category] = (categoryRevenueMap[it.category] || 0) + Number(it.revenue || 0); });
+      (d.revenue_by_brand || []).forEach(it => { brandRevenueMap[it.brand] = (brandRevenueMap[it.brand] || 0) + Number(it.revenue || 0); });
+      (d.top_customers_phone || []).forEach(it => { phoneRevenueMap[it.phone] = (phoneRevenueMap[it.phone] || 0) + Number(it.revenue || 0); });
+    });
+    if (agg.data.total_orders > 0){
+      agg.data.average_order_value = agg.total_revenue / agg.data.total_orders;
+    }
+    agg.data.qty_by_category = Object.entries(catQtyMap).map(([category, qty]) => ({ category, qty }));
+    agg.data.qty_by_brand = Object.entries(brandQtyMap).map(([brand, qty]) => ({ brand, qty }));
+    agg.data.top_selling = Object.entries(topSellingMap).map(([name, qty]) => ({ name, qty })).sort((a,b)=>b.qty-a.qty).slice(0,10);
+    agg.data.top_revenue = Object.entries(topRevenueMap).map(([name, revenue]) => ({ name, revenue })).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+    agg.data.top_customers = Object.entries(topCustomersMap).map(([name, revenue]) => ({ name, revenue })).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+    agg.data.top_profit_products = Object.entries(topProfitMap).map(([name, profit]) => ({ name, profit })).sort((a,b)=>b.profit-a.profit).slice(0,10);
+    agg.data.revenue_by_region = Object.entries(regionRevenueMap).map(([region, revenue]) => ({ region, revenue })).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+    agg.data.revenue_by_category = Object.entries(categoryRevenueMap).map(([category, revenue]) => ({ category, revenue })).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+    agg.data.revenue_by_brand = Object.entries(brandRevenueMap).map(([brand, revenue]) => ({ brand, revenue })).sort((a,b)=>b.revenue-a.revenue).slice(0,10);
+    // Build phone aggregates
+    const phones = Object.entries(phoneRevenueMap).map(([phone, revenue]) => ({ phone, revenue }));
+    phones.sort((a,b)=>b.revenue-a.revenue);
+    agg.data.top_customers_phone = phones.slice(0,10);
+    agg.data.top_customer_phone = phones.length ? phones[0].phone : '-';
+    return agg;
+  }
   
   // For custom range, create detailed chart by day or month
   if (customRange) {
@@ -423,11 +531,17 @@ async function loadSnapshots(period, customRange = null){
   
   // Show latest snapshot details (most recent period)
   // Find the most recent snapshot by created_at or period_key
-  const latestSnap = data.reduce((latest, current) => {
+  let latestSnap = data.reduce((latest, current) => {
     // Compare by period_key (newest date first)
     if (!latest) return current;
     return current.period_key > latest.period_key ? current : latest;
   }, null);
+  // If custom range is selected, use aggregated snapshot for displays
+  if (customRange) {
+    latestSnap = aggregateSnapshots(allSnapshots);
+  }
+  // Render quantity charts now that latestSnap is available
+  renderQtyCharts(latestSnap);
   
   console.log('📊 All Snapshots:', data);
   console.log('📊 Latest Snapshot:', latestSnap);
@@ -435,11 +549,16 @@ async function loadSnapshots(period, customRange = null){
   console.log('💵 Latest Profit:', latestSnap.total_profit);
   console.log('📦 Latest Import:', latestSnap.data?.import_total);
   console.log('🚚 Latest Shipping:', latestSnap.data?.shipping_total);
+  console.log('🏷️ Latest Voucher Discount:', latestSnap.data?.voucher_discount_total);
   
   document.getElementById('analyticsRevenue').textContent = fmt(latestSnap.total_revenue || 0);
   document.getElementById('analyticsProfit').textContent = fmt(latestSnap.total_profit || 0);
   document.getElementById('analyticsImport').textContent = fmt((latestSnap.data && latestSnap.data.import_total) || 0);
   document.getElementById('analyticsShip').textContent = fmt((latestSnap.data && latestSnap.data.shipping_total) || 0);
+  const voucherSum = (latestSnap.data && latestSnap.data.voucher_discount_total) || 0;
+  if (document.getElementById('analyticsVoucher')) {
+    document.getElementById('analyticsVoucher').textContent = fmt(voucherSum);
+  }
 
   // Debug info to console for verification
   try {
@@ -461,7 +580,12 @@ async function loadSnapshots(period, customRange = null){
   // Basic stats
   const totalOrders = latestSnap.data?.total_orders || 0;
   const averageOrderValue = latestSnap.data?.average_order_value || 0;
-  const topCustomerPhone = latestSnap.data?.top_customer_phone || '-';
+  let topCustomerPhone = latestSnap.data?.top_customer_phone || '-';
+  // If custom aggregated snapshot, find top phone from aggregated customers
+  if (customRange && (!topCustomerPhone || topCustomerPhone === '-')) {
+    const phones = latestSnap.data?.top_customers_phone || [];
+    topCustomerPhone = phones.length ? phones[0].phone : '-';
+  }
   
   // Get top customer name and phone
   const topCustomer = topCustomers.length > 0 ? topCustomers[0] : null;
@@ -472,11 +596,17 @@ async function loadSnapshots(period, customRange = null){
   const totalProfit = latestSnap.total_profit || 0;
   const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
   
+  // Helper function to truncate product names
+  function truncateName(name, maxLength = 48) {
+    if (name.length <= maxLength) return name;
+    return name.substring(0, maxLength) + '...';
+  }
+
   // Update displays
-  document.getElementById('topSelling').innerHTML = topS.map(it => `<li>${it.name} <span class="text-muted float-end">x${it.qty}</span></li>`).join('');
-  document.getElementById('topRevenue').innerHTML = topR.map(it => `<li>${it.name} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
+  document.getElementById('topSelling').innerHTML = topS.map(it => `<li><span title="${it.name}">${truncateName(it.name)}</span> <span class="text-muted float-end">x${it.qty}</span></li>`).join('');
+  document.getElementById('topRevenue').innerHTML = topR.map(it => `<li><span title="${it.name}">${truncateName(it.name)}</span> <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
   document.getElementById('topCustomers').innerHTML = topCustomers.map(it => `<li>${it.name} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
-  document.getElementById('topProfitProducts').innerHTML = topProfitProducts.map(it => `<li>${it.name} <strong class=\"float-end\">${fmt(it.profit)}</strong></li>`).join('');
+  document.getElementById('topProfitProducts').innerHTML = topProfitProducts.map(it => `<li><span title="${it.name}">${truncateName(it.name)}</span> <strong class=\"float-end\">${fmt(it.profit)}</strong></li>`).join('');
   document.getElementById('revenueByRegion').innerHTML = revenueByRegion.map(it => `<li>${it.region} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
   document.getElementById('revenueByCategory').innerHTML = revenueByCategory.map(it => `<li>${it.category} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
   document.getElementById('revenueByBrand').innerHTML = revenueByBrand.map(it => `<li>${it.brand} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
@@ -498,6 +628,34 @@ function renderChart(labels, data){
   });
 }
 
+function renderQtyCharts(latestSnap){
+  const qtyByCategory = (latestSnap.data && latestSnap.data.qty_by_category) || [];
+  const qtyByBrand = (latestSnap.data && latestSnap.data.qty_by_brand) || [];
+
+  // Category Pie
+  const pieCtx = document.getElementById('qtyCategoryPie');
+  if (qtyCategoryPieInst) qtyCategoryPieInst.destroy();
+  const catLabels = qtyByCategory.map(it => it.category);
+  const catData = qtyByCategory.map(it => it.qty);
+  const pieColors = ['#6366f1','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#84cc16','#06b6d4','#eab308'];
+  qtyCategoryPieInst = new Chart(pieCtx, {
+    type: 'pie',
+    data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: pieColors }]},
+    options: { plugins: { legend: { position: 'bottom' } }, maintainAspectRatio: false, responsive: true }
+  });
+
+  // Brand Bar
+  const barCtx = document.getElementById('qtyBrandBar');
+  if (qtyBrandBarInst) qtyBrandBarInst.destroy();
+  const brandLabels = qtyByBrand.map(it => it.brand);
+  const brandData = qtyByBrand.map(it => it.qty);
+  qtyBrandBarInst = new Chart(barCtx, {
+    type: 'bar',
+    data: { labels: brandLabels, datasets: [{ label: 'Số lượng', data: brandData, backgroundColor: '#3b82f6' }]},
+    options: { scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } }, maintainAspectRatio: false, responsive: true }
+  });
+}
+
 document.getElementById('rangeGroup').addEventListener('click', async (e)=>{
   const btn = e.target.closest('button[data-range]'); if(!btn) return;
   document.querySelectorAll('#rangeGroup button').forEach(b=>b.classList.remove('active'));
@@ -507,12 +665,14 @@ document.getElementById('rangeGroup').addEventListener('click', async (e)=>{
   
   if (btn.dataset.range === 'custom') {
     document.getElementById('customDateRange').style.display = 'block';
-    // Set default date range to last 30 days
-    const last30days = getDateRange('last30days');
-    if (last30days) {
-      document.getElementById('startDate').value = formatDateForAPI(last30days.start);
-      document.getElementById('endDate').value = formatDateForAPI(last30days.end);
-    }
+    // Default: yesterday -> today
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    document.getElementById('startDate').value = formatDateForAPI(yesterday);
+    document.getElementById('endDate').value = formatDateForAPI(today);
+    const qs = document.getElementById('quickSelect');
+    if (qs) qs.value = '';
   } else {
     document.getElementById('customDateRange').style.display = 'none';
     customDateRange = null;
@@ -529,6 +689,17 @@ document.getElementById('quickSelect').addEventListener('change', (e) => {
       document.getElementById('startDate').value = formatDateForAPI(dateRange.start);
       document.getElementById('endDate').value = formatDateForAPI(dateRange.end);
     }
+  }
+});
+
+// When user manually changes start/end date, reset quickSelect to placeholder
+['startDate','endDate'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('change', () => {
+      const qs = document.getElementById('quickSelect');
+      if (qs) qs.value = '';
+    });
   }
 });
 

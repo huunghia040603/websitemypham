@@ -185,7 +185,7 @@
                 <div class="card bg-light">
                     <div class="card-body py-3">
                         <h6 class="card-title mb-3">
-                            <i class="fas fa-chart-bar me-2"></i>Thống Kê Đơn Hàng
+                            <i class="fas fa-chart-bar me-2"></i>Thống Kê Đơn Hàng Theo Bộ Lọc
                         </h6>
                         <div class="row text-center">
                             <div class="col-md-2">
@@ -263,7 +263,7 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="orderSearch" class="form-label">Tìm kiếm đơn hàng</label>
-                        <input type="text" class="form-control" id="orderSearch" placeholder="ID, tên khách hàng...">
+                        <input type="text" class="form-control" id="orderSearch" placeholder="ID, tên khách hàng, số điện thoại...">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="dateFilter" class="form-label">Ngày tạo</label>
@@ -766,6 +766,9 @@ function renderOrders() {
                     <button class="btn btn-sm btn-outline-warning" onclick="editOrder(${order.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
                         <i class="fas fa-edit"></i>
                     </button>
+                    <a class="btn btn-sm btn-outline-success ms-1" href="/admin/orders/${order.id}/invoice" target="_blank" data-bs-toggle="tooltip" title="Xuất hóa đơn / In">
+                        <i class="fas fa-file-invoice"></i>
+                    </a>
                 </td>
             </tr>
         `;
@@ -803,9 +806,11 @@ function filterOrders() {
     const dateFilter = document.getElementById('dateFilter').value;
     
     filteredOrders = allOrders.filter(order => {
+        const phone = (order.phone_number || order.customer_phone || '').toString().toLowerCase();
         const matchesSearch = 
             order.id.toString().includes(searchTerm) ||
-            (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm));
+            (order.customer_name && order.customer_name.toLowerCase().includes(searchTerm)) ||
+            (phone && phone.includes(searchTerm));
         
         const matchesStatus = !statusFilter || order.status === statusFilter;
         const matchesConfirmation = !confirmationFilter || order.is_confirmed.toString() === confirmationFilter;

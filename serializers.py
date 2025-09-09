@@ -474,6 +474,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         # Compute import cost and shipping fee totals
         import_total = Decimal('0.00')
         shipping_total = Decimal('0.00')
+        voucher_discount_total = Decimal('0.00')
         shipping_by_order = {}
         import_by_order = {}
         debug_import = []
@@ -486,6 +487,14 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 ship = ship * 1000
             shipping_total += ship
             shipping_by_order[str(o.id)] = float(ship)
+            # Sum voucher discount applied on this order
+            try:
+                disc = Decimal(str(o.discount_applied or 0))
+            except Exception:
+                disc = Decimal('0.00')
+            if needs_scaling and disc > 0 and disc < 1000:
+                disc = disc * 1000
+            voucher_discount_total += disc
             # sum import costs for each item
             for item in getattr(o, 'items').all():
                 # Check if import_price needs scaling (likely in thousands instead of VND)
@@ -552,6 +561,11 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         )[:10]
         
         top_customer_phone = max(customer_phone_revenue.items(), key=lambda x: x[1])[0] if customer_phone_revenue else '-'
+        # Build phone list for aggregation on frontend
+        top_customers_phone = sorted(
+            [{'phone': phone, 'revenue': float(rev)} for phone, rev in customer_phone_revenue.items()],
+            key=lambda x: x['revenue'], reverse=True
+        )[:10]
         
         # Top products by profit
         product_profit = {}
@@ -593,8 +607,9 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             key=lambda x: x['revenue'], reverse=True
         )[:10]
         
-        # Revenue by category
+        # Revenue and quantity by category
         category_revenue = {}
+        category_qty = {}
         for o in orders:
             for item in getattr(o, 'items').all():
                 category_name = getattr(item.product.category, 'name', 'Không phân loại')
@@ -606,14 +621,21 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 
                 revenue = price * qty
                 category_revenue[category_name] = category_revenue.get(category_name, 0) + revenue
+                category_qty[category_name] = category_qty.get(category_name, 0) + qty
         
         revenue_by_category = sorted(
             [{'category': category, 'revenue': float(revenue)} for category, revenue in category_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
         )[:10]
         
-        # Revenue by brand
+        qty_by_category = sorted(
+            [{'category': category, 'qty': float(qty)} for category, qty in category_qty.items()],
+            key=lambda x: x['qty'], reverse=True
+        )[:10]
+        
+        # Revenue and quantity by brand
         brand_revenue = {}
+        brand_qty = {}
         for o in orders:
             for item in getattr(o, 'items').all():
                 brand_name = getattr(item.product.brand, 'name', 'Không xác định')
@@ -625,10 +647,16 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 
                 revenue = price * qty
                 brand_revenue[brand_name] = brand_revenue.get(brand_name, 0) + revenue
+                brand_qty[brand_name] = brand_qty.get(brand_name, 0) + qty
         
         revenue_by_brand = sorted(
             [{'brand': brand, 'revenue': float(revenue)} for brand, revenue in brand_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
+        )[:10]
+        
+        qty_by_brand = sorted(
+            [{'brand': brand, 'qty': float(qty)} for brand, qty in brand_qty.items()],
+            key=lambda x: x['qty'], reverse=True
         )[:10]
 
         snapshot = AnalyticsSnapshot.objects.update_or_create(
@@ -644,6 +672,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                     'top_revenue': tr_list,
                     'import_total': float(import_total),
                     'shipping_total': float(shipping_total),
+                    'voucher_discount_total': float(voucher_discount_total),
                     'import_by_order': import_by_order,
                     'shipping_by_order': shipping_by_order,
                     'debug_import': debug_import[:10],  # Limit to first 10 for debugging
@@ -653,10 +682,14 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                     'average_order_value': average_order_value,
                     'top_customers': top_customers,
                     'top_customer_phone': top_customer_phone,
+                    'top_customers_phone': top_customers_phone,
                     'top_profit_products': top_profit_products,
                     'revenue_by_region': revenue_by_region,
                     'revenue_by_category': revenue_by_category,
                     'revenue_by_brand': revenue_by_brand,
+                    # Quantities for charts
+                    'qty_by_category': qty_by_category,
+                    'qty_by_brand': qty_by_brand,
                 }
             }
         )[0]

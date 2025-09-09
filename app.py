@@ -4,6 +4,14 @@ from datetime import datetime, timedelta
 import cloudinary
 import cloudinary.uploader
 import time
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
 
 app = Flask(__name__)
 app.secret_key = 'buddyskincare_secret_key_2024'
@@ -430,28 +438,38 @@ def search_products():
         # Fetch products from API
         api_url = f'{API_BASE_URL}/products/'
         response = requests.get(api_url, timeout=30)
-        
-        if response.status_code == 200:
-            all_products = response.json()
-            
-            # Tìm kiếm theo tên sản phẩm hoặc thương hiệu
-            results = []
-            for product in all_products:
-                if (query in product.get('name', '').lower() or 
-                    query in product.get('brand_name', '').lower() or
-                    query in product.get('category', {}).get('name', '').lower()):
+        if response.status_code != 200:
+            return jsonify([])
+
+        all_products = response.json()
+
+        # Tìm kiếm theo tên sản phẩm, thương hiệu, hoặc danh mục
+        results = []
+        for product in all_products:
+            try:
+                product_name = product.get('name', '').lower()
+                brand_name = product.get('brand_name', '').lower()
+                category_name = ''
+                category = product.get('category') or {}
+                if isinstance(category, dict):
+                    category_name = category.get('name', '').lower()
+                if (
+                    query in product_name or
+                    query in brand_name or
+                    query in category_name
+                ):
                     results.append({
                         'id': product.get('id'),
                         'name': product.get('name'),
                         'brand': product.get('brand_name'),
-                        'price': product.get('discounted_price', 0) * 1000,
+                        'price': (product.get('discounted_price', 0) or 0) * 1000,
                         'image': product.get('image')
                     })
-            
-            return jsonify(results[:5])  # Giới hạn 5 kết quả
-        else:
-            return jsonify([])
-            
+            except Exception:
+                continue
+
+        return jsonify(results[:5])  # Giới hạn 5 kết quả
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error searching products: {e}")
         return jsonify([])
@@ -633,10 +651,151 @@ def admin_order_detail(order_id):
     """Admin - Chi tiết đơn hàng"""
     return render_template('admin_orders.html')
 
+@app.route('/admin/orders/<int:order_id>/invoice')
+def admin_order_invoice(order_id: int):
+    """Admin - Hóa đơn in/ảnh cho đơn hàng"""
+    import requests
+    try:
+        resp = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
+        if resp.status_code != 200:
+            return render_template('admin_invoice.html', order=None, error=f'Không tìm thấy đơn hàng #{order_id}')
+        order = resp.json()
+    except Exception as e:
+        return render_template('admin_invoice.html', order=None, error=f'Lỗi tải đơn hàng: {str(e)}')
+    return render_template('admin_invoice.html', order=order)
+
+@app.route('/admin/orders/<int:order_id>/invoice/email', methods=['POST'])
+def admin_order_invoice_email(order_id: int):
+    """Send invoice via email."""
+    import requests
+    try:
+        resp = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
+        if resp.status_code != 200:
+            return jsonify({'success': False, 'message': 'Không tìm thấy đơn hàng'}), 404
+        order = resp.json()
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi tải đơn hàng: {str(e)}'}), 500
+
+    # Determine recipient
+    data = request.get_json(silent=True) or {}
+    recipient = (data.get('email') or order.get('email') or '').strip()
+    if not recipient or '@' not in recipient:
+        return jsonify({'success': False, 'message': 'Email khách hàng không hợp lệ'}), 400
+
+    # Render minimal HTML invoice for email
+    html_content = render_template('emails/invoice_email.html', order=order)
+
+    # SMTP configuration from environment
+    smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+    smtp_port = int(os.getenv('SMTP_PORT', '587'))
+    smtp_user = os.getenv('SMTP_USER')
+    smtp_pass = os.getenv('SMTP_PASS')
+    sender = os.getenv('SMTP_SENDER', smtp_user or 'no-reply@buddyskincare.vn')
+
+    if not (smtp_user and smtp_pass):
+        # Development fallback: save invoice HTML to file instead of sending email
+        try:
+            fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
+            os.makedirs(fallback_dir, exist_ok=True)
+            filename = f'invoice_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+            file_path = os.path.join(fallback_dir, filename)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            return jsonify({'success': True, 'message': f'Đã lưu hóa đơn vào file: {file_path}', 'saved_path': file_path}), 200
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'SMTP chưa cấu hình và lưu file thất bại: {str(e)}'}), 500
+
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f'Hóa đơn đơn hàng #{order_id} - BuddySkincare'
+        msg['From'] = sender
+        msg['To'] = recipient
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(sender, [recipient], msg.as_string())
+        return jsonify({'success': True, 'message': f'Đã gửi hóa đơn đến {recipient}'}), 200
+    except (smtplib.SMTPAuthenticationError, smtplib.SMTPException, TimeoutError) as e:
+        # Graceful fallback: save HTML to file when SMTP fails, return 200 for UX
+        try:
+            fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
+            os.makedirs(fallback_dir, exist_ok=True)
+            filename = f'invoice_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+            file_path = os.path.join(fallback_dir, filename)
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+            return jsonify({'success': True, 'message': f'Không gửi được qua SMTP, đã lưu hóa đơn vào file', 'saved_path': file_path, 'error': str(e)}), 200
+        except Exception as save_err:
+            return jsonify({'success': False, 'message': f'Lỗi SMTP và lưu file thất bại: {str(save_err)}', 'error': str(e)}), 500
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi gửi email: {str(e)}'}), 500
+
 @app.route('/admin/customers')
 def admin_customers():
     """Admin - Quản lý khách hàng"""
     return render_template('admin_customers.html')
+
+@app.route('/admin/vouchers')
+def admin_vouchers():
+    """Admin - Quản lý voucher"""
+    return render_template('admin_vouchers.html')
+
+# Preview invoice email template in browser
+@app.route('/templates/emails/invoice_email.html')
+def preview_invoice_email():
+    """Preview the invoice email template at a direct URL for design/testing.
+    Optional query: ?order_id=123 to load real order from API.
+    """
+    import requests
+    order = None
+    order_id = request.args.get('order_id')
+    if order_id:
+        try:
+            resp = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=15)
+            if resp.status_code == 200:
+                order = resp.json()
+        except Exception:
+            order = None
+    if not order:
+        # Fallback demo order for preview
+        order = {
+            'id': 9999,
+            'order_date': datetime.now().isoformat(timespec='minutes'),
+            'payment_method': 'bank',
+            'is_confirmed': True,
+            'status': 'processing',
+            'voucher_code': 'WELCOME10',
+            'phone_number': '0987789274',
+            'customer_name': 'Buddy Skincare',
+            'street': '123 Đường ABC',
+            'ward': 'Phường 1',
+            'district': 'Quận 1',
+            'province': 'TP.HCM',
+            'shipping_fee': 30.0,
+            'discount_applied': 20.0,
+            'total_amount': 350.0,
+            'items': [
+                {
+                    'product': {
+                        'name': 'Nước cân bằng Sen Hậu Giang',
+                        'discounted_price': 120.0,
+                    },
+                    'price_at_purchase': 120.0,
+                    'quantity': 1
+                },
+                {
+                    'product': {
+                        'name': 'Kem chống nắng SPF50+',
+                        'discounted_price': 200.0,
+                    },
+                    'price_at_purchase': 200.0,
+                    'quantity': 1
+                }
+            ]
+        }
+    return render_template('emails/invoice_email.html', order=order)
 
 # Admin API Endpoints
 @app.route('/admin/api/orders', methods=['GET'])

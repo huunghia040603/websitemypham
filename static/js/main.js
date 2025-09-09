@@ -8,31 +8,19 @@ function generateRandomDiscount() {
     return discount;
 }
 
-// Get voucher with case-insensitive matching
-function getVoucherByCode(code) {
-    const upperCode = code.toUpperCase();
-    return VOUCHERS[upperCode] || null;
-}
-
-// Voucher data (temporary - will be replaced with PythonAnywhere API)
-const VOUCHERS = {
-    'HIBUDDY': {
-        code: 'HIBUDDY',
-        discount: 10000,
-        type: 'fixed', // 'fixed' or 'percentage'
-        minOrder: 0,
-        maxUses: 100,
-        description: 'Giảm 10.000đ cho đơn hàng'
-    },
-    'LOVEBUDDY': {
-        code: 'LOVEBUDDY',
-        discount: generateRandomDiscount(), // Random 5,000-15,000
-        type: 'fixed',
-        minOrder: 0,
-        maxUses: 100,
-        description: 'Giảm ngẫu nhiên 5.000đ - 15.000đ cho đơn hàng'
+// Fetch voucher by code from backend API
+async function fetchVoucherFromAPI(code){
+    try{
+        const res = await fetch('https://buddyskincare.pythonanywhere.com/vouchers/');
+        if(!res.ok) return null;
+        const list = await res.json();
+        const found = (list||[]).find(v => (v.code||'').toUpperCase() === String(code||'').toUpperCase());
+        return found || null;
+    }catch(e){
+        console.error('Voucher API error:', e);
+        return null;
     }
-};
+}
 
 // Save voucher to localStorage
 function saveVoucher(voucher) {
@@ -117,7 +105,7 @@ function removeVoucher(isCheckout = false) {
 }
 
 // Apply voucher
-function applyVoucher(code, isCheckout = false) {
+async function applyVoucher(code, isCheckout = false) {
     const prefix = isCheckout ? 'checkout' : 'cart';
     const messageEl = document.getElementById(`${prefix}VoucherMessage`);
     const appliedEl = document.getElementById(`${prefix}VoucherApplied`);
@@ -128,17 +116,26 @@ function applyVoucher(code, isCheckout = false) {
     // Clear previous messages
     messageEl.innerHTML = '';
     
-    // Get voucher with case-insensitive matching
-    const voucher = getVoucherByCode(code);
+    // Fetch voucher from API
+    const voucher = await fetchVoucherFromAPI(code);
     if (!voucher) {
         messageEl.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>Mã giảm giá không hợp lệ</span>';
         return false;
     }
-    
-    // For LOVEBUDDY, generate new random discount each time
-    if (voucher.code === 'LOVEBUDDY') {
-        voucher.discount = generateRandomDiscount(); // Random 5,000-15,000
-        console.log('LOVEBUDDY voucher applied with random discount:', voucher.discount);
+
+    // Validate voucher conditions
+    const now = new Date();
+    if (voucher.valid_from && now < new Date(voucher.valid_from)) {
+        messageEl.innerHTML = '<span class="text-warning"><i class="fas fa-clock me-1"></i>Voucher chưa tới thời gian hiệu lực</span>';
+        return false;
+    }
+    if (voucher.valid_to && now > new Date(voucher.valid_to)) {
+        messageEl.innerHTML = '<span class="text-warning"><i class="fas fa-clock me-1"></i>Voucher đã hết hạn</span>';
+        return false;
+    }
+    if (voucher.is_active === false) {
+        messageEl.innerHTML = '<span class="text-warning"><i class="fas fa-ban me-1"></i>Voucher đang ngưng hoạt động</span>';
+        return false;
     }
     
     // Check minimum order (if needed)
@@ -149,8 +146,16 @@ function applyVoucher(code, isCheckout = false) {
         subtotal += price * item.quantity;
     });
     
-    if (subtotal < voucher.minOrder) {
-        messageEl.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Đơn hàng tối thiểu ${voucher.minOrder.toLocaleString('vi-VN')}đ</span>`;
+    const minOrder = Math.max(0, parseFloat(voucher.min_order_amount || '0')) * 1000;
+    if (subtotal < minOrder) {
+        messageEl.innerHTML = `<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Đơn hàng tối thiểu ${minOrder.toLocaleString('vi-VN')}đ</span>`;
+        return false;
+    }
+    // Check remaining uses
+    const maxUses = parseInt(voucher.max_uses || 0, 10);
+    const timesUsed = parseInt(voucher.times_used || 0, 10);
+    if (maxUses && timesUsed >= maxUses) {
+        messageEl.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle me-1"></i>Voucher đã hết lượt sử dụng</span>';
         return false;
     }
     
@@ -162,12 +167,31 @@ function applyVoucher(code, isCheckout = false) {
         clearVoucherDisplay(isCheckout);
     }
     
+    // Compute discount amount
+    let discountAmount = 0;
+    if ((voucher.discount_type || '').toLowerCase() === 'percentage') {
+        const percent = Math.max(0, parseFloat(voucher.discount_value || '0'));
+        discountAmount = Math.floor(subtotal * (percent / 100));
+        const cap = Math.max(0, parseFloat(voucher.max_order_amount || '0')) * 1000;
+        if (cap > 0) discountAmount = Math.min(discountAmount, cap);
+    } else {
+        // amount is stored in thousands
+        discountAmount = Math.max(0, parseFloat(voucher.discount_value || '0')) * 1000;
+    }
+    const applied = {
+        id: voucher.id,
+        code: voucher.code,
+        discount: discountAmount,
+        type: (voucher.discount_type||'amount').toLowerCase(),
+        minOrder: minOrder
+    };
+    
     // Apply voucher
-    saveVoucher(voucher);
+    saveVoucher(applied);
     
     // Update UI
-    nameEl.textContent = voucher.code;
-    discountEl.textContent = `-${voucher.discount.toLocaleString('vi-VN')}đ`;
+    nameEl.textContent = applied.code;
+    discountEl.textContent = `-${applied.discount.toLocaleString('vi-VN')}đ`;
     appliedEl.classList.remove('d-none');
     voucherLineEl.style.display = 'flex';
     
@@ -844,6 +868,23 @@ async function handlePlaceOrder() {
         // Redirect
         window.location.href = '/';
     });
+                // After success: update voucher usage if applied
+                try {
+                    const appliedVoucher = getAppliedVoucher();
+                    if (appliedVoucher && appliedVoucher.id) {
+                        const usageRes = await fetch(`https://buddyskincare.pythonanywhere.com/vouchers/${appliedVoucher.id}/`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                max_uses: undefined, // backend ignores undefined
+                                times_used: (appliedVoucher.times_used || 0) + 1
+                            })
+                        });
+                        console.log('Voucher usage update status:', usageRes.status);
+                    }
+                } catch (e) {
+                    console.warn('Voucher usage update failed:', e);
+                }
             } else {
                 const errorData = await response.json();
                 console.error('[Checkout] Order creation failed:', errorData);
@@ -1249,9 +1290,16 @@ function createProductCard(product) {
                     </div>
                 </div>
                 ` : ''}
-                <div class="position-absolute top-0 end-0 m-2">
-                    <i class="fas fa-heart text-white" style="font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
-                </div>
+                <button class="fav-toggle position-absolute top-0 end-0 m-2" 
+                        title="Thêm vào yêu thích" 
+                        data-id="${product.id}"
+                        data-name="${String(productName).replace(/\"/g,'\\\"')}"
+                        data-image="${imageUrl}"
+                        data-brand="${String(brandName).replace(/\"/g,'\\\"')}"
+                        data-price="${discountedPrice || 0}"
+                        style="border:none;background:transparent;cursor:pointer;">
+                    <i class="far fa-heart" style="font-size: 18px; color:#fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
+                </button>
                 <div class="position-absolute bottom-0 start-0 m-1">
                     <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
                 </div>
@@ -1359,9 +1407,16 @@ function createFlashSaleProductCard(product) {
                     </div>
                 </div>
                 ` : ''}
-                <div class="position-absolute top-0 end-0 m-2">
-                    <i class="fas fa-heart text-white" style="font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
-                </div>
+                <button class="fav-toggle position-absolute top-0 end-0 m-2" 
+                        title="Thêm vào yêu thích" 
+                        data-id="${product.id}"
+                        data-name="${String(productName).replace(/\"/g,'\\\"')}"
+                        data-image="${imageUrl}"
+                        data-brand="${String(brandName).replace(/\"/g,'\\\"')}"
+                        data-price="${discountedPrice || 0}"
+                        style="border:none;background:transparent;cursor:pointer;">
+                    <i class="far fa-heart" style="font-size: 18px; color:#fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
+                </button>
                 <div class="position-absolute bottom-0 start-0 m-1">
                     <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
                 </div>
@@ -1462,6 +1517,7 @@ function initProductCards() {
     productCards.forEach(card => {
         const addToCartBtn = card.querySelector('.add-to-cart-btn');
         const productImage = card.querySelector('img');
+        const favBtn = card.querySelector('.fav-toggle');
 
         if (addToCartBtn) {
             addToCartBtn.addEventListener('click', function(e) {
@@ -1522,8 +1578,182 @@ function initProductCards() {
                 });
             });
         }
+
+        // Wishlist toggle
+        if (favBtn) {
+            const icon = favBtn.querySelector('i');
+            const pid = String(favBtn.getAttribute('data-id'));
+            const currentFavs = getWishlist();
+            if (currentFavs[pid]) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                icon.style.color = '#ff4d6d';
+            }
+            // Prevent duplicate bindings across re-renders
+            if (favBtn.dataset.bound === '1') return;
+            favBtn.dataset.bound = '1';
+            favBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const item = {
+                    id: pid,
+                    name: favBtn.getAttribute('data-name') || '',
+                    image: favBtn.getAttribute('data-image') || '',
+                    brand: favBtn.getAttribute('data-brand') || '',
+                    price: parseFloat(favBtn.getAttribute('data-price') || '0') || 0
+                };
+                const added = toggleWishlist(item);
+                if (added) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.style.color = '#ff4d6d';
+                    showNotification('Đã thêm vào yêu thích', 'success');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    icon.style.color = '#fff';
+                    showNotification('Đã bỏ khỏi yêu thích', 'info');
+                }
+                renderWishlistDrawer();
+            });
+        }
     });
 }
+
+// --- Wishlist (Favorites) ---
+function getWishlist() {
+    try {
+        const raw = localStorage.getItem('wishlist_v1');
+        const parsed = raw ? JSON.parse(raw) : {};
+        // Normalize to map shape if older data was an array
+        if (Array.isArray(parsed)) {
+            const map = {};
+            parsed.forEach(it => {
+                if (it && (it.id !== undefined && it.id !== null)) {
+                    map[String(it.id)] = it;
+                }
+            });
+            return map;
+        }
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function setWishlist(map) {
+    try {
+        localStorage.setItem('wishlist_v1', JSON.stringify(map));
+    } catch (e) {}
+}
+
+function toggleWishlist(item) {
+    const map = getWishlist();
+    const key = String(item.id);
+    const existed = Boolean(map[key]);
+    if (existed) {
+        delete map[key];
+    } else {
+        map[key] = item;
+    }
+    setWishlist(map);
+    updateFavBadgeCount();
+    return !existed; // true if added, false if removed
+}
+
+function updateFavBadgeCount() {
+    const map = getWishlist();
+    const count = Object.keys(map).length;
+    const fab = document.getElementById('favFab');
+    if (!fab) return;
+    let badge = fab.querySelector('.fav-count-badge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'fav-count-badge';
+        badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:#fff;color:#dc3545;border:1px solid rgba(0,0,0,.05);border-radius:999px;padding:0 6px;font-size:10px;font-weight:700;line-height:18px;min-width:18px;text-align:center;';
+        fab.style.position = 'relative';
+        fab.appendChild(badge);
+    }
+    badge.textContent = String(count);
+}
+
+function renderWishlistDrawer() {
+    const listEl = document.getElementById('wishlistList');
+    if (!listEl) return;
+    const map = getWishlist();
+    const items = Object.values(map);
+    if (items.length === 0) {
+        listEl.innerHTML = '<div class="p-3 text-center text-muted">Chưa có sản phẩm yêu thích</div>';
+        updateFavBadgeCount();
+        return;
+    }
+    listEl.innerHTML = items.map(p => `
+        <div class="d-flex align-items-center p-2 border-bottom">
+            <a href="/product/${p.id}" class="me-2" style="flex:0 0 56px;">
+                <img src="${p.image}" alt="${p.name}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;">
+            </a>
+            <div class="flex-grow-1">
+                <a href="/product/${p.id}" class="text-decoration-none text-dark" style="font-weight:600; display:block; line-height:1.2;">${p.name}</a>
+                <div class="text-muted" style="font-size:12px;">${p.brand || ''}</div>
+                <div class="text-danger" style="font-size:13px;font-weight:700;">${formatPrice((parseFloat(p.price) || 0) * 1000)}</div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger ms-2" data-remove-fav="${p.id}"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+
+    // Bind remove buttons
+    listEl.querySelectorAll('[data-remove-fav]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const id = btn.getAttribute('data-remove-fav');
+            const map = getWishlist();
+            delete map[id];
+            setWishlist(map);
+            showNotification('Đã xóa khỏi yêu thích', 'info');
+            renderWishlistDrawer();
+            // Also update any heart icon on page
+            document.querySelectorAll(`.fav-toggle[data-id="${id}"] i`).forEach(ic => {
+                ic.classList.remove('fas');
+                ic.classList.add('far');
+                ic.style.color = '#fff';
+            });
+        });
+    });
+    updateFavBadgeCount();
+}
+
+function initWishlistUI() {
+    const fab = document.getElementById('favFab');
+    const modalEl = document.getElementById('wishlistModal');
+    const clearBtn = document.getElementById('favClearBtn');
+    if (!fab || !modalEl) return;
+
+    const bsModal = () => (window.bootstrap ? new bootstrap.Modal(modalEl) : null);
+
+    fab.addEventListener('click', (e) => {
+        e.preventDefault();
+        renderWishlistDrawer();
+        const inst = bsModal();
+        if (inst) inst.show(); else modalEl.style.display = 'block';
+    });
+
+    clearBtn && clearBtn.addEventListener('click', () => {
+        setWishlist({});
+        renderWishlistDrawer();
+        // reset all heart icons
+        document.querySelectorAll('.fav-toggle i').forEach(ic => {
+            ic.classList.remove('fas');
+            ic.classList.add('far');
+            ic.style.color = '#fff';
+        });
+        showNotification('Đã xóa danh sách yêu thích', 'info');
+    });
+
+    updateFavBadgeCount();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    try { initWishlistUI(); } catch(e) {}
+});
 
 // Update Cart Count - Use actual cart items count
 function updateCartCount() {
@@ -1689,12 +1919,12 @@ function showNotification(message, type = 'info') {
     
     document.body.appendChild(notification);
     
-    // Auto remove after 5 seconds
+    // Auto remove after 2 seconds
     setTimeout(() => {
         if (notification.parentNode) {
             notification.remove();
         }
-    }, 5000);
+    }, 1500);
 }
 
 // Animations on scroll
@@ -3862,6 +4092,56 @@ defineProductDetailInit = (function(){
             });
         }
 
+        // Wishlist on detail page
+        const favBtn = document.getElementById('detailFavBtn');
+        if (favBtn) {
+            // Prepare item payload
+            const item = {
+                id: String(p.id),
+                name: p.name || '',
+                image: imageUrl || '',
+                brand: brandName || '',
+                price: typeof p.discounted_price === 'number' ? p.discounted_price : (parseFloat(p.discounted_price || '0') || 0)
+            };
+            const icon = favBtn.querySelector('i');
+            const textEl = favBtn.querySelector('.fav-text');
+            const syncState = () => {
+                const map = getWishlist();
+                const isFav = Boolean(map[item.id]);
+                if (isFav) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    icon.style.color = '#ff4d6d';
+                    favBtn.classList.remove('btn-outline-secondary');
+                    favBtn.classList.add('btn-danger');
+                    if (textEl) textEl.textContent = 'Đã trong yêu thích';
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    icon.style.color = '';
+                    favBtn.classList.remove('btn-danger');
+                    favBtn.classList.add('btn-outline-secondary');
+                    if (textEl) textEl.textContent = 'Thêm vào yêu thích';
+                }
+            };
+            // Init state
+            syncState();
+            // Click handler (guard against duplicate binding)
+            if (favBtn.dataset.bound !== '1') {
+                favBtn.dataset.bound = '1';
+                favBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const added = toggleWishlist(item);
+                    syncState();
+                    if (added) {
+                        showNotification('Đã thêm vào yêu thích', 'success');
+                    } else {
+                        showNotification('Đã bỏ khỏi yêu thích', 'info');
+                    }
+                });
+            }
+        }
+
         const buyBtn = document.getElementById('detailBuyNowBtn');
         if (buyBtn) {
             buyBtn.addEventListener('click', () => {
@@ -3962,13 +4242,13 @@ function showOrderSuccessModal(onOk) {
                 <div class="modal-header border-0">
                     <h5 class="modal-title fw-bold">
                         <i class="fas fa-check-circle text-success me-2"></i>
-                        Đặt hàng thành công
+                        Đơn hàng đã được đặt thành công
                     </h5>
                 </div>
                 <div class="modal-body pt-0">
                     <div class="text-center py-2">
                         <div class="display-6 text-success mb-2"><i class="fas fa-bag-shopping"></i></div>
-                        <p class="mb-0">Đơn hàng của bạn đã được đặt thành công.</p>
+                        <p class="mb-0"> Vui lòng chờ nhân viên xác nhận đơn hàng.</p>
                         <p class="text-muted mb-0">Cảm ơn bạn đã luôn tin tưởng chúng tôi!</p>
                     </div>
                 </div>

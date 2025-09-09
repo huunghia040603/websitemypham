@@ -3,6 +3,11 @@
     <!-- Floating Action Button -->
 <div class="floating-actions">
     <div class="floating-action-item">
+        <button id="favFab" class="floating-btn" title="Yêu thích" style="background:#dc3545;display:flex;align-items:center;justify-content:center;border:none;outline:none;box-shadow:none;">
+            <i class="fas fa-heart"></i>
+        </button>
+    </div>
+    <div class="floating-action-item">
         <a href="tel:1900-1234" class="floating-btn phone-btn" title="Gọi ngay">
             <i class="fas fa-phone"></i>
         </a>
@@ -17,6 +22,24 @@
             <i class="fas fa-arrow-up"></i>
         </a>
     </div>
+    
+</div>
+
+<!-- Wishlist Modal (center) -->
+<div class="modal fade" id="wishlistModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-heart text-danger me-2"></i>Danh sách yêu thích</h5>
+        <button type="button" class="btn-close" id="favModalClose" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="wishlistList"></div>
+      <div class="modal-footer">
+        <button id="favClearBtn" type="button" class="btn btn-outline-secondary"><i class="fas fa-trash me-1"></i>Xóa hết</button>
+        <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
 </div>
 
     <!-- Newsletter Section -->

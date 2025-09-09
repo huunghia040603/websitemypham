@@ -216,6 +216,44 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
     serializer_class = AnalyticsSnapshotSerializer
     permission_classes = [AllowAny]
     
+    def _ensure_snapshot_qty_fields(self, snapshots):
+        """Recompute snapshots missing newly added fields (qty and phones)."""
+        from datetime import date, timedelta
+        updated = False
+        for snap in snapshots:
+            data = snap.data or {}
+            has_qty = 'qty_by_category' in data and 'qty_by_brand' in data
+            has_phone = 'top_customers_phone' in data and 'top_customer_phone' in data
+            if has_qty and has_phone:
+                continue
+            # Determine start/end from period_key
+            period = snap.period
+            if period == 'day':
+                try:
+                    d = date.fromisoformat(snap.period_key)
+                except Exception:
+                    continue
+                payload = { 'period': 'day', 'start': d, 'end': d }
+            elif period == 'month':
+                try:
+                    y, m = map(int, snap.period_key.split('-'))
+                    start = date(y, m, 1)
+                    if m == 12:
+                        end = date(y + 1, 1, 1) - timedelta(days=1)
+                    else:
+                        end = date(y, m + 1, 1) - timedelta(days=1)
+                except Exception:
+                    continue
+                payload = { 'period': 'month', 'start': start, 'end': end }
+            else:
+                # Only handle day/month for now
+                continue
+            serializer = ComputeAnalyticsSerializer(data=payload)
+            if serializer.is_valid():
+                serializer.save()
+                updated = True
+        return updated
+
     def aggregate_snapshots(self, snapshots, period_key):
         """Helper function to aggregate multiple snapshots"""
         if not snapshots:
@@ -384,6 +422,7 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
                 print(f"📊 Found {month_snapshots.count()} month snapshots")
                 
                 if month_snapshots.exists():
+                    self._ensure_snapshot_qty_fields(month_snapshots)
                     data = AnalyticsSnapshotSerializer(month_snapshots, many=True).data
                     print(f"📊 Returning {len(data)} month snapshots for custom range")
                     return Response(data)
@@ -419,6 +458,7 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
                 print(f"📊 Found {day_snapshots.count()} day snapshots")
                 
                 if day_snapshots.exists():
+                    self._ensure_snapshot_qty_fields(day_snapshots)
                     data = AnalyticsSnapshotSerializer(day_snapshots, many=True).data
                     print(f"📊 Returning {len(data)} day snapshots for custom range")
                     return Response(data)
@@ -455,21 +495,15 @@ class AnalyticsViewSet(viewsets.GenericViewSet):
             order_dates = orders.values_list('order_date__date', flat=True).distinct().order_by('order_date__date')
 
             if period == 'day':
-                # For day period, return existing day snapshots
-                existing_snapshots = AnalyticsSnapshot.objects.filter(period='day').order_by('period_key')
-                if existing_snapshots.exists():
-                    data = AnalyticsSnapshotSerializer(existing_snapshots, many=True).data
-                    print(f"📊 Returning {len(data)} existing day snapshots")
-                    return Response(data)
-                else:
-                    # Create one period for each day that has orders
-                    for order_date in order_dates:
-                        periods_to_compute.append({
-                            'period': 'day',
-                            'start': order_date,
-                            'end': order_date,
-                            'key': order_date.strftime('%Y-%m-%d')
-                        })
+                # Always recompute day snapshots based on actual distinct order dates (prevents stale data)
+                # Create one period for each day that has orders
+                for order_date in order_dates:
+                    periods_to_compute.append({
+                        'period': 'day',
+                        'start': order_date,
+                        'end': order_date,
+                        'key': order_date.strftime('%Y-%m-%d')
+                    })
 
             elif period == 'week':
                 # Group orders by week

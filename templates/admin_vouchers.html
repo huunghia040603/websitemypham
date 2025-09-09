@@ -1,0 +1,357 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Quản Lý Voucher{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Quản Lý Voucher</h4>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" id="btnExport"><i class="fas fa-file-export me-2"></i>Xuất CSV</button>
+            <button class="btn btn-primary" id="btnCreate"><i class="fas fa-plus me-2"></i>Thêm voucher</button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Tìm theo mã</label>
+                    <input type="text" class="form-control" id="searchCode" placeholder="Nhập mã voucher...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Loại</label>
+                    <select class="form-select" id="filterType">
+                        <option value="">Tất cả</option>
+                        <option value="amount">Giảm số tiền</option>
+                        <option value="percentage">Giảm %</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" id="filterActive">
+                        <option value="">Tất cả</option>
+                        <option value="true">Đang hoạt động</option>
+                        <option value="false">Ngưng</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Hiển thị</label>
+                    <select class="form-select" id="pageSize">
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <button class="btn btn-outline-primary" id="btnRefresh"><i class="fas fa-sync me-2"></i>Làm mới</button>
+                    <button class="btn btn-outline-secondary ms-2" id="btnClear"><i class="fas fa-eraser me-2"></i>Xóa lọc</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="voucherTable">
+                    <thead>
+                        <tr>
+                            <th>Mã <button class="btn btn-sm btn-link" data-sort="code">↕</button></th>
+                            <th>Loại</th>
+                            <th>Giá trị</th>
+                            <th>Tối thiểu</th>
+                            <th>Tối đa</th>
+                            <th>Hiệu lực từ</th>
+                            <th>Đến</th>
+                            <th>Tối đa dùng</th>
+                            <th>Đã dùng</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="text-muted" id="resultInfo">0 kết quả</small>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="pager"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div class="modal fade" id="voucherModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="voucherModalTitle">Thêm voucher</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="voucherForm">
+          <input type="hidden" id="voucherId">
+          <div class="mb-3">
+            <label class="form-label">Mã</label>
+            <input type="text" class="form-control" id="code" required>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Loại</label>
+              <select class="form-select" id="discount_type" required>
+                <option value="amount">Giảm số tiền</option>
+                <option value="percentage">Giảm %</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Giá trị</label>
+              <input type="number" step="0.01" class="form-control" id="discount_value" required>
+            </div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Tối thiểu đơn</label>
+              <input type="number" step="0.01" class="form-control" id="min_order_amount" value="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Giảm tối đa</label>
+              <input type="number" step="0.01" class="form-control" id="max_order_amount" value="0">
+            </div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Bắt đầu</label>
+              <input type="datetime-local" class="form-control" id="valid_from">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Kết thúc</label>
+              <input type="datetime-local" class="form-control" id="valid_to">
+            </div>
+          </div>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Tối đa lượt dùng</label>
+              <input type="number" class="form-control" id="max_uses" value="0">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Trạng thái</label>
+              <select class="form-select" id="is_active">
+                <option value="true" selected>Đang hoạt động</option>
+                <option value="false">Ngưng</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-primary" id="btnSaveVoucher"><i class="fas fa-save me-2"></i>Lưu</button>
+      </div>
+    </div>
+  </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const API_BASE = 'https://buddyskincare.pythonanywhere.com/vouchers/'; // API nguồn
+
+let vouchers = [];
+let filtered = [];
+let currentSort = { key: 'code', dir: 'asc' };
+let page = 1;
+let pageSize = 20;
+
+function fmtMoney(v){
+  const n = Number(v||0);
+  return new Intl.NumberFormat('vi-VN', { style: 'decimal', maximumFractionDigits: 2 }).format(n);
+}
+
+function toLocalDT(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function loadVouchers(){
+  const res = await fetch(API_BASE);
+  if(!res.ok) throw new Error('Không tải được vouchers');
+  vouchers = await res.json();
+  applyFilters();
+}
+
+function applyFilters(){
+  const q = document.getElementById('searchCode').value.trim().toLowerCase();
+  const type = document.getElementById('filterType').value;
+  const active = document.getElementById('filterActive').value;
+  pageSize = Number(document.getElementById('pageSize').value||20);
+
+  filtered = vouchers.filter(v => {
+    const matchCode = !q || (v.code||'').toLowerCase().includes(q);
+    const matchType = !type || v.discount_type === type;
+    const matchActive = !active || String(v.is_active) === active;
+    return matchCode && matchType && matchActive;
+  });
+
+  // sort
+  filtered.sort((a,b)=>{
+    const A = (a[currentSort.key] ?? '').toString();
+    const B = (b[currentSort.key] ?? '').toString();
+    return currentSort.dir==='asc' ? A.localeCompare(B) : B.localeCompare(A);
+  });
+
+  page = 1;
+  renderTable();
+}
+
+function renderTable(){
+  const tbody = document.querySelector('#voucherTable tbody');
+  const total = filtered.length;
+  const start = (page-1)*pageSize;
+  const end = Math.min(start+pageSize, total);
+  const rows = filtered.slice(start,end).map(v => {
+    const now = new Date();
+    const from = v.valid_from ? new Date(v.valid_from) : null;
+    const to = v.valid_to ? new Date(v.valid_to) : null;
+    const inRange = (!from || from<=now) && (!to || now<=to);
+    const statusBadge = v.is_active && inRange ? '<span class="badge bg-success">Đang hoạt động</span>' : '<span class="badge bg-secondary">Ngưng/ Hết hạn</span>';
+    const valueText = v.discount_type==='percentage' 
+      ? `${fmtMoney(v.discount_value)}%` 
+      : `${new Intl.NumberFormat('vi-VN').format(Number(v.discount_value||0)*1000)}đ`;
+    return `
+      <tr>
+        <td><code>${v.code}</code></td>
+        <td>${v.discount_type==='percentage'?'Phần trăm':'Số tiền'}</td>
+        <td>${valueText}</td>
+        <td>${fmtMoney(v.min_order_amount)}</td>
+        <td>${fmtMoney(v.max_order_amount)}</td>
+        <td>${v.valid_from? new Date(v.valid_from).toLocaleString('vi-VN'): '-'}</td>
+        <td>${v.valid_to? new Date(v.valid_to).toLocaleString('vi-VN'): '-'}</td>
+        <td>${v.max_uses ?? 0}</td>
+        <td>${v.times_used ?? 0}</td>
+        <td>${statusBadge}</td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-primary me-1" onclick='openEdit(${JSON.stringify(v).replace(/"/g,"&quot;")})'><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-outline-secondary me-1" onclick='toggleActive(${v.id}, ${!v.is_active})'>${v.is_active?'Tắt':'Bật'}</button>
+          <button class="btn btn-sm btn-outline-danger" onclick='removeVoucher(${v.id})'><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+  }).join('');
+  tbody.innerHTML = rows || `<tr><td colspan="11" class="text-center text-muted">Không có voucher</td></tr>`;
+
+  document.getElementById('resultInfo').textContent = `${total} kết quả · Hiển thị ${start+1}-${end}`;
+  renderPager(total);
+}
+
+function renderPager(total){
+  const ul = document.getElementById('pager');
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  page = Math.min(page, totalPages);
+  let html = '';
+  const mk = (p, label, disabled=false, active=false)=>`<li class="page-item ${disabled?'disabled':''} ${active?'active':''}"><a class="page-link" href="#" onclick="gotoPage(${p});return false;">${label}</a></li>`;
+  html += mk(Math.max(1,page-1),'«', page===1);
+  for(let p=Math.max(1,page-2); p<=Math.min(totalPages,page+2); p++) html += mk(p,p, false, p===page);
+  html += mk(Math.min(totalPages,page+1),'»', page===totalPages);
+  ul.innerHTML = html;
+}
+
+function gotoPage(p){ page = p; renderTable(); }
+
+// Actions
+function openCreate(){
+  document.getElementById('voucherModalTitle').textContent = 'Thêm voucher';
+  document.getElementById('voucherId').value = '';
+  document.getElementById('voucherForm').reset();
+  new bootstrap.Modal(document.getElementById('voucherModal')).show();
+}
+
+function openEdit(v){
+  document.getElementById('voucherModalTitle').textContent = 'Chỉnh sửa voucher';
+  document.getElementById('voucherId').value = v.id;
+  document.getElementById('code').value = v.code || '';
+  document.getElementById('discount_type').value = v.discount_type || 'amount';
+  document.getElementById('discount_value').value = v.discount_value || 0;
+  document.getElementById('min_order_amount').value = v.min_order_amount || 0;
+  document.getElementById('max_order_amount').value = v.max_order_amount || 0;
+  document.getElementById('valid_from').value = toLocalDT(v.valid_from);
+  document.getElementById('valid_to').value = toLocalDT(v.valid_to);
+  document.getElementById('max_uses').value = v.max_uses || 0;
+  document.getElementById('is_active').value = String(!!v.is_active);
+  new bootstrap.Modal(document.getElementById('voucherModal')).show();
+}
+
+async function saveVoucher(){
+  const id = document.getElementById('voucherId').value;
+  const payload = {
+    code: document.getElementById('code').value.trim(),
+    discount_type: document.getElementById('discount_type').value,
+    // Nếu loại số tiền, backend đang lưu theo đơn vị nghìn => gửi về theo đơn vị nghìn (giữ nguyên)
+    // Hiển thị đã nhân 1000 ở bảng, còn khi lưu giữ nguyên số gốc người nhập
+    discount_value: document.getElementById('discount_value').value,
+    min_order_amount: document.getElementById('min_order_amount').value || 0,
+    max_order_amount: document.getElementById('max_order_amount').value || 0,
+    valid_from: document.getElementById('valid_from').value || null,
+    valid_to: document.getElementById('valid_to').value || null,
+    max_uses: Number(document.getElementById('max_uses').value || 0),
+    is_active: document.getElementById('is_active').value === 'true'
+  };
+
+  const method = id ? 'PUT' : 'POST';
+  const url = id ? API_BASE + id + '/' : API_BASE;
+  const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+  if(!res.ok){
+    const err = await res.text();
+    alert('Lưu thất bại: ' + err);
+    return;
+  }
+  bootstrap.Modal.getInstance(document.getElementById('voucherModal')).hide();
+  await loadVouchers();
+}
+
+async function toggleActive(id, active){
+  const res = await fetch(API_BASE + id + '/', { method: 'PATCH', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ is_active: !!active }) });
+  if(res.ok) await loadVouchers(); else alert('Không cập nhật được trạng thái');
+}
+
+async function removeVoucher(id){
+  if(!confirm('Xóa voucher này?')) return;
+  const res = await fetch(API_BASE + id + '/', { method: 'DELETE' });
+  if(res.ok) await loadVouchers(); else alert('Không xóa được');
+}
+
+function exportCSV(){
+  const headers = ['id','code','discount_type','discount_value','min_order_amount','max_order_amount','valid_from','valid_to','max_uses','times_used','is_active'];
+  const rows = filtered.map(v => headers.map(h=> (v[h]??'')).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'vouchers.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Events
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('btnCreate').addEventListener('click', openCreate);
+  document.getElementById('btnSaveVoucher').addEventListener('click', saveVoucher);
+  document.getElementById('btnRefresh').addEventListener('click', loadVouchers);
+  document.getElementById('btnClear').addEventListener('click', ()=>{ document.getElementById('searchCode').value=''; document.getElementById('filterType').value=''; document.getElementById('filterActive').value=''; applyFilters(); });
+  document.getElementById('btnExport').addEventListener('click', exportCSV);
+  document.getElementById('searchCode').addEventListener('input', ()=>{ applyFilters(); });
+  document.getElementById('filterType').addEventListener('change', applyFilters);
+  document.getElementById('filterActive').addEventListener('change', applyFilters);
+  document.getElementById('pageSize').addEventListener('change', applyFilters);
+  document.querySelector('[data-sort="code"]').addEventListener('click', ()=>{ currentSort.dir = currentSort.dir==='asc'?'desc':'asc'; renderTable(); });
+
+  try { await loadVouchers(); } catch(e) { alert('Không tải được dữ liệu voucher'); }
+});
+</script>
+{% endblock %}
+
