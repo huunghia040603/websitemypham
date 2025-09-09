@@ -49,12 +49,21 @@
       </div>
     </div>
   </div>
-  <div class="col-12 col-lg-4">
-    <div class="card stats-card stats-card-green h-100">
+  <div class="col-6 col-lg-2">
+    <div class="card stats-card stats-card-green">
       <div class="card-body text-center py-3">
         <i class="fas fa-users stats-icon"></i>
         <div class="stats-number" id="collaboratorsCount">-</div>
         <div class="stats-label">Thành viên cộng tác</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="card stats-card stats-card-info">
+      <div class="card-body text-center py-3">
+        <i class="fas fa-user-friends stats-icon"></i>
+        <div class="stats-number" id="totalCustomers">-</div>
+        <div class="stats-label">Khách Hàng</div>
       </div>
     </div>
   </div>
@@ -72,13 +81,8 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-lg-3 col-md-6 mb-3">
-                        <a href="/admin/products/new" class="btn btn-outline-primary w-100 btn-action">
-                            <i class="fas fa-plus-circle me-2"></i>Quản Lý Sản Phẩm Mới
-                        </a>
-                    </div>
-                    <div class="col-lg-3 col-md-6 mb-3">
-                        <a href="/admin/products/used" class="btn btn-outline-secondary w-100 btn-action">
-                            <i class="fas fa-recycle me-2"></i>Quản Lý Sản Phẩm Đã Sử Dụng
+                        <a href="/admin/products" class="btn btn-outline-primary w-100 btn-action">
+                            <i class="fas fa-box me-2"></i>Quản Lý Sản Phẩm
                         </a>
                     </div>
                     <div class="col-lg-3 col-md-6 mb-3">
@@ -89,6 +93,11 @@
                     <div class="col-lg-3 col-md-6 mb-3">
                         <a href="/admin/orders" class="btn btn-outline-info w-100 btn-action">
                             <i class="fas fa-shopping-cart me-2"></i>Quản Lý Đơn Hàng
+                        </a>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-3">
+                        <a href="/admin/customers" class="btn btn-outline-success w-100 btn-action">
+                            <i class="fas fa-users me-2"></i>Quản Lý Khách Hàng
                         </a>
                     </div>
                 </div>
@@ -122,6 +131,36 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.stats-card-info {
+    background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    transition: all 0.3s ease;
+}
+
+.stats-card-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+}
+
+.stats-card-info .stats-icon {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.stats-card-info .stats-number {
+    color: white;
+    font-weight: bold;
+}
+
+.stats-card-info .stats-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
@@ -135,15 +174,24 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function loadDashboardStats() {
     try {
         // Load all products
-        const products = await AdminAPI.fetchProducts();
+        const products = await AdminAPI.getProducts();
         document.getElementById('totalProducts').textContent = products.length;
         
-        // Count flash sale products
-        const flashSaleCount = products.filter(p => parseFloat(p.discount_rate || 0) > 0).length;
+        // Count flash sale products by tag 'FlashSale'
+        const hasFlashTag = (p) => {
+            const tags = p?.tags || [];
+            if (!Array.isArray(tags)) return false;
+            return tags.some(t => {
+                if (typeof t === 'string') return t.toLowerCase() === 'flashsale';
+                if (t && typeof t === 'object') return (t.name || '').toLowerCase() === 'flashsale';
+                return false;
+            });
+        };
+        const flashSaleCount = products.filter(hasFlashTag).length;
         document.getElementById('flashSaleProducts').textContent = flashSaleCount;
         
         // Load orders
-        const orders = await AdminAPI.fetchOrders();
+        const orders = await AdminAPI.getOrders();
         document.getElementById('totalOrders').textContent = orders.length;
         
         // Count pending orders
@@ -155,6 +203,10 @@ async function loadDashboardStats() {
         const colEl = document.getElementById('collaboratorsCount');
         if (colEl) colEl.textContent = collaborators;
         
+        // Load customers
+        const customers = await AdminAPI.getCustomers();
+        document.getElementById('totalCustomers').textContent = customers.length;
+        
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
         AdminAPI.showNotification('Lỗi khi tải thống kê dashboard', 'error');
@@ -163,8 +215,11 @@ async function loadDashboardStats() {
 
 async function loadRecentOrders() {
     try {
-        const orders = await AdminAPI.fetchOrders();
-        const recentOrders = orders.slice(0, 5); // Get 5 most recent orders
+        const orders = await AdminAPI.getOrders();
+        // Sort orders by ID descending (highest ID first) and get top 5
+        const recentOrders = orders
+            .sort((a, b) => (b.id || 0) - (a.id || 0))
+            .slice(0, 5);
         
         const container = document.getElementById('recentOrders');
         
@@ -174,29 +229,39 @@ async function loadRecentOrders() {
         }
         
         let ordersHtml = '<div class="table-responsive"><table class="table table-hover">';
-        ordersHtml += '<thead><tr><th>ID</th><th>Khách Hàng</th><th>Tổng Tiền</th><th>Trạng Thái</th><th>Ngày Tạo</th><th>Thao Tác</th></tr></thead><tbody>';
+        ordersHtml += '<thead><tr><th>ID</th><th>Khách Hàng</th><th>Tổng Tiền</th><th>Trạng Thái</th><th>Ngày Tạo</th></tr></thead><tbody>';
         
         recentOrders.forEach(order => {
             const statusClass = {
                 'pending': 'status-pending',
-                'confirmed': 'status-confirmed',
+                'processing': 'status-processing',
                 'shipped': 'status-shipped',
                 'delivered': 'status-delivered',
                 'cancelled': 'status-cancelled'
             }[order.status] || 'status-pending';
             
+            const statusText = {
+                'pending': 'Chờ xử lý',
+                'processing': 'Đã xử lý',
+                'shipped': 'Đã giao hàng',
+                'delivered': 'Đã nhận hàng',
+                'cancelled': 'Đã hủy'
+            }[order.status] || order.status;
+            
+            // Format total amount (multiply by 1000 for display)
+            const totalAmount = (parseFloat(order.total_amount) || 0) * 1000;
+            const formattedAmount = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(totalAmount);
+            
             ordersHtml += `
                 <tr>
                     <td><strong>#${order.id}</strong></td>
                     <td>${order.customer_name || 'N/A'}</td>
-                    <td>${AdminAPI.formatPrice(order.total_amount)}</td>
-                    <td><span class="badge ${statusClass}">${order.status}</span></td>
-                    <td>${AdminAPI.formatDate(order.created_at)}</td>
-                    <td>
-                        <a href="/admin/orders/${order.id}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                    </td>
+                    <td>${formattedAmount}</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>${AdminAPI.formatDate(order.order_date)}</td>
                 </tr>
             `;
         });

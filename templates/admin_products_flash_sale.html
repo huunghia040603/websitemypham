@@ -30,17 +30,23 @@
                         <label for="discountFilter" class="form-label">Giảm giá (%)</label>
                         <select class="form-select" id="discountFilter">
                             <option value="">Tất cả</option>
-                            <option value="50">Trên 50%</option>
-                            <option value="30">30-50%</option>
-                            <option value="20">20-30%</option>
-                            <option value="10">10-20%</option>
-                            <option value="5">Dưới 10%</option>
+                            <option value="over_90">Trên 90%</option>
+                            <option value="80_90">80-90%</option>
+                            <option value="60_80">60-80%</option>
+                            <option value="40_60">40-60%</option>
+                            <option value="under_40">Dưới 40%</option>
                         </select>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-2 mb-3">
                         <label for="brandFilter" class="form-label">Thương hiệu</label>
                         <select class="form-select" id="brandFilter">
                             <option value="">Tất cả thương hiệu</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="categoryFilter" class="form-label">Danh mục</label>
+                        <select class="form-select" id="categoryFilter">
+                            <option value="">Tất cả danh mục</option>
                         </select>
                     </div>
                     <div class="col-md-2 mb-3">
@@ -108,8 +114,8 @@
                             </select>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="discountRate" class="form-label">Tỷ lệ giảm giá (%) *</label>
-                            <input type="number" class="form-control" id="discountRate" min="1" max="99" required>
+                            <label for="discountedPriceInput" class="form-label">Giá sau giảm (VND) *</label>
+                            <input type="number" class="form-control" id="discountedPriceInput" min="0" required>
                         </div>
                     </div>
                     
@@ -213,6 +219,35 @@
 let allProducts = [];
 let filteredProducts = [];
 
+function isFlashSaleProduct(product) {
+    try {
+        const tags = product?.tags || [];
+        if (Array.isArray(tags)) {
+            return tags.some(t => {
+                if (typeof t === 'string') return t.toLowerCase() === 'flashsale';
+                if (t && typeof t === 'object') return (t.name || '').toLowerCase() === 'flashsale';
+                return false;
+            });
+        }
+        return false;
+    } catch { return false; }
+}
+
+function mapStatusText(status) {
+    const s = (status || '').toString().toLowerCase();
+    if (s.includes('chiet')) return 'Chiết';
+    if (s === 'new') return 'New nguyên';
+    if (s.includes('newmh')) return 'New mất hộp';
+    if (s.includes('newm')) return 'New móp hộp';
+    if (s.includes('newrt')) return 'New rách tem';
+    if (s.includes('newmn')) return 'New móp nhẹ';
+    if (s.includes('newx')) return 'New xước nhẹ';
+    if (s.includes('newspx')) return 'New xước';
+    if (s.includes('test')) return 'Test 1-2 lần';
+    const m = s.match(/(\d{2})/);
+    return m ? `Còn ${m[1]}%` : (status || '');
+}
+
 document.addEventListener('DOMContentLoaded', async function() {
     await loadFlashSaleProducts();
     await loadAllProductsForSelect();
@@ -222,11 +257,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function loadFlashSaleProducts() {
     try {
         AdminAPI.showLoading('productsContainer');
-        allProducts = await AdminAPI.fetchProducts(null, true); // Get flash sale products
-        filteredProducts = [...allProducts];
+        // Fetch all products then filter by FlashSale tag on client for robustness
+        allProducts = await AdminAPI.fetchProducts();
+        filteredProducts = allProducts.filter(isFlashSaleProduct);
         
         renderProducts();
-        populateFilters();
+        await populateFilters();
         updateProductCount();
         
     } catch (error) {
@@ -261,73 +297,134 @@ function renderProducts() {
         return;
     }
     
-    let html = '<div class="row">';
+    let html = '<div class="table-responsive"><table class="table table-admin">';
+    html += '<thead><tr><th>Hình Ảnh</th><th>Tên Sản Phẩm</th><th>Giá bán</th><th>Tồn Kho</th><th>Trạng Thái</th><th>Thao Tác</th></tr></thead><tbody>';
     
     filteredProducts.forEach(product => {
         const imageUrl = product.image || '/static/image/default-product.jpg';
-        const originalPrice = AdminAPI.formatPrice(product.original_price);
-        const discountedPrice = AdminAPI.formatPrice(product.discounted_price);
-        const discountRate = Math.round(product.discount_rate || 0);
-        const stockClass = product.stock_quantity > 10 ? 'bg-success' : product.stock_quantity > 0 ? 'bg-warning' : 'bg-danger';
+        const salePrice = AdminAPI.formatPrice(product.discounted_price);
+        const statusClass = (product.status || '').toString().toLowerCase().includes('new') || (product.status || '').toString().toLowerCase().includes('chiet') ? 'status-confirmed' : 'status-pending';
+        const statusText = mapStatusText(product.status);
+        const stockBadge = product.stock_quantity > 0 ? 'bg-success' : 'bg-danger';
         
         html += `
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card product-card h-100">
-                    <div class="position-relative">
-                        <img src="${imageUrl}" class="card-img-top product-image" alt="${product.name}">
-                        <div class="flash-sale-badge">-${discountRate}%</div>
-                    </div>
-                    <div class="card-body">
-                        <h6 class="card-title">${product.name}</h6>
-                        <p class="card-text">
-                            <small class="text-muted">${product.brand_name || 'N/A'}</small>
-                        </p>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <div>
-                                <span class="text-decoration-line-through text-muted small">${originalPrice}</span>
-                                <br>
-                                <span class="text-danger fw-bold">${discountedPrice}</span>
-                            </div>
-                            <span class="badge ${stockClass}">Còn ${product.stock_quantity}</span>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-warning flex-fill" onclick="editFlashSale(${product.id})">
-                                <i class="fas fa-edit me-1"></i>Chỉnh Sửa
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeFlashSale(${product.id})">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <tr>
+                <td>
+                    <img src="${imageUrl}" alt="${product.name}" class="product-image" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                </td>
+                <td>
+                    <strong>${product.name}</strong>
+                    <br><small class="text-muted">ID: ${product.id} • ${product.brand_name || 'N/A'}</small>
+                </td>
+                <td>${salePrice || '-'}</td>
+                <td>
+                    <span class="badge ${stockBadge}">
+                        ${product.stock_quantity || 0}
+                    </span>
+                </td>
+                <td><span class="badge ${statusClass}" style="background:#eaf4ff;color:#1e56a0;border:1px solid #b8d4ff;font-weight:500;"> <i class="fas fa-circle-info me-1"></i>${statusText}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editFlashSale(${product.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeFlashSale(${product.id})" data-bs-toggle="tooltip" title="Gỡ Flash Sale">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>
         `;
     });
     
-    html += '</div>';
+    html += '</tbody></table></div>';
     container.innerHTML = html;
+    
+    // Re-init tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
 }
 
-function populateFilters() {
+async function fetchBrandsFromAPI() {
+    try {
+        const response = await fetch('https://buddyskincare.pythonanywhere.com/brands/');
+        if (response.ok) {
+            const brands = await response.json();
+            return brands.map(brand => brand.name || brand).filter(Boolean);
+        }
+    } catch (error) {
+        console.error('Error fetching brands from API:', error);
+    }
+    
+    // Fallback to local brands if API fails
+    return [...new Set(allProducts.map(p => p.brand_name).filter(Boolean))];
+}
+
+async function populateFilters() {
     // Populate brand filter
-    const brands = [...new Set(allProducts.map(p => p.brand_name).filter(Boolean))];
+    const brands = await fetchBrandsFromAPI();
+    
+    // Sort brands alphabetically
+    brands.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
+    
     const brandSelect = document.getElementById('brandFilter');
+    brandSelect.innerHTML = '<option value="">Tất cả thương hiệu</option>';
     brands.forEach(brand => {
         const option = document.createElement('option');
         option.value = brand;
         option.textContent = brand;
         brandSelect.appendChild(option);
     });
+    
+    // Populate category filter from API
+    try {
+        const response = await fetch('https://buddyskincare.pythonanywhere.com/category/');
+        if (response.ok) {
+            const categories = await response.json();
+            const categorySelect = document.getElementById('categoryFilter');
+            
+            // Clear existing options except the first one
+            categorySelect.innerHTML = '<option value="">Tất cả danh mục</option>';
+            
+            if (Array.isArray(categories)) {
+                // Sort categories alphabetically
+                const sortedCategories = categories
+                    .map(item => ({
+                        name: item.name || item.title || '',
+                        item: item
+                    }))
+                    .filter(cat => cat.name)
+                    .sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
+                
+                sortedCategories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.name;
+                    option.textContent = category.name;
+                    categorySelect.appendChild(option);
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error fetching categories:', error);
+        // Fallback to existing categories from products
+        const categories = [...new Set(allProducts.map(p => p.category?.name || p.category_name).filter(Boolean))];
+        const categorySelect = document.getElementById('categoryFilter');
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+    }
 }
 
 function setupEventListeners() {
     document.getElementById('searchInput').addEventListener('input', filterProducts);
     document.getElementById('discountFilter').addEventListener('change', filterProducts);
     document.getElementById('brandFilter').addEventListener('change', filterProducts);
+    document.getElementById('categoryFilter').addEventListener('change', filterProducts);
     document.getElementById('stockFilter').addEventListener('change', filterProducts);
     
     // Auto calculate discounted price
-    document.getElementById('discountRate').addEventListener('input', calculateDiscountedPrice);
+    document.getElementById('discountedPriceInput').addEventListener('input', calculateDiscountedPrice);
     document.getElementById('editDiscountRate').addEventListener('input', calculateEditDiscountedPrice);
 }
 
@@ -335,29 +432,38 @@ function filterProducts() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const discountFilter = document.getElementById('discountFilter').value;
     const brandFilter = document.getElementById('brandFilter').value;
+    const categoryFilter = document.getElementById('categoryFilter').value;
     const stockFilter = document.getElementById('stockFilter').value;
     
-    filteredProducts = allProducts.filter(product => {
-        const matchesSearch = product.name.toLowerCase().includes(searchTerm);
-        const matchesBrand = !brandFilter || product.brand_name === brandFilter;
-        
-        let matchesDiscount = true;
-        if (discountFilter) {
-            const discount = parseFloat(product.discount_rate || 0);
-            const filterValue = parseFloat(discountFilter);
-            matchesDiscount = discount >= filterValue;
-        }
-        
-        let matchesStock = true;
-        if (stockFilter) {
-            const stock = product.stock_quantity || 0;
-            if (stockFilter === 'in_stock') matchesStock = stock > 10;
-            else if (stockFilter === 'low_stock') matchesStock = stock > 0 && stock <= 10;
-            else if (stockFilter === 'out_of_stock') matchesStock = stock === 0;
-        }
-        
-        return matchesSearch && matchesBrand && matchesDiscount && matchesStock;
-    });
+    filteredProducts = allProducts
+        .filter(isFlashSaleProduct)
+        .filter(product => {
+            const matchesSearch = product.name.toLowerCase().includes(searchTerm);
+            const matchesBrand = !brandFilter || product.brand_name === brandFilter;
+            const matchesCategory = !categoryFilter || 
+                (product.category?.name === categoryFilter) || 
+                (product.category_name === categoryFilter);
+            
+            let matchesDiscount = true;
+            if (discountFilter) {
+                const discount = parseFloat(product.discount_rate || 0);
+                if (discountFilter === 'over_90') matchesDiscount = discount > 90;
+                else if (discountFilter === '80_90') matchesDiscount = discount >= 80 && discount <= 90;
+                else if (discountFilter === '60_80') matchesDiscount = discount >= 60 && discount <= 80;
+                else if (discountFilter === '40_60') matchesDiscount = discount >= 40 && discount <= 60;
+                else if (discountFilter === 'under_40') matchesDiscount = discount < 40;
+            }
+            
+            let matchesStock = true;
+            if (stockFilter) {
+                const stock = product.stock_quantity || 0;
+                if (stockFilter === 'in_stock') matchesStock = stock > 10;
+                else if (stockFilter === 'low_stock') matchesStock = stock > 0 && stock <= 10;
+                else if (stockFilter === 'out_of_stock') matchesStock = stock === 0;
+            }
+            
+            return matchesSearch && matchesBrand && matchesCategory && matchesDiscount && matchesStock;
+        });
     
     renderProducts();
     updateProductCount();
@@ -367,6 +473,7 @@ function clearFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('discountFilter').value = '';
     document.getElementById('brandFilter').value = '';
+    document.getElementById('categoryFilter').value = '';
     document.getElementById('stockFilter').value = '';
     filterProducts();
 }
@@ -377,13 +484,13 @@ function updateProductCount() {
 
 function calculateDiscountedPrice() {
     const productSelect = document.getElementById('productSelect');
-    const discountRate = parseFloat(document.getElementById('discountRate').value) || 0;
+    const discountedPriceInput = parseFloat(document.getElementById('discountedPriceInput').value) || 0;
     
-    if (productSelect.value && discountRate > 0) {
+    if (productSelect.value && discountedPriceInput > 0) {
         const selectedProduct = allProducts.find(p => p.id == productSelect.value);
         if (selectedProduct) {
             const originalPrice = selectedProduct.original_price || 0;
-            const discountedPrice = originalPrice * (1 - discountRate / 100);
+            const discountRate = ((originalPrice - discountedPriceInput) / originalPrice) * 100;
             // You can show this in a preview area if needed
         }
     }
@@ -446,34 +553,36 @@ async function updateFlashSale() {
 
 async function addFlashSale() {
     const productId = document.getElementById('productSelect').value;
-    const discountRate = parseFloat(document.getElementById('discountRate').value);
+    const discountedPriceInput = parseFloat(document.getElementById('discountedPriceInput').value);
     
-    if (!productId || !discountRate) {
-        AdminAPI.showNotification('Vui lòng chọn sản phẩm và nhập tỷ lệ giảm giá', 'warning');
+    if (!productId || isNaN(discountedPriceInput)) {
+        AdminAPI.showNotification('Vui lòng chọn sản phẩm và nhập giá sau giảm', 'warning');
         return;
     }
     
     try {
-        // Get selected product
         const selectedProduct = allProducts.find(p => p.id == productId);
         if (!selectedProduct) {
             AdminAPI.showNotification('Không tìm thấy sản phẩm được chọn', 'error');
             return;
         }
-        
-        const originalPrice = selectedProduct.original_price || 0;
-        const discountedPrice = originalPrice * (1 - discountRate / 100);
+        const originalPrice = parseFloat(selectedProduct.original_price || 0);
+        if (!(originalPrice > 0)) {
+            AdminAPI.showNotification('Giá gốc không hợp lệ để tính tỷ lệ giảm', 'error');
+            return;
+        }
+        const discountedPrice = Math.max(0, discountedPriceInput);
+        const discountRate = Math.max(0, Math.min(99, (1 - (discountedPrice / originalPrice)) * 100));
         
         const formData = {
-            discount_rate: discountRate,
             discounted_price: discountedPrice,
+            discount_rate: discountRate,
             flash_sale_description: document.getElementById('flashSaleDescription').value
         };
         
         await AdminAPI.updateProduct(productId, formData);
         AdminAPI.showNotification('Thêm flash sale thành công!', 'success');
         
-        // Close modal and reload data
         bootstrap.Modal.getInstance(document.getElementById('addFlashSaleModal')).hide();
         document.getElementById('addFlashSaleForm').reset();
         await loadFlashSaleProducts();
@@ -483,24 +592,81 @@ async function addFlashSale() {
     }
 }
 
+async function tryUpdateProductTags(productId, tagNames) {
+    // Try multiple payload shapes to match API expectations
+    const payloads = [
+        { tags: tagNames },
+        { tags: tagNames.map(n => ({ name: n })) },
+        { tag_names: tagNames },
+        { tags: tagNames.length ? tagNames : [] },
+        { tags: tagNames.length ? tagNames : null },
+        { tag_names: tagNames.length ? tagNames : null },
+        // Remove semantics some APIs support
+        { remove_tags: ['FlashSale'] },
+        { tags_to_remove: ['FlashSale'] },
+        { tags: ['FlashSale'], op: 'remove' }
+    ];
+    for (const body of payloads) {
+        try {
+            await AdminAPI.updateProduct(productId, body);
+            return true;
+        } catch (e) {
+            // try next shape
+        }
+    }
+    return false;
+}
+
+async function verifyFlashSaleRemoved(productId) {
+    try {
+        const res = await fetch(`https://buddyskincare.pythonanywhere.com/products/${productId}/`, { cache: 'no-store' });
+        if (!res.ok) return false;
+        const p = await res.json();
+        const tags = Array.isArray(p?.tags) ? p.tags : [];
+        const hasFlash = tags.some(t => (typeof t === 'string' ? t : (t && t.name) || '').toLowerCase() === 'flashsale');
+        return !hasFlash;
+    } catch { return false; }
+}
+
 async function removeFlashSale(productId) {
     if (!confirm('Bạn có chắc chắn muốn xóa flash sale cho sản phẩm này?')) {
         return;
     }
     
     try {
-        const formData = {
-            discount_rate: 0,
-            discounted_price: null
-        };
+        // Find current product and its tags
+        const product = allProducts.find(p => String(p.id) === String(productId)) || {};
+        const rawTags = Array.isArray(product.tags) ? product.tags : [];
+        // Normalize to names
+        const currentNames = rawTags.map(t => typeof t === 'string' ? t : (t && t.name) || '').filter(Boolean);
+        // Remove FlashSale (case-insensitive)
+        const newNames = currentNames.filter(n => n.toLowerCase() !== 'flashsale');
         
-        await AdminAPI.updateProduct(productId, formData);
-        AdminAPI.showNotification('Xóa flash sale thành công!', 'success');
+        // Try via multiple payload shapes
+        let ok = await tryUpdateProductTags(productId, newNames);
+        if (!ok || !(await verifyFlashSaleRemoved(productId))) {
+            // Fallback: attempt PUT with only tags field via admin proxy
+            try {
+                const resp = await fetch(`/admin/api/products/${productId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tags: newNames.length ? newNames : [] })
+                });
+                ok = resp.ok && (await verifyFlashSaleRemoved(productId));
+            } catch {}
+        }
         
+        if (!ok) {
+            AdminAPI.showNotification('Không thể gỡ tag FlashSale từ API. Vui lòng kiểm tra backend cho phép cập nhật tags.', 'error');
+            return;
+        }
+        
+        AdminAPI.showNotification('Đã gỡ Flash Sale khỏi sản phẩm.', 'success');
         await loadFlashSaleProducts();
         
     } catch (error) {
         console.error('Error removing flash sale:', error);
+        AdminAPI.showNotification('Có lỗi khi gỡ Flash Sale.', 'error');
     }
 }
 </script>

@@ -1,0 +1,606 @@
+{% extends 'admin_base.html' %}
+
+{% block title %}Thống kê doanh thu{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>Thống kê chi tiết doanh thu</h4>
+        <div class="btn-group" id="rangeGroup">
+            <button class="btn btn-outline-primary active" data-range="day">Ngày hôm nay</button>
+            <button class="btn btn-outline-primary" data-range="week">Tuần</button>
+            <button class="btn btn-outline-primary" data-range="month">Tháng</button>
+            <button class="btn btn-outline-primary" data-range="year">Năm</button>
+            <button class="btn btn-outline-secondary" data-range="custom" id="customRangeBtn">
+                <i class="fas fa-calendar-alt me-1"></i>Tùy chọn
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Date Range Picker -->
+    <div class="card mb-4" id="customDateRange" style="display: none;">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" class="form-control" id="startDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" class="form-control" id="endDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hoặc chọn nhanh</label>
+                    <select class="form-select" id="quickSelect">
+                        <option value="">Chọn khoảng thời gian</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="yesterday">Hôm qua</option>
+                        <option value="thisWeek">Tuần này</option>
+                        <option value="lastWeek">Tuần trước</option>
+                        <option value="thisMonth">Tháng này</option>
+                        <option value="lastMonth">Tháng trước</option>
+                        <option value="thisYear">Năm nay</option>
+                        <option value="lastYear">Năm trước</option>
+                        <option value="last7days">7 ngày qua</option>
+                        <option value="last30days">30 ngày qua</option>
+                        <option value="last90days">90 ngày qua</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-primary" id="applyCustomRange">
+                        <i class="fas fa-search me-1"></i>Áp dụng
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" id="clearCustomRange">
+                        <i class="fas fa-times me-1"></i>Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Overview -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-2x mb-2"></i>
+                    <h5 class="card-title">Tổng doanh thu</h5>
+                    <h3 id="analyticsRevenue">0đ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-coins fa-2x mb-2"></i>
+                    <h5 class="card-title">Lợi nhuận</h5>
+                    <h3 id="analyticsProfit">0đ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                    <h5 class="card-title">Số đơn hàng</h5>
+                    <h3 id="totalOrders">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-calculator fa-2x mb-2"></i>
+                    <h5 class="card-title">Đơn trung bình AOV</h5>
+                    <h3 id="averageOrderValue">0đ</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue Chart -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-chart-area me-2"></i>Biểu đồ doanh thu</h5>
+                    <button id="btnCompute" class="btn btn-sm btn-outline-primary d-none" aria-hidden="true" tabindex="-1">
+                        <i class="fas fa-rotate me-1"></i>Cập nhật dữ liệu
+                    </button>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Metrics -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-box me-2"></i>Chi phí & Phí ship</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Tổng giá nhập kho</span>
+                        <strong id="analyticsImport">0đ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Tổng phí ship</span>
+                        <strong id="analyticsShip">0đ</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Khách hàng VIP</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="text-primary">
+                        <span id="topCustomerName">-</span>
+                        <small class="text-secondary ms-2" id="topCustomerPhone">-</small>
+                    </h4>
+                    <small class="text-muted">Khách hàng mang lại doanh thu cao nhất</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-percentage me-2"></i>Tỷ lệ lợi nhuận</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h4 id="profitMargin" class="text-success">0%</h4>
+                    <small class="text-muted">Lợi nhuận / Doanh thu</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Product Analytics -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-fire me-2"></i>Sản phẩm bán chạy nhất</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="topSelling" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-trophy me-2"></i>Sản phẩm doanh thu cao nhất</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="topRevenue" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Sản phẩm lợi nhuận cao nhất</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="topProfitProducts" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customer Analytics -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-users me-2"></i>Khách hàng mang lại doanh thu cao nhất</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="topCustomers" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Doanh thu theo khu vực địa lý</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="revenueByRegion" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category & Brand Analytics -->
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-tags me-2"></i>Doanh thu theo danh mục sản phẩm</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="revenueByCategory" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-crown me-2"></i>Doanh thu theo hãng sản phẩm</h6>
+                </div>
+                <div class="card-body">
+                    <ol id="revenueByBrand" class="small mb-0"></ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+let chartInst = null;
+let currentPeriod = 'day';
+let customDateRange = null;
+
+function fmt(v){
+  const val = Number(v || 0);
+  return new Intl.NumberFormat('vi-VN').format(Math.round(val)) + 'đ';
+}
+
+// Date utility functions
+function getDateRange(option) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  switch(option) {
+    case 'today':
+      return { start: today, end: today };
+    case 'yesterday':
+      return { start: yesterday, end: yesterday };
+    case 'thisWeek':
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - today.getDay() + 1);
+      return { start: startOfWeek, end: today };
+    case 'lastWeek':
+      const lastWeekStart = new Date(today);
+      lastWeekStart.setDate(today.getDate() - today.getDay() - 6);
+      const lastWeekEnd = new Date(lastWeekStart);
+      lastWeekEnd.setDate(lastWeekStart.getDate() + 6);
+      return { start: lastWeekStart, end: lastWeekEnd };
+    case 'thisMonth':
+      return { 
+        start: new Date(today.getFullYear(), today.getMonth(), 1), 
+        end: today 
+      };
+    case 'lastMonth':
+      const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+      return { start: lastMonth, end: lastMonthEnd };
+    case 'thisYear':
+      return { 
+        start: new Date(today.getFullYear(), 0, 1), 
+        end: today 
+      };
+    case 'lastYear':
+      return { 
+        start: new Date(today.getFullYear() - 1, 0, 1), 
+        end: new Date(today.getFullYear() - 1, 11, 31) 
+      };
+    case 'last7days':
+      const last7days = new Date(today);
+      last7days.setDate(today.getDate() - 7);
+      return { start: last7days, end: today };
+    case 'last30days':
+      const last30days = new Date(today);
+      last30days.setDate(today.getDate() - 30);
+      return { start: last30days, end: today };
+    case 'last90days':
+      const last90days = new Date(today);
+      last90days.setDate(today.getDate() - 90);
+      return { start: last90days, end: today };
+    default:
+      return null;
+  }
+}
+
+function formatDateForAPI(date) {
+  return date.toISOString().split('T')[0];
+}
+
+async function loadSnapshots(period, customRange = null){
+  // Add cache busting to ensure fresh data
+  const timestamp = new Date().getTime();
+  let apiUrl = `?period=${period}&t=${timestamp}`;
+  
+  // Add custom date range parameters if provided
+  if (customRange && customRange.start && customRange.end) {
+    apiUrl += `&start_date=${formatDateForAPI(customRange.start)}&end_date=${formatDateForAPI(customRange.end)}`;
+  }
+  
+  console.log('🔍 Loading analytics with URL:', apiUrl);
+  let data;
+  try {
+    data = await AdminAPI.getAnalytics(apiUrl);
+    console.log('📊 Analytics data received:', data);
+    console.log('📊 Data length:', data ? data.length : 'null');
+    if (data && data.length > 0) {
+      console.log('📊 First item:', data[0]);
+    }
+  } catch (error) {
+    console.error('❌ Error loading analytics:', error);
+    console.error('❌ Error details:', error.response ? error.response.data : error.message);
+    AdminAPI.showNotification('Có lỗi khi tải dữ liệu thống kê: ' + error.message, 'error');
+    return;
+  }
+  if(!data || !data.length){
+    renderChart([],[]);
+    document.getElementById('analyticsRevenue').textContent = '0đ';
+    document.getElementById('analyticsProfit').textContent = '0đ';
+    document.getElementById('topSelling').innerHTML = '';
+    document.getElementById('topRevenue').innerHTML = '';
+    return;
+  }
+  
+  // Prepare chart data from all snapshots
+  const labels = [];
+  const series = [];
+  const allSnapshots = data;
+  
+  // For custom range, create detailed chart by day or month
+  if (customRange) {
+    console.log('📅 Custom range:', customRange.start, 'to', customRange.end);
+    
+    const startDate = new Date(customRange.start);
+    const endDate = new Date(customRange.end);
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    // If range is more than 90 days, show by month (12 points max)
+    if (daysDiff > 90) {
+      console.log('📅 Range > 90 days, showing by month');
+      
+      // Generate all months in the range
+      const currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+      const endMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+      
+      while (currentDate <= endMonth) {
+        const monthStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        labels.push(monthStr);
+        
+        // Find revenue for this specific month
+        const monthData = allSnapshots.find(snap => snap.period_key === monthStr);
+        const revenue = monthData ? Number(monthData.total_revenue || 0) : 0;
+        series.push(revenue);
+        
+        console.log(`📅 ${monthStr}: ${revenue}đ`);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+    } else {
+      console.log('📅 Range <= 90 days, showing by day');
+      
+      // Generate all days in the range
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        labels.push(dateStr);
+        
+        // Find revenue for this specific date
+        const dayData = allSnapshots.find(snap => snap.period_key === dateStr);
+        const revenue = dayData ? Number(dayData.total_revenue || 0) : 0;
+        series.push(revenue);
+        
+        console.log(`📅 ${dateStr}: ${revenue}đ`);
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+    
+    console.log('📊 Custom range - Final labels:', labels.length);
+    console.log('📊 Custom range - Final series:', series.length);
+  } else {
+    // For regular periods (day, week, month, year), use existing logic
+    // Sort by period_key to get chronological order
+    allSnapshots.sort((a, b) => a.period_key.localeCompare(b.period_key));
+    
+    // For chart: show individual periods, not cumulative
+    allSnapshots.forEach(snap => {
+      labels.push(snap.period_key);
+      series.push(Number(snap.total_revenue || 0));
+    });
+  }
+  
+  renderChart(labels, series);
+  
+  // Show latest snapshot details (most recent period)
+  // Find the most recent snapshot by created_at or period_key
+  const latestSnap = data.reduce((latest, current) => {
+    // Compare by period_key (newest date first)
+    if (!latest) return current;
+    return current.period_key > latest.period_key ? current : latest;
+  }, null);
+  
+  console.log('📊 All Snapshots:', data);
+  console.log('📊 Latest Snapshot:', latestSnap);
+  console.log('💰 Latest Revenue:', latestSnap.total_revenue);
+  console.log('💵 Latest Profit:', latestSnap.total_profit);
+  console.log('📦 Latest Import:', latestSnap.data?.import_total);
+  console.log('🚚 Latest Shipping:', latestSnap.data?.shipping_total);
+  
+  document.getElementById('analyticsRevenue').textContent = fmt(latestSnap.total_revenue || 0);
+  document.getElementById('analyticsProfit').textContent = fmt(latestSnap.total_profit || 0);
+  document.getElementById('analyticsImport').textContent = fmt((latestSnap.data && latestSnap.data.import_total) || 0);
+  document.getElementById('analyticsShip').textContent = fmt((latestSnap.data && latestSnap.data.shipping_total) || 0);
+
+  // Debug info to console for verification
+  try {
+    console.log('📊 All Snapshots:', data);
+    console.log('🧮 Chart Labels:', labels);
+    console.log('🧮 Chart Series:', series);
+    console.log('💰 Latest Revenue:', latestSnap.total_revenue);
+    console.log('💵 Latest Profit:', latestSnap.total_profit);
+  } catch(e) {}
+
+  const topS = (latestSnap.data && latestSnap.data.top_selling) || [];
+  const topR = (latestSnap.data && latestSnap.data.top_revenue) || [];
+  const topCustomers = (latestSnap.data && latestSnap.data.top_customers) || [];
+  const topProfitProducts = (latestSnap.data && latestSnap.data.top_profit_products) || [];
+  const revenueByRegion = (latestSnap.data && latestSnap.data.revenue_by_region) || [];
+  const revenueByCategory = (latestSnap.data && latestSnap.data.revenue_by_category) || [];
+  const revenueByBrand = (latestSnap.data && latestSnap.data.revenue_by_brand) || [];
+  
+  // Basic stats
+  const totalOrders = latestSnap.data?.total_orders || 0;
+  const averageOrderValue = latestSnap.data?.average_order_value || 0;
+  const topCustomerPhone = latestSnap.data?.top_customer_phone || '-';
+  
+  // Get top customer name and phone
+  const topCustomer = topCustomers.length > 0 ? topCustomers[0] : null;
+  const topCustomerName = topCustomer ? topCustomer.name : '-';
+  
+  // Calculate profit margin
+  const totalRevenue = latestSnap.total_revenue || 0;
+  const totalProfit = latestSnap.total_profit || 0;
+  const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
+  
+  // Update displays
+  document.getElementById('topSelling').innerHTML = topS.map(it => `<li>${it.name} <span class="text-muted float-end">x${it.qty}</span></li>`).join('');
+  document.getElementById('topRevenue').innerHTML = topR.map(it => `<li>${it.name} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
+  document.getElementById('topCustomers').innerHTML = topCustomers.map(it => `<li>${it.name} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
+  document.getElementById('topProfitProducts').innerHTML = topProfitProducts.map(it => `<li>${it.name} <strong class=\"float-end\">${fmt(it.profit)}</strong></li>`).join('');
+  document.getElementById('revenueByRegion').innerHTML = revenueByRegion.map(it => `<li>${it.region} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
+  document.getElementById('revenueByCategory').innerHTML = revenueByCategory.map(it => `<li>${it.category} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
+  document.getElementById('revenueByBrand').innerHTML = revenueByBrand.map(it => `<li>${it.brand} <strong class=\"float-end\">${fmt(it.revenue)}</strong></li>`).join('');
+  
+  document.getElementById('totalOrders').textContent = totalOrders;
+  document.getElementById('averageOrderValue').textContent = fmt(averageOrderValue);
+  document.getElementById('topCustomerName').textContent = topCustomerName;
+  document.getElementById('topCustomerPhone').textContent = topCustomerPhone;
+  document.getElementById('profitMargin').textContent = profitMargin + '%';
+}
+
+function renderChart(labels, data){
+  const ctx = document.getElementById('revenueChart');
+  if(chartInst) chartInst.destroy();
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: 'Doanh thu', data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.15)', tension: .3, fill: true }]},
+    options: { plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>fmt(v) } } } }
+  });
+}
+
+document.getElementById('rangeGroup').addEventListener('click', async (e)=>{
+  const btn = e.target.closest('button[data-range]'); if(!btn) return;
+  document.querySelectorAll('#rangeGroup button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  
+  currentPeriod = btn.dataset.range;
+  
+  if (btn.dataset.range === 'custom') {
+    document.getElementById('customDateRange').style.display = 'block';
+    // Set default date range to last 30 days
+    const last30days = getDateRange('last30days');
+    if (last30days) {
+      document.getElementById('startDate').value = formatDateForAPI(last30days.start);
+      document.getElementById('endDate').value = formatDateForAPI(last30days.end);
+    }
+  } else {
+    document.getElementById('customDateRange').style.display = 'none';
+    customDateRange = null;
+    await loadSnapshots(btn.dataset.range);
+  }
+});
+
+// Quick select handler
+document.getElementById('quickSelect').addEventListener('change', (e) => {
+  const option = e.target.value;
+  if (option) {
+    const dateRange = getDateRange(option);
+    if (dateRange) {
+      document.getElementById('startDate').value = formatDateForAPI(dateRange.start);
+      document.getElementById('endDate').value = formatDateForAPI(dateRange.end);
+    }
+  }
+});
+
+// Apply custom range handler
+document.getElementById('applyCustomRange').addEventListener('click', async () => {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  if (!startDate || !endDate) {
+    AdminAPI.showNotification('Vui lòng chọn đầy đủ ngày bắt đầu và kết thúc', 'error');
+    return;
+  }
+  
+  if (new Date(startDate) > new Date(endDate)) {
+    AdminAPI.showNotification('Ngày bắt đầu không được lớn hơn ngày kết thúc', 'error');
+    return;
+  }
+  
+  customDateRange = {
+    start: new Date(startDate),
+    end: new Date(endDate)
+  };
+  
+  console.log('🎯 Applying custom range:', customDateRange);
+  
+  // Show loading state
+  document.getElementById('applyCustomRange').innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tải...';
+  document.getElementById('applyCustomRange').disabled = true;
+  
+  try {
+    await loadSnapshots('custom', customDateRange);
+    AdminAPI.showNotification(`Đã áp dụng thống kê từ ${startDate} đến ${endDate}`, 'success');
+  } catch (error) {
+    console.error('Error loading custom range:', error);
+    AdminAPI.showNotification('Có lỗi khi tải dữ liệu thống kê', 'error');
+  } finally {
+    document.getElementById('applyCustomRange').innerHTML = '<i class="fas fa-search me-1"></i>Áp dụng';
+    document.getElementById('applyCustomRange').disabled = false;
+  }
+});
+
+// Clear custom range handler
+document.getElementById('clearCustomRange').addEventListener('click', () => {
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  document.getElementById('quickSelect').value = '';
+  customDateRange = null;
+  
+  // Switch back to day view
+  document.querySelectorAll('#rangeGroup button').forEach(b => b.classList.remove('active'));
+  document.querySelector('#rangeGroup button[data-range="day"]').classList.add('active');
+  currentPeriod = 'day';
+  loadSnapshots('day');
+});
+
+document.getElementById('btnCompute').addEventListener('click', async ()=>{
+  const active = document.querySelector('#rangeGroup .active');
+  const period = active ? active.dataset.range : 'month';
+  await AdminAPI.computeAnalytics(period);
+  await loadSnapshots(period, customDateRange);
+  AdminAPI.showNotification('Đã cập nhật dữ liệu doanh thu','success');
+});
+
+// init - force refresh on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Force refresh all periods
+    loadSnapshots('day');
+});
+
+// Also load on page show (back button, etc.)
+window.addEventListener('pageshow', function() {
+    loadSnapshots('day');
+});
+</script>
+{% endblock %}

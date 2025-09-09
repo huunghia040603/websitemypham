@@ -410,7 +410,6 @@ function initCheckoutEvents() {
     if (placeOrderBtn) {
         placeOrderBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            e.stopPropagation();
             handlePlaceOrder();
         });
     }
@@ -419,11 +418,7 @@ function initCheckoutEvents() {
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            e.stopPropagation();
-            // Only call if not already processing
-            if (!isOrderBeingProcessed) {
             handlePlaceOrder();
-            }
         });
     }
     
@@ -650,8 +645,13 @@ async function handlePlaceOrder() {
         return;
     }
     
-    // Get button reference but don't set loading yet
+    // Set processing flag and disable button immediately
+    isOrderBeingProcessed = true;
     const placeOrderBtn = document.getElementById('place-order-btn');
+    if (placeOrderBtn) {
+        placeOrderBtn.disabled = true;
+        placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+    }
 
     const isCheckoutPage = document.querySelector('input[name="pay"]') !== null;
     if (isCheckoutPage) {
@@ -770,7 +770,7 @@ async function handlePlaceOrder() {
             quantity: item.quantity
         }));
 
-        // Get shipping fee from checkout-shipping field
+        // Get shipping fee from checkout-shipping field (already divided by 1000)
         const shippingFeeInput = formRoot.querySelector('#checkout-shipping') || formRoot.querySelector('[name="checkout-shipping"]');
         const shipping_fee = shippingFeeInput ? parseFloat(shippingFeeInput.value) || 0 : 0;
 
@@ -802,16 +802,10 @@ async function handlePlaceOrder() {
         console.log('[Checkout] Customer:', formData.customer_name);
         console.log('[Checkout] Phone:', formData.phone_number);
         console.log('[Checkout] Payment method:', formData.payment_method);
-        console.log('[Checkout] Shipping fee:', shipping_fee);
         console.log('[Checkout] Voucher applied:', appliedVoucher ? appliedVoucher.code : 'None');
         console.log('[Checkout] Order note:', orderNote || 'None');
 
-        // Set processing flag and disable button only when data is valid
-        isOrderBeingProcessed = true;
-        if (placeOrderBtn) {
-            placeOrderBtn.disabled = true;
-            placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
-        }
+        // Button already disabled above
 
         try {
 
@@ -850,6 +844,7 @@ async function handlePlaceOrder() {
                 console.error('[Checkout] Response status:', response.status);
                 
                 // Show specific error message if available
+                let errorMessage = 'Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.';
                 
                 if (response.status === 400) {
                     // Handle validation errors
@@ -863,7 +858,9 @@ async function handlePlaceOrder() {
                         errorMessage = 'Số điện thoại không hợp lệ.';
                     } else if (errorData.email) {
                         errorMessage = 'Email không hợp lệ.';
-                    } 
+                    } else {
+                        errorMessage = 'Dữ liệu đơn hàng không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+                    }
                 } else if (errorData.detail) {
                     errorMessage = errorData.detail;
                 } else if (errorData.message) {
@@ -876,6 +873,7 @@ async function handlePlaceOrder() {
             }
         } catch (error) {
             console.error('[Checkout] Network error:', error);
+            showNotification('Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.', 'error');
         } finally {
             // Reset button state and processing flag
             if (placeOrderBtn) {
@@ -906,6 +904,11 @@ async function handlePlaceOrder() {
 
 // Initialize additional features
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM loaded, initializing...');
+    console.log('🔍 Checking Flash Sale container...');
+    const flashContainer = document.querySelector('#flash-sale-products');
+    console.log('🎯 Flash Sale container found:', flashContainer);
+    
     // Initialize all components
     initCountdownTimer();
     initProductCards();
@@ -917,7 +920,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initSearch();
     initLazyLoading();
     initSmoothScrolling();
+    console.log('🚀 About to initialize Flash Sale products...');
     initFlashSaleProducts(); // Khởi tạo Flash Sale
+    console.log('✅ Flash Sale products initialization completed');
     initNewProducts(); // Khởi tạo sản phẩm mới
     initFeaturedProducts(); // Khởi tạo sản phẩm nổi bật
     initCart(); // Khởi tạo giỏ hàng
@@ -954,21 +959,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Hàm chung để fetch và render sản phẩm
 async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = createProductCard, viewAllButton = null) {
+    console.log('🔍 fetchAndRenderProducts called with:', {apiUrl, containerSelector});
     const container = document.querySelector(containerSelector);
     if (!container) {
-        console.error(`Không tìm thấy container với selector: ${containerSelector}`);
+        console.error(`❌ Không tìm thấy container với selector: ${containerSelector}`);
         return;
     }
+    console.log('✅ Container found:', container);
 
     // Xóa nội dung cũ trước khi thêm mới
     container.innerHTML = '';
 
     try {
+        console.log(`📡 Đang tải dữ liệu từ: ${apiUrl}`);
         const response = await fetch(apiUrl);
+        console.log('📡 Response status:', response.status);
         if (!response.ok) {
             throw new Error('Lỗi khi lấy dữ liệu từ API');
         }
         const products = await response.json();
+        console.log(`✅ Đã tải được ${products.length} sản phẩm:`, products.slice(0, 2));
         
         if (products.length === 0) {
             container.innerHTML = '<p class="text-muted text-center py-4">Không có sản phẩm nào để hiển thị.</p>';
@@ -1060,24 +1070,27 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
 
 // Hàm khởi tạo cho Flash Sale
 function initFlashSaleProducts() {
-    const flashSaleApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?tags=FlashSale';
+    console.log('🚀 Initializing Flash Sale products...');
+    const flashSaleApiUrl = '/api/products?tags=FlashSale';
     const containerSelector = '#flash-sale-products';
     const flashSaleButton = `
         
     `;
+    console.log('📡 Flash Sale API URL:', flashSaleApiUrl);
+    console.log('🎯 Container selector:', containerSelector);
     fetchAndRenderProducts(flashSaleApiUrl, containerSelector, createFlashSaleProductCard, flashSaleButton);
 }
 
 // Hàm khởi tạo cho sản phẩm mới
 function initNewProducts() {
-    const newProductsApiUrl = 'https://buddyskincare.pythonanywhere.com/latest-products/';
+    const newProductsApiUrl = '/api/products?sort=latest';
     const containerSelector = '#new-product-products';
     fetchAndRenderProducts(newProductsApiUrl, containerSelector, createProductCard);
 }
 
 // Hàm khởi tạo cho sản phẩm nổi bật
 function initFeaturedProducts() {
-    const featuredProductsApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?sort=sales';
+    const featuredProductsApiUrl = '/api/products?sort=sales';
     const containerSelector = '#featured-products-container';
     fetchAndRenderProducts(featuredProductsApiUrl, containerSelector, createProductCard);
 }
@@ -1201,7 +1214,7 @@ function createProductCard(product) {
         : null;
     const newLabel = isNewByStatus ? (function(){
         if (statusText.includes('chiet')) return 'Chiết';
-        if (statusText === 'new') return 'New đẹp';
+        if (statusText === 'new') return 'New nguyên';
         if (statusText.includes('newmh')) return 'New mất hộp';
         if (statusText.includes('newm')) return 'New móp hộp';
         if (statusText.includes('newrt')) return 'New rách tem';
@@ -1212,8 +1225,8 @@ function createProductCard(product) {
     })() : null;
     const infoLabel = isNewByStatus ? newLabel : usedLabel;
 
-    const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
-    const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
+    const originalPrice = typeof product.original_price === 'number' ? product.original_price : null;
+    const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price : null;
     const rating = typeof product.rating === 'number' ? product.rating : (parseFloat(product.rating) || 0);
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5 && rating % 1 < 1;
@@ -1230,25 +1243,12 @@ function createProductCard(product) {
 
     const productName = product.name;
 
-    // Check if product is out of stock
-    const isOutOfStock = stockQuantity <= 0;
-
     const cardHTML = `
-        <div class="product-card card h-100 border-0 shadow-sm ${isFlashSale ? 'flash-sale-card' : ''}" style="${isFlashSale ? 'border: 1px solid #ffc107 !important;' : ''}">
+        <div class="product-card card h-100 border-0 shadow-sm ${isFlashSale ? 'flash-sale-card' : ''}" style="${isFlashSale ? 'border: 2px solid #ffc107 !important;' : ''}">
             <div class="position-relative">
                 <a href="/product/${product.id}" class="text-decoration-none">
-                    <img src="${imageUrl}" class="card-img-top" alt="${productName}" style="height: 220px; object-fit: cover; ${isOutOfStock ? 'filter: grayscale(100%);' : ''}">
+                    <img src="${imageUrl}" class="card-img-top" alt="${productName}" style="height: 220px; object-fit: cover;">
                 </a>
-                ${isOutOfStock ? `
-                <!-- Out of Stock Overlay -->
-                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-                     style="background-color: rgba(0,0,0,0.7); border-radius: 6px;">
-                    <div class="text-center text-white">
-                        <i class="fas fa-times-circle fa-2x mb-1"></i>
-                        <h6 class="fw-bold mb-0">HẾT HÀNG</h6>
-                    </div>
-                </div>
-                ` : ''}
                 <div class="position-absolute top-0 end-0 m-2">
                     <i class="fas fa-heart text-white" style="font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
                 </div>
@@ -1256,10 +1256,7 @@ function createProductCard(product) {
                     <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
                 </div>
                 <div class="product-badges-row position-absolute" style="top:8px;left:10px;display:flex;gap:6px;align-items:center;z-index:2;">
-                    ${isFlashSale ? 
-                        `<div class="badge bg-warning text-dark flash-sale-badge" style="font-size: 10px; padding: 4px 6px;"><i class="fas fa-bolt me-1"></i>FLASH SALE</div>` : 
-                        (discountRate > 0 ? `<div class=\"badge bg-danger discount-badge-left\" style=\"font-size: 11px; padding: 4px 8px;\">-${discountRate}%</div>` : '')
-                    }
+                    ${discountRate > 0 ? `<div class=\"badge bg-danger discount-badge-left\" style=\"font-size: 11px; padding: 4px 8px;\">-${discountRate}%</div>` : ''}
                     ${infoLabel ? `<div class=\"product-info-badge\" style=\"font-size: 10px; padding: 1px 6px; background:#eaf4ff; border:1px solid #b8d4ff; color:#1e56a0; border-radius:6px;\"><i class="fas fa-circle-info me-1"></i>${infoLabel}</div>` : ''}
                 </div>
             </div>
@@ -1277,14 +1274,9 @@ function createProductCard(product) {
                         ${starsHTML}
                     </div>
                     <small class="text-muted" style="font-size: 11px;">(${rating})</small>
-                    <span class="badge ${isOutOfStock ? 'bg-danger' : 'bg-success'}" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">${isOutOfStock ? 'Hết hàng' : `Còn ${stockQuantity}`}</span>
+                    <span class="badge bg-success" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">Còn ${stockQuantity}</span>
                 </div>
-                <button class="btn w-100 add-to-cart-btn ${isOutOfStock ? 'btn-secondary' : (isFlashSale ? 'btn-warning text-dark' : 'btn-light text-dark border')}" 
-                        data-product-id="${product.id}" 
-                        style="font-size: 13px; padding: 8px;" 
-                        ${isOutOfStock ? 'disabled' : ''}>
-                    ${isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}
-                </button>
+                <button class="btn w-100 add-to-cart-btn ${isFlashSale ? 'btn-warning text-dark' : 'btn-light text-dark border'}" data-product-id="${product.id}" style="font-size: 13px; padding: 8px;">Thêm vào giỏ</button>
             </div>
         </div>
     `;
@@ -1296,8 +1288,8 @@ function createFlashSaleProductCard(product) {
     const imageUrl = (product.image && String(product.image).trim()) || '/static/image/default-product.jpg';
     const brandName = product.brand_name ? (product.brand_name || 'Không rõ') : 'Không rõ';
 
-    const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
-    const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
+    const originalPrice = typeof product.original_price === 'number' ? product.original_price : null;
+    const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price : null;
     const rating = typeof product.rating === 'number' ? product.rating : (parseFloat(product.rating) || 0);
     const reviews = typeof product.rating !== 'undefined' ? rating : 0;
 
@@ -1339,26 +1331,13 @@ function createFlashSaleProductCard(product) {
     const progressPercentage = totalStock > 0 ? (soldQuantity / totalStock) * 100 : 0;
 
     const productName = product.name;
-    
-    // Check if product is out of stock
-    const isOutOfStock = stockQuantity <= 0;
 
     const cardHTML = `
-        <div class="product-card card h-100 border-0 shadow-sm flash-sale-container-card">
+        <div class="product-card card h-100 border-0 shadow-sm flash-sale-card">
             <div class="position-relative">
                 <a href="/product/${product.id}" class="text-decoration-none">
-                    <img src="${imageUrl}" class="card-img-top" alt="${productName}" style="height: 220px; object-fit: cover; ${isOutOfStock ? 'filter: grayscale(100%);' : ''}">
+                    <img src="${imageUrl}" class="card-img-top" alt="${productName}" style="height: 220px; object-fit: cover;">
                 </a>
-                ${isOutOfStock ? `
-                <!-- Out of Stock Overlay -->
-                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-                     style="background-color: rgba(0,0,0,0.7); border-radius: 6px;">
-                    <div class="text-center text-white">
-                        <i class="fas fa-times-circle fa-2x mb-1"></i>
-                        <h6 class="fw-bold mb-0">HẾT HÀNG</h6>
-                    </div>
-                </div>
-                ` : ''}
                 <div class="position-absolute top-0 end-0 m-2">
                     <i class="fas fa-heart text-white" style="font-size: 18px; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
                 </div>
@@ -1394,7 +1373,7 @@ function createFlashSaleProductCard(product) {
                     </div>
                     <div class="d-flex justify-content-between mt-1">
                         <span class="text-success" style="font-size: 11px;">Đã bán ${soldQuantity}</span>
-                        <span class="${isOutOfStock ? 'text-danger' : 'text-muted'}" style="font-size: 11px;">${isOutOfStock ? 'Hết hàng' : `Còn ${stockQuantity}`}</span>
+                        <span class="text-muted" style="font-size: 11px;">Còn ${stockQuantity}</span>
                     </div>
                 </div>
                 <ul class="list-unstyled mb-1" style="font-size: 11px;">
@@ -1402,12 +1381,7 @@ function createFlashSaleProductCard(product) {
                     <li class="text-muted small"><i class="fas fa-rotate text-primary me-1"></i>Đổi trả trong 5 ngày</li>
                     <li class="text-muted small"><i class="fas fa-truck-fast text-warning me-1"></i>Giao nhanh TP.HCM</li>
                 </ul>
-                <button class="btn w-100 ${isOutOfStock ? 'btn-secondary' : 'btn-light text-dark border'} add-to-cart-btn" 
-                        data-product-id="${product.id}" 
-                        style="font-size: 13px; padding: 8px;" 
-                        ${isOutOfStock ? 'disabled' : ''}>
-                    ${isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}
-                </button>
+                <button class="btn btn-light w-100 text-dark border add-to-cart-btn" data-product-id="${product.id}" style="font-size: 13px; padding: 8px;">Thêm vào giỏ</button>
             </div>
         </div>
     `;
@@ -1895,8 +1869,8 @@ function initCartQuantityControls() {
         const shippingEl = document.querySelector('.cart-shipping');
         const totalEl = document.querySelector('.cart-total');
         const shipping = shippingEl ? parseNumber(shippingEl.textContent) : 0;
-        if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
-        if (totalEl) totalEl.textContent = formatPrice(subtotal + shipping );
+        if (subtotalEl) subtotalEl.textContent = new Intl.NumberFormat('vi-VN').format(subtotal) + 'đ';
+        if (totalEl) totalEl.textContent = new Intl.NumberFormat('vi-VN').format(subtotal + shipping) + 'đ';
 
         // Update global cart badge with total quantity
         const totalQty = Array.from(document.querySelectorAll('.cart-qty-input'))
@@ -1950,7 +1924,7 @@ function initCartQuantityControls() {
             // Update UI
             input.value = newQuantity;
             const newLineTotal = unitPrice * newQuantity;
-            lineTotalEl.textContent = formatPrice(newLineTotal);
+            lineTotalEl.textContent = new Intl.NumberFormat('vi-VN').format(newLineTotal) + 'đ';
             
             // Update quantity in localStorage
             await updateProductQuantity(productId, newQuantity);
@@ -2057,7 +2031,7 @@ function initCartQuantityControls() {
 
         input.value = qty;
         const newLineTotal = unitPrice * qty;
-            lineTotalEl.textContent = formatPrice(newLineTotal);
+        lineTotalEl.textContent = new Intl.NumberFormat('vi-VN').format(newLineTotal) + 'đ';
 
         // Update quantity in localStorage
         updateProductQuantity(productId, qty);
@@ -2078,7 +2052,7 @@ function initCartQuantityControls() {
         const qty = digits === '' ? null : Math.max(0, parseInt(digits, 10));
 
         const newLineTotal = (qty === null ? 0 : unitPrice * qty);
-            lineTotalEl.textContent = formatPrice(newLineTotal);
+        lineTotalEl.textContent = new Intl.NumberFormat('vi-VN').format(newLineTotal) + 'đ';
         
         // Do not persist while empty; wait for change/blur
         if (qty !== null) {
@@ -2117,7 +2091,7 @@ function initCartQuantityControls() {
         const lineTotalEl = row.querySelector('.cart-line-total');
         const unitPrice = parseNumber(priceEl?.dataset?.price);
         const newLineTotal = unitPrice * qty;
-            lineTotalEl.textContent = formatPrice(newLineTotal);
+        lineTotalEl.textContent = new Intl.NumberFormat('vi-VN').format(newLineTotal) + 'đ';
     });
 
     // Initial sync on load
@@ -2262,8 +2236,8 @@ function updateCartDisplay() {
                         <button class="btn btn-outline-secondary btn-sm cart-qty-increase" type="button" aria-label="Tăng">+</button>
                     </div>
                 </td>
-                <td class="text-end cart-price" data-price="${price}">${formatPrice(price)}</td>
-                <td class="text-end fw-semibold cart-line-total">${formatPrice(itemTotal)}</td>
+                <td class="text-end cart-price" data-price="${price}">${item.price}</td>
+                <td class="text-end fw-semibold cart-line-total">${itemTotal.toLocaleString('vi-VN')}đ</td>
                 <td class="text-end">
                     <button class="btn btn-sm btn-outline-danger cart-remove-btn" aria-label="Xóa sản phẩm" data-product-id="${item.id}">
                         <i class="fas fa-trash"></i>
@@ -2481,11 +2455,11 @@ function updateCheckoutSummary() {
     console.log('Total:', total);
     console.log('=== END CHECKOUT CALCULATION ===');
     
-    subtotalEl.textContent = formatPrice(subtotal);
-    shippingEl.textContent = formatPrice(shipping );
-    totalEl.textContent = formatPrice(total);
+    subtotalEl.textContent = subtotal.toLocaleString('vi-VN') + 'đ';
+    shippingEl.textContent = shipping.toLocaleString('vi-VN') + 'đ';
+    totalEl.textContent = total.toLocaleString('vi-VN') + 'đ';
     
-    // Update hidden shipping fee input (send original value to API)
+    // Update hidden shipping fee input (divide by 1000 for API)
     const shippingInput = document.getElementById('checkout-shipping');
     if (shippingInput) {
         shippingInput.value = shipping / 1000;
@@ -2500,13 +2474,13 @@ function updateCheckoutSummary() {
     // Also try to update the transfer amount if it exists
     const transferAmountEl = document.querySelector('.transfer-amount');
     if (transferAmountEl) {
-        transferAmountEl.textContent = formatPrice(total);
+        transferAmountEl.textContent = total.toLocaleString('vi-VN') + 'đ';
         console.log('Setting transfer amount to:', total.toLocaleString('vi-VN') + 'đ');
     }
     
     // Hiển thị phần tiết kiệm
     if (savingsEl && totalSavings > 0) {
-        savingsEl.textContent = formatPrice(totalSavings );
+        savingsEl.textContent = totalSavings.toLocaleString('vi-VN') + 'đ';
     } else if (savingsEl) {
         savingsEl.textContent = '0đ';
     }
@@ -2788,13 +2762,13 @@ function updateCartSummary() {
     
     const total = subtotal + shipping - voucherDiscount;
     
-    if (subtotalEl) subtotalEl.textContent = formatPrice(subtotal);
-    if (shippingEl) shippingEl.textContent = formatPrice(shipping );
-    if (totalEl) totalEl.textContent = formatPrice(total);
+    if (subtotalEl) subtotalEl.textContent = subtotal.toLocaleString('vi-VN') + 'đ';
+    if (shippingEl) shippingEl.textContent = shipping.toLocaleString('vi-VN') + 'đ';
+    if (totalEl) totalEl.textContent = total.toLocaleString('vi-VN') + 'đ';
     
     // Hiển thị tổng tiền tiết kiệm
     if (savingsEl && totalSavings > 0) {
-        savingsEl.textContent = formatPrice(totalSavings );
+        savingsEl.textContent = totalSavings.toLocaleString('vi-VN') + 'đ';
     } else if (savingsEl) {
         savingsEl.textContent = '0đ';
     }
@@ -2924,18 +2898,9 @@ console.log('- manualSelectPayment("bankTransfer") - Manually select bank transf
 
 // Hàm khởi tạo cho sản phẩm gợi ý trong checkout
 function initCheckoutSuggestedProducts() {
-    const suggestedProductsApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?tags=FlashSale&limit=10';
+    const suggestedProductsApiUrl = '/api/products?tags=FlashSale&limit=4';
     const containerSelector = '#checkout-suggested-products';
     fetchAndRenderSuggestedProducts(suggestedProductsApiUrl, containerSelector);
-    
-    // Re-render when window is resized to handle responsive layout
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            fetchAndRenderSuggestedProducts(suggestedProductsApiUrl, containerSelector);
-        }, 250);
-    });
 }
 
 // Hàm render sản phẩm gợi ý cho checkout (layout nhỏ gọn)
@@ -2963,10 +2928,10 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
         
         // Xác định số lượng tối đa theo thiết bị
         const isMobile = window.innerWidth <= 767;
-        const maxItems = isMobile ? 6 : 10; // Mobile: 6 sản phẩm, Desktop: 10 sản phẩm
+        const maxItems = isMobile ? 6 : 10;
         const count = Math.min(products.length, maxItems);
         
-        // Tạo layout responsive: Mobile 2 cột, Desktop 5 cột
+        // Tạo layout responsive
         const itemsPerRow = isMobile ? 2 : 5;
         const rows = Math.ceil(count / itemsPerRow);
         
@@ -2994,9 +2959,9 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
                     <div class="col-6 col-lg" style="flex: 0 0 ${isMobile ? '50%' : '20%'}; max-width: ${isMobile ? '50%' : '20%'};">
                         <div class="card suggested-product-card h-100 border-0 shadow-sm">
                             <div class="position-relative">
-                                <div class="suggested-product-image" data-product-id="${product.id}" style="cursor: pointer;">
+                                <a href="/product/${product.id}" class="text-decoration-none">
                                     <img src="${imageUrl}" class="card-img-top" alt="${product.name}" style="height: 150px; object-fit: cover; border-radius: 4px;">
-                                </div>
+                                </a>
                                 <div class="flash-sale-badge">-${discountRate}%</div>
                                 <div class="position-absolute bottom-0 start-0 m-1">
                                     <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px !important; height: 28px !important; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
@@ -3004,7 +2969,7 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
                             </div>
                             <div class="card-body p-1 position-relative">
                                 <h6 class="card-title small fw-bold mb-1" style="font-size: 9px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                    <span class="suggested-product-name text-decoration-none text-dark" data-product-id="${product.id}" style="cursor: pointer;">${product.name}</span>
+                                    <a href="/product/${product.id}" class="text-decoration-none text-dark">${product.name}</a>
                                 </h6>
                                 <div class="d-flex align-items-center mb-1">
                                     ${originalPrice ? `<span class="text-decoration-line-through text-muted me-1" style="font-size: 8px;">${formatPrice(originalPrice)}</span>` : ''}
@@ -3028,9 +2993,6 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
         
         container.innerHTML = productsHTML;
 
-        // Add event handlers for suggested products
-        initSuggestedProductHandlers();
-
         // Re-initialize Product Cards with new DOM elements
         initProductCards();
 
@@ -3038,62 +3000,6 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
         console.error(`Đã xảy ra lỗi khi tải dữ liệu sản phẩm gợi ý:`, error);
         container.innerHTML = '<p class="text-danger text-center py-4">Không thể tải sản phẩm gợi ý. Vui lòng thử lại sau.</p>';
     }
-}
-
-// Initialize event handlers for suggested products
-function initSuggestedProductHandlers() {
-    const container = document.querySelector('#checkout-suggested-products');
-    if (!container) return;
-    
-    // Handle clicks on suggested product images and names
-    container.addEventListener('click', function(e) {
-        console.log('Click detected on:', e.target);
-        
-        // Check if clicked on product image or name
-        const productImage = e.target.closest('.suggested-product-image');
-        const productName = e.target.closest('.suggested-product-name');
-        
-        if (productImage) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
-            const productId = productImage.getAttribute('data-product-id');
-            console.log('Navigating to product:', productId);
-            
-            // Force navigation
-            window.location.href = `/product/${productId}`;
-            return false;
-        }
-        
-        if (productName) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
-            const productId = productName.getAttribute('data-product-id');
-            console.log('Navigating to product:', productId);
-            
-            // Force navigation
-            window.location.href = `/product/${productId}`;
-            return false;
-        }
-        
-        // Handle add to cart button clicks
-        const addToCartBtn = e.target.closest('.add-to-cart-btn');
-        if (addToCartBtn) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
-            const productId = addToCartBtn.getAttribute('data-product-id');
-            if (productId) {
-                console.log('Adding product to cart:', productId);
-                addToCart(productId, 1);
-            }
-            return false;
-        }
-    });
 }
 
 // Helper function to update all cart-related displays
@@ -3125,17 +3031,13 @@ function initProductsPage() {
     if (!grid) return; // Not on products page
 
     const urlParams = new URLSearchParams(window.location.search);
-    const query = urlParams.get('query') || urlParams.get('q') || urlParams.get('search') || '';
+    const query = urlParams.get('query') || urlParams.get('q') || '';
     let condition = urlParams.get('condition') || '';
     const categoryName = urlParams.get('category_name') || urlParams.get('category') || '';
     const brandsName = urlParams.get('brands_name') || urlParams.get('brand') || '';
     const priceRange = urlParams.get('price_range') || urlParams.get('price') || '';
     const discountRange = urlParams.get('discount_range') || urlParams.get('discount') || '';
     const tagsFilter = urlParams.get('tags') || '';
-    
-    // Pagination parameters
-    const currentPage = parseInt(urlParams.get('page')) || 1;
-    const perPage = parseInt(urlParams.get('per_page')) || 12;
     // Infer condition from pathname if not provided via query string
     if (!condition) {
         const path = window.location.pathname || '';
@@ -3143,7 +3045,7 @@ function initProductsPage() {
         else if (path.includes('/products/used')) condition = 'used';
     }
 
-    let apiUrl = 'https://buddyskincare.pythonanywhere.com/products/';
+    let apiUrl = '/api/products';
     const qs = [];
     if (query) qs.push(`search=${encodeURIComponent(query)}`);
     if (condition) qs.push(`condition=${encodeURIComponent(condition)}`);
@@ -3261,15 +3163,8 @@ function initProductsPage() {
             }
 
             function render(list) {
-                // Calculate pagination
-                const totalPages = Math.ceil(list.length / perPage);
-                const startIndex = (currentPage - 1) * perPage;
-                const endIndex = startIndex + perPage;
-                const paginatedProducts = list.slice(startIndex, endIndex);
-                
-                // Render products
                 const fragments = document.createDocumentFragment();
-                paginatedProducts.forEach(product => {
+                list.forEach(product => {
                     const col = document.createElement('div');
                     col.className = 'col-6 col-md-4 col-lg-3';
                     col.innerHTML = createProductCard(product);
@@ -3279,152 +3174,20 @@ function initProductsPage() {
                 grid.appendChild(fragments);
                 initProductCards();
                 initAnimations();
-                
-                // Update products info
-                updateProductsInfo(startIndex + 1, Math.min(endIndex, list.length), list.length);
-                
-                // Render pagination
-                renderPagination(currentPage, totalPages, list.length);
             }
 
             // Attach sorting and render first time
             attachProductsSorting(products, render);
-            
-            // Attach per-page filter
-            attachPerPageFilter(products, render);
         })
         .catch(() => {
             grid.innerHTML = '<div class="col-12"><p class="text-center text-danger py-4 mb-0">Không thể tải sản phẩm. Vui lòng thử lại sau.</p></div>';
         });
 }
 
-// Render pagination
-function renderPagination(currentPage, totalPages, totalProducts) {
-    const paginationContainer = document.getElementById('products-pagination');
-    if (!paginationContainer) return;
-    
-    if (totalPages <= 1) {
-        paginationContainer.innerHTML = '';
-        return;
-    }
-    
-    let paginationHTML = '';
-    
-    // Previous button
-    if (currentPage > 1) {
-        paginationHTML += `<li class="page-item">
-            <a class="page-link" href="#" data-page="${currentPage - 1}">Trước</a>
-        </li>`;
-    } else {
-        paginationHTML += `<li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Trước</a>
-        </li>`;
-    }
-    
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-    
-    if (startPage > 1) {
-        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
-        if (startPage > 2) {
-            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-        }
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-        if (i === currentPage) {
-            paginationHTML += `<li class="page-item active"><a class="page-link" href="#">${i}</a></li>`;
-        } else {
-            paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
-        }
-    }
-    
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-        }
-        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
-    }
-    
-    // Next button
-    if (currentPage < totalPages) {
-        paginationHTML += `<li class="page-item">
-            <a class="page-link" href="#" data-page="${currentPage + 1}">Sau</a>
-        </li>`;
-    } else {
-        paginationHTML += `<li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Sau</a>
-        </li>`;
-    }
-    
-    paginationContainer.innerHTML = paginationHTML;
-    
-    // Add click event listeners
-    paginationContainer.addEventListener('click', function(e) {
-        e.preventDefault();
-        const pageLink = e.target.closest('a[data-page]');
-        if (pageLink) {
-            const page = parseInt(pageLink.dataset.page);
-            updateURL({ page: page });
-        }
-    });
-}
-
-// Attach per-page filter
-function attachPerPageFilter(products, renderCallback) {
-    const perPageSelect = document.getElementById('products-per-page');
-    const perPageSelectMobile = document.getElementById('products-per-page-mobile');
-    
-    // Set current value
-    const urlParams = new URLSearchParams(window.location.search);
-    const currentPerPage = parseInt(urlParams.get('per_page')) || 12;
-    
-    if (perPageSelect) {
-        perPageSelect.value = currentPerPage;
-        perPageSelect.addEventListener('change', function() {
-            const newPerPage = parseInt(this.value);
-            updateURL({ per_page: newPerPage, page: 1 }); // Reset to page 1
-        });
-    }
-    
-    if (perPageSelectMobile) {
-        perPageSelectMobile.value = currentPerPage;
-        perPageSelectMobile.addEventListener('change', function() {
-            const newPerPage = parseInt(this.value);
-            updateURL({ per_page: newPerPage, page: 1 }); // Reset to page 1
-        });
-    }
-}
-
-// Update products info display
-function updateProductsInfo(showing, total) {
-    const showingElement = document.getElementById('products-showing');
-    const totalElement = document.getElementById('products-total');
-    
-    if (showingElement) showingElement.textContent = showing;
-    if (totalElement) totalElement.textContent = total;
-}
-
-// Update URL with new parameters
-function updateURL(params) {
-    const url = new URL(window.location);
-    Object.keys(params).forEach(key => {
-        if (params[key]) {
-            url.searchParams.set(key, params[key]);
-        } else {
-            url.searchParams.delete(key);
-        }
-    });
-    window.location.href = url.toString();
-}
-
 // Sorting logic for products page
 function attachProductsSorting(products, renderCallback) {
     const sortSelect = document.getElementById('products-sort');
-    const sortSelectMobile = document.getElementById('products-sort-mobile');
-    
-    if (!sortSelect && !sortSelectMobile) return;
+    if (!sortSelect) return;
 
     const getOriginal = (p) => {
         const v = typeof p.original_price === 'number' ? p.original_price : parseFloat(p.original_price || '0');
@@ -3451,7 +3214,7 @@ function attachProductsSorting(products, renderCallback) {
     };
 
     function applySort() {
-        const mode = (sortSelect && sortSelect.value) || (sortSelectMobile && sortSelectMobile.value) || 'newest';
+        const mode = sortSelect.value;
         const sorted = [...products];
         sorted.sort((a, b) => {
             switch (mode) {
@@ -3471,13 +3234,7 @@ function attachProductsSorting(products, renderCallback) {
         renderCallback(sorted);
     }
 
-    if (sortSelect) {
     sortSelect.addEventListener('change', applySort);
-    }
-    if (sortSelectMobile) {
-        sortSelectMobile.addEventListener('change', applySort);
-    }
-    
     // First run
     applySort();
 }
@@ -3503,111 +3260,10 @@ defineProductDetailInit = (function(){
         container.innerHTML = html;
     }
 
-    // Fetch brand information from API
-    async function fetchBrandInfo(brandName, descEl, description) {
-        try {
-            console.log('🔍 Fetching brand info for:', brandName);
-            const response = await fetch('https://buddyskincare.pythonanywhere.com/brands/');
-            if (response.ok) {
-                const brands = await response.json();
-                console.log('📦 Total brands found:', brands.length);
-                
-                // Try exact match first
-                let brand = brands.find(b => b.name === brandName);
-                
-                // If not found, try case-insensitive match
-                if (!brand) {
-                    brand = brands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
-                }
-                
-                // If still not found, try partial match
-                if (!brand) {
-                    brand = brands.find(b => b.name.toLowerCase().includes(brandName.toLowerCase()) || 
-                                           brandName.toLowerCase().includes(b.name.toLowerCase()));
-                }
-                
-                console.log('🎯 Brand found:', brand);
-                
-                let brandInfo = '';
-                if (brand) {
-                    brandInfo += `<div class="alert alert-info mb-3">
-                        <h6 class="fw-bold mb-2"><i class="fas fa-award me-2"></i>Thông tin thương hiệu</h6>
-                        <p class="mb-1"><strong>Thương hiệu:</strong> ${brand.name}</p>`;
-                    if (brand.country) brandInfo += `<p class="mb-1"><strong>Xuất xứ:</strong> ${brand.country}</p>`;
-                    if (brand.introduction) {
-                        brandInfo += `<p class="mb-0"><strong>Giới thiệu:</strong><br>${brand.introduction}</p>`;
-                    }
-                    brandInfo += `</div>`;
-                } else {
-                    console.log('❌ Brand not found:', brandName);
-                    // Fallback if brand not found
-                    brandInfo += `<div class="alert alert-info mb-3">
-                        <h6 class="fw-bold mb-2"><i class="fas fa-award me-2"></i>Thông tin thương hiệu</h6>
-                        <p class="mb-0"><strong>Thương hiệu:</strong> ${brandName}</p>
-                    </div>`;
-                }
-                
-                // Format description with line breaks for better readability
-                if (description && description.length > 0) {
-                    description = formatDescription(description);
-                }
-                
-                descEl.innerHTML = brandInfo + description;
-            } else {
-                console.error('❌ API response not ok:', response.status);
-                // Fallback if API fails
-                let brandInfo = `<div class="alert alert-info mb-3">
-                    <h6 class="fw-bold mb-2"><i class="fas fa-award me-2"></i>Thông tin thương hiệu</h6>
-                    <p class="mb-0"><strong>Thương hiệu:</strong> ${brandName}</p>
-                </div>`;
-                
-                if (description && description.length > 0) {
-                    description = formatDescription(description);
-                }
-                
-                descEl.innerHTML = brandInfo + description;
-            }
-        } catch (error) {
-            console.error('❌ Error fetching brand info:', error);
-            // Fallback if API fails
-            let brandInfo = `<div class="alert alert-info mb-3">
-                <h6 class="fw-bold mb-2"><i class="fas fa-award me-2"></i>Thông tin thương hiệu</h6>
-                <p class="mb-0"><strong>Thương hiệu:</strong> ${brandName}</p>
-            </div>`;
-            
-            if (description && description.length > 0) {
-                description = formatDescription(description);
-            }
-            
-            descEl.innerHTML = brandInfo + description;
-        }
-    }
-
-    // Format description with line breaks
-    function formatDescription(description) {
-        if (!description || description.length === 0) return description;
-        
-        // Add line breaks after sentences ending with . ! ?
-        description = description.replace(/([.!?])\s+/g, '$1<br><br>');
-        
-        // Add line breaks after commas in long sentences
-        description = description.replace(/(,)\s+(?=\w{20,})/g, '$1<br>');
-        
-        // Add line breaks for bullet points or lists
-        description = description.replace(/(\d+\.\s)/g, '<br>$1');
-        description = description.replace(/([•·▪▫])\s/g, '<br>$1 ');
-        
-        // Clean up multiple line breaks
-        description = description.replace(/(<br>){3,}/g, '<br><br>');
-        
-        return description;
-    }
-
     function populateDetail(p) {
         console.log('🎯 populateDetail called with data:', p);
         console.log('📦 Product name:', p.name);
         console.log('💰 Product price:', p.sale_price || p.discounted_price);
-        console.log('📊 Stock quantity:', p.stock_quantity);
         
         // Xử lý cả dữ liệu cũ (Flask demo) và mới (API)
         let imageUrl, brandName, original, discounted, rating, stock, soldQuantity;
@@ -3616,8 +3272,8 @@ defineProductDetailInit = (function(){
             // Dữ liệu mới từ API
             imageUrl = (p.image && String(p.image).trim()) || '/static/image/default-product.jpg';
             brandName = p.brand_name || (p.brand ? p.brand.name : '');
-            original = typeof p.original_price === 'number' ? p.original_price * 1000 : null;
-            discounted = typeof p.discounted_price === 'number' ? p.discounted_price * 1000 : null;
+            original = typeof p.original_price === 'number' ? p.original_price : null;
+            discounted = typeof p.discounted_price === 'number' ? p.discounted_price : null;
             rating = typeof p.rating === 'number' ? p.rating : (parseFloat(p.rating) || 0);
             stock = typeof p.stock_quantity === 'number' ? p.stock_quantity : 0;
             soldQuantity = typeof p.sold_quantity === 'number' ? p.sold_quantity : 0;
@@ -3625,8 +3281,8 @@ defineProductDetailInit = (function(){
             // Dữ liệu từ API PythonAnywhere
             imageUrl = (p.image && String(p.image).trim()) || '/static/image/default-product.jpg';
             brandName = p.brand_name || (p.brand ? p.brand.name : '');
-            original = typeof p.original_price === 'number' ? p.original_price * 1000 : null;
-            discounted = typeof p.discounted_price === 'number' ? p.discounted_price * 1000 : null;
+            original = typeof p.original_price === 'number' ? p.original_price : null;
+            discounted = typeof p.discounted_price === 'number' ? p.discounted_price : null;
             rating = typeof p.rating === 'number' ? p.rating : (parseFloat(p.rating) || 0);
             stock = typeof p.stock_quantity === 'number' ? p.stock_quantity : 0;
             soldQuantity = typeof p.sold_quantity === 'number' ? p.sold_quantity : 0;
@@ -3666,92 +3322,18 @@ defineProductDetailInit = (function(){
         const brandEl = document.getElementById('detailBrand'); if (brandEl) brandEl.textContent = brandName;
         const brandFeatureEl = document.getElementById('detailBrandFeature'); if (brandFeatureEl) brandFeatureEl.textContent = brandName;
         setStars(document.getElementById('detailStars'), rating);
-        const ratingEl = document.getElementById('detailRating'); if (ratingEl) ratingEl.textContent = (rating || 0).toFixed(1);
         const reviewsEl = document.getElementById('detailReviews'); if (reviewsEl) reviewsEl.textContent = `(${soldQuantity} đã bán)`;
         const stockEl = document.getElementById('detailStock'); if (stockEl) stockEl.textContent = stock > 0 ? `Còn ${stock} sản phẩm` : 'Hết hàng';
-        
-        // Handle out of stock state
-        const isOutOfStock = stock <= 0;
-        console.log('🔍 Stock check:', { stock, isOutOfStock });
-        
-        // Show/hide out of stock overlay
-        const outOfStockOverlay = document.getElementById('outOfStockOverlay');
-        console.log('🔍 Overlay element:', outOfStockOverlay);
-        if (outOfStockOverlay) {
-            outOfStockOverlay.style.setProperty('display', isOutOfStock ? 'flex' : 'none', 'important');
-            console.log('🔍 Overlay display set to:', outOfStockOverlay.style.display);
-        }
-        
-        // Apply grayscale filter to main image when out of stock
-        if (mainImage) {
-            mainImage.style.filter = isOutOfStock ? 'grayscale(100%)' : 'none';
-        }
-        
-        // Update quantity input max attribute based on stock
-        const quantityInput = document.getElementById('quantity');
-        if (quantityInput) {
-            quantityInput.max = stock > 0 ? stock : 1;
-            if (parseInt(quantityInput.value) > stock && stock > 0) {
-                quantityInput.value = stock;
-            }
-            // Disable quantity input when out of stock
-            quantityInput.disabled = isOutOfStock;
-        }
-        
-        // Disable quantity buttons when out of stock
-        const quantityButtons = document.querySelectorAll('.quantity-section button');
-        quantityButtons.forEach(btn => {
-            btn.disabled = isOutOfStock;
-        });
-        
-        // Disable add to cart button when out of stock
-        const addToCartBtn = document.getElementById('detailAddToCartBtn');
-        if (addToCartBtn) {
-            addToCartBtn.disabled = isOutOfStock;
-            if (isOutOfStock) {
-                addToCartBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hết hàng';
-                addToCartBtn.classList.remove('btn-primary');
-                addToCartBtn.classList.add('btn-secondary');
-            } else {
-                addToCartBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Thêm vào giỏ hàng';
-                addToCartBtn.classList.remove('btn-secondary');
-                addToCartBtn.classList.add('btn-primary');
-            }
-            
-            // Handle Buy Now button
-            const buyNowBtn = document.getElementById('detailBuyNowBtn');
-            if (buyNowBtn) {
-                buyNowBtn.disabled = isOutOfStock;
-                if (isOutOfStock) {
-                    buyNowBtn.innerHTML = '<i class="fas fa-times me-2"></i>Hết hàng';
-                    buyNowBtn.classList.remove('btn-success');
-                    buyNowBtn.classList.add('btn-secondary');
-                } else {
-                    buyNowBtn.innerHTML = '<i class="fas fa-bolt me-2"></i>Mua ngay';
-                    buyNowBtn.classList.remove('btn-secondary');
-                    buyNowBtn.classList.add('btn-success');
-                }
-            }
-        }
 
         const oEl = document.getElementById('detailOriginalPrice'); if (oEl && original) oEl.textContent = formatPrice(original);
         const dEl = document.getElementById('detailDiscountedPrice'); if (dEl && discounted) dEl.textContent = formatPrice(discounted);
         const badge = document.getElementById('detailDiscountBadge');
         if (badge && original && discounted && original > discounted) {
-            // Check if product is flash sale
-            const isFlashSale = isFlashSaleProduct(p);
-            if (isFlashSale) {
+            const rate = typeof p.discount_rate === 'number' 
+                ? Math.round(p.discount_rate) 
+                : Math.round(((original - discounted) / original) * 100);
             badge.style.display = '';
-                badge.className = 'badge bg-warning text-dark';
-                badge.innerHTML = '<i class="fas fa-bolt me-1"></i>FLASH SALE';
-            } else {
-                const rate = typeof p.discount_rate === 'number' 
-                    ? Math.round(p.discount_rate) 
-                    : Math.round(((original - discounted) / original) * 100);
-                badge.style.display = '';
-                badge.className = 'badge bg-danger';
             badge.textContent = `-${rate}%`;
-            }
         }
         const saveEl = document.getElementById('detailSavings');
         if (saveEl && original && discounted) {
@@ -3760,21 +3342,7 @@ defineProductDetailInit = (function(){
         }
 
         const descEl = document.getElementById('detailDescription'); 
-        if (descEl) {
-            let description = p.description || 'Chưa có mô tả.';
-            
-            // Fetch brand information from API
-            if (p.brand || p.brand_name) {
-                const brandName = p.brand || p.brand_name;
-                fetchBrandInfo(brandName, descEl, description);
-            } else {
-                // Format description with line breaks for better readability
-                if (description && description.length > 0) {
-                    description = formatDescription(description);
-                }
-                descEl.innerHTML = description;
-            }
-        }
+        if (descEl) descEl.innerHTML = p.description || 'Chưa có mô tả.';
         
         const specEl = document.getElementById('detailSpecifications'); 
         if (specEl) {
@@ -3782,17 +3350,8 @@ defineProductDetailInit = (function(){
             let specsHTML = '<div class="row">';
             
             // Xử lý dữ liệu từ API PythonAnywhere
-            // Thông tin hãng
-            if (p.brand) specsHTML += `<div class="col-md-6"><strong>Thương hiệu:</strong> ${p.brand}</div>`;
-            if (p.origin) specsHTML += `<div class="col-md-6"><strong>Xuất xứ:</strong> ${p.origin}</div>`;
-            if (p.manufacturer) specsHTML += `<div class="col-md-6"><strong>Nhà sản xuất:</strong> ${p.manufacturer}</div>`;
-            if (p.sku) specsHTML += `<div class="col-md-6"><strong>Mã sản phẩm:</strong> ${p.sku}</div>`;
-            
-            // Thông tin sản phẩm
             if (p.volume) specsHTML += `<div class="col-md-6"><strong>Dung tích:</strong> ${p.volume}</div>`;
             if (p.unit) specsHTML += `<div class="col-md-6"><strong>Đơn vị:</strong> ${p.unit}</div>`;
-            if (p.weight) specsHTML += `<div class="col-md-6"><strong>Trọng lượng:</strong> ${p.weight}</div>`;
-            if (p.dimensions) specsHTML += `<div class="col-md-6"><strong>Kích thước:</strong> ${p.dimensions}</div>`;
             if (p.status) {
                 const statusText = {
                     'new': 'Mới 100%',
@@ -3897,7 +3456,7 @@ defineProductDetailInit = (function(){
         }
         
         // Fallback: fetch từ API PythonAnywhere
-        const apiUrl = `https://buddyskincare.pythonanywhere.com/products/${id}/`;
+        const apiUrl = `/api/products/${id}`;
         console.log('Fetching product from API:', apiUrl);
         fetch(apiUrl)
             .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
@@ -4006,7 +3565,7 @@ function initRelatedProducts() {
     if (!container) return;
 
     // Build API: fetch a list (we'll randomize client-side) then slice 10
-    const apiUrl = 'https://buddyskincare.pythonanywhere.com/products/';
+    const apiUrl = '/api/products';
 
     fetch(apiUrl)
         .then(r => r.ok ? r.json() : Promise.reject(new Error('API error')))
@@ -4126,7 +3685,7 @@ window.initProductDetailPageGlobal = function() {
     console.log('⚠️ No product data from Flask template, trying API...');
     
     // Fallback: fetch từ API PythonAnywhere
-    const apiUrl = `https://buddyskincare.pythonanywhere.com/products/${id}/`;
+    const apiUrl = `/api/products/${id}`;
     console.log('Fetching product from API:', apiUrl);
     fetch(apiUrl)
         .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
@@ -4146,4 +3705,200 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Cache bust: 1757233662
+
+        modalEl.id = 'orderSuccessModal';
+        modalEl.className = 'modal fade';
+        modalEl.tabIndex = -1;
+        // Prevent closing by backdrop/ESC
+        modalEl.setAttribute('data-bs-backdrop', 'static');
+        modalEl.setAttribute('data-bs-keyboard', 'false');
+        modalEl.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        Đặt hàng thành công
+                    </h5>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="text-center py-2">
+                        <div class="display-6 text-success mb-2"><i class="fas fa-bag-shopping"></i></div>
+                        <p class="mb-0">Đơn hàng của bạn đã được đặt thành công.</p>
+                        <p class="text-muted mb-0">Cảm ơn bạn đã luôn tin tưởng chúng tôi!</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light text-dark border border-success" id="orderSuccessOkBtn" style="padding: 8px 16px;">Quay lại trang chủ</button>
+                </div>
+            </div>
+        </div>`;
+        document.body.appendChild(modalEl);
+    } else {
+        // Ensure attributes are applied if modal already exists
+        modalEl.setAttribute('data-bs-backdrop', 'static');
+        modalEl.setAttribute('data-bs-keyboard', 'false');
+    }
+    const okBtn = modalEl.querySelector('#orderSuccessOkBtn');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl, { backdrop: 'static', keyboard: false });
+    const cleanup = () => {
+        okBtn && okBtn.removeEventListener('click', handleOk);
+        modalEl && modalEl.removeEventListener('hidden.bs.modal', cleanup);
+    };
+    const handleOk = () => {
+        cleanup();
+        modal.hide();
+        if (typeof onOk === 'function') onOk();
+    };
+    okBtn && okBtn.addEventListener('click', handleOk);
+    modalEl && modalEl.addEventListener('hidden.bs.modal', cleanup);
+    modal.show();
+}
+
+// Initialize related products on product detail page
+function initRelatedProducts() {
+    if (!document.getElementById('product-detail-page')) return;
+    const container = document.getElementById('related-products-container');
+    if (!container) return;
+
+    // Build API: fetch a list (we'll randomize client-side) then slice 10
+    const apiUrl = '/api/products';
+
+    fetch(apiUrl)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('API error')))
+        .then(list => {
+            if (!Array.isArray(list) || list.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Không có sản phẩm liên quan.</p>';
+                return;
+            }
+            // Shuffle and take up to 10
+            const shuffled = list.sort(() => Math.random() - 0.5).slice(0, 10);
+
+            // Create carousel like homepage
+            const wrapper = document.createElement('div');
+            wrapper.className = 'position-relative';
+            wrapper.style.overflow = 'hidden';
+            wrapper.style.padding = '10px 40px';
+
+            const track = document.createElement('div');
+            track.className = 'related-track d-flex';
+            track.style.gap = '16px';
+            track.style.transition = 'transform .4s ease';
+            track.dataset.index = '0';
+            track.dataset.perView = '5';
+
+            shuffled.forEach(p => {
+                const item = document.createElement('div');
+                item.className = 'slider-item';
+                item.style.flex = '0 0 auto';
+                item.innerHTML = createProductCard(p);
+                track.appendChild(item);
+            });
+
+            wrapper.appendChild(track);
+            container.innerHTML = '';
+            container.appendChild(wrapper);
+
+            // Nav buttons
+            if (shuffled.length > 5) {
+                const left = document.createElement('button');
+                left.className = 'btn btn-light position-absolute';
+                left.style.cssText = 'z-index:10;border-radius:50%;width:40px;height:40px;box-shadow:0 4px 10px rgba(0,0,0,.2);top:40%;left:10px;transform:translateY(-50%);';
+                left.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                const right = document.createElement('button');
+                right.className = 'btn btn-light position-absolute';
+                right.style.cssText = 'z-index:10;border-radius:50%;width:40px;height:40px;box-shadow:0 4px 10px rgba(0,0,0,.2);top:40%;right:10px;transform:translateY(-50%);';
+                right.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                wrapper.appendChild(left);
+                wrapper.appendChild(right);
+
+                const relayout = () => {
+                    const per = window.innerWidth <= 576 ? 2 : (window.innerWidth <= 768 ? 3 : 5);
+                    track.dataset.perView = String(per);
+                    const containerWidth = wrapper.clientWidth - 20 * 2; // approximate side paddings
+                    const gap = 16;
+                    const itemWidth = Math.floor((containerWidth - gap * (per - 1)) / per);
+                    track.querySelectorAll('.slider-item').forEach(it => { it.style.width = itemWidth + 'px'; });
+                };
+                const navigate = dir => {
+                    const per = parseInt(track.dataset.perView || '5', 10);
+                    const current = parseInt(track.dataset.index || '0', 10);
+                    const maxIndex = Math.max(0, shuffled.length - per);
+                    const next = Math.max(0, Math.min(maxIndex, current + (dir === 'left' ? -1 : 1)));
+                    if (next === current) return;
+                    track.dataset.index = String(next);
+                    const first = track.querySelector('.slider-item');
+                    const step = (first ? first.offsetWidth : 0) + 16;
+                    track.style.transform = `translateX(${-next * step}px)`;
+                };
+                left.addEventListener('click', () => navigate('left'));
+                right.addEventListener('click', () => navigate('right'));
+                window.addEventListener('resize', () => { relayout(); navigate('left'); navigate('right'); });
+                relayout();
+            }
+
+            // Re-init for newly added cards
+            initProductCards();
+            initAnimations();
+        })
+        .catch(() => {
+            container.innerHTML = '<p class="text-center text-danger">Không thể tải sản phẩm liên quan.</p>';
+        });
+}
+
+// Global function to initialize product detail page
+window.initProductDetailPageGlobal = function() {
+    console.log('🔍 initProductDetailPageGlobal called');
+    
+    if (!document.getElementById('product-detail-page')) {
+        console.log('❌ product-detail-page element not found');
+        return;
+    }
+    
+    const id = parseProductIdFromPath();
+    if (!id) {
+        console.log('❌ Product ID not found in URL');
+        return;
+    }
+    
+    console.log('✅ Product ID found:', id);
+    
+    // Kiểm tra xem có dữ liệu từ Flask template không
+    const productData = window.productData;
+    if (productData) {
+        console.log('✅ Using product data from Flask template:', productData);
+        console.log('📦 Product name:', productData.name);
+        console.log('💰 Product price:', productData.sale_price);
+        
+        try {
+            populateDetail(productData);
+            console.log('✅ populateDetail called successfully');
+        } catch (error) {
+            console.error('❌ Error in populateDetail:', error);
+        }
+        return;
+    }
+    
+    console.log('⚠️ No product data from Flask template, trying API...');
+    
+    // Fallback: fetch từ API PythonAnywhere
+    const apiUrl = `/api/products/${id}`;
+    console.log('Fetching product from API:', apiUrl);
+    fetch(apiUrl)
+        .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
+        .then(populateDetail)
+        .catch((error) => {
+            console.error('API fetch failed:', error);
+            showNotification('Không tìm thấy sản phẩm hoặc xảy ra lỗi khi tải dữ liệu.', 'error');
+        });
+};
+
+// Initialize product detail page when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize product detail page if we're on a product detail page
+    if (document.getElementById('product-detail-page')) {
+        console.log('Initializing product detail page...');
+        window.initProductDetailPageGlobal();
+    }
+});
+

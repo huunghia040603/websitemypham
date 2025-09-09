@@ -4,7 +4,9 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from decimal import Decimal
 from ckeditor.fields import RichTextField
 from django.contrib.auth.models import UserManager as BaseUserManager
-
+from django.utils import timezone
+import uuid
+from django.db.models import JSONField
 
 # Helper functions
 def calculate_discount_rate(original_price, discounted_price):
@@ -25,16 +27,29 @@ def calculate_discount_rate(original_price, discounted_price):
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, phone_number, password, **extra_fields):
-        if not phone_number:
-            raise ValueError('Số điện thoại phải được cung cấp.')
+    def create_user(self, email=None, phone_number=None, password=None, is_google_user=False, **extra_fields):
+        # Normalize email
+        if email:
+            email = self.normalize_email(email)
 
-        user = self.model(phone_number=phone_number, **extra_fields)
-        user.set_password(password)
+        if not is_google_user and not (phone_number and password):
+            raise ValueError('Đối với đăng ký thường, cần cung cấp số điện thoại và mật khẩu.')
+
+        if is_google_user and not email:
+            raise ValueError('Đăng ký bằng Google phải có email.')
+
+        # Tạo đối tượng User
+        user = self.model(email=email, phone_number=phone_number, **extra_fields)
+        if password:
+            user.set_password(password)
+        else:
+            # Đặt mật khẩu không sử dụng được cho người dùng Google
+            user.set_unusable_password()
+
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone_number, password, **extra_fields):
+    def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
@@ -44,7 +59,8 @@ class UserManager(BaseUserManager):
         if extra_fields.get('is_superuser') is not True:
             raise ValueError('Superuser must have is_superuser=True.')
 
-        return self.create_user(phone_number=phone_number, password=password, **extra_fields)
+        # Tạo superuser bằng email và mật khẩu
+        return self.create_user(email=email, password=password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -52,14 +68,16 @@ class User(AbstractUser):
     name = models.CharField(max_length=40, blank=True, null=True, verbose_name="Họ tên")
     phone_number = models.CharField(max_length=15, unique=True, blank=True, null=True, verbose_name="Số điện thoại")
     address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Địa chỉ")
-    email = models.CharField(max_length=255, blank=True, null=True, verbose_name="Địa chỉ email")
+    email = models.CharField(max_length=255, unique=True, blank=True, null=True, verbose_name="Địa chỉ email")
     avatar = models.CharField(max_length=255, blank=True, null=True, verbose_name="ảnh đại diện")
     dob = models.DateField(blank=True, null=True, verbose_name="Ngày sinh")
+    is_google_user = models.BooleanField(default=False, verbose_name="Đăng nhập bằng Google")
 
-    USERNAME_FIELD = 'phone_number'
-    REQUIRED_FIELDS = ['email']
 
     objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     class Meta:
         verbose_name = "Tài khoản"
@@ -94,6 +112,8 @@ class Collaborator(User):
         verbose_name="Loại tài khoản"
     )
     sales_code = models.CharField(max_length=20, unique=True, verbose_name="Mã bán hàng")
+    points = models.PositiveIntegerField(default=0, verbose_name="Điểm bán hàng tháng này")
+    level = models.PositiveIntegerField(default=1, verbose_name="Cấp độ")
 
     class Meta:
         verbose_name = "Cộng tác viên"
@@ -101,6 +121,20 @@ class Collaborator(User):
 
     def __str__(self):
         return f"CTV: {self.phone_number or self.email}"
+
+    def update_level(self):
+        """Cập nhật cấp độ dựa trên số điểm trong tháng."""
+        if self.points >= 2000:
+            self.level = 5
+        elif self.points >= 1000:
+            self.level = 4
+        elif self.points >= 500:
+            self.level = 3
+        elif self.points >= 100:
+            self.level = 2
+        else:
+            self.level = 1
+        self.save(update_fields=['level'])
 
 
 class Staff(User):
@@ -123,10 +157,26 @@ class Customer(User):
         editable=False,
         verbose_name="Loại tài khoản"
     )
+    points = models.PositiveIntegerField(default=0, verbose_name="Điểm tích lũy")
+    level = models.PositiveIntegerField(default=1, verbose_name="Cấp độ")
 
     class Meta:
         verbose_name = "Khách hàng"
         verbose_name_plural = "Khách hàng"
+
+    def update_level(self):
+        """Cập nhật cấp độ dựa trên số điểm."""
+        if self.points >= 1000:
+            self.level = 5
+        elif self.points >= 400:
+            self.level = 4
+        elif self.points >= 100:
+            self.level = 3
+        elif self.points >= 30:
+            self.level = 2
+        else:
+            self.level = 1
+        self.save(update_fields=['level'])
 
 
 # --- Product-related Models ---
@@ -155,14 +205,58 @@ class Category(models.Model):
         return self.name
 
 
+class AnalyticsSnapshot(models.Model):
+    PERIOD_DAY = 'day'
+    PERIOD_WEEK = 'week'
+    PERIOD_MONTH = 'month'
+    PERIOD_YEAR = 'year'
+
+    PERIOD_CHOICES = [
+        (PERIOD_DAY, 'Day'),
+        (PERIOD_WEEK, 'Week'),
+        (PERIOD_MONTH, 'Month'),
+        (PERIOD_YEAR, 'Year'),
+    ]
+
+    period = models.CharField(max_length=10, choices=PERIOD_CHOICES)
+    period_key = models.CharField(max_length=32, help_text="Key of the period, e.g. 2025-09-07 or 2025-09 or 2025W36 or 2025")
+    total_revenue = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    total_profit = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal('0.00'))
+    data = JSONField(default=dict, help_text="Arbitrary analytics payload: labels, series, top lists")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Analytics Snapshot"
+        verbose_name_plural = "Analytics Snapshots"
+        unique_together = ('period', 'period_key')
+
+    def __str__(self):
+        return f"Analytics {self.period}:{self.period_key} - {self.total_revenue}"
+
+
 class Tag(models.Model):
+    TAG_STATUS_CHOICES = [
+        ('active', 'Đang hoạt động'),
+        ('upcoming', 'Sắp diễn ra'),
+        ('expired', 'Đã hết hạn'),
+    ]
+
     code = models.CharField(max_length=50, unique=True, verbose_name="Mã tag")
     name = models.CharField(max_length=100, verbose_name="Tên tag")
     description = models.CharField(max_length=255, verbose_name="Mô tả")
+    # Thêm giá trị mặc định cho các trường mới
+    start_date = models.DateTimeField(verbose_name="Ngày giờ bắt đầu", default=timezone.now)
+    end_date = models.DateTimeField(verbose_name="Ngày giờ kết thúc", default=timezone.now)
+    status = models.CharField(max_length=20, choices=TAG_STATUS_CHOICES, default='upcoming', verbose_name="Trạng thái tag")
+    discounted_price_reduction = models.IntegerField(
+        blank=True,
+        null=True,
+        verbose_name="Giá giảm tiếp tục (nghìn đồng)"
+    )
 
     class Meta:
-        verbose_name = "Tag sản phẩm"
-        verbose_name_plural = "Tag sản phẩm"
+        verbose_name = "Tag khuyến mãi"
+        verbose_name_plural = "Tags khuyến mãi"
 
     def __str__(self):
         return self.name
@@ -180,30 +274,6 @@ class Gift(models.Model):
     def __str__(self):
         return self.name
 
-
-class Album(models.Model):
-    name = models.CharField(max_length=255, blank=True, verbose_name="Tên album")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")
-
-    class Meta:
-        verbose_name = "Album ảnh"
-        verbose_name_plural = "Album ảnh"
-
-    def __str__(self):
-        return f"Album {self.id}"
-
-
-class Image(models.Model):
-    album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='images', verbose_name="Album")
-    image = models.CharField(max_length=255, verbose_name="URL ảnh")
-    is_thumbnail = models.BooleanField(default=False, verbose_name="Ảnh đại diện")
-
-    class Meta:
-        verbose_name = "Hình ảnh"
-        verbose_name_plural = "Hình ảnh sản phẩm"
-
-    def __str__(self):
-        return f"Image for Album {self.album.id}"
 
 PRODUCT_STATUS_CHOICES = [
     ('new', 'Mới'),
@@ -231,9 +301,7 @@ class Product(models.Model):
     name = models.CharField(max_length=255, verbose_name="Tên sản phẩm")
     status = models.CharField(max_length=10, choices=PRODUCT_STATUS_CHOICES, default='new', verbose_name="Trạng thái sản phẩm")
     description = RichTextField(verbose_name="Mô tả sản phẩm")
-    ingredients = RichTextField(verbose_name="Thành phần",blank=True, null=True,)
-    volume = models.CharField(max_length=50, blank=True, null=True, verbose_name="Dung tích")
-    unit = models.CharField(max_length=50, blank=True, null=True, verbose_name="Đơn vị")
+    ingredients = RichTextField(verbose_name="Thành phần", blank=True, null=True)
     image = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh")
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Hãng mỹ phẩm")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, verbose_name="Danh mục")
@@ -241,8 +309,7 @@ class Product(models.Model):
     gifts = models.ManyToManyField(Gift, blank=True, verbose_name="Quà tặng kèm")
     stock_quantity = models.PositiveIntegerField(default=0, verbose_name="Số lượng còn trong kho")
     sold_quantity = models.PositiveIntegerField(default=0, verbose_name="Số lượng đã bán")
-    rating = models.DecimalField(verbose_name="Lượt đánh giá trung bình", max_digits=3, decimal_places=1, default=3.2)
-    market_price = models.IntegerField(blank=True, null=True, verbose_name="Giá thị trường")
+    rating = models.DecimalField(verbose_name="Lượt đánh giá trung bình", max_digits=3, decimal_places=1, default=4.2)
     savings_price = models.IntegerField(blank=True, null=True, verbose_name="Giá tiết kiệm (nghìn đồng)")
     import_price = models.IntegerField(verbose_name="Giá nhập kho (nghìn đồng)", default=0)
     original_price = models.IntegerField(verbose_name="Giá bán gốc (nghìn đồng)", default=0)
@@ -252,21 +319,6 @@ class Product(models.Model):
     class Meta:
         verbose_name = "Sản phẩm"
         verbose_name_plural = "Sản phẩm"
-
-    def save(self, *args, **kwargs):
-        # Tính discount_rate dựa trên giá gốc và giá sau giảm
-        if self.original_price is not None and self.discounted_price is not None:
-            self.discount_rate = calculate_discount_rate(self.original_price, self.discounted_price)
-        else:
-            self.discount_rate = Decimal('0.00')
-
-        # Tính savings_price dựa trên giá thị trường và giá sau giảm
-        if self.market_price is not None and self.discounted_price is not None:
-            self.savings_price = self.market_price - self.discounted_price
-        else:
-            self.savings_price = None
-
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name}"
@@ -315,19 +367,110 @@ class Voucher(models.Model):
 
 
 class Order(models.Model):
-    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders", verbose_name="Khách hàng")
+    # Trạng thái đơn hàng
+    STATUS_CHOICES = [
+        ('pending', 'Chờ xử lý'),
+        ('processing', 'Đang xử lý'),
+        ('shipped', 'Đã giao hàng'),
+        ('delivered', 'Đã nhận hàng'),
+        ('cancelled', 'Đã hủy'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('cod', 'Ship COD'),
+        ('bank', 'Chuyển khoản'),
+        ('cash', 'Tiền mặt'),
+    ]
+
+    # Thêm trường mã đơn hàng
+    order_code = models.CharField(max_length=50, unique=True, blank=True, null=True, verbose_name="Mã đơn hàng")
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending',
+        verbose_name="Trạng thái đơn hàng"
+    )
+    is_confirmed = models.BooleanField(default=False, verbose_name="Xác nhận đơn hàng")
+    customer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="orders", verbose_name="Khách hàng")
+    customer_name = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tên khách hàng")
+    phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Số điện thoại")
+    zalo_phone_number = models.CharField(max_length=20, blank=True, null=True, verbose_name="Số điện thoại Zalo")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Địa chỉ")
+
+    # Thông tin địa chỉ chi tiết
+    street = models.CharField(max_length=100, blank=True, null=True, verbose_name="Số nhà/Tên đường")
+    ward = models.CharField(max_length=100, blank=True, null=True, verbose_name="Phường/Xã")
+    district = models.CharField(max_length=100, blank=True, null=True, verbose_name="Quận/Huyện")
+    province = models.CharField(max_length=100, blank=True, null=True, verbose_name="Tỉnh/Thành phố")
+
+    notes = models.TextField(blank=True, null=True, verbose_name="Ghi chú")
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='cod',
+        verbose_name="Phương thức thanh toán"
+    )
+    bank_transfer_image = models.CharField(max_length=255, blank=True, null=True, verbose_name="Ảnh chuyển khoản")
+
+    # Các trường đã có
     order_date = models.DateTimeField(auto_now_add=True, verbose_name="Ngày đặt hàng")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Tổng tiền")
+    shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Phí ship")
     collaborator_code = models.CharField(max_length=20, blank=True, null=True, verbose_name="Mã CTV")
     discount_applied = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Giảm giá áp dụng")
     voucher = models.ForeignKey(Voucher, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Voucher đã dùng")
+
 
     class Meta:
         verbose_name = "Hóa đơn"
         verbose_name_plural = "Hóa đơn mua hàng"
 
+
+    def save(self, *args, **kwargs):
+        is_new_order = self.pk is None # Kiểm tra xem đây có phải là đơn hàng mới hay không
+
+        # Tạo mã đơn hàng tự động nếu chưa có
+        if not self.order_code:
+             # Lấy ngày tháng hiện tại (DDMM)
+            date_str = timezone.now().strftime("%d%m")
+            random_chars = str(uuid.uuid4())[:4]
+            self.order_code = f"B-{date_str}{random_chars}"
+        super().save(*args, **kwargs)
+
+        # Cập nhật điểm và cấp độ sau khi lưu đơn hàng
+        if is_new_order and self.status == 'delivered':
+            # Chỉ cập nhật khi đơn hàng mới và đã được giao thành công
+            self.update_points()
+
+    def update_points(self):
+        """Cập nhật điểm cho khách hàng và cộng tác viên."""
+        order_points = int(self.total_amount / 100000)
+
+        # Cập nhật điểm cho khách hàng
+        if self.customer and isinstance(self.customer, Customer):
+            self.customer.points += order_points
+            self.customer.save(update_fields=['points'])
+            self.customer.update_level()
+
+        # Cập nhật điểm cho cộng tác viên
+        if self.collaborator_code:
+            try:
+                collaborator = Collaborator.objects.get(sales_code=self.collaborator_code)
+                collaborator.points += order_points
+                collaborator.save(update_fields=['points'])
+                collaborator.update_level()
+            except Collaborator.DoesNotExist:
+                # Xử lý trường hợp không tìm thấy cộng tác viên
+                pass
+
     def __str__(self):
-        return f"Order #{self.id} by {self.customer.username}"
+        if self.customer:
+            return f"{self.customer.username} - {self.order_code}"
+        else:
+            return f"{self.customer_name} - {self.order_code}"
 
 
 class OrderItem(models.Model):
@@ -380,3 +523,5 @@ class CartItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name} trong giỏ hàng của {self.cart.user.name or self.cart.user.phone_number}"
+
+
