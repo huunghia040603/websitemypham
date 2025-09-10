@@ -1,0 +1,64 @@
+{% extends "ctv_base.html" %}
+{% block title %}CTV - Đặt đơn đặc biệt{% endblock %}
+{% block ctv_content %}
+<div class="container py-4">
+  <h1 class="h5 mb-3">Đặt đơn CTV (giá đặc biệt)</h1>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label">Mã CTV</label>
+          <input id="poCtvCode" class="form-control" placeholder="Tự điền từ hồ sơ">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Sản phẩm (ID)</label>
+          <input id="poProductId" class="form-control" placeholder="VD: 123">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Số lượng</label>
+          <input id="poQty" type="number" min="1" class="form-control" value="1">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Giá CTV (VNĐ)</label>
+          <input id="poCtvPrice" type="number" class="form-control" placeholder="Nhập giá đặc biệt">
+        </div>
+        <div class="col-md-8">
+          <label class="form-label">Ghi chú</label>
+          <input id="poNote" class="form-control" placeholder="Mô tả ngắn">
+        </div>
+      </div>
+      <div class="mt-3 d-flex gap-2">
+        <button id="poBtn" class="btn btn-primary">Tạo đơn</button>
+        <div id="poMsg" class="text-muted"></div>
+      </div>
+      <div class="small text-muted mt-2">Đơn CTV sẽ được review để chốt hoa hồng theo cấp.</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  const API = 'https://buddyskincare.pythonanywhere.com';
+  let ctv = null;
+  async function init(){
+    const list = await fetch(`${API}/ctvs/`).then(r=>r.ok?r.json():[]);
+    ctv = list[0]; if(!ctv) return;
+    document.getElementById('poCtvCode').value = ctv.code;
+    document.getElementById('poBtn').addEventListener('click', createOrder);
+  }
+  async function createOrder(){
+    const code = document.getElementById('poCtvCode').value.trim();
+    const product = document.getElementById('poProductId').value.trim();
+    const qty = parseInt(document.getElementById('poQty').value||'1',10);
+    const cprice = parseFloat(document.getElementById('poCtvPrice').value||'0');
+    if(!code||!product||qty<=0||!cprice) return msg('Vui lòng nhập đủ thông tin');
+    // Placeholder: gửi đơn đặc biệt, backend cần endpoint riêng nếu muốn tách biệt
+    msg('Đã gửi yêu cầu tạo đơn CTV (demo).');
+  }
+  function msg(t){ document.getElementById('poMsg').textContent = t; }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+{% endblock %}
+

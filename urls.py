@@ -27,6 +27,9 @@ r.register(r'analytics', views.AnalyticsViewSet, basename='analytics')
 r.register(r'lucky-events', views.LuckyEventViewSet, basename='lucky-event')
 r.register(r'lucky-participants', views.LuckyParticipantViewSet, basename='lucky-participant')
 r.register(r'lucky-winners', views.LuckyWinnerViewSet, basename='lucky-winner')
+r.register(r'ctv-applications', views.CTVApplicationViewSet, basename='ctv-application')
+r.register(r'ctv-levels', views.CTVLevelViewSet, basename='ctv-level')
+r.register(r'ctvs', views.CTVViewSet, basename='ctv')
 
 
 

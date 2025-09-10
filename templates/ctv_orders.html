@@ -1,0 +1,59 @@
+{% extends "ctv_base.html" %}
+{% block title %}CTV - Đơn hàng{% endblock %}
+{% block ctv_content %}
+<div class="container py-4">
+  <h1 class="h5 mb-3">Đơn hàng của tôi</h1>
+  <div class="card border-0 shadow-sm">
+    <div class="card-body">
+      <div class="row g-2 mb-2">
+        <div class="col-md-3"><input id="fCode" class="form-control" placeholder="Mã đơn"></div>
+        <div class="col-md-3"><select id="fStatus" class="form-select"><option value="">Tất cả trạng thái</option><option>paid</option><option>pending</option><option>cancelled</option></select></div>
+        <div class="col-md-3"><input id="fFrom" type="date" class="form-control"></div>
+        <div class="col-md-3"><input id="fTo" type="date" class="form-control"></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead class="table-light"><tr><th>Mã</th><th>Khách</th><th>Tổng</th><th>Trạng thái</th><th>Ngày</th></tr></thead>
+          <tbody id="ordersBody"><tr><td colspan="5" class="text-center text-muted py-3">Đang tải...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function(){
+  const API = 'https://buddyskincare.pythonanywhere.com';
+  let currentCtv = null;
+  const fmt = (v)=> Number(v||0).toLocaleString('vi-VN')+'đ';
+  async function init(){
+    const list = await fetch(`${API}/ctvs/`).then(r=>r.ok?r.json():[]);
+    currentCtv = list[0];
+    load();
+    ['fCode','fStatus','fFrom','fTo'].forEach(id=>document.getElementById(id).addEventListener('input', debounce(load,300)));
+  }
+  async function load(){
+    if(!currentCtv) return;
+    const code = document.getElementById('fCode').value.trim();
+    const status = document.getElementById('fStatus').value.trim();
+    let url = `${API}/orders/?ctv_code=${encodeURIComponent(currentCtv.code)}`;
+    if(code) url += `&id=${encodeURIComponent(code)}`;
+    if(status) url += `&status=${encodeURIComponent(status)}`;
+    const rows = await fetch(url).then(r=>r.ok?r.json():[]);
+    const tbody = document.getElementById('ordersBody');
+    if(!Array.isArray(rows)||!rows.length){ tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Không có đơn</td></tr>'; return; }
+    tbody.innerHTML = rows.map(o=>`<tr>
+      <td>#${o.id}</td>
+      <td>${o.customer_name||'-'}</td>
+      <td>${fmt(o.total||0)}</td>
+      <td><span class="badge bg-${(o.status||'').includes('paid')?'success':'secondary'}">${o.status||'-'}</span></td>
+      <td>${o.created_at? new Date(o.created_at).toLocaleString('vi-VN'): '-'}</td>
+    </tr>`).join('');
+  }
+  function debounce(fn,ms){let t;return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn.apply(null,a),ms)}}
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+{% endblock %}
+

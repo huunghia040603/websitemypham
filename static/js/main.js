@@ -1714,7 +1714,7 @@ function renderWishlistDrawer() {
             <div class="flex-grow-1">
                 <a href="/product/${p.id}" class="text-decoration-none text-dark" style="font-weight:600; display:block; line-height:1.2;">${p.name}</a>
                 <div class="text-muted" style="font-size:12px;">${p.brand || ''}</div>
-                <div class="text-danger" style="font-size:13px;font-weight:700;">${formatPrice((parseFloat(p.price) || 0) * 1000)}</div>
+                <div class="text-danger" style="font-size:13px;font-weight:700;">${formatPrice(parseFloat(p.price) || 0)}</div>
             </div>
             <button class="btn btn-sm btn-outline-danger ms-2" data-remove-fav="${p.id}"><i class="fas fa-trash"></i></button>
         </div>
@@ -4120,7 +4120,8 @@ defineProductDetailInit = (function(){
                 name: p.name || '',
                 image: imageUrl || '',
                 brand: brandName || '',
-                price: typeof p.discounted_price === 'number' ? p.discounted_price : (parseFloat(p.discounted_price || '0') || 0)
+                // Store price in VND for wishlist so drawer doesn't need to multiply
+                price: (typeof p.discounted_price === 'number' ? p.discounted_price : (parseFloat(p.discounted_price || '0') || 0)) * 1000
             };
             const icon = favBtn.querySelector('i');
             const textEl = favBtn.querySelector('.fav-text');

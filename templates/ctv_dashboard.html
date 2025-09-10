@@ -1,0 +1,141 @@
+{% extends "ctv_base.html" %}
+
+{% block title %}CTV Dashboard{% endblock %}
+
+{% block ctv_content %}
+<div class="container py-4">
+  <div class="row g-3">
+    <div class="col-12">
+      <h1 class="h4">Bảng điều khiển Cộng Tác Viên</h1>
+      <p class="text-muted mb-3">Xem tổng quan doanh số, hoa hồng và các thao tác nhanh.</p>
+    </div>
+    <div class="col-lg-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Mã CTV</strong>
+            <span id="ctvCode" class="badge bg-primary">--</span>
+          </div>
+          <div class="mb-1"><span class="text-muted">Tên:</span> <strong id="ctvName">--</strong></div>
+          <div class="mb-1"><span class="text-muted">Cấp:</span> <strong id="ctvLevel">--</strong></div>
+          <div class="mb-1"><span class="text-muted">Hoa hồng (%):</span> <strong id="ctvPercent">--</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <div class="text-muted">Số dư khả dụng</div>
+              <div class="display-6" id="walletBalance">0đ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <div class="text-muted">Đang chờ rút</div>
+              <div class="display-6" id="walletPending">0đ</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+              <div class="text-muted">Đơn hàng tháng</div>
+              <div class="display-6" id="ordersThisMonth">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-2">
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white"><strong>Đơn hàng gần đây</strong></div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Mã đơn</th>
+                  <th>Khách</th>
+                  <th>Tổng</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="recentOrders"><tr><td colspan="4" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+          <strong>Rút hoa hồng</strong>
+          <button id="btnWithdraw" class="btn btn-sm btn-primary">Yêu cầu rút</button>
+        </div>
+        <div class="card-body">
+          <div class="mb-2">
+            <label class="form-label">Số tiền muốn rút</label>
+            <input id="withdrawAmount" type="number" min="10000" step="1000" class="form-control" placeholder="Nhập số tiền (VNĐ)">
+          </div>
+          <div id="withdrawStatus" class="small text-muted">Số dư phải đủ và >= 10,000đ</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function(){
+  const API = 'https://buddyskincare.pythonanywhere.com';
+  // Demo: lấy CTV đầu tiên làm ví dụ hiển thị
+  async function loadCtv() {
+    const res = await fetch(`${API}/ctvs/`);
+    const list = res.ok ? await res.json() : [];
+    const ctv = list[0];
+    if (!ctv) return;
+    document.getElementById('ctvCode').textContent = ctv.code;
+    document.getElementById('ctvName').textContent = ctv.full_name;
+    document.getElementById('ctvLevel').textContent = ctv.level?.name || '--';
+    document.getElementById('ctvPercent').textContent = ctv.level?.commission_percent || '--';
+    const w = await fetch(`${API}/ctvs/${ctv.id}/wallet/`).then(r=>r.json()).catch(()=>({balance:0,pending:0}));
+    const fmt = (v)=> Number(v||0).toLocaleString('vi-VN') + 'đ';
+    document.getElementById('walletBalance').textContent = fmt(w.balance);
+    document.getElementById('walletPending').textContent = fmt(w.pending);
+
+    document.getElementById('btnWithdraw').addEventListener('click', async ()=>{
+      const amt = parseFloat(document.getElementById('withdrawAmount').value||'0');
+      if (!amt || amt <= 0) return alert('Số tiền không hợp lệ');
+      const resp = await fetch(`${API}/ctvs/${ctv.id}/withdraw/`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amount: amt})});
+      const data = await resp.json().catch(()=>({}));
+      if (!resp.ok) return alert(data.detail||'Không tạo được yêu cầu rút');
+      alert('Đã tạo yêu cầu rút, chờ duyệt');
+      document.getElementById('withdrawAmount').value = '';
+      loadCtv();
+    });
+
+    // Recent orders: cần backend trả về theo mã CTV ở /orders/?ctv_code=
+    const ord = await fetch(`${API}/orders/?ctv_code=${encodeURIComponent(ctv.code)}`).then(r=> r.ok ? r.json() : []);
+    const tbody = document.getElementById('recentOrders');
+    if (Array.isArray(ord) && ord.length){
+      tbody.innerHTML = ord.slice(0,10).map(o=>`<tr>
+        <td>#${o.id}</td>
+        <td>${o.customer_name||'-'}</td>
+        <td>${(Number(o.total||0)).toLocaleString('vi-VN')}đ</td>
+        <td><span class="badge bg-${(o.status||'').includes('paid')?'success':'secondary'}">${o.status||'-'}</span></td>
+      </tr>`).join('');
+    }
+  }
+  document.addEventListener('DOMContentLoaded', loadCtv);
+})();
+</script>
+{% endblock %}
+

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CTV - BuddySkincare</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <style>
+    body{background:#f7f8fa}
+    .ctv-topbar{position:sticky;top:0;z-index:1030;background:#fff;border-bottom:1px solid rgba(0,0,0,.06)}
+    .ctv-layout{display:grid;grid-template-columns:240px 1fr;gap:16px}
+    .ctv-sidebar{position:sticky;top:70px;height:calc(100vh - 90px);overflow:auto;border-right:1px solid rgba(0,0,0,.06)}
+    .ctv-menu .list-group-item{border:0;border-radius:10px;margin-bottom:6px}
+    .ctv-menu .list-group-item.active{background:#0d6efd;color:#fff}
+    @media (max-width: 992px){.ctv-layout{grid-template-columns:1fr}.ctv-sidebar{position:static;height:auto;border-right:0}}
+  </style>
+</head>
+<body>
+  <nav class="ctv-topbar navbar navbar-light bg-white">
+    <div class="container d-flex justify-content-between align-items-center">
+      <a href="/ctv/dashboard" class="navbar-brand fw-bold">BuddySkincare CTV</a>
+      <div class="d-flex align-items-center gap-3">
+        <span class="text-muted small d-none d-md-inline">Khu vực dành cho Cộng tác viên</span>
+        <a class="btn btn-sm btn-outline-secondary" href="/"><i class="fas fa-home me-1"></i>Trang chủ</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-3">
+    <div class="ctv-layout">
+      <aside class="ctv-sidebar pe-lg-3">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <div class="avatar rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center me-2" style="width:40px;height:40px;">C</div>
+              <div>
+                <div class="fw-bold" id="ctvBaseName">CTV</div>
+                <div class="text-muted small" id="ctvBaseCode">--</div>
+              </div>
+            </div>
+            <div class="list-group ctv-menu">
+              <a href="/ctv/dashboard" class="list-group-item list-group-item-action"><i class="fas fa-gauge me-2"></i>Dashboard</a>
+              <a href="/ctv/orders" class="list-group-item list-group-item-action"><i class="fas fa-receipt me-2"></i>Đơn hàng</a>
+              <a href="/ctv/wallet" class="list-group-item list-group-item-action"><i class="fas fa-wallet me-2"></i>Ví & Rút tiền</a>
+              <a href="/ctv/place-order" class="list-group-item list-group-item-action"><i class="fas fa-cart-plus me-2"></i>Đặt đơn CTV</a>
+            </div>
+          </div>
+        </div>
+      </aside>
+      <main class="ctv-content">
+        {% block ctv_content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/js/main.js"></script>
+  <script>
+  (function(){
+    const API = 'https://buddyskincare.pythonanywhere.com';
+    async function initCtvBase(){
+      try{
+        const res = await fetch(`${API}/ctvs/`);
+        const list = res.ok ? await res.json() : [];
+        const ctv = list[0];
+        if (!ctv) return;
+        document.getElementById('ctvBaseName') && (document.getElementById('ctvBaseName').textContent = ctv.full_name||'CTV');
+        document.getElementById('ctvBaseCode') && (document.getElementById('ctvBaseCode').textContent = ctv.code||'--');
+        document.querySelectorAll('.ctv-menu a').forEach(a=>{
+          if (a.getAttribute('href')===location.pathname){ a.classList.add('active'); }
+        });
+      }catch(e){}
+    }
+    document.addEventListener('DOMContentLoaded', initCtvBase);
+  })();
+  </script>
+</body>
+</html>
+

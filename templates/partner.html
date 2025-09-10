@@ -52,35 +52,68 @@
     <div class="col-lg-6">
       <div class="pt-card p-4">
         <h2 class="h5 mb-3">Thông tin đăng ký</h2>
-        <form id="partnerForm" class="row g-3 pt-form">
+        <form id="partnerForm" class="row g-3 pt-form" enctype="multipart/form-data">
           <div class="col-md-6">
-            <label class="form-label">Họ và tên</label>
-            <input class="form-control" required>
+            <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+            <input id="ptFullName" name="full_name" class="form-control" placeholder="VD: Nguyễn Văn A" required>
           </div>
           <div class="col-md-6">
-            <label class="form-label">Số điện thoại</label>
-            <input class="form-control" required>
+            <label class="form-label">Số điện thoại Zalo <span class="text-danger">*</span></label>
+            <input id="ptPhone" name="phone" class="form-control" placeholder="VD: 0987xxxxxx" inputmode="tel" pattern="^[0-9]{10,11}$" required>
           </div>
           <div class="col-12">
-            <label class="form-label">Email</label>
-            <input type="email" class="form-control" required>
+            <label class="form-label">Địa chỉ</label>
+            <input id="ptAddress" name="address" class="form-control" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
           </div>
           <div class="col-12">
-            <label class="form-label">Kênh bán chính</label>
-            <select class="form-select" required>
-              <option value="">Chọn...</option>
-              <option>Facebook</option>
-              <option>TikTok</option>
-              <option>Zalo</option>
-              <option>Shopee/Lazada</option>
-            </select>
+            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <input id="ptEmail" type="email" name="email" class="form-control" placeholder="you@example.com" required>
           </div>
-          <div class="col-12">
-            <label class="form-label">Ghi chú</label>
-            <textarea class="form-control" rows="3"></textarea>
+
+          <div class="col-12 mt-2">
+            <h3 class="h6 mb-2">Thông tin ngân hàng nhận hoa hồng <span class="text-danger">*</span></h3>
           </div>
+          <div class="col-md-4">
+            <label class="form-label">Tên ngân hàng <span class="text-danger">*</span></label>
+            <input id="ptBankName" name="bank_name" class="form-control" placeholder="VD: Vietcombank" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Số tài khoản <span class="text-danger">*</span></label>
+            <input id="ptBankNumber" name="bank_number" class="form-control" placeholder="VD: 0123456789" inputmode="numeric" pattern="^[0-9]{6,20}$" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Tên thẻ ngân hàng <span class="text-danger">*</span></label>
+            <input id="ptBankHolder" name="bank_holder" class="form-control" placeholder="VD: NGUYEN VAN A" required>
+          </div>
+
+          <div class="col-12 mt-2">
+            <h3 class="h6 mb-2">Xác minh CCCD <span class="text-danger">*</span></h3>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Ảnh mặt trước CCCD <span class="text-danger">*</span></label>
+            <input id="ptCccdFront" name="cccd_front" type="file" class="form-control" accept="image/*" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Ảnh mặt sau CCCD <span class="text-danger">*</span></label>
+            <input id="ptCccdBack" name="cccd_back" type="file" class="form-control" accept="image/*" required>
+          </div>
+
           <div class="col-12">
-            <button class="btn btn-primary w-100">Gửi đăng ký</button>
+            <label class="form-label">Bạn làm gì để bán được hàng (có thể để trống)</label>
+            <textarea id="ptPlan" name="sales_plan" class="form-control" rows="3" placeholder="VD: Livestream, chạy quảng cáo, KOC/KOL, cộng đồng Facebook, giới thiệu bạn bè, bán qua Zalo, Shopee, Lazada..."></textarea>
+          </div>
+
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="1" id="ptAgree" required>
+              <label class="form-check-label" for="ptAgree">
+                Tôi đồng ý với quy định và thoả thuận của BuddySkincare
+              </label>
+            </div>
+          </div>
+
+          <div class="col-12">
+            <button class="btn btn-primary w-100" type="submit">Gửi đăng ký</button>
           </div>
         </form>
       </div>
@@ -140,9 +173,70 @@
 
 {% block extra_js %}
 <script>
-document.getElementById('partnerForm')?.addEventListener('submit', function(e){
+document.getElementById('partnerForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
-  alert('Đã gửi đăng ký! Chúng tôi sẽ liên hệ sớm.');
+  const fullName = document.getElementById('ptFullName').value.trim();
+  const phone = document.getElementById('ptPhone').value.trim();
+  const email = document.getElementById('ptEmail').value.trim();
+  const bankName = document.getElementById('ptBankName').value.trim();
+  const bankNumber = document.getElementById('ptBankNumber').value.trim();
+  const bankHolder = document.getElementById('ptBankHolder').value.trim();
+  const front = document.getElementById('ptCccdFront').files?.length || 0;
+  const back = document.getElementById('ptCccdBack').files?.length || 0;
+  const agree = document.getElementById('ptAgree').checked;
+
+  // Basic validations
+  if (!fullName) return alert('Vui lòng nhập Họ và tên');
+  if (!/^\d{10,11}$/.test(phone)) return alert('Số điện thoại phải 10-11 số');
+  if (!email) return alert('Vui lòng nhập Email');
+  if (!bankName || !bankNumber || !bankHolder) return alert('Vui lòng điền đầy đủ thông tin ngân hàng');
+  if (!/^\d{6,20}$/.test(bankNumber)) return alert('Số tài khoản không hợp lệ');
+  if (!front || !back) return alert('Vui lòng tải lên ảnh CCCD (mặt trước & mặt sau)');
+  if (!agree) return alert('Vui lòng đồng ý với quy định và thoả thuận của BuddySkincare');
+
+  // Convert images to base64 (simple client approach)
+  const toBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  try {
+    const fFile = document.getElementById('ptCccdFront').files[0];
+    const bFile = document.getElementById('ptCccdBack').files[0];
+    const front64 = await toBase64(fFile);
+    const back64 = await toBase64(bFile);
+
+    const payload = {
+      full_name: fullName,
+      phone: phone,
+      email: email,
+      address: document.getElementById('ptAddress').value.trim(),
+      bank_name: bankName,
+      bank_number: bankNumber,
+      bank_holder: bankHolder,
+      cccd_front_url: front64,
+      cccd_back_url: back64,
+      sales_plan: document.getElementById('ptPlan').value.trim(),
+      agreed: true
+    };
+
+    const resp = await fetch('https://buddyskincare.pythonanywhere.com/ctv-applications/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      const msg = err.detail || JSON.stringify(err) || 'Đăng ký thất bại';
+      return alert(msg);
+    }
+    alert('Đã gửi đăng ký! Chúng tôi sẽ liên hệ sớm.');
+    e.target.reset();
+  } catch (err) {
+    alert('Có lỗi khi gửi đăng ký: ' + (err?.message || err));
+  }
 });
 </script>
 {% endblock %} 

@@ -141,7 +141,6 @@
     height: 140px !important;
     border-radius: 4px;
     margin-bottom: 0.3rem;
-    p
   }
 
   @media (min-width: 480px) {
@@ -318,7 +317,7 @@
   }
 
   #participantsBody {
-    max-height: 300px;
+    max-height: 620px;
     overflow-y: auto;
     padding-right: 0.5rem;
   }
@@ -340,6 +339,7 @@
   #participantsBody::-webkit-scrollbar-thumb:hover {
     background: #a8a8a8;
   }
+
 
   /* Phone search styles */
   #phoneSearch {
@@ -1121,7 +1121,7 @@
             </div>
             <p class=" small mb-0 fw-bold" id="resultAnnouncementTime">
                 <i class="fas fa-bullhorn me-1"></i>
-                Kết quả công bố: <span id="endTimeDisplay">--</span>
+                Kết quả công bố vào: <span id="endTimeDisplay">--</span>
               </p>
           </div>
           <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -1466,6 +1466,38 @@
     </div>
   </div>
 </div>
+
+<!-- Sản Phẩm Mới Về -->
+<div class="container-fluid py-5" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <div class="text-center mb-5">
+          <h2 class="h3 mb-3" style="color: #2d3748; font-weight: 700;">
+            <i class="fas fa-star me-2 text-warning"></i>
+            Sản Phẩm Mới Về
+          </h2>
+          <p class="text-muted">Khám phá những sản phẩm mới nhất từ BuddySkincare</p>
+        </div>
+        
+        <div id="newProductsContainer">
+          <div class="col-12 text-center">
+            <div class="loading-spinner"></div>
+            <p class="text-muted mt-2">Đang tải sản phẩm mới...</p>
+          </div>
+        </div>
+        
+        <div class="text-center mt-4">
+          <a href="/products" class="btn btn-primary btn-lg">
+            <i class="fas fa-shopping-bag me-2"></i>
+            Xem Tất Cả Sản Phẩm
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1926,10 +1958,17 @@ function setupCountdown() {
 async function loadWinners() {
   try {
     utils.showLoading('winnersLoading', true);
-    
-    // Danh sách trúng thưởng - tạm thời để rỗng vì chưa có API winners
-    // Trong tương lai sẽ gọi /lucky-winners/ khi có dữ liệu
-    const winners = [];
+    // Ensure we have an active event
+    if (!state.activeEvent) {
+      await loadActiveEvent();
+      if (!state.activeEvent) {
+        renderWinners([]);
+        return;
+      }
+    }
+    const eventId = state.activeEvent.id;
+    const data = await SmartAPI.getJson(`/lucky-winners/?event=${eventId}`);
+    const winners = Array.isArray(data) ? data : [];
     renderWinners(winners);
   } catch (error) {
     console.error('Error loading winners:', error);
@@ -1942,31 +1981,34 @@ async function loadWinners() {
 function renderWinners(winners) {
   const container = document.getElementById('winnersBody');
   if (!container) return;
-  
-  if (winners.length === 0) {
+  if (!Array.isArray(winners) || winners.length === 0) {
     container.innerHTML = '<p class="text-muted text-center">Chưa có người trúng thưởng nào</p>';
     return;
   }
-  
-  container.innerHTML = winners.map(winner => `
-    <div class="col-md-6 col-lg-4">
-      <div class="winner-card fade-in">
-        <div class="d-flex align-items-center mb-2">
-          <i class="fas fa-trophy text-warning me-2"></i>
-          <strong>${winner.name}</strong>
+  container.innerHTML = winners.map((w, idx) => {
+    const p = w.participant || {};
+    const prize = w.prize || {};
+    const name = p.name || '';
+    const chosen = String(p.chosen_number || '').padStart(2,'0');
+    const prizeName = prize.name || '—';
+    const time = p.submitted_at ? new Date(p.submitted_at).toLocaleString('vi-VN') : '';
+    const phone = String(p.zalo_phone || '');
+    const maskedPhone = phone && phone.length >= 10 ? (phone.slice(0,1) + 'xxx xxx ' + phone.slice(-3)) : phone;
+    return `
+    <div class="col-12">
+      <div class="d-flex align-items-center justify-content-between border rounded px-2 py-2 mb-2" style="font-size:14px;">
+        <div class="d-flex align-items-center flex-wrap" style="gap:8px;">
+          <i class="fas fa-trophy text-warning"></i>
+          <span class="badge bg-warning text-dark">Top ${idx+1}</span>
+          <strong>${name}</strong>
+          <span class="text-muted">${maskedPhone}</span>
+          <span class="badge bg-primary">${chosen}</span>
+          <span class="text-muted">${prizeName}</span>
         </div>
-        <div class="text-muted mb-2">
-          <small>Số may mắn: <span class="badge bg-primary">${winner.chosen_number}</span></small>
-        </div>
-        <div class="text-muted mb-2">
-          <small>Phần thưởng: <strong>Đang chờ công bố</strong></small>
-        </div>
-        <div class="text-muted">
-          <small>Thời gian: ${new Date(winner.submitted_at).toLocaleString('vi-VN')}</small>
-        </div>
+        <small class="text-muted">${time}</small>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 function showNoActiveEvent() {
@@ -2029,8 +2071,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   await Promise.all([
     loadActiveEvent(),
     loadWinners(),
-    loadParticipants()
+    loadParticipants(),
+    loadNewProducts()
   ]);
+  
+  // Handle window resize for carousel
+  window.addEventListener('resize', () => {
+    layoutSlider('#newProductsContainer');
+  });
+  
+  // Initialize favorite buttons
+  initFavoriteButtons();
+  
+  // Update favorite badge count
+  updateFavBadgeCount();
 });
 
 // Global state for participants
@@ -2176,6 +2230,535 @@ function clearSearch() {
   renderParticipants(allParticipants, false);
 }
 
+// Load new products with carousel (using same function as index)
+async function loadNewProducts() {
+  const container = document.getElementById('newProductsContainer');
+  if (!container) return;
+  
+  // Sử dụng cùng hàm fetchAndRenderProducts như trang index
+  await fetchAndRenderProducts('https://buddyskincare.pythonanywhere.com/products/?limit=20', '#newProductsContainer', createProductCard);
+}
+
+// Hàm chung để fetch và render sản phẩm (copy từ main.js)
+async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = createProductCard, viewAllButton = null) {
+    const container = document.querySelector(containerSelector);
+    if (!container) {
+        console.error(`Không tìm thấy container với selector: ${containerSelector}`);
+        return;
+    }
+
+    // Xóa nội dung cũ trước khi thêm mới
+    container.innerHTML = '';
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error('Lỗi khi lấy dữ liệu từ API');
+        }
+        const products = await response.json();
+        
+        if (products.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center py-4">Không có sản phẩm nào để hiển thị.</p>';
+            return;
+        }
+
+        // Tạo wrapper cho carousel
+        const carouselWrapper = document.createElement('div');
+        carouselWrapper.className = 'position-relative';
+        carouselWrapper.style.overflow = 'hidden';
+        carouselWrapper.style.padding = '10px 40px';
+        
+        // Tạo container cho sản phẩm (1 hàng, không xuống dòng)
+        const productsContainer = document.createElement('div');
+        productsContainer.className = 'homepage-products';
+        productsContainer.style.display = 'flex';
+        productsContainer.style.flexWrap = 'nowrap';
+        productsContainer.style.gap = '16px';
+        productsContainer.style.transition = 'transform 0.4s ease';
+        productsContainer.style.willChange = 'transform';
+        productsContainer.id = `${containerSelector.replace('#', '')}-products`;
+        productsContainer.dataset.currentIndex = '0';
+        productsContainer.dataset.totalProducts = String(products.length);
+        productsContainer.dataset.productsPerView = '5';
+
+        const productsPerView = 5;
+        // Tạo tất cả sản phẩm; width sẽ được tính theo pixel trong layoutSlider()
+        products.forEach(product => {
+            const item = document.createElement('div');
+            item.className = 'slider-item';
+            item.style.flex = '0 0 auto';
+            item.style.minWidth = '0';
+            item.innerHTML = cardFunction(product);
+            productsContainer.appendChild(item);
+        });
+
+        carouselWrapper.appendChild(productsContainer);
+        container.appendChild(carouselWrapper);
+
+        // Initialize favorite button states
+        setTimeout(() => {
+          const favoriteButtons = container.querySelectorAll('.fav-toggle');
+          favoriteButtons.forEach(button => {
+            const productId = button.dataset.id;
+            updateFavoriteButtonState(button, productId);
+          });
+        }, 100);
+
+        // Thêm nút điều hướng nếu có nhiều hơn productsPerView sản phẩm
+        if (products.length > productsPerView) {
+            // Nút trái
+            const leftBtn = document.createElement('button');
+            leftBtn.className = 'btn btn-light position-absolute carousel-nav-btn carousel-left-btn';
+            leftBtn.style.cssText = 'z-index: 10; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); top: calc(40% - 10px); left: 20px; transform: translateY(-50%); background-color: #fff;';
+            leftBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+            leftBtn.onclick = () => navigateProducts(containerSelector, 'left');
+            
+            // Nút phải
+            const rightBtn = document.createElement('button');
+            rightBtn.className = 'btn btn-light position-absolute carousel-nav-btn carousel-right-btn';
+            rightBtn.style.cssText = 'z-index: 10; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); top: calc(40% - 10px); right: 20px; transform: translateY(-50%); background-color: #fff;';
+            rightBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            rightBtn.onclick = () => navigateProducts(containerSelector, 'right');
+            
+            carouselWrapper.appendChild(leftBtn);
+            carouselWrapper.appendChild(rightBtn);
+
+            // Cập nhật trạng thái ban đầu
+            updateNavigationButtons(containerSelector, 0);
+        }
+
+        // Tính layout theo kích thước wrapper hiện tại
+        layoutSlider(containerSelector);
+
+    } catch (error) {
+        console.error(`Đã xảy ra lỗi khi tải dữ liệu từ ${apiUrl}:`, error);
+        container.innerHTML = '<p class="text-danger text-center py-4">Không thể tải dữ liệu sản phẩm. Vui lòng thử lại sau.</p>';
+    }
+}
+
+// Format price
+function formatPrice(price) {
+  if (!price) return '0';
+  return parseFloat(price).toLocaleString('vi-VN');
+}
+
+// Check if product is flash sale
+function isFlashSaleProduct(product) {
+  if (!product.tags || !Array.isArray(product.tags)) return false;
+  return product.tags.some(tag => 
+    tag && typeof tag === 'object' && tag.name && 
+    tag.name.toLowerCase().includes('flash')
+  );
+}
+
+// Create product card (same as index.html)
+function createProductCard(product) {
+  // Map to backend Product model (no variants/album)
+  const imageUrl = (product.image && String(product.image).trim()) || '/static/image/default-product.jpg';
+  const brandName = product.brand_name || (product.brand ? product.brand.name : 'Không rõ');
+  
+  // Check if product has FlashSale tag
+  const isFlashSale = isFlashSaleProduct(product);
+
+  // Determine if product is new by status; otherwise it's used
+  const statusText = (product.status || '').toString().toLowerCase();
+  const isNewByStatus = statusText.includes('new') || statusText.includes('chiet');
+  let remainingPercent = null;
+  if (!isNewByStatus) {
+    const m = statusText.match(/(\d{2})/);
+    remainingPercent = m ? m[1] : null;
+  }
+  const usedLabel = !isNewByStatus
+    ? (statusText.includes('test') ? 'Test 1-2 lần' : (remainingPercent ? `Còn ${remainingPercent}%` : null))
+    : null;
+  const newLabel = isNewByStatus ? (function(){
+    if (statusText.includes('chiet')) return 'Chiết';
+    if (statusText === 'new') return 'New đẹp';
+    if (statusText.includes('newmh')) return 'New mất hộp';
+    if (statusText.includes('newm')) return 'New móp hộp';
+    if (statusText.includes('newrt')) return 'New rách tem';
+    if (statusText.includes('newmn')) return 'New móp nhẹ';
+    if (statusText.includes('newx')) return 'New xước nhẹ';
+    if (statusText.includes('newspx')) return 'New xước';
+    return 'New';
+  })() : null;
+  const infoLabel = isNewByStatus ? newLabel : usedLabel;
+
+  const originalPrice = typeof product.original_price === 'number' ? product.original_price * 1000 : null;
+  const discountedPrice = typeof product.discounted_price === 'number' ? product.discounted_price * 1000 : null;
+  const rating = typeof product.rating === 'number' ? product.rating : (parseFloat(product.rating) || 0);
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5 && rating % 1 < 1;
+
+  let starsHTML = '';
+  for (let i = 0; i < fullStars; i++) starsHTML += '<i class="fas fa-star"></i>';
+  if (hasHalfStar) starsHTML += '<i class="fas fa-star-half-alt"></i>';
+  for (let i = fullStars + (hasHalfStar ? 1 : 0); i < 5; i++) starsHTML += '<i class="far fa-star"></i>';
+
+  const discountRate = (typeof product.discount_rate === 'number')
+    ? Math.round(product.discount_rate)
+    : ((originalPrice && discountedPrice) ? Math.round(((originalPrice - discountedPrice) / originalPrice) * 100) : 0);
+  const stockQuantity = typeof product.stock_quantity === 'number' ? product.stock_quantity : 0;
+
+  const productName = product.name;
+
+  // Check if product is out of stock
+  const isOutOfStock = stockQuantity <= 0;
+
+  const cardHTML = `
+    <div class="product-card card h-100 border-0 shadow-sm ${isFlashSale ? 'flash-sale-card' : ''}" style="${isFlashSale ? 'border: 1px solid #ffc107 !important;' : ''}">
+        <div class="position-relative">
+          <a href="/product/${product.id}" class="text-decoration-none">
+            <img src="${imageUrl}" class="card-img-top" alt="${productName}" style="height: 220px; object-fit: cover; ${isOutOfStock ? 'filter: grayscale(100%);' : ''}">
+          </a>
+          ${isOutOfStock ? `
+          <!-- Out of Stock Overlay -->
+          <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+               style="background-color: rgba(0,0,0,0.7); border-radius: 6px;">
+              <div class="text-center text-white">
+                  <i class="fas fa-times-circle fa-2x mb-1"></i>
+                  <h6 class="fw-bold mb-0">HẾT HÀNG</h6>
+              </div>
+          </div>
+          ` : ''}
+          <button class="fav-toggle position-absolute top-0 end-0 m-2" 
+                  title="Thêm vào yêu thích" 
+                  data-id="${product.id}"
+                  data-name="${String(productName).replace(/\"/g,'\\\"')}"
+                  data-image="${imageUrl}"
+                  data-brand="${String(brandName).replace(/\"/g,'\\\"')}"
+                  data-price="${discountedPrice || 0}"
+                  style="border:none;background:transparent;cursor:pointer;">
+              <i class="far fa-heart" style="font-size: 18px; color:#fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
+          </button>
+          <div class="position-absolute bottom-0 start-0 m-1">
+              <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
+          </div>
+          <div class="product-badges-row position-absolute" style="top:8px;left:10px;display:flex;gap:6px;align-items:center;z-index:2;">
+              ${isFlashSale ? 
+                  `<div class="badge bg-warning text-dark flash-sale-badge" style="font-size: 10px; padding: 4px 6px;"><i class="fas fa-bolt me-1"></i>FLASH SALE</div>` : 
+                  (discountRate > 0 ? `<div class=\"badge bg-danger discount-badge-left\" style=\"font-size: 11px; padding: 4px 8px;\">-${discountRate}%</div>` : '')
+              }
+              ${infoLabel ? `<div class=\"product-info-badge\" style=\"font-size: 10px; padding: 1px 6px; background:#eaf4ff; border:1px solid #b8d4ff; color:#1e56a0; border-radius:6px;\"><i class="fas fa-circle-info me-1"></i>${infoLabel}</div>` : ''}
+          </div>
+        </div>
+        <div class="card-body d-flex flex-column">
+          <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
+              <a href="/product/${product.id}" class="text-decoration-none text-dark">${productName}</a>
+          </h6>
+          <p class="text-muted small mb-2" style="font-size: 10px;">${brandName}${infoLabel ? ` • ${infoLabel}` : ''}</p>
+          <div class="d-flex align-items-center mb-1">
+              ${originalPrice ? `<span class="text-decoration-line-through text-muted me-1" style="font-size: 11px;">${formatPrice(originalPrice)}</span>` : ''}
+              <span class="text-danger fw-bold" style="font-size: 15px;">${formatPrice(discountedPrice)}</span>
+          </div>
+          <div class="d-flex align-items-center mb-3">
+              <div class="stars text-warning me-2" style="font-size: 12px;">
+                  ${starsHTML}
+              </div>
+              <small class="text-muted" style="font-size: 11px;">(${rating})</small>
+              <span class="badge ${isOutOfStock ? 'bg-danger' : 'bg-success'}" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">${isOutOfStock ? 'Hết hàng' : `Còn ${stockQuantity}`}</span>
+          </div>
+          <button class="btn w-100 add-to-cart-btn ${isOutOfStock ? 'btn-secondary' : (isFlashSale ? 'btn-warning text-dark' : 'btn-light text-dark border')}" 
+                  data-product-id="${product.id}" 
+                  style="font-size: 13px; padding: 8px;" 
+                  ${isOutOfStock ? 'disabled' : ''}>
+              ${isOutOfStock ? 'Hết hàng' : 'Thêm vào giỏ'}
+          </button>
+        </div>
+      </div>
+  `;
+  return cardHTML;
+}
+
+// View product
+function viewProduct(productId) {
+  window.open(`/product-detail?id=${productId}`, '_blank');
+}
+
+// Layout slider function
+function layoutSlider(containerSelector) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  
+  const productsContainer = container.querySelector('.homepage-products');
+  if (!productsContainer) return;
+  
+  const wrapper = productsContainer.parentElement;
+  
+  // Responsive products per view
+  let productsPerView = 5; // Desktop default
+  let paddingX = 80;
+  let gap = 16;
+  
+  if (window.innerWidth <= 575.98) {
+    productsPerView = 2; // Mobile: 2 sản phẩm
+    paddingX = 40;
+    gap = 12;
+  } else if (window.innerWidth <= 991.98) {
+    productsPerView = 3; // Tablet: 3 sản phẩm
+    paddingX = 60;
+    gap = 14;
+  }
+  
+  // Cập nhật dataset
+  productsContainer.dataset.productsPerView = productsPerView.toString();
+  
+  const availableWidth = wrapper.clientWidth - paddingX;
+  const totalGapWidth = gap * (productsPerView - 1);
+  const itemWidth = Math.floor((availableWidth - totalGapWidth) / productsPerView);
+  
+  // Cập nhật width cho tất cả items
+  const items = productsContainer.querySelectorAll('.slider-item');
+  items.forEach(item => {
+    item.style.width = `${itemWidth}px`;
+  });
+  
+  // Cập nhật gap
+  productsContainer.style.gap = `${gap}px`;
+  
+  // Cập nhật padding cho wrapper
+  wrapper.style.padding = `10px ${paddingX}px`;
+  
+  // Cập nhật transform ban đầu
+  productsContainer.style.transform = 'translateX(0px)';
+  
+  // Cập nhật trạng thái nút điều hướng
+  const currentIndex = parseInt(productsContainer.dataset.currentIndex || '0', 10);
+  updateNavigationButtons(containerSelector, currentIndex);
+}
+
+// Navigate products function
+function navigateProducts(containerSelector, direction) {
+  const container = document.querySelector(containerSelector);
+  const productsContainer = container.querySelector('.homepage-products');
+  if (!productsContainer) return;
+  const wrapper = productsContainer.parentElement;
+
+  const currentIndex = parseInt(productsContainer.dataset.currentIndex || '0', 10);
+  const totalProducts = parseInt(productsContainer.dataset.totalProducts || '0', 10);
+  
+  // Responsive products per view (same logic as layoutSlider)
+  let productsPerView = 5; // Desktop default
+  let paddingX = 80;
+  let gap = 16;
+  
+  if (window.innerWidth <= 575.98) {
+    productsPerView = 2; // Mobile: 2 sản phẩm
+    paddingX = 40;
+    gap = 12;
+  } else if (window.innerWidth <= 991.98) {
+    productsPerView = 3; // Tablet: 3 sản phẩm
+    paddingX = 60;
+    gap = 14;
+  }
+
+  // Tính step theo chiều rộng 1 item + gap
+  const firstItem = productsContainer.querySelector('.slider-item');
+  const availableWidth = wrapper.clientWidth - paddingX;
+  const totalGapWidth = gap * (productsPerView - 1);
+  const itemWidth = firstItem ? firstItem.offsetWidth : Math.floor((availableWidth - totalGapWidth) / productsPerView);
+  const step = itemWidth + gap;
+
+  // Chỉ số bắt đầu tối đa sao cho vẫn đủ productsPerView sản phẩm trong khung nhìn
+  const maxStartIndex = Math.max(0, totalProducts - productsPerView);
+
+  let newIndex = currentIndex;
+  if (direction === 'left') {
+    newIndex = Math.max(0, currentIndex - 1);
+  } else {
+    newIndex = Math.min(maxStartIndex, currentIndex + 1);
+  }
+
+  if (newIndex !== currentIndex) {
+    productsContainer.dataset.currentIndex = String(newIndex);
+    const translatePx = -newIndex * step;
+    productsContainer.style.transform = `translateX(${translatePx}px)`;
+    updateNavigationButtons(containerSelector, newIndex);
+  }
+}
+
+// Update navigation buttons
+function updateNavigationButtons(containerSelector, currentIndex) {
+  const container = document.querySelector(containerSelector);
+  const leftBtn = container.querySelector('.carousel-left-btn');
+  const rightBtn = container.querySelector('.carousel-right-btn');
+  const productsContainer = container.querySelector('.homepage-products');
+  
+  if (!productsContainer) return;
+  
+  const totalProducts = parseInt(productsContainer.dataset.totalProducts || '0', 10);
+  
+  // Responsive products per view (same logic as layoutSlider)
+  let productsPerView = 5; // Desktop default
+  
+  if (window.innerWidth <= 575.98) {
+    productsPerView = 2; // Mobile: 2 sản phẩm
+  } else if (window.innerWidth <= 991.98) {
+    productsPerView = 3; // Tablet: 3 sản phẩm
+  }
+  
+  const maxStartIndex = Math.max(0, totalProducts - productsPerView);
+  
+  if (leftBtn) {
+    leftBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
+    leftBtn.disabled = currentIndex === 0;
+  }
+  
+  if (rightBtn) {
+    rightBtn.style.opacity = currentIndex >= maxStartIndex ? '0.5' : '1';
+    rightBtn.disabled = currentIndex >= maxStartIndex;
+  }
+}
+
+// Initialize favorite buttons - sync with main.js wishlist system
+function initFavoriteButtons() {
+  // Add event listeners to existing favorite buttons
+  document.addEventListener('click', function(e) {
+    if (e.target.closest('.fav-toggle')) {
+      e.preventDefault();
+      const button = e.target.closest('.fav-toggle');
+      const productId = button.dataset.id;
+      const productName = button.dataset.name;
+      const productImage = button.dataset.image;
+      const productBrand = button.dataset.brand;
+      const productPrice = button.dataset.price;
+      
+      // Use main.js wishlist system
+      const item = {
+        id: productId,
+        name: productName,
+        image: productImage,
+        brand: productBrand,
+        price: parseFloat(productPrice) // Không nhân 1000, để main.js xử lý
+      };
+      
+      const added = toggleWishlist(item);
+      updateFavoriteButtonState(button, productId);
+      
+      // Show notification
+      if (added) {
+        showNotification('Đã thêm vào danh sách yêu thích', 'success');
+      } else {
+        showNotification('Đã xóa khỏi danh sách yêu thích', 'info');
+      }
+    }
+  });
+}
+
+// Wishlist functions - sync with main.js
+function getWishlist() {
+    try {
+        const raw = localStorage.getItem('wishlist_v1');
+        const parsed = raw ? JSON.parse(raw) : {};
+        // Normalize to map shape if older data was an array
+        if (Array.isArray(parsed)) {
+            const map = {};
+            parsed.forEach(it => {
+                if (it && (it.id !== undefined && it.id !== null)) {
+                    map[String(it.id)] = it;
+                }
+            });
+            return map;
+        }
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function setWishlist(map) {
+    try {
+        localStorage.setItem('wishlist_v1', JSON.stringify(map));
+    } catch (e) {}
+}
+
+function toggleWishlist(item) {
+    const map = getWishlist();
+    const key = String(item.id);
+    const existed = Boolean(map[key]);
+    if (existed) {
+        delete map[key];
+    } else {
+        map[key] = item;
+    }
+    setWishlist(map);
+    updateFavBadgeCount();
+    return !existed; // true if added, false if removed
+}
+
+function updateFavBadgeCount() {
+    const map = getWishlist();
+    const count = Object.keys(map).length;
+    const fab = document.getElementById('favFab');
+    if (!fab) return;
+    let badge = fab.querySelector('.fav-count-badge');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'fav-count-badge';
+        badge.style.cssText = 'position:absolute;top:-6px;right:-6px;background:#fff;color:#dc3545;border:1px solid rgba(0,0,0,.05);border-radius:999px;padding:0 6px;font-size:10px;font-weight:700;line-height:18px;min-width:18px;text-align:center;';
+        fab.style.position = 'relative';
+        fab.appendChild(badge);
+    }
+    badge.textContent = String(count);
+}
+
+// Check if product is favorited
+function isFavorited(productId) {
+    const map = getWishlist();
+    return Boolean(map[String(productId)]);
+}
+
+// Update favorite button state
+function updateFavoriteButtonState(button, productId) {
+  const icon = button.querySelector('i');
+  const isFav = isFavorited(productId);
+  
+  if (isFav) {
+    icon.classList.remove('far');
+    icon.classList.add('fas');
+    icon.style.color = '#dc3545';
+    button.title = 'Xóa khỏi yêu thích';
+  } else {
+    icon.classList.remove('fas');
+    icon.classList.add('far');
+    icon.style.color = '#fff';
+    button.title = 'Thêm vào yêu thích';
+  }
+}
+
+// Format price function - sync with main.js
+function formatPrice(price) {
+  if (!price || isNaN(price)) return '0 VNĐ';
+  // Không nhân 1000 vì main.js đã xử lý việc nhân 1000 trong renderWishlistDrawer
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(price).replace('₫', 'VNĐ');
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+  // Create notification element
+  const notification = document.createElement('div');
+  notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+  notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+  notification.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 1000);
+}
+
 // Global functions for backward compatibility
 function changeNumber(delta) {
   handlers.changeNumber(delta);
@@ -2187,6 +2770,8 @@ window.loadParticipants = loadParticipants;
 window.changeNumber = changeNumber;
 window.searchByPhone = searchByPhone;
 window.clearSearch = clearSearch;
+window.loadNewProducts = loadNewProducts;
+window.viewProduct = viewProduct;
 </script>
 {% endblock %}
 

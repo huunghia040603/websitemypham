@@ -949,3 +949,53 @@ class LuckyWinnerSerializer(serializers.ModelSerializer):
         model = LuckyWinner
         fields = ['participant', 'prize', 'decided_at']
 
+
+# --- CTV (Affiliate) Serializers ---
+class CTVLevelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CTVLevel
+        fields = ['id', 'name', 'commission_percent', 'description']
+
+
+class CTVApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CTVApplication
+        fields = [
+            'id', 'full_name', 'phone', 'email', 'address',
+            'bank_name', 'bank_number', 'bank_holder',
+            'cccd_front_url', 'cccd_back_url', 'sales_plan',
+            'agreed', 'status', 'created_at'
+        ]
+
+    def validate(self, attrs):
+        required = ['full_name', 'phone', 'email', 'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url']
+        for f in required:
+            if not attrs.get(f):
+                raise serializers.ValidationError({f: 'Trường này là bắt buộc'})
+        if not attrs.get('agreed', False):
+            raise serializers.ValidationError({'agreed': 'Bạn phải đồng ý với quy định'})
+        return attrs
+
+
+class CTVSerializer(serializers.ModelSerializer):
+    level = CTVLevelSerializer(read_only=True)
+
+    class Meta:
+        model = CTV
+        fields = [
+            'id', 'code', 'full_name', 'phone', 'email', 'address',
+            'bank_name', 'bank_number', 'bank_holder', 'level', 'is_active', 'joined_at'
+        ]
+
+
+class CTVWalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CTVWallet
+        fields = ['balance', 'pending', 'updated_at']
+
+
+class CTVWithdrawalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CTVWithdrawal
+        fields = ['id', 'amount', 'status', 'requested_at', 'processed_at', 'note']
+

@@ -1079,11 +1079,8 @@ class LuckyEventViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='winners')
     def winners(self, request, pk=None):
         event = self.get_object()
-        winner = getattr(event, 'winner', None)
-        if not winner:
-            return Response([],
-                            status=status.HTTP_200_OK)
-        return Response([LuckyWinnerSerializer(winner).data])
+        winners_qs = LuckyWinner.objects.filter(event=event).select_related('participant', 'prize')
+        return Response(LuckyWinnerSerializer(winners_qs, many=True).data)
 
     @action(detail=True, methods=['post'], url_path='finalize')
     def finalize(self, request, pk=None):
@@ -1099,15 +1096,25 @@ class LuckyEventViewSet(viewsets.ModelViewSet):
         if not event.lucky_number:
             return Response({'detail': 'Chưa có lucky_number'}, status=400)
 
-        # tìm người thắng: đúng số và thời gian gửi sớm nhất
-        participant = LuckyParticipant.objects.filter(event=event, chosen_number=event.lucky_number).order_by('submitted_at').first()
-        if not participant:
+        # tìm tất cả người thắng theo số may mắn, sắp xếp theo thời gian gửi
+        participants = list(LuckyParticipant.objects.filter(event=event, chosen_number=event.lucky_number).order_by('submitted_at'))
+        if not participants:
             return Response({'detail': 'Không có người thắng cho số này'}, status=200)
 
-        # chọn prize đầu tiên (nếu có)
-        prize = event.prizes.order_by('order', 'id').first()
-        LuckyWinner.objects.update_or_create(event=event, defaults={'participant': participant, 'prize': prize})
-        return Response({'detail': 'Đã chốt kết quả', 'winner': LuckyWinnerSerializer(event.winner).data})
+        prizes = list(event.prizes.order_by('order', 'id'))
+        if not prizes:
+            return Response({'detail': 'Chưa cấu hình giải thưởng cho sự kiện'}, status=400)
+
+        # Gán lần lượt từng prize cho người thắng theo thứ tự gửi
+        LuckyWinner.objects.filter(event=event).delete()
+        created = []
+        for idx, prize in enumerate(prizes):
+            if idx >= len(participants):
+                break
+            winner = LuckyWinner.objects.create(event=event, participant=participants[idx], prize=prize)
+            created.append(winner)
+
+        return Response({'detail': 'Đã chốt kết quả', 'winners': LuckyWinnerSerializer(created, many=True).data})
 
 
 class LuckyParticipantViewSet(viewsets.ModelViewSet):
@@ -1187,4 +1194,49 @@ class LuckyWinnerViewSet(viewsets.ReadOnlyModelViewSet):
         if event_id:
             queryset = queryset.filter(event_id=event_id)
         return queryset
+
+
+# --- CTV (Affiliate) Views ---
+class CTVApplicationViewSet(viewsets.ModelViewSet):
+    queryset = CTVApplication.objects.all().order_by('-created_at')
+    serializer_class = CTVApplicationSerializer
+    permission_classes = [AllowAny]
+
+
+class CTVLevelViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CTVLevel.objects.all()
+    serializer_class = CTVLevelSerializer
+    permission_classes = [AllowAny]
+
+
+class CTVViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CTV.objects.all().select_related('level')
+    serializer_class = CTVSerializer
+    permission_classes = [AllowAny]
+
+    @action(detail=True, methods=['get'], url_path='wallet')
+    def wallet(self, request, pk=None):
+        ctv = self.get_object()
+        wallet, _ = CTVWallet.objects.get_or_create(ctv=ctv)
+        return Response(CTVWalletSerializer(wallet).data)
+
+    @action(detail=True, methods=['post'], url_path='withdraw')
+    def withdraw(self, request, pk=None):
+        ctv = self.get_object()
+        amount = request.data.get('amount')
+        try:
+            amt = float(amount)
+        except Exception:
+            return Response({'detail': 'Số tiền không hợp lệ'}, status=400)
+        if amt <= 0:
+            return Response({'detail': 'Số tiền phải > 0'}, status=400)
+        wallet, _ = CTVWallet.objects.get_or_create(ctv=ctv)
+        if amt > float(wallet.balance):
+            return Response({'detail': 'Số dư không đủ'}, status=400)
+        # move to pending
+        wallet.balance = float(wallet.balance) - amt
+        wallet.pending = float(wallet.pending) + amt
+        wallet.save()
+        CTVWithdrawal.objects.create(ctv=ctv, amount=amt, status='pending')
+        return Response({'detail': 'Đã tạo yêu cầu rút, chờ duyệt', 'wallet': CTVWalletSerializer(wallet).data})
 

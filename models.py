@@ -612,7 +612,7 @@ class LuckyParticipant(models.Model):
 
 
 class LuckyWinner(models.Model):
-    event = models.OneToOneField(LuckyEvent, on_delete=models.CASCADE, related_name='winner', verbose_name="Sự kiện")
+    event = models.ForeignKey(LuckyEvent, on_delete=models.CASCADE, related_name='winners', verbose_name="Sự kiện")
     participant = models.ForeignKey(LuckyParticipant, on_delete=models.CASCADE, related_name='won_records', verbose_name="Người trúng")
     prize = models.ForeignKey(LuckyPrize, on_delete=models.SET_NULL, null=True, blank=True, related_name='winners', verbose_name="Phần thưởng")
     decided_at = models.DateTimeField(auto_now_add=True, verbose_name="Thời điểm xác định")
@@ -620,6 +620,9 @@ class LuckyWinner(models.Model):
     class Meta:
         verbose_name = "Người trúng thưởng"
         verbose_name_plural = "Người trúng thưởng"
+        constraints = [
+            models.UniqueConstraint(fields=['event', 'prize'], name='unique_event_prize_winner')
+        ]
 
     def __str__(self):
         return f"Winner {self.participant.name} ({self.participant.chosen_number})"
@@ -631,5 +634,94 @@ class LuckyWinner(models.Model):
 
 
 
+
+# --- CTV (Affiliate) Models ---
+class CTVLevel(models.Model):
+    name = models.CharField(max_length=100)
+    commission_percent = models.DecimalField(max_digits=5, decimal_places=2, default=10.0)
+    description = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Cấp CTV"
+        verbose_name_plural = "Cấp CTV"
+
+    def __str__(self):
+        return f"{self.name} ({self.commission_percent}%)"
+
+
+class CTVApplication(models.Model):
+    full_name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    address = models.CharField(max_length=255, blank=True, null=True)
+    bank_name = models.CharField(max_length=120)
+    bank_number = models.CharField(max_length=50)
+    bank_holder = models.CharField(max_length=150)
+    cccd_front_url = models.CharField(max_length=500)
+    cccd_back_url = models.CharField(max_length=500)
+    sales_plan = models.TextField(blank=True, null=True)
+    agreed = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, default='pending')  # pending/approved/rejected
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Đơn đăng ký CTV"
+        verbose_name_plural = "Đơn đăng ký CTV"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"CTVApplication {self.full_name} - {self.phone} ({self.status})"
+
+
+class CTV(models.Model):
+    code = models.CharField(max_length=20, unique=True)
+    full_name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=20)
+    email = models.EmailField()
+    address = models.CharField(max_length=255, blank=True, null=True)
+    bank_name = models.CharField(max_length=120)
+    bank_number = models.CharField(max_length=50)
+    bank_holder = models.CharField(max_length=150)
+    level = models.ForeignKey(CTVLevel, on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "CTV"
+        verbose_name_plural = "CTV"
+
+    def __str__(self):
+        return f"{self.code} - {self.full_name}"
+
+
+class CTVWallet(models.Model):
+    ctv = models.OneToOneField(CTV, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)  # VND
+    pending = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Ví CTV"
+        verbose_name_plural = "Ví CTV"
+
+    def __str__(self):
+        return f"Wallet {self.ctv.code}: {self.balance}"
+
+
+class CTVWithdrawal(models.Model):
+    ctv = models.ForeignKey(CTV, on_delete=models.CASCADE, related_name='withdrawals')
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    status = models.CharField(max_length=20, default='pending')  # pending/approved/rejected
+    requested_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(blank=True, null=True)
+    note = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Yêu cầu rút ví CTV"
+        verbose_name_plural = "Yêu cầu rút ví CTV"
+        ordering = ['-requested_at']
+
+    def __str__(self):
+        return f"Withdraw {self.ctv.code} {self.amount} ({self.status})"
 
 

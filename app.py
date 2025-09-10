@@ -529,6 +529,23 @@ def lucky_number_event():
     """Trang Số may mắn"""
     return render_template('lucky-number.html')
 
+# --- CTV Pages ---
+@app.route('/ctv/dashboard')
+def ctv_dashboard():
+    return render_template('ctv_dashboard.html')
+
+@app.route('/ctv/orders')
+def ctv_orders():
+    return render_template('ctv_orders.html')
+
+@app.route('/ctv/wallet')
+def ctv_wallet():
+    return render_template('ctv_wallet.html')
+
+@app.route('/ctv/place-order')
+def ctv_place_order():
+    return render_template('ctv_place_order.html')
+
 @app.route('/login')
 def login():
     """Trang đăng nhập"""
@@ -756,6 +773,12 @@ def admin_customers():
 def admin_vouchers():
     """Admin - Quản lý voucher"""
     return render_template('admin_vouchers.html')
+
+# Lucky Number admin page
+@app.route('/admin/lucky-number')
+def admin_lucky_number():
+    """Admin - Quản lý sự kiện Số may mắn"""
+    return render_template('admin_lucky_number.html')
 
 # Preview invoice email template in browser
 @app.route('/templates/emails/invoice_email.html')
