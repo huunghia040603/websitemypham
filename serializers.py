@@ -65,7 +65,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'points',
             'level'
         ]
-        read_only_fields = ['id', 'phone_number']
+        read_only_fields = ['id']
 
     def validate_email(self, value):
         if value and self.instance and User.objects.exclude(id=self.instance.id).filter(email=value).exists():
@@ -207,7 +207,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         write_only=True,
         required=True,
         style={'input_type': 'password'},
-        min_length=8
+        min_length=3
     )
     user_type = serializers.CharField(write_only=True, required=False, default='customer')
 
@@ -387,7 +387,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
 
         # Only count orders that are confirmed and not cancelled
         orders = Order.objects.filter(is_confirmed=True).exclude(status='cancelled')
-        
+
         # Set proper date range based on period
         today = date.today()
         if not start and not end:
@@ -409,7 +409,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 # Get start and end of current year
                 start = today.replace(month=1, day=1)
                 end = today.replace(month=12, day=31)
-        
+
         if start: orders = orders.filter(order_date__date__gte=start)
         if end: orders = orders.filter(order_date__date__lte=end)
 
@@ -417,7 +417,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         total_revenue = Decimal('0.00')
         top_selling = {}
         top_revenue = {}
-        
+
         # Create period key based on the date range
         if period == 'day':
             period_key = start.strftime('%Y-%m-%d')
@@ -427,7 +427,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             period_key = start.strftime('%Y-%m')
         else:  # year
             period_key = str(start.year)
-        
+
         # Calculate total revenue for this specific period
         for o in orders:
             total_revenue += (o.total_amount or Decimal('0.00'))
@@ -444,7 +444,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         # For single period, create simple chart data
         labels = [period_key]
         series = [float(total_revenue)]
-        
+
         # Debug: Check if revenue needs scaling
         debug_revenue = []
         for o in orders:
@@ -454,7 +454,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 'shipping_fee': float(o.shipping_fee or 0),
                 'order_date': str(o.order_date.date())
             })
-        
+
         # Check if revenue values seem too small (likely in thousands instead of VND)
         # If average revenue per order is less than 1000, assume it's in thousands
         needs_scaling = False
@@ -465,7 +465,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 # Scale up revenue and series by 1000
                 total_revenue = total_revenue * 1000
                 series = [s * 1000 for s in series]
-        
+
         # Scale up top_revenue if needed
         if needs_scaling:
             for name in top_revenue:
@@ -478,7 +478,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         shipping_by_order = {}
         import_by_order = {}
         debug_import = []
-        
+
         for o in orders:
             # shipping fee may be None
             ship = Decimal(str(o.shipping_fee or 0))
@@ -508,7 +508,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 sub = (unit_import_vnd * qty)
                 import_total += sub
                 import_by_order[str(o.id)] = float(Decimal(str(import_by_order.get(str(o.id), 0))) + sub)
-                
+
                 # Debug info
                 debug_import.append({
                     'order_id': o.id,
@@ -526,7 +526,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             [{'name': n, 'qty': float(q)} for n, q in top_selling.items()],
             key=lambda x: x['qty'], reverse=True
         )[:10]
-        
+
         # Ensure top_revenue is properly scaled
         tr_list = []
         for name, revenue in top_revenue.items():
@@ -534,13 +534,13 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             if revenue < 1000:
                 revenue = revenue * 1000
             tr_list.append({'name': name, 'revenue': float(revenue)})
-        
+
         tr_list = sorted(tr_list, key=lambda x: x['revenue'], reverse=True)[:10]
-        
+
         # Calculate additional analytics
         total_orders = orders.count()
         average_order_value = float(total_revenue / total_orders) if total_orders > 0 else 0
-        
+
         # Top customers by revenue
         customer_revenue = {}
         customer_phone_revenue = {}
@@ -548,25 +548,25 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             customer_name = o.customer_name or 'Khách vãng lai'
             phone = o.phone_number or 'N/A'
             order_revenue = float(o.total_amount or 0)
-            
+
             if needs_scaling and order_revenue < 1000:
                 order_revenue = order_revenue * 1000
-                
+
             customer_revenue[customer_name] = customer_revenue.get(customer_name, 0) + order_revenue
             customer_phone_revenue[phone] = customer_phone_revenue.get(phone, 0) + order_revenue
-        
+
         top_customers = sorted(
             [{'name': name, 'revenue': float(revenue)} for name, revenue in customer_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
         )[:10]
-        
+
         top_customer_phone = max(customer_phone_revenue.items(), key=lambda x: x[1])[0] if customer_phone_revenue else '-'
         # Build phone list for aggregation on frontend
         top_customers_phone = sorted(
             [{'phone': phone, 'revenue': float(rev)} for phone, rev in customer_phone_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
         )[:10]
-        
+
         # Top products by profit
         product_profit = {}
         for o in orders:
@@ -575,24 +575,24 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 qty = float(item.quantity or 0)
                 price = float(item.price_at_purchase or 0)
                 import_price = float(getattr(item.product, 'import_price', 0) or 0)
-                
+
                 if needs_scaling:
                     if price < 1000:
                         price = price * 1000
                     if import_price < 1000:
                         import_price = import_price * 1000
-                
+
                 revenue = price * qty
                 cost = import_price * qty
                 profit = revenue - cost
-                
+
                 product_profit[product_name] = product_profit.get(product_name, 0) + profit
-        
+
         top_profit_products = sorted(
             [{'name': name, 'profit': float(profit)} for name, profit in product_profit.items()],
             key=lambda x: x['profit'], reverse=True
         )[:10]
-        
+
         # Revenue by region (province)
         region_revenue = {}
         for o in orders:
@@ -601,12 +601,12 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             if needs_scaling and order_revenue < 1000:
                 order_revenue = order_revenue * 1000
             region_revenue[region] = region_revenue.get(region, 0) + order_revenue
-        
+
         revenue_by_region = sorted(
             [{'region': region, 'revenue': float(revenue)} for region, revenue in region_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
         )[:10]
-        
+
         # Revenue and quantity by category
         category_revenue = {}
         category_qty = {}
@@ -615,24 +615,24 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 category_name = getattr(item.product.category, 'name', 'Không phân loại')
                 qty = float(item.quantity or 0)
                 price = float(item.price_at_purchase or 0)
-                
+
                 if needs_scaling and price < 1000:
                     price = price * 1000
-                
+
                 revenue = price * qty
                 category_revenue[category_name] = category_revenue.get(category_name, 0) + revenue
                 category_qty[category_name] = category_qty.get(category_name, 0) + qty
-        
+
         revenue_by_category = sorted(
             [{'category': category, 'revenue': float(revenue)} for category, revenue in category_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
         )[:10]
-        
+
         qty_by_category = sorted(
             [{'category': category, 'qty': float(qty)} for category, qty in category_qty.items()],
             key=lambda x: x['qty'], reverse=True
         )[:10]
-        
+
         # Revenue and quantity by brand
         brand_revenue = {}
         brand_qty = {}
@@ -641,19 +641,19 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 brand_name = getattr(item.product.brand, 'name', 'Không xác định')
                 qty = float(item.quantity or 0)
                 price = float(item.price_at_purchase or 0)
-                
+
                 if needs_scaling and price < 1000:
                     price = price * 1000
-                
+
                 revenue = price * qty
                 brand_revenue[brand_name] = brand_revenue.get(brand_name, 0) + revenue
                 brand_qty[brand_name] = brand_qty.get(brand_name, 0) + qty
-        
+
         revenue_by_brand = sorted(
             [{'brand': brand, 'revenue': float(revenue)} for brand, revenue in brand_revenue.items()],
             key=lambda x: x['revenue'], reverse=True
         )[:10]
-        
+
         qty_by_brand = sorted(
             [{'brand': brand, 'qty': float(qty)} for brand, qty in brand_qty.items()],
             key=lambda x: x['qty'], reverse=True
@@ -785,7 +785,7 @@ class OrderSerializer(serializers.ModelSerializer):
         shipping_fee = validated_data.get('shipping_fee', Decimal('0'))
         if shipping_fee is None:
             shipping_fee = Decimal('0')
-        
+
         validated_data['total_amount'] = order_total - discount_amount + shipping_fee
         validated_data['shipping_fee'] = shipping_fee
         validated_data['discount_applied'] = discount_amount
@@ -817,7 +817,7 @@ class OrderSerializer(serializers.ModelSerializer):
         # Lấy giá trị is_confirmed và status từ validated_data
         is_confirmed = validated_data.get('is_confirmed')
         status = validated_data.get('status')
-        
+
         # Đảm bảo is_confirmed không thể thay đổi từ True về False
         if instance.is_confirmed and is_confirmed is False:
             validated_data['is_confirmed'] = True
@@ -829,7 +829,7 @@ class OrderSerializer(serializers.ModelSerializer):
             # Cập nhật status thành 'processing' khi xác nhận
             if status is None:
                 validated_data['status'] = 'processing'
-            
+
             # Lặp qua các sản phẩm trong đơn hàng
             for item in instance.items.all():
                 product = item.product
@@ -844,7 +844,7 @@ class OrderSerializer(serializers.ModelSerializer):
         elif status == 'cancelled' and instance.status != 'cancelled':
             # Đảm bảo is_confirmed vẫn là True khi hủy đơn hàng
             validated_data['is_confirmed'] = True
-            
+
             # Hoàn trả số lượng sản phẩm về kho
             for item in instance.items.all():
                 product = item.product
@@ -859,94 +859,6 @@ class OrderSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# class OrderSerializer(serializers.ModelSerializer):
-#     customer = UserSerializer(read_only=True)
-#     items = OrderItemReadSerializer(many=True, read_only=True)
-#     items_data = OrderItemWriteSerializer(many=True, write_only=True)
-#     voucher_code = serializers.CharField(write_only=True, required=False)
-
-#     class Meta:
-#         model = Order
-#         fields = (
-#             'id', 'customer', 'customer_name', 'phone_number', 'email', 'street',
-#             'ward', 'district', 'province', 'notes', 'payment_method',
-#             'bank_transfer_image', 'order_date', 'total_amount', 'collaborator_code',
-#             'discount_applied', 'items', 'items_data', 'voucher_code'
-#         )
-#         read_only_fields = ('total_amount', 'discount_applied')
-
-#     @transaction.atomic
-#     def create(self, validated_data):
-#         items_data = validated_data.pop('items_data', [])
-#         voucher_code = validated_data.pop('voucher_code', None)
-
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             validated_data['customer'] = request.user
-
-#         # Lấy voucher và tính toán tổng tiền tạm thời trước khi tạo đơn hàng
-#         order_total = Decimal('0.00')
-#         for item_data in items_data:
-#             product = item_data['product']
-#             quantity = item_data['quantity']
-#             if product.stock_quantity < quantity:
-#                 raise serializers.ValidationError({"detail": f"Sản phẩm {product.name} chỉ còn {product.stock_quantity} sản phẩm trong kho."})
-#             order_total += product.discounted_price * quantity
-
-#         discount_amount = Decimal('0.00')
-#         voucher = None
-#         if voucher_code:
-#             try:
-#                 voucher = Voucher.objects.get(
-#                     code=voucher_code,
-#                     is_active=True,
-#                     valid_from__lte=timezone.now(),
-#                     valid_to__gte=timezone.now(),
-#                     max_uses__gt=F('times_used')
-#                 )
-#             except Voucher.DoesNotExist:
-#                 raise serializers.ValidationError({"voucher_code": "Mã voucher không hợp lệ hoặc đã hết hạn."})
-
-#             if voucher.min_order_amount > order_total:
-#                 raise serializers.ValidationError({"voucher_code": f"Đơn hàng phải có giá trị tối thiểu là {voucher.min_order_amount} để sử dụng voucher này."})
-
-#             discount_amount = voucher.get_discount_amount(order_total)
-#             if voucher.discount_type == "percentage" and voucher.max_order_amount > 0 and discount_amount > voucher.max_order_amount:
-#                 discount_amount = voucher.max_order_amount
-
-#         # Gán giá trị ban đầu cho total_amount và discount_applied trước khi tạo Order
-#         validated_data['total_amount'] = order_total - discount_amount
-#         validated_data['discount_applied'] = discount_amount
-#         if voucher:
-#             validated_data['voucher'] = voucher
-
-#         # Tạo đối tượng Order ban đầu
-#         order = Order.objects.create(**validated_data)
-
-#         # Tạo OrderItems và cập nhật số lượng tồn kho
-#         for item_data in items_data:
-#             product = item_data['product']
-#             quantity = item_data['quantity']
-#             price_at_purchase = product.discounted_price
-
-#             OrderItem.objects.create(
-#                 order=order,
-#                 product=product,
-#                 quantity=quantity,
-#                 price_at_purchase=price_at_purchase
-#             )
-
-#             product.stock_quantity = F('stock_quantity') - quantity
-#             product.sold_quantity = F('sold_quantity') + quantity
-#             product.save(update_fields=['stock_quantity', 'sold_quantity'])
-
-#         # Cập nhật số lần sử dụng của voucher
-#         if voucher:
-#             voucher.times_used = F('times_used') + 1
-#             voucher.save(update_fields=['times_used'])
-
-#         # Do đã tính toán và gán giá trị trước, nên không cần cập nhật lại
-#         return order
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -969,871 +881,71 @@ class CartSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'items']
         read_only_fields = ['user']
 
-
-# from rest_framework import serializers
-# from .models import *
-# from rest_framework_simplejwt.tokens import RefreshToken
-# from .google_social_auth import Google
-# from django.contrib.auth import authenticate
-# from django.db import transaction
-# from django.db.models import F
-
-# # --- User Serializers ---
-
-# class UserSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer để hiển thị và cập nhật thông tin người dùng.
-#     Bao gồm các trường điểm và cấp độ.
-#     """
-#     points = serializers.SerializerMethodField()
-#     level = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = User
-#         fields = ('id', 'name', 'email', 'phone_number', 'address', 'dob', 'avatar', 'points', 'level')
-
-#     def get_points(self, obj):
-#         if isinstance(obj, (Customer, Collaborator)):
-#             return obj.points
-#         return 0
-
-#     def get_level(self, obj):
-#         if isinstance(obj, (Customer, Collaborator)):
-#             return obj.level
-#         return 1
-
-
-# class UserProfileSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer để hiển thị và chỉnh sửa thông tin hồ sơ người dùng.
-#     """
-#     points = serializers.SerializerMethodField()
-#     level = serializers.SerializerMethodField()
-
-#     class Meta:
-#         model = User
-#         fields = [
-#             'id',
-#             'phone_number',
-#             'email',
-#             'name',
-#             'address',
-#             'dob',
-#             'avatar',
-#             'points',
-#             'level'
-#         ]
-#         read_only_fields = ['id', 'phone_number']
-
-#     def validate_email(self, value):
-#         if value and self.instance and User.objects.exclude(id=self.instance.id).filter(email=value).exists():
-#             raise serializers.ValidationError("Email này đã được sử dụng. Vui lòng chọn một email khác.")
-#         return value
-
-#     def get_points(self, obj):
-#         try:
-#             if isinstance(obj, Customer):
-#                 return obj.customer.points
-#             elif isinstance(obj, Collaborator):
-#                 return obj.collaborator.points
-#         except (Customer.DoesNotExist, Collaborator.DoesNotExist):
-#             pass
-#         return 0
-
-#     def get_level(self, obj):
-#         try:
-#             if isinstance(obj, Customer):
-#                 return obj.customer.level
-#             elif isinstance(obj, Collaborator):
-#                 return obj.collaborator.level
-#         except (Customer.DoesNotExist, Collaborator.DoesNotExist):
-#             pass
-#         return 1
-
-
-# class CollaboratorSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer cho mô hình Collaborator.
-#     """
-#     # Không cần UserSerializer lồng vào vì thông tin đã có trong mô hình Collaborator
-#     class Meta:
-#         model = Collaborator
-#         fields = ('id', 'name', 'email', 'phone_number', 'sales_code', 'points', 'level')
-#         read_only_fields = ('id', 'name', 'email', 'phone_number', 'points', 'level')
-
-
-# class PhoneNumberLoginSerializer(serializers.Serializer):
-#     """
-#     Serializer để xử lý đăng nhập bằng số điện thoại và mật khẩu.
-#     """
-#     phone_number = serializers.CharField(max_length=15)
-#     password = serializers.CharField(write_only=True)
-#     user_info = serializers.SerializerMethodField()
-
-#     def validate(self, data):
-#         phone_number = data.get('phone_number')
-#         password = data.get('password')
-
-#         if not phone_number or not password:
-#             raise serializers.ValidationError('Vui lòng cung cấp cả số điện thoại và mật khẩu.')
-
-#         user = authenticate(request=self.context.get('request'),
-#                             phone_number=phone_number, password=password)
-
-#         if not user:
-#             raise serializers.ValidationError('Số điện thoại hoặc mật khẩu không đúng.')
-
-#         if not user.is_active:
-#             raise serializers.ValidationError('Tài khoản đã bị vô hiệu hóa.')
-
-#         self.user = user  # Lưu người dùng vào self để sử dụng trong get_user_info
-#         return data
-
-#     def get_user_info(self, data):
-#         if self.user:
-#             return UserSerializer(self.user).data
-#         return None
-
-#     def to_representation(self, instance):
-#         representation = super().to_representation(instance)
-
-#         # Lấy người dùng từ validated data
-#         user = self.user
-
-#         # Lấy JWT tokens
-#         refresh = RefreshToken.for_user(user)
-#         representation['access_token'] = str(refresh.access_token)
-#         representation['refresh_token'] = str(refresh)
-
-#         # Trả về thông tin người dùng chi tiết
-#         representation['user'] = UserSerializer(user).data
-
-#         return representation
-
-
-# class GoogleSocialAuthSerializer(serializers.Serializer):
-#     """
-#     Serializer để xử lý xác thực xã hội bằng Google.
-#     """
-#     auth_token = serializers.CharField()
-
-#     def validate_auth_token(self, auth_token):
-#         try:
-#             user_data = Google.validate(auth_token)
-#         except ValueError as e:
-#             raise serializers.ValidationError(str(e))
-#         except Exception as e:
-#             raise serializers.ValidationError(f"Google token validation failed: {str(e)}")
-
-#         email = user_data.get('email', '')
-#         name = user_data.get('name', '')
-#         avatar = user_data.get('picture', None)
-
-#         if not email:
-#             raise serializers.ValidationError("Email is not provided in Google token.")
-
-#         try:
-#             with transaction.atomic():
-#                 user, created = User.objects.get_or_create(
-#                     email=email,
-#                     defaults={
-#                         'name': name,
-#                         'avatar': avatar,
-#                         'is_google_user': True,
-#                         'is_active': True,
-#                     }
-#                 )
-#                 if created:
-#                     # Gán user_type='customer' và tạo Customer object liên quan
-#                     Customer.objects.create(
-#                         user_ptr=user,
-#                         name=name,
-#                         email=email,
-#                         avatar=avatar,
-#                         is_google_user=True,
-#                     )
-#                 else:
-#                     # Nếu người dùng đã tồn tại, cập nhật thông tin nếu cần
-#                     if not user.name:
-#                         user.name = name
-#                     if not user.avatar:
-#                         user.avatar = avatar
-#                     user.is_google_user = True
-#                     user.save()
-#         except Exception as e:
-#             print(f"Lỗi khi xử lý người dùng Google: {e}")
-#             raise serializers.ValidationError(f"Lỗi khi xử lý dữ liệu người dùng: {str(e)}")
-
-#         return user
-
-
-# class RegistrationSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer cho đăng ký người dùng.
-#     """
-#     password = serializers.CharField(
-#         write_only=True,
-#         required=True,
-#         style={'input_type': 'password'},
-#         min_length=8
-#     )
-#     user_type = serializers.CharField(write_only=True, required=False, default='customer')
-
-
-#     class Meta:
-#         model = User
-#         fields = ('name', 'phone_number', 'password', 'email', 'avatar', 'user_type')
-#         extra_kwargs = {
-#             'phone_number': {'required': False},
-#             'email': {'required': False},
-#             'name': {'required': False},
-#             'avatar': {'required': False},
-#         }
-
-#     def validate(self, data):
-#         phone_number = data.get('phone_number')
-#         email = data.get('email')
-
-#         if not phone_number and not email:
-#             raise serializers.ValidationError("Phải cung cấp số điện thoại hoặc email.")
-
-#         if phone_number and User.objects.filter(phone_number=phone_number).exists():
-#             raise serializers.ValidationError("Số điện thoại này đã được đăng ký.")
-
-#         if email and User.objects.filter(email=email).exists():
-#             raise serializers.ValidationError("Email này đã được đăng ký.")
-
-#         return data
-
-#     def create(self, validated_data):
-#         user_type = validated_data.pop('user_type', 'customer')
-#         password = validated_data.pop('password')
-
-#         with transaction.atomic():
-#             user = User.objects.create_user(
-#                 password=password,
-#                 **validated_data
-#             )
-
-#             # Sau khi user được tạo, tạo đối tượng con tương ứng
-#             if user_type == 'customer':
-#                 Customer.objects.create(user_ptr=user, **validated_data)
-#             elif user_type == 'collaborator':
-#                 Collaborator.objects.create(user_ptr=user, **validated_data)
-#             elif user_type == 'staff':
-#                 Staff.objects.create(user_ptr=user, **validated_data)
-
-#             return user
-
-
-# class ForgotPasswordSerializer(serializers.Serializer):
-#     """
-#     Serializer để xử lý yêu cầu quên mật khẩu.
-#     """
-#     email = serializers.EmailField(required=True)
-
-
-# # --- Product-related Serializers ---
-
-# class BrandSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Brand
-#         fields = ('id', 'name', 'country', 'introduction')
-
-
-# class CategorySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Category
-#         fields = ('id', 'name')
-
-
-# class TagSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Tag
-#         fields = ['id', 'code', 'name', 'description', 'start_date', 'end_date', 'status', 'discounted_price_reduction']
-
-
-# class GiftSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Gift
-#         fields = ('id', 'name', 'description', 'image')
-
-
-# # Sửa lại ProductSerializer
-# class ProductSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer cho Product, hiển thị tên hãng và tên tags
-#     """
-#     brand_name = serializers.CharField(source='brand.name', read_only=True)
-#     category_name = serializers.CharField(source='category.name', read_only=True)
-#     brand_id = serializers.PrimaryKeyRelatedField(
-#         queryset=Brand.objects.all(),
-#         source='brand',
-#         write_only=True
-#     )
-#     # Thay đổi StringRelatedField thành SlugRelatedField
-#     tags = serializers.SlugRelatedField(
-#         many=True,
-#         read_only=True,
-#         slug_field='name' # Chỉ định trường 'name' để hiển thị
-#     )
-
-#     class Meta:
-#         model = Product
-#         fields = (
-#             'id', 'name', 'description',
-#             'image', 'brand_name', 'brand_id', 'tags', 'gifts', 'stock_quantity', 'sold_quantity',
-#             'rating', 'savings_price', 'import_price', 'original_price',
-#             'discount_rate', 'discounted_price', 'status','category_name'
-#         )
-#         read_only_fields = ('savings_price', 'discount_rate')
-
-
-# # --- Order-related Serializers ---
-
-# class VoucherSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Voucher
-#         fields = (
-#             'id', 'code', 'discount_type', 'discount_value', 'is_active',
-#             'min_order_amount', 'max_order_amount', 'valid_from', 'valid_to',
-#             'max_uses', 'times_used'
-#         )
-
-
-# class OrderItemWriteSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = OrderItem
-#         fields = ('product', 'quantity')
-
-# # Serializer cho việc hiển thị (read-only) OrderItem
-# class OrderItemReadSerializer(serializers.ModelSerializer):
-#     product = ProductSerializer(read_only=True)
-
-#     class Meta:
-#         model = OrderItem
-#         fields = ('id', 'product', 'quantity', 'price_at_purchase')
-
-# # Order Serializer
-# class OrderSerializer(serializers.ModelSerializer):
-#     customer = UserSerializer(read_only=True)
-#     # Sử dụng serializer đọc cho hiển thị
-#     items = OrderItemReadSerializer(many=True, read_only=True)
-#     # Thêm trường để nhận danh sách items khi tạo/cập nhật
-#     items_data = OrderItemWriteSerializer(many=True, write_only=True, required=False)
-#     voucher_code = serializers.CharField(write_only=True, required=False)
-
-#     class Meta:
-#         model = Order
-#         fields = (
-#             'id', 'customer', 'customer_name', 'phone_number', 'email', 'street',
-#             'ward', 'district', 'province', 'notes', 'payment_method',
-#             'bank_transfer_image', 'order_date', 'total_amount', 'collaborator_code',
-#             'discount_applied', 'items', 'items_data', 'voucher_code'
-#         )
-#         read_only_fields = ('total_amount', 'discount_applied')
-
-#     @transaction.atomic
-#     def create(self, validated_data):
-#         items_data = validated_data.pop('items_data', [])
-#         voucher_code = validated_data.pop('voucher_code', None)
-
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             validated_data['customer'] = request.user
-
-#         # Lưu thông tin voucher_id và discount_applied để xử lý sau
-#         voucher = None
-#         if voucher_code:
-#             try:
-#                 voucher = Voucher.objects.get(
-#                     code=voucher_code,
-#                     is_active=True,
-#                     valid_from__lte=timezone.now(),
-#                     valid_to__gte=timezone.now(),
-#                     max_uses__gt=F('times_used')
-#                 )
-#                 validated_data['voucher'] = voucher
-#             except Voucher.DoesNotExist:
-#                 raise serializers.ValidationError({"voucher_code": "Mã voucher không hợp lệ hoặc đã hết hạn."})
-
-#         # Tạm thời đặt total_amount và discount_applied về 0 để tạo đối tượng
-#         # Sau đó sẽ cập nhật lại sau khi tính toán
-#         validated_data['total_amount'] = Decimal('0.00')
-#         validated_data['discount_applied'] = Decimal('0.00')
-
-#         # Tạo đối tượng Order ban đầu
-#         order = Order.objects.create(**validated_data)
-
-#         # Tạo OrderItems và tính toán tổng tiền
-#         order_total = Decimal('0.00')
-#         for item_data in items_data:
-#             product = item_data['product']
-#             quantity = item_data['quantity']
-#             price_at_purchase = product.discounted_price
-
-#             OrderItem.objects.create(
-#                 order=order,
-#                 product=product,
-#                 quantity=quantity,
-#                 price_at_purchase=price_at_purchase
-#             )
-#             order_total += price_at_purchase * quantity
-
-#         # Tính toán giảm giá và tổng tiền cuối cùng
-#         discount_amount = Decimal('0.00')
-#         if voucher:
-#             # Kiểm tra giá trị đơn hàng tối thiểu
-#             if voucher.min_order_amount > order_total:
-#                 raise serializers.ValidationError({"voucher_code": f"Đơn hàng phải có giá trị tối thiểu là {voucher.min_order_amount} để sử dụng voucher này."})
-
-#             discount_amount = voucher.get_discount_amount(order_total)
-#             if voucher.discount_type == "percentage" and voucher.max_order_amount > 0 and discount_amount > voucher.max_order_amount:
-#                 discount_amount = voucher.max_order_amount
-
-#             # Tăng số lần sử dụng của voucher
-#             voucher.times_used = F('times_used') + 1
-#             voucher.save(update_fields=['times_used'])
-
-#         # Cập nhật lại tổng tiền và giảm giá sau khi đã tính toán
-#         order.discount_applied = discount_amount
-#         order.total_amount = order_total - discount_amount
-#         order.save(update_fields=['total_amount', 'discount_applied'])
-
-#         return order
-
-
-# class CartItemSerializer(serializers.ModelSerializer):
-#     product = ProductSerializer(read_only=True)
-#     product_id = serializers.PrimaryKeyRelatedField(
-#         queryset=Product.objects.all(), write_only=True, source='product'
-#     )
-
-#     class Meta:
-#         model = CartItem
-#         fields = ['id', 'product', 'product_id', 'quantity']
-#         read_only_fields = ['id', 'product']
-
-
-# class CartSerializer(serializers.ModelSerializer):
-#     items = CartItemSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Cart
-#         fields = ['id', 'user', 'items']
-#         read_only_fields = ['user']
-
-
-
-
-
-# from rest_framework import serializers
-# from .models import *
-# from rest_framework_simplejwt.tokens import RefreshToken
-# from .google_social_auth import Google
-# from django.contrib.auth import authenticate
-# from django.db import transaction
-# from django.db.models import F
-
-# # --- User Serializers ---
-
-# class UserSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer to display and update user profile information.
-#     """
-#     class Meta:
-#         model = User
-#         fields = ('id', 'name', 'email', 'phone_number', 'address', 'dob', 'avatar')
-
-
-# class UserProfileSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer to display and edit user profile information.
-#     """
-#     class Meta:
-#         model = User
-#         fields = [
-#             'id',
-#             'phone_number',
-#             'email',
-#             'name',
-#             'address',
-#             'dob',
-#             'avatar'
-#         ]
-#         read_only_fields = ['id', 'phone_number']
-
-#     def validate_email(self, value):
-#         if value and self.instance and User.objects.exclude(id=self.instance.id).filter(email=value).exists():
-#             raise serializers.ValidationError("Email này đã được sử dụng. Vui lòng chọn một email khác.")
-#         return value
-
-
-# class CollaboratorSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer for the Collaborator model.
-#     """
-#     user = UserSerializer()
-
-#     class Meta:
-#         model = Collaborator
-#         fields = ('user', 'sales_code')
-
-
-# class PhoneNumberLoginSerializer(serializers.Serializer):
-#     """
-#     Serializer to handle login with phone number and password,
-#     and return user info and JWT tokens.
-#     """
-#     phone_number = serializers.CharField(max_length=15)
-#     password = serializers.CharField(write_only=True)
-#     user_info = serializers.SerializerMethodField()
-
-#     def validate(self, data):
-#         phone_number = data.get('phone_number')
-#         password = data.get('password')
-
-#         if not phone_number or not password:
-#             raise serializers.ValidationError('Vui lòng cung cấp cả số điện thoại và mật khẩu.')
-
-#         user = authenticate(request=self.context.get('request'),
-#                             phone_number=phone_number, password=password)
-
-#         if not user:
-#             raise serializers.ValidationError('Số điện thoại hoặc mật khẩu không đúng.')
-
-#         if not user.is_active:
-#             raise serializers.ValidationError('Tài khoản đã bị vô hiệu hóa.')
-
-#         self.user = user  # Lưu người dùng vào self để sử dụng trong get_user_info
-#         return data
-
-#     def get_user_info(self, data):
-#         if self.user:
-#             return UserSerializer(self.user).data
-#         return None
-
-#     def to_representation(self, instance):
-#         representation = super().to_representation(instance)
-
-#         # Lấy người dùng từ validated data
-#         user = self.user
-
-#         # Lấy JWT tokens
-#         refresh = RefreshToken.for_user(user)
-#         representation['access_token'] = str(refresh.access_token)
-#         representation['refresh_token'] = str(refresh)
-
-#         # Trả về thông tin người dùng chi tiết
-#         representation['user'] = UserSerializer(user).data
-
-#         return representation
-
-
-# class GoogleSocialAuthSerializer(serializers.Serializer):
-#     """
-#     Serializer to handle Google social authentication.
-#     """
-#     auth_token = serializers.CharField()
-
-#     def validate_auth_token(self, auth_token):
-#         try:
-#             user_data = Google.validate(auth_token)
-#         except ValueError as e:
-#             raise serializers.ValidationError(str(e))
-#         except Exception as e:
-#             raise serializers.ValidationError(f"Google token validation failed: {str(e)}")
-
-#         email = user_data.get('email', '')
-#         name = user_data.get('name', '')
-#         avatar = user_data.get('picture', None)
-
-#         if not email:
-#             raise serializers.ValidationError("Email is not provided in Google token.")
-
-#         try:
-#             # Sử dụng get_or_create để tìm hoặc tạo người dùng
-#             user, created = User.objects.get_or_create(
-#                 email=email,
-#                 defaults={
-#                     'name': name,
-#                     'avatar': avatar,
-#                     'is_google_user': True,
-#                     'is_active': True,
-#                 }
-#             )
-#             if created:
-#                 # Gán user_type='customer' và tạo Customer object liên quan
-#                 Customer.objects.create(user_ptr=user, name=name, email=email, avatar=avatar, is_google_user=True)
-#             else:
-#                 # Nếu người dùng đã tồn tại, cập nhật thông tin nếu cần
-#                 if not user.name:
-#                     user.name = name
-#                 if not user.avatar:
-#                     user.avatar = avatar
-#                 user.is_google_user = True  # Đánh dấu là người dùng Google
-#                 user.save()
-
-#         except Exception as e:
-#             print(f"Lỗi khi xử lý người dùng Google: {e}")
-#             raise serializers.ValidationError(f"Lỗi khi xử lý dữ liệu người dùng: {str(e)}")
-
-#         return user
-
-
-# class RegistrationSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer for user registration.
-#     """
-#     password = serializers.CharField(
-#         write_only=True,
-#         required=True,
-#         style={'input_type': 'password'},
-#         min_length=8
-#     )
-#     user_type = serializers.CharField(write_only=True, required=False, default='customer')
-
-
-#     class Meta:
-#         model = User
-#         fields = ('name', 'phone_number', 'password', 'email', 'avatar', 'user_type')
-#         extra_kwargs = {
-#             'phone_number': {'required': False},
-#             'email': {'required': False},
-#             'name': {'required': False},
-#             'avatar': {'required': False},
-#         }
-
-#     def validate(self, data):
-#         phone_number = data.get('phone_number')
-#         email = data.get('email')
-
-#         if not phone_number and not email:
-#             raise serializers.ValidationError("Phải cung cấp số điện thoại hoặc email.")
-
-#         if phone_number and User.objects.filter(phone_number=phone_number).exists():
-#             raise serializers.ValidationError("Số điện thoại này đã được đăng ký.")
-
-#         if email and User.objects.filter(email=email).exists():
-#             raise serializers.ValidationError("Email này đã được đăng ký.")
-
-#         return data
-
-#     def create(self, validated_data):
-#         user_type = validated_data.pop('user_type', 'customer')
-#         password = validated_data.pop('password')
-
-#         with transaction.atomic():
-#             user = User.objects.create_user(
-#                 password=password,
-#                 **validated_data
-#             )
-
-#             # Sau khi user được tạo, tạo đối tượng con tương ứng
-#             if user_type == 'customer':
-#                 Customer.objects.create(user_ptr=user)
-#             elif user_type == 'collaborator':
-#                 Collaborator.objects.create(user_ptr=user)
-#             elif user_type == 'staff':
-#                 Staff.objects.create(user_ptr=user)
-#             # Bạn có thể thêm các loại user khác ở đây
-
-#             user.save()
-#             return user
-
-
-# class ForgotPasswordSerializer(serializers.Serializer):
-#     """
-#     Serializer to handle forgot password requests.
-#     """
-#     email = serializers.EmailField(required=True)
-
-
-# # --- Product-related Serializers ---
-
-# class BrandSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Brand
-#         fields = ('id', 'name', 'country', 'introduction')
-
-
-# class CategorySerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Category
-#         fields = ('id', 'name')
-
-
-# class TagSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Tag
-#         fields = ['id', 'code', 'name', 'description', 'start_date', 'end_date', 'status', 'discounted_price_reduction']
-
-# class GiftSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Gift
-#         fields = ('id', 'name', 'description', 'image')
-
-
-# # Sửa lại ProductSerializer
-# class ProductSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer cho Product, hiển thị tên hãng và tên tags
-#     """
-#     brand_name = serializers.CharField(source='brand.name', read_only=True)
-#     category_name = serializers.CharField(source='category.name', read_only=True)
-#     brand_id = serializers.PrimaryKeyRelatedField(
-#         queryset=Brand.objects.all(),
-#         source='brand',
-#         write_only=True
-#     )
-#     # Thay đổi StringRelatedField thành SlugRelatedField
-#     tags = serializers.SlugRelatedField(
-#         many=True,
-#         read_only=True,
-#         slug_field='name' # Chỉ định trường 'name' để hiển thị
-#     )
-
-#     class Meta:
-#         model = Product
-#         fields = (
-#             'id', 'name', 'description',
-#             'image', 'brand_name', 'brand_id', 'tags', 'gifts', 'stock_quantity', 'sold_quantity',
-#             'rating', 'savings_price', 'import_price', 'original_price',
-#             'discount_rate', 'discounted_price', 'status','category_name'
-#         )
-#         read_only_fields = ('savings_price', 'discount_rate')
-# # --- Order-related Serializers ---
-
-# class VoucherSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Voucher
-#         fields = (
-#             'id', 'code', 'discount_type', 'discount_value', 'is_active',
-#             'min_order_amount', 'max_order_amount', 'valid_from', 'valid_to',
-#             'max_uses', 'times_used'
-#         )
-
-
-# class OrderItemWriteSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = OrderItem
-#         fields = ('product', 'quantity')
-
-# # Serializer cho việc hiển thị (read-only) OrderItem
-# class OrderItemReadSerializer(serializers.ModelSerializer):
-#     product = ProductSerializer(read_only=True)
-
-#     class Meta:
-#         model = OrderItem
-#         fields = ('id', 'product', 'quantity', 'price_at_purchase')
-
-# # Order Serializer
-# class OrderSerializer(serializers.ModelSerializer):
-#     customer = UserSerializer(read_only=True)
-#     # Sử dụng serializer đọc cho hiển thị
-#     items = OrderItemReadSerializer(many=True, read_only=True)
-#     # Thêm trường để nhận danh sách items khi tạo/cập nhật
-#     items_data = OrderItemWriteSerializer(many=True, write_only=True, required=False)
-#     voucher_code = serializers.CharField(write_only=True, required=False)
-
-#     class Meta:
-#         model = Order
-#         fields = (
-#             'id', 'customer', 'customer_name', 'phone_number', 'email', 'street',
-#             'ward', 'district', 'province', 'notes', 'payment_method',
-#             'bank_transfer_image', 'order_date', 'total_amount', 'collaborator_code',
-#             'discount_applied', 'items', 'items_data', 'voucher_code'
-#         )
-#         read_only_fields = ('total_amount', 'discount_applied')
-
-#     @transaction.atomic
-#     def create(self, validated_data):
-#         items_data = validated_data.pop('items_data', [])
-#         voucher_code = validated_data.pop('voucher_code', None)
-
-#         request = self.context.get('request')
-#         if request and request.user.is_authenticated:
-#             validated_data['customer'] = request.user
-
-#         # Lưu thông tin voucher_id và discount_applied để xử lý sau
-#         voucher = None
-#         if voucher_code:
-#             try:
-#                 voucher = Voucher.objects.get(
-#                     code=voucher_code,
-#                     is_active=True,
-#                     valid_from__lte=timezone.now(),
-#                     valid_to__gte=timezone.now(),
-#                     max_uses__gt=F('times_used')
-#                 )
-#                 validated_data['voucher'] = voucher
-#             except Voucher.DoesNotExist:
-#                 raise serializers.ValidationError({"voucher_code": "Mã voucher không hợp lệ hoặc đã hết hạn."})
-
-#         # Tạm thời đặt total_amount và discount_applied về 0 để tạo đối tượng
-#         # Sau đó sẽ cập nhật lại sau khi tính toán
-#         validated_data['total_amount'] = Decimal('0.00')
-#         validated_data['discount_applied'] = Decimal('0.00')
-
-#         # Tạo đối tượng Order ban đầu
-#         order = Order.objects.create(**validated_data)
-
-#         # Tạo OrderItems và tính toán tổng tiền
-#         order_total = Decimal('0.00')
-#         for item_data in items_data:
-#             product = item_data['product']
-#             quantity = item_data['quantity']
-#             price_at_purchase = product.discounted_price
-
-#             OrderItem.objects.create(
-#                 order=order,
-#                 product=product,
-#                 quantity=quantity,
-#                 price_at_purchase=price_at_purchase
-#             )
-#             order_total += price_at_purchase * quantity
-
-#         # Tính toán giảm giá và tổng tiền cuối cùng
-#         discount_amount = Decimal('0.00')
-#         if voucher:
-#             # Kiểm tra giá trị đơn hàng tối thiểu
-#             if voucher.min_order_amount > order_total:
-#                 raise serializers.ValidationError({"voucher_code": f"Đơn hàng phải có giá trị tối thiểu là {voucher.min_order_amount} để sử dụng voucher này."})
-
-#             discount_amount = voucher.get_discount_amount(order_total)
-#             if voucher.discount_type == "percentage" and voucher.max_order_amount > 0 and discount_amount > voucher.max_order_amount:
-#                 discount_amount = voucher.max_order_amount
-
-#             # Tăng số lần sử dụng của voucher
-#             voucher.times_used = F('times_used') + 1
-#             voucher.save(update_fields=['times_used'])
-
-#         # Cập nhật lại tổng tiền và giảm giá sau khi đã tính toán
-#         order.discount_applied = discount_amount
-#         order.total_amount = order_total - discount_amount
-#         order.save(update_fields=['total_amount', 'discount_applied'])
-
-#         return order
-
-# class CartItemSerializer(serializers.ModelSerializer):
-#     product = ProductSerializer(read_only=True)
-#     product_id = serializers.PrimaryKeyRelatedField(
-#         queryset=Product.objects.all(), write_only=True, source='product'
-#     )
-
-#     class Meta:
-#         model = CartItem
-#         fields = ['id', 'product', 'product_id', 'quantity']
-#         read_only_fields = ['id', 'product']
-
-
-# class CartSerializer(serializers.ModelSerializer):
-#     items = CartItemSerializer(many=True, read_only=True)
-
-#     class Meta:
-#         model = Cart
-#         fields = ['id', 'user', 'items']
-#         read_only_fields = ['user']
-
-
+class BlogSerializer(serializers.ModelSerializer):
+    """
+    Serializer cho model Blog
+    """
+    class Meta:
+        model = Blog
+        fields = '__all__'
+
+
+
+# --- Lucky Event Serializers ---
+class LuckyPrizeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LuckyPrize
+        fields = ['id', 'name', 'image', 'value', 'order']
+
+
+class LuckyEventSerializer(serializers.ModelSerializer):
+    prizes = LuckyPrizeSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = LuckyEvent
+        fields = ['id', 'title', 'description', 'start_at', 'end_at', 'is_active', 'lucky_number', 'prizes']
+
+
+class LuckyParticipantCreateSerializer(serializers.ModelSerializer):
+    chosen_number = serializers.RegexField(regex=r'^\d{2}$', max_length=2)
+
+    class Meta:
+        model = LuckyParticipant
+        fields = ['event', 'chosen_number', 'name', 'zalo_phone', 'address', 'message']
+
+    def validate(self, attrs):
+        event = attrs.get('event')
+        zalo_phone = attrs.get('zalo_phone')
+        from django.utils import timezone
+        now = timezone.now()
+        
+        if not (event.is_active and event.start_at <= now <= event.end_at):
+            raise serializers.ValidationError('Sự kiện không trong thời gian tham gia.')
+        
+        # Kiểm tra số điện thoại đã tham gia chưa
+        if LuckyParticipant.objects.filter(event=event, zalo_phone=zalo_phone).exists():
+            raise serializers.ValidationError('Số điện thoại này đã tham gia sự kiện trước đó. Mỗi số điện thoại chỉ được tham gia 1 lần duy nhất!')
+        
+        return attrs
+
+    def create(self, validated_data):
+        # Tự động set thời gian gửi khi tạo mới
+        from django.utils import timezone
+        validated_data['submitted_at'] = timezone.now()
+        return super().create(validated_data)
+
+
+class LuckyParticipantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LuckyParticipant
+        fields = ['id', 'chosen_number', 'name', 'zalo_phone', 'address', 'message', 'submitted_at']
+
+
+class LuckyWinnerSerializer(serializers.ModelSerializer):
+    participant = LuckyParticipantSerializer()
+    prize = LuckyPrizeSerializer()
+
+    class Meta:
+        model = LuckyWinner
+        fields = ['participant', 'prize', 'decided_at']
 

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo đơn hàng mới - BuddySkincare</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        
+        .email-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .alert-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .alert-icon {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+        
+        .alert-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .alert-text {
+            color: #856404;
+            font-size: 14px;
+        }
+        
+        .order-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .order-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .order-number {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .customer-info {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .customer-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #155724;
+            margin-bottom: 10px;
+        }
+        
+        .customer-details {
+            font-size: 14px;
+            color: #155724;
+        }
+        
+        .pending-orders {
+            margin-top: 30px;
+        }
+        
+        .pending-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .pending-count {
+            background: #ffc107;
+            color: #000;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .orders-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .orders-table th {
+            background: #f8f9fa;
+            color: #495057;
+            font-weight: 600;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        
+        .orders-table td {
+            padding: 12px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+        
+        .orders-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .amount {
+            font-weight: 700;
+            color: #e74c3c;
+        }
+        
+        .action-buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: #007bff;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 12px;
+        }
+        
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .orders-table {
+                font-size: 12px;
+            }
+            
+            .orders-table th,
+            .orders-table td {
+                padding: 8px 4px;
+            }
+            
+            .btn {
+                display: block;
+                margin: 10px 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">🛍️ BuddySkincare</div>
+            <div class="subtitle">Thông báo đơn hàng mới</div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Alert Box -->
+            <div class="alert-box">
+                <div class="alert-title">
+                    <span class="alert-icon">🔔</span>
+                    Có đơn hàng mới cần xác nhận!
+                </div>
+                <div class="alert-text">
+                    Một đơn hàng mới vừa được đặt thành công và đang chờ xác nhận. Vui lòng kiểm tra và xác nhận đơn hàng trong thời gian sớm nhất.
+                </div>
+            </div>
+            
+            <!-- Order Information -->
+            <div class="order-info">
+                <div class="order-title">
+                    Thông tin đơn hàng mới
+                    <span class="order-number">#{{ order.id }}</span>
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Ngày đặt hàng&emsp;</div>
+                        <div class="info-value">{{ order.order_date[:16] }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phương thức thanh toán&emsp;</div>
+                        <div class="info-value">{{ 'Chuyển khoản' if order.payment_method == 'bank' else 'COD' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Tổng tiền &emsp;</div>
+                        <div class="info-value amount">{{ '{:,.0f}'.format((order.total_amount|float or 0) * 1000).replace(',', '.') }}đ</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Trạng thái&emsp;</div>
+                        <div class="info-value">
+                            <span class="status-badge status-pending">Chờ xác nhận</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customer Information -->
+                <div class="customer-info">
+                    <div class="customer-title">👤 Thông tin khách hàng</div>
+                    <div class="customer-details">
+                        <strong>Tên:</strong> {{ order.customer_name or 'N/A' }}<br>
+                        <strong>SĐT:</strong> {{ order.phone_number or 'N/A' }}<br>
+                        <strong>Email:</strong> {{ order.email or 'N/A' }}<br>
+                        <strong>Địa chỉ:</strong> {{ (order.street or '') ~ ' ' ~ (order.ward or '') ~ ' ' ~ (order.district or '') ~ ' ' ~ (order.province or '') }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pending Orders List -->
+            {% if pending_orders and pending_orders|length > 0 %}
+            <div class="pending-orders">
+                <div class="pending-title">
+                    Danh sách đơn hàng chờ xác nhận
+                    <span class="pending-count">{{ pending_orders|length }}</span>
+                </div>
+                
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>Mã đơn</th>
+                            <th>Khách hàng</th>
+                            <th>SĐT</th>
+                            <th>Tổng tiền</th>
+                            <th>Ngày đặt</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pending_order in pending_orders %}
+                        <tr>
+                            <td><strong>#{{ pending_order.id }}</strong></td>
+                            <td>{{ pending_order.customer_name or 'N/A' }}</td>
+                            <td>{{ pending_order.phone_number or 'N/A' }}</td>
+                            <td class="amount">{{ '{:,.0f}'.format((pending_order.total_amount|float or 0) * 1000).replace(',', '.') }}đ</td>
+                            <td>{{ pending_order.order_date[:16] if pending_order.order_date else 'N/A' }}</td>
+                            <td>
+                                <span class="status-badge status-pending">Chờ xác nhận</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="https://buddyskincare.pythonanywhere.com/admin/orders" class="btn btn-primary">
+                    🔍 Xem tất cả đơn hàng
+                </a>
+                <a href="https://buddyskincare.pythonanywhere.com/admin/orders/{{ order.id }}" class="btn btn-success">
+                    ✅ Xác nhận đơn hàng #{{ order.id }}
+                </a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>📧 Email này được gửi tự động từ hệ thống BuddySkincare</p>
+            <p>🌐 Website: <a href="https://buddyskincare.com">www.buddyskincare.com</a></p>
+            <p>📞 Hotline: 0987 789 274 (Kim Nhi - Buddy)</p>
+            <p>⏰ Thời gian: {{ current_time }}</p>
+        </div>
+    </div>
+</body>
+</html>

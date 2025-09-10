@@ -525,3 +525,111 @@ class CartItem(models.Model):
         return f"{self.quantity} x {self.product.name} trong giỏ hàng của {self.cart.user.name or self.cart.user.phone_number}"
 
 
+
+class Blog(models.Model):
+    """
+    Model Blog
+    """
+    BLOG_TAG_CHOICES = [
+        ('HD', 'Hướng dẫn'),
+        ('UD', 'Ưu đãi'),
+        ('MLD', 'Mẹo làm đẹp'),
+    ]
+    tag = models.CharField(max_length=20, choices=BLOG_TAG_CHOICES,default='HD',verbose_name="Nhãn blog")
+    title = models.CharField(max_length=255, verbose_name="Tiêu đề bài viết")
+    short_description = models.TextField(verbose_name="Mô tả ngắn")
+    post_date = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo blog")
+    content = RichTextField(null=True, blank=True,verbose_name="Nội dung bài blog")
+    link = models.CharField(max_length=255,null=True, blank=True, verbose_name="Link bài viết")
+    img_thumbnail = models.CharField(max_length=255, verbose_name="Ảnh bìa blog")
+    views = models.PositiveIntegerField(default=0, verbose_name="Lượt xem")
+    is_active = models.BooleanField(default=True, verbose_name="Tình trạng hoạt động")
+
+    class Meta:
+        verbose_name = "Blog làm đẹp"
+        verbose_name_plural = "Các Bài Blog"
+        ordering = ['-post_date']
+
+
+    def __str__(self):
+        return f"{self.tag} x {self.title} {self.post_date} {self.is_active} {self.views}"
+
+
+
+
+
+# --- Lucky Number Event Models ---
+class LuckyEvent(models.Model):
+    title = models.CharField(max_length=255, default="Sự kiện Số may mắn", verbose_name="Tiêu đề")
+    description = models.TextField(blank=True, null=True, verbose_name="Mô tả")
+    start_at = models.DateTimeField(verbose_name="Bắt đầu")
+    end_at = models.DateTimeField(verbose_name="Kết thúc")
+    is_active = models.BooleanField(default=True, verbose_name="Đang diễn ra")
+    lucky_number = models.CharField(max_length=2, blank=True, null=True, verbose_name="Số may mắn (2 số)")
+
+    class Meta:
+        verbose_name = "Sự kiện Số may mắn"
+        verbose_name_plural = "Các Sự kiện Số may mắn"
+
+    def __str__(self):
+        return f"LuckyEvent {self.id} {self.title}"
+
+
+class LuckyPrize(models.Model):
+    event = models.ForeignKey(LuckyEvent, on_delete=models.CASCADE, related_name='prizes')
+    name = models.CharField(max_length=255, verbose_name="Tên phần thưởng")
+    image = models.CharField(max_length=255, blank=True, null=True, verbose_name="Ảnh phần thưởng")
+    value = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Giá trị sản phẩm (nghìn đồng)")
+    order = models.PositiveIntegerField(default=0, verbose_name="Thứ tự")
+
+    class Meta:
+        verbose_name = "Phần thưởng"
+        verbose_name_plural = "Phần thưởng"
+        ordering = ['order', 'id']
+
+    def __str__(self):
+        return f"Prize {self.name}"
+
+
+class LuckyParticipant(models.Model):
+    event = models.ForeignKey(LuckyEvent, on_delete=models.CASCADE, related_name='participants')
+    chosen_number = models.CharField(max_length=2, verbose_name="Số chọn (00-99)")
+    name = models.CharField(max_length=100, verbose_name="Tên")
+    zalo_phone = models.CharField(max_length=20, verbose_name="SĐT Zalo")
+    address = models.CharField(max_length=255, verbose_name="Địa chỉ")
+    message = models.CharField(max_length=255, blank=True, null=True, verbose_name="Lời chúc")
+    submitted_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian gửi")
+
+    class Meta:
+        verbose_name = "Người tham gia"
+        verbose_name_plural = "Người tham gia"
+        indexes = [
+            models.Index(fields=['event', 'chosen_number', 'submitted_at'])
+        ]
+
+    def __str__(self):
+        return f"{self.name} - {self.chosen_number}"
+
+
+class LuckyWinner(models.Model):
+    event = models.OneToOneField(LuckyEvent, on_delete=models.CASCADE, related_name='winner', verbose_name="Sự kiện")
+    participant = models.ForeignKey(LuckyParticipant, on_delete=models.CASCADE, related_name='won_records', verbose_name="Người trúng")
+    prize = models.ForeignKey(LuckyPrize, on_delete=models.SET_NULL, null=True, blank=True, related_name='winners', verbose_name="Phần thưởng")
+    decided_at = models.DateTimeField(auto_now_add=True, verbose_name="Thời điểm xác định")
+
+    class Meta:
+        verbose_name = "Người trúng thưởng"
+        verbose_name_plural = "Người trúng thưởng"
+
+    def __str__(self):
+        return f"Winner {self.participant.name} ({self.participant.chosen_number})"
+
+# class ReceiveNews(models.Model):
+#     email = models.CharField(max_length=255, verbose_name="Email nhận bản tin")
+
+
+
+
+
+
+

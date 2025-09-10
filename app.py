@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
 import os
 from datetime import datetime, timedelta
 import cloudinary
@@ -7,6 +7,7 @@ import time
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from io import BytesIO
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -523,6 +524,11 @@ def all_events():
     """Trang tất cả sự kiện"""
     return render_template('events.html')
 
+@app.route('/events/lucky-number')
+def lucky_number_event():
+    """Trang Số may mắn"""
+    return render_template('lucky-number.html')
+
 @app.route('/login')
 def login():
     """Trang đăng nhập"""
@@ -568,6 +574,15 @@ def support():
 @app.route('/skincare')
 def skincare():
     return render_template('skincare.html')
+
+@app.route('/live-chat')
+def live_chat():
+    return render_template('live-chat.html')
+
+@app.route('/test-order-notification')
+def test_order_notification():
+    """Test page for order notification system"""
+    return render_template('test_order_notification.html')
 
 # Admin Routes
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -796,6 +811,84 @@ def preview_invoice_email():
             ]
         }
     return render_template('emails/invoice_email.html', order=order)
+
+# Preview new order notification email template in browser
+@app.route('/templates/emails/new_order_notification.html')
+def preview_new_order_notification():
+    """Preview the new order notification email template at a direct URL for design/testing.
+    Optional query: ?order_id=123 to load real order from API.
+    """
+    import requests
+    order = None
+    pending_orders = []
+    order_id = request.args.get('order_id')
+    
+    if order_id:
+        try:
+            # Get specific order
+            resp = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=15)
+            if resp.status_code == 200:
+                order = resp.json()
+        except Exception:
+            order = None
+    
+    if not order:
+        # Fallback demo order for preview
+        order = {
+            'id': 12345,
+            'order_date': datetime.now().isoformat(timespec='minutes'),
+            'payment_method': 'bank',
+            'is_confirmed': False,
+            'status': 'pending',
+            'phone_number': '0987789274',
+            'customer_name': 'Nguyễn Thị Minh Anh',
+            'email': 'minhanh@gmail.com',
+            'street': '456 Đường XYZ',
+            'ward': 'Phường 2',
+            'district': 'Quận 3',
+            'province': 'TP.HCM',
+            'total_amount': 450.0,
+        }
+    
+    # Get pending orders for demo
+    try:
+        resp = requests.get(f'{API_BASE_URL}/orders/', timeout=15)
+        if resp.status_code == 200:
+            all_orders = resp.json()
+            pending_orders = [o for o in all_orders if not o.get('is_confirmed', False)][:5]
+    except Exception:
+        # Demo pending orders
+        pending_orders = [
+            {
+                'id': 12344,
+                'customer_name': 'Trần Văn Bình',
+                'phone_number': '0987654321',
+                'total_amount': 320.0,
+                'order_date': (datetime.now() - timedelta(hours=2)).isoformat(),
+                'is_confirmed': False
+            },
+            {
+                'id': 12343,
+                'customer_name': 'Lê Thị Cẩm',
+                'phone_number': '0987123456',
+                'total_amount': 180.0,
+                'order_date': (datetime.now() - timedelta(hours=5)).isoformat(),
+                'is_confirmed': False
+            },
+            {
+                'id': 12342,
+                'customer_name': 'Phạm Văn Đức',
+                'phone_number': '0987234567',
+                'total_amount': 650.0,
+                'order_date': (datetime.now() - timedelta(days=1)).isoformat(),
+                'is_confirmed': False
+            }
+        ]
+    
+    return render_template('emails/new_order_notification.html', 
+                         order=order, 
+                         pending_orders=pending_orders,
+                         current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
 
 # Admin API Endpoints
 @app.route('/admin/api/orders', methods=['GET'])
@@ -1377,6 +1470,154 @@ def api_product_stock(product_id):
             return jsonify({'error': 'Không tìm thấy sản phẩm'}), 404
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/api/download-image')
+def api_download_image():
+    """Proxy download an image URL with Content-Disposition attachment to force save-as.
+    Query params:
+      - url: required, absolute image URL
+      - filename: optional, suggested filename (fallback derives from URL)
+    """
+    try:
+        import requests
+        img_url = request.args.get('url', '').strip()
+        filename = request.args.get('filename', '').strip()
+        if not img_url:
+            return jsonify({'error': 'Thiếu tham số url'}), 400
+
+        # Fetch binary with short timeout
+        resp = requests.get(img_url, timeout=20, stream=True)
+        if resp.status_code != 200:
+            return jsonify({'error': f'Không tải được ảnh: {resp.status_code}'}), 502
+
+        # Guess filename
+        if not filename:
+            try:
+                from urllib.parse import urlparse
+                import os as _os
+                path = urlparse(img_url).path
+                base = _os.path.basename(path) or 'image'
+                # ensure simple name
+                filename = base.split('?')[0] or 'image'
+            except Exception:
+                filename = 'image'
+
+        # Detect content-type
+        content_type = resp.headers.get('Content-Type', 'application/octet-stream')
+        data = resp.content
+        return send_file(
+            BytesIO(data),
+            mimetype=content_type,
+            as_attachment=True,
+            download_name=filename
+        )
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi tải ảnh: {str(e)}'}), 502
+    except Exception as e:
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
+
+@app.route('/api/send-new-order-notification', methods=['POST'])
+def send_new_order_notification():
+    """API gửi thông báo đơn hàng mới cho admin"""
+    import requests
+    
+    try:
+        data = request.get_json()
+        order_id = data.get('order_id')
+        
+        if not order_id:
+            return jsonify({'error': 'Thiếu order_id'}), 400
+        
+        # Lấy thông tin đơn hàng
+        order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
+        if order_response.status_code != 200:
+            return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
+        
+        order = order_response.json()
+        
+        # Lấy danh sách đơn hàng chờ xác nhận
+        orders_response = requests.get(f'{API_BASE_URL}/orders/', timeout=30)
+        pending_orders = []
+        if orders_response.status_code == 200:
+            all_orders = orders_response.json()
+            pending_orders = [o for o in all_orders if not o.get('is_confirmed', False)][:10]  # Lấy tối đa 10 đơn hàng
+        
+        # Render email template
+        html_content = render_template('emails/new_order_notification.html', 
+                                     order=order, 
+                                     pending_orders=pending_orders,
+                                     current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
+        
+        # SMTP configuration
+        smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        smtp_user = os.getenv('SMTP_USER')
+        smtp_pass = os.getenv('SMTP_PASS')
+        sender = os.getenv('SMTP_SENDER', smtp_user or 'no-reply@buddyskincare.vn')
+        admin_email = os.getenv('ADMIN_EMAIL', 'buddyskincarevn@gmail.com')
+        
+        if not (smtp_user and smtp_pass):
+            # Development fallback: save email HTML to file
+            try:
+                fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
+                os.makedirs(fallback_dir, exist_ok=True)
+                filename = f'new_order_notification_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+                file_path = os.path.join(fallback_dir, filename)
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                return jsonify({
+                    'success': True, 
+                    'message': f'Đã lưu thông báo đơn hàng mới vào file: {file_path}',
+                    'saved_path': file_path
+                }), 200
+            except Exception as e:
+                return jsonify({'success': False, 'message': f'SMTP chưa cấu hình và lưu file thất bại: {str(e)}'}), 500
+        
+        try:
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = f'🔔 Đơn hàng mới #{order_id} cần xác nhận - BuddySkincare'
+            msg['From'] = sender
+            msg['To'] = admin_email
+            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+            
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(sender, [admin_email], msg.as_string())
+            
+            return jsonify({
+                'success': True, 
+                'message': f'Đã gửi thông báo đơn hàng mới đến {admin_email}'
+            }), 200
+            
+        except (smtplib.SMTPAuthenticationError, smtplib.SMTPException, TimeoutError) as e:
+            # Graceful fallback: save HTML to file when SMTP fails
+            try:
+                fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
+                os.makedirs(fallback_dir, exist_ok=True)
+                filename = f'new_order_notification_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
+                file_path = os.path.join(fallback_dir, filename)
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(html_content)
+                return jsonify({
+                    'success': True, 
+                    'message': f'Không gửi được qua SMTP, đã lưu thông báo vào file',
+                    'saved_path': file_path,
+                    'error': str(e)
+                }), 200
+            except Exception as save_err:
+                return jsonify({
+                    'success': False, 
+                    'message': f'Lỗi SMTP và lưu file thất bại: {str(save_err)}',
+                    'error': str(e)
+                }), 500
+        except Exception as e:
+            return jsonify({'success': False, 'message': f'Lỗi gửi email: {str(e)}'}), 500
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối API: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
 
 @app.errorhandler(404)
 def not_found(error):

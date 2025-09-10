@@ -30,6 +30,15 @@
                              alt="Hình sản phẩm" 
                              class="img-fluid rounded" 
                              id="mainImage">
+                        <!-- Smart Actions -->
+                        <div class="position-absolute top-0 end-0 m-2 d-flex gap-2">
+                            <button type="button" class="btn btn-light btn-sm shadow-sm" id="btnDownloadImage" title="Tải ảnh sản phẩm" onclick="window.downloadCurrentImage && window.downloadCurrentImage()">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button type="button" class="btn btn-light btn-sm shadow-sm" id="btnCopyProductLink" title="Sao chép link sản phẩm" onclick="window.copyProductLink && window.copyProductLink()">
+                                <i class="fas fa-link"></i>
+                            </button>
+                        </div>
                         <!-- Out of Stock Overlay -->
                         <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
                              id="outOfStockOverlay" 
@@ -129,6 +138,14 @@
                         <button id="detailFavBtn" class="btn btn-outline-secondary w-100">
                             <i class="far fa-heart me-2"></i><span class="fav-text">Thêm vào yêu thích</span>
                         </button>
+                        <div class="d-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-primary flex-fill" id="btnCopyProductLink_2" onclick="window.copyProductLink && window.copyProductLink()">
+                                <i class="fas fa-link me-1"></i> Copy link sản phẩm
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary flex-fill" id="btnDownloadImage_2" onclick="window.downloadCurrentImage && window.downloadCurrentImage()">
+                                <i class="fas fa-download me-1"></i> Tải ảnh sản phẩm
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Product Features -->
@@ -250,20 +267,29 @@
 {% endblock %}
 
 {% block extra_js %}
+<script id="productDataJson" type="application/json">{{ product | tojson | safe }}</script>
 <script>
 // Pass product data to JavaScript
-window.productData = {{ product | tojson | safe }};
+try {
+    window.productData = JSON.parse(document.getElementById('productDataJson').textContent || '{}');
+} catch(e) {
+    window.productData = {};
+}
 
 // Initialize product detail page after data is loaded
 console.log('🔍 Template script loaded');
 console.log('📦 Product data available:', !!window.productData);
 console.log('🔧 Init function available:', typeof window.initProductDetailPageGlobal);
 
-if (typeof window.initProductDetailPageGlobal === 'function') {
-    console.log('✅ Calling initProductDetailPageGlobal...');
-    window.initProductDetailPageGlobal();
-} else {
-    console.log('❌ initProductDetailPageGlobal function not found');
+try {
+    if (typeof window.initProductDetailPageGlobal === 'function') {
+        console.log('✅ Calling initProductDetailPageGlobal...');
+        window.initProductDetailPageGlobal();
+    } else {
+        console.log('❌ initProductDetailPageGlobal function not found');
+    }
+} catch (err) {
+    console.warn('⚠️ initProductDetailPageGlobal error (ignored to keep page interactive):', err);
 }
 
 // Keep helper functions
@@ -345,21 +371,135 @@ function buyNow() {
 
 // Star rating for review modal
 document.addEventListener('DOMContentLoaded', function() {
+    // Smart actions: copy product link & download image
+    function getProductUrl(){
+        try {
+            const id = (window.productData && window.productData.id) ? window.productData.id : null;
+            if (!id) return window.location.href;
+            return `${window.location.origin}/product/${id}`;
+        } catch(e){ return window.location.href; }
+    }
+
+    window.copyProductLink = async function(){
+        const link = getProductUrl();
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(link);
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = link;
+                ta.style.position = 'fixed';
+                ta.style.top = '-1000px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+            if (typeof showNotification === 'function') {
+                showNotification('Đã sao chép link sản phẩm vào clipboard', 'success');
+            }
+        } catch (err) {
+            if (typeof showNotification === 'function') {
+                showNotification('Không thể sao chép link. Vui lòng thử lại.', 'error');
+            }
+        }
+    }
+
+    window.downloadCurrentImage = async function(){
+        try {
+            const img = document.getElementById('mainImage');
+            const url = img ? img.src : null;
+            if (!url) throw new Error('Không tìm thấy ảnh');
+
+            const nameFromTitle = (document.getElementById('detailName')?.textContent || 'product')
+                .replace(/[^a-zA-Z0-9\- ]/g,'')
+                .replace(/\s+/g,'-')
+                .toLowerCase() || 'product';
+            // Always use backend proxy to force download with correct headers
+            const productId = (window.productData && (window.productData.id || window.productData.product_id)) || 'product';
+            const filename = `${nameFromTitle}-${productId}.jpg`;
+            const proxy = `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+            const a = document.createElement('a');
+            a.href = proxy;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            if (typeof showNotification === 'function') {
+                showNotification('Đang tải ảnh sản phẩm...', 'success');
+            }
+        } catch(err){
+            const img = document.getElementById('mainImage');
+            if (img && img.src) window.open(img.src, '_blank');
+        }
+    }
+
+    function bindSmartActionButtons(){
+        const copyBtns = [
+            document.getElementById('btnCopyProductLink'),
+            document.getElementById('btnCopyProductLink_2')
+        ].filter(Boolean);
+        copyBtns.forEach(btn => {
+            if (!btn.dataset.bound) {
+                btn.addEventListener('click', copyProductLink);
+                btn.dataset.bound = '1';
+            }
+        });
+
+        const dlBtns = [
+            document.getElementById('btnDownloadImage'),
+            document.getElementById('btnDownloadImage_2')
+        ].filter(Boolean);
+        dlBtns.forEach(btn => {
+            if (!btn.dataset.bound) {
+                btn.addEventListener('click', downloadCurrentImage);
+                btn.dataset.bound = '1';
+            }
+        });
+    }
+
+    function onReady(fn){
+        if (document.readyState !== 'loading') fn();
+        else document.addEventListener('DOMContentLoaded', fn);
+    }
+
+    onReady(bindSmartActionButtons);
+
+    // Event delegation fallback (in case DOM is re-rendered by other scripts)
+    document.addEventListener('click', function(e){
+        const t = e.target;
+        const copyBtn = t.closest && (t.closest('#btnCopyProductLink') || t.closest('#btnCopyProductLink_2'));
+        if (copyBtn) {
+            e.preventDefault();
+            copyProductLink();
+            return;
+        }
+        const dlBtn = t.closest && (t.closest('#btnDownloadImage') || t.closest('#btnDownloadImage_2'));
+        if (dlBtn) {
+            e.preventDefault();
+            downloadCurrentImage();
+            return;
+        }
+    });
+
     const stars = document.querySelectorAll('.stars-input i');
-    stars.forEach(star => {
-        star.addEventListener('click', function() {
-            const rating = this.dataset.rating;
-            stars.forEach((s, index) => {
-                if (index < rating) {
-                    s.classList.remove('far');
-                    s.classList.add('fas');
-                } else {
-                    s.classList.remove('fas');
-                    s.classList.add('far');
-                }
+    if (stars && stars.length) {
+        stars.forEach(star => {
+            star.addEventListener('click', function() {
+                const rating = this.dataset.rating;
+                stars.forEach((s, index) => {
+                    if (index < rating) {
+                        s.classList.remove('far');
+                        s.classList.add('fas');
+                    } else {
+                        s.classList.remove('fas');
+                        s.classList.add('far');
+                    }
+                });
             });
         });
-    });
+    }
 });
 </script>
 {% endblock %} 

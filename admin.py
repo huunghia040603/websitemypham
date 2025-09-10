@@ -3,6 +3,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.db import models
 from ckeditor.widgets import CKEditorWidget
 from .models import *
+from django import forms
 
 
 # Tạo một trang admin tùy chỉnh
@@ -61,7 +62,7 @@ class CollaboratorAdmin(admin.ModelAdmin):
 
 # --- Product-related Admin ---
 class BrandAdmin(admin.ModelAdmin):
-    list_display = ('name', 'country')
+    list_display = ('id','name', 'country')
     search_fields = ('name',)
 
 
@@ -87,23 +88,40 @@ class GiftAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+
+# Sửa lại class ProductAdmin
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'name', 'brand', 'rating', 'display_tags', 'category', 'stock_quantity',
-        'original_price', 'discounted_price', 'discount_rate', 'status'
+        'id', 'name', 'brand', 'rating', 'display_tags', 'category',
+        'stock_quantity', 'import_price', 'original_price', 'discounted_price',
+        'discount_rate', 'status'
     )
+
+    # Chỉ giữ lại các trường có thể chỉnh sửa được
+    list_editable = (
+        'name', 'brand', 'stock_quantity', 'import_price',
+        'original_price', 'discounted_price', 'status'
+    )
+
     list_filter = ('brand', 'category', 'tags', 'status')
     search_fields = ('name', 'brand__name', 'status')
+
+    # Sử dụng filter_horizontal để chọn tags và gifts
     filter_horizontal = ('tags', 'gifts')
+
     formfield_overrides = {
         models.TextField: {'widget': CKEditorWidget},
     }
+
     fieldsets = (
         (None, {'fields': ('name', 'image', 'brand', 'category')}),
         ('Mô tả', {'fields': ('description',)}),
         ('Thông tin giá và kho', {'fields': ('import_price', 'original_price', 'discounted_price', 'stock_quantity', 'sold_quantity')}),
-        ('Thuộc tính khác', {'fields': ('tags', 'gifts', 'rating', 'status')}),
+        # Bỏ tags và gifts khỏi fieldsets để chúng được hiển thị bởi filter_horizontal
+        ('Thuộc tính khác', {'fields': ('rating', 'status')}),
+        ('Tags và Quà tặng', {'fields': ('tags', 'gifts')}),
     )
+
     readonly_fields = ('discount_rate', 'savings_price')
 
     def display_tags(self, obj):
@@ -149,6 +167,34 @@ class OrderAdmin(admin.ModelAdmin):
     phone_number.short_description = 'Số điện thoại'
 
 
+class BlogAdmin(admin.ModelAdmin):
+    """
+    Tùy chỉnh giao diện quản trị cho model Blog
+    """
+    # Các trường hiển thị trên trang danh sách Blog
+    list_display = ('title', 'tag', 'post_date', 'views', 'is_active')
+
+    list_filter = ('tag', 'post_date', 'is_active')
+
+    # Thêm thanh tìm kiếm dựa trên các trường
+    search_fields = ('title', 'short_description', 'content')
+    fieldsets = (
+        (None, {
+            'fields': ('title', 'short_description', 'content', 'link', 'img_thumbnail')
+        }),
+        ('Thông tin chi tiết', {
+            'fields': ('tag', 'is_active', 'views'),
+            'classes': ('collapse',) # Ẩn phần này, có thể mở rộng
+        }),
+    )
+
+    # Chỉ cho phép chỉnh sửa các trường này trong trang quản trị
+    readonly_fields = (
+        'post_date',
+        'views'
+    )
+
+
 # --- Đăng ký các models với admin_site tùy chỉnh ---
 admin_site.register(User, CustomUserAdmin)
 admin_site.register(Admin)
@@ -163,6 +209,7 @@ admin_site.register(Product, ProductAdmin)
 admin_site.register(Voucher, VoucherAdmin)
 admin_site.register(Order, OrderAdmin)
 admin_site.register(OrderItem)
+admin_site.register(Blog, BlogAdmin)
 
 # --- Analytics ---
 class AnalyticsSnapshotAdmin(admin.ModelAdmin):
@@ -174,132 +221,49 @@ class AnalyticsSnapshotAdmin(admin.ModelAdmin):
 admin_site.register(AnalyticsSnapshot, AnalyticsSnapshotAdmin)
 
 
+# --- Lucky Number Event Admin ---
+class LuckyPrizeInline(admin.TabularInline):
+    model = LuckyPrize
+    extra = 1
+    fields = ('name', 'image', 'value', 'order')
 
 
-# from django.contrib import admin
-# from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-# from django.db import models
-# from ckeditor.widgets import CKEditorWidget
-# from .models import *
+class LuckyEventAdmin(admin.ModelAdmin):
+    list_display = ('id', 'title', 'start_at', 'end_at', 'is_active', 'lucky_number')
+    list_filter = ('is_active',)
+    search_fields = ('title',)
+    inlines = [LuckyPrizeInline]
+    fieldsets = (
+        (None, {'fields': ('title', 'description')}),
+        ('Thời gian', {'fields': ('start_at', 'end_at', 'is_active')}),
+        ('Kết quả', {'fields': ('lucky_number',)}),
+    )
 
 
-# # Tạo một trang admin tùy chỉnh
-# class MyAdminSite(admin.AdminSite):
-#     site_header = "Hệ thống quản lý Buddy Skincare"
-#     site_title = "Buddy Skincare Admin Portal"
-#     index_title = "Chào mừng đến với trang quản trị"
-
-# admin_site = MyAdminSite(name='myadmin')
-
-# # --- User Admin ---
-# class CustomUserAdmin(BaseUserAdmin):
-#     list_display = ('name', 'email', 'phone_number', 'is_staff', 'is_active', 'date_joined', 'avatar')
-#     list_filter = ('is_staff', 'is_active')
-#     search_fields = ('name', 'email', 'phone_number')
-#     filter_horizontal = ('groups', 'user_permissions',)
-
-#     fieldsets = (
-#         (None, {'fields': ('email', 'phone_number', 'password')}),
-#         ('Thông tin cá nhân', {'fields': ('name', 'dob', 'address', 'avatar')}),
-#         ('Phân quyền', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-#         ('Ngày quan trọng', {'fields': ('last_login', 'date_joined')}),
-#     )
-
-#     add_fieldsets = (
-#         (None, {'fields': ('email', 'phone_number', 'password', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-#     )
-
-#     ordering = ('email',)
-
-# # --- Product-related Admin ---
-# class BrandAdmin(admin.ModelAdmin):
-#     list_display = ('name', 'country')
-#     search_fields = ('name',)
+class LuckyParticipantAdmin(admin.ModelAdmin):
+    list_display = ('id', 'event', 'name', 'zalo_phone', 'chosen_number', 'submitted_at')
+    list_filter = ('event', 'chosen_number')
+    search_fields = ('name', 'zalo_phone', 'address', 'message')
+    readonly_fields = ()
+    fieldsets = (
+        (None, {'fields': ('event', 'chosen_number', 'name', 'zalo_phone')}),
+        ('Thông tin khác', {'fields': ('address', 'message', 'submitted_at')}),
+    )
 
 
+class LuckyWinnerAdmin(admin.ModelAdmin):
+    list_display = ('event', 'participant', 'get_number', 'prize', 'decided_at')
+    readonly_fields = ('decided_at',)
 
-# class TagAdmin(admin.ModelAdmin):
-#     list_display = ('code', 'name', 'status', 'start_date', 'end_date', 'discounted_price_reduction')
-#     search_fields = ('name', 'code')
-#     list_filter = ('status', 'start_date', 'end_date')
-
-
-#     def save_model(self, request, obj, form, change):
-#         # Tự động cập nhật trạng thái tag khi lưu
-#         now = timezone.now()
-#         if obj.start_date <= now and obj.end_date >= now:
-#             obj.status = 'active'
-#         elif obj.start_date > now:
-#             obj.status = 'upcoming'
-#         else:
-#             obj.status = 'expired'
-#         super().save_model(request, obj, form, change)
-
-# class GiftAdmin(admin.ModelAdmin):
-#     list_display = ('name',)
-#     search_fields = ('name',)
+    def get_number(self, obj):
+        try:
+            return obj.participant.chosen_number
+        except Exception:
+            return '-'
+    get_number.short_description = 'Số may mắn'
 
 
-
-# class ProductAdmin(admin.ModelAdmin):
-#     list_display = (
-#         'id', 'name', 'brand', 'rating', 'display_tags', 'category', 'stock_quantity',
-#         'original_price', 'discounted_price', 'discount_rate', 'status'
-#     )
-#     list_filter = ('brand', 'category', 'tags', 'status')
-#     search_fields = ('name', 'brand__name', 'status')
-#     filter_horizontal = ('tags', 'gifts')
-#     formfield_overrides = {
-#         models.TextField: {'widget': CKEditorWidget},
-#     }
-#     fieldsets = (
-#         (None, {'fields': ('name', 'image', 'brand', 'category')}),
-#         ('Mô tả', {'fields': ('description',)}),
-#         ('Thông tin giá và kho', {'fields': ('import_price', 'original_price', 'discounted_price', 'stock_quantity', 'sold_quantity')}),
-#         ('Thuộc tính khác', {'fields': ('tags', 'gifts', 'rating', 'status')}),
-#     )
-#     readonly_fields = ('discount_rate', 'savings_price')
-
-#     def display_tags(self, obj):
-#         return ", ".join([tag.name for tag in obj.tags.all()])
-
-#     display_tags.short_description = "Tags"
-
-# # --- Order-related Admin ---
-# class VoucherAdmin(admin.ModelAdmin):
-#     list_display = ('code', 'discount_type', 'discount_value', 'is_active', 'valid_from', 'valid_to', 'times_used')
-#     list_filter = ('discount_type', 'is_active')
-#     search_fields = ('code',)
-
-# class OrderItemInline(admin.TabularInline):
-#     model = OrderItem
-#     extra = 1
-#     # Để hiển thị sản phẩm, bạn có thể thêm product vào list_display
-#     raw_id_fields = ('product',) # Sử dụng raw_id_fields để chọn sản phẩm dễ dàng hơn nếu có nhiều sản phẩm
-
-# class OrderAdmin(admin.ModelAdmin):
-#     inlines = [OrderItemInline]
-#     list_display = ('id', 'customer', 'order_date', 'total_amount', 'collaborator_code', 'voucher')
-#     list_filter = ('order_date', 'customer')
-#     search_fields = ('customer__email', 'collaborator_code', 'voucher__code')
-#     readonly_fields = ('total_amount',)
-
-# # --- Đăng ký các models với admin_site tùy chỉnh ---
-# admin_site.register(User, CustomUserAdmin)
-# admin_site.register(Admin)
-# admin_site.register(Collaborator)
-# admin_site.register(Staff)
-# admin_site.register(Customer)
-# admin_site.register(Brand, BrandAdmin)
-# admin_site.register(Category)
-# admin_site.register(Tag, TagAdmin)
-# admin_site.register(Gift, GiftAdmin)
-
-# admin_site.register(Product, ProductAdmin)
-# admin_site.register(Voucher, VoucherAdmin)
-# admin_site.register(Order, OrderAdmin)
-# admin_site.register(OrderItem)
-
-
-
+admin_site.register(LuckyEvent, LuckyEventAdmin)
+admin_site.register(LuckyParticipant, LuckyParticipantAdmin)
+admin_site.register(LuckyWinner, LuckyWinnerAdmin)
 

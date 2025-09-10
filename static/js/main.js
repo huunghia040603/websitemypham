@@ -980,6 +980,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+
+    // SAFETY: allow normal anchor navigation (avoid accidental preventDefault from other handlers)
+    document.addEventListener('click', function(e) {
+        const anchor = e.target.closest('a[href]');
+        if (!anchor) return;
+        const href = anchor.getAttribute('href') || '';
+        // Only interfere for real navigations (absolute/relative paths), not hash or JS links
+        const isHash = href.startsWith('#') || href.startsWith('javascript:');
+        if (!isHash) {
+            // Stop other handlers that might call preventDefault; do NOT prevent default here
+            e.stopImmediatePropagation();
+        }
+    }, true);
+
+    // SAFETY: if any full-screen overlay accidentally remains, disable pointer events after 5s
+    setTimeout(() => {
+        document.querySelectorAll('.overlay, .loading, .loader, [data-overlay]')
+            .forEach(el => { el.style.pointerEvents = 'none'; el.style.opacity = '0.001'; });
+    }, 5000);
     
     // Force sync payment method after page is fully loaded
     window.addEventListener('load', function() {

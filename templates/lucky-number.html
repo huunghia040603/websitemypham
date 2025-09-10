@@ -1,0 +1,2192 @@
+{% extends "base.html" %}
+
+{% block title %}Số may mắn - BuddySkincare{% endblock %}
+
+{% block content %}
+<style>
+  /* === OPTIMIZED CSS WITH PERFORMANCE FOCUS === */
+  :root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    --glass-bg: rgba(255, 255, 255, 0.25);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --shadow-soft: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    --shadow-hover: 0 15px 35px 0 rgba(31, 38, 135, 0.5);
+    --border-radius: 20px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* === HERO SECTION === */
+  .hero-lucky {
+    background: linear-gradient(135deg, #ffe8af 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid #f4e8c9;
+    box-shadow: 0 4px 12px rgba(244, 232, 201, 0.2) ;
+    
+  } 
+
+  @media (min-width: 480px) {
+    .hero-lucky {
+      padding: 20px;
+      border-radius: 14px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .hero-lucky {
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(244, 232, 201, 0.3);
+    }
+  }
+
+  /* === PRIZE GRID === */
+  .prize-tier {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+
+  @media (min-width: 480px) {
+    .prize-tier {
+      gap: 1rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .prize-tier {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+  }
+
+  /* === PRIZE GRID IN SIDEBAR === */
+  .winners-section .prize-tier {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+  }
+
+  @media (min-width: 480px) {
+    .winners-section .prize-tier {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+    }
+  }
+
+  @media (min-width: 992px) {
+    .winners-section .prize-tier {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+  }
+
+  .prize-card {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 0.5rem 0.5rem 0.5rem !important;
+    text-align: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* === PRIZE CARD IN SIDEBAR === */
+  .winners-section .prize-card {
+    padding: 0.4rem 0.3rem 0.3rem 0.3rem !important;
+    border-radius: 6px;
+  }
+
+  @media (min-width: 480px) {
+    .prize-card {
+      padding: 0.45rem 0.75rem 0.75rem 0.75rem;
+      border-radius: 10px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .prize-card {
+      padding: 0.25rem 1rem 1rem 1rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+  }
+
+
+  .prize-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    border-color: #ffd700;
+  }
+
+  .prize-img {
+    width: 100%;
+    height: 180px !important;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    position: relative;
+  }
+
+  /* === PRIZE IMAGE IN SIDEBAR === */
+  .winners-section .prize-img {
+    height: 140px !important;
+    border-radius: 4px;
+    margin-bottom: 0.3rem;
+    p
+  }
+
+  @media (min-width: 480px) {
+    .prize-img {
+      height: 90px;
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .prize-img {
+      height: 100px;
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+    }
+  }
+
+
+  .prize-card:hover .prize-img {
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+
+  .prize-name {
+    font-weight: 500;
+    font-size: 0.65rem;
+    color: #333;
+    margin: 0;
+    line-height: 1.2;
+    transition: color 0.2s ease;
+  }
+
+  /* === PRIZE NAME IN SIDEBAR === */
+  .winners-section .prize-name {
+    font-size: 0.55rem;
+    line-height: 1.1;
+    padding: 5px 10px;
+  }
+
+  /* === PRIZE VALUE === */
+  .prize-value {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #28a745;
+    text-align: center;
+    margin-top: 0.25rem;
+    padding: 0.2rem 0.4rem;
+    background: rgba(40, 167, 69, 0.1);
+    border-radius: 4px;
+    border: 1px solid rgba(40, 167, 69, 0.2);
+  }
+
+  .winners-section .prize-value {
+    font-size: 0.5rem;
+    padding: 0.15rem 0.3rem;
+    margin-top: 0.2rem;
+  }
+
+  /* === RESULT ANNOUNCEMENT TIME === */
+  #resultAnnouncementTime {
+    background: rgba(240, 36, 13, 0.1);
+    /* border: 1px solid rgba(13, 202, 240, 0.2); */
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    margin-top: 0.5rem;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+
+  #endTimeDisplay {
+    color: #fd0d0d;
+    font-weight: 700;
+  }
+
+  /* === PARTICIPANTS SECTION === */
+  .participants-section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border: 1px solid #e9ecef;
+  }
+
+  .participant-item {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 0.1rem 0.5rem;
+    margin-bottom: 0.1rem;
+    transition: all 0.2s ease;
+    display: block;
+    width: 100%;
+  }
+
+  .participant-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+  }
+
+  .participant-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .participant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 0.5rem;
+  }
+
+  .participant-name {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+    min-width: 80px;
+    flex-shrink: 0;
+  }
+
+  .participant-phone {
+    font-size: 0.8rem;
+    color: #6c757d;
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+
+  .participant-time {
+    font-size: 0.75rem;
+    color: #adb5bd;
+    min-width: 140px;
+    flex-shrink: 0;
+  }
+
+  .participant-number-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    flex-shrink: 0;
+  }
+
+  .participant-number-container span:first-child {
+    font-size: 0.75rem;
+    color: #6c757d;
+  }
+
+  .participant-number {
+    background: #fde53033;
+    color: rgb(0, 0, 0);
+    padding: 0.05rem 0.3rem !important;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 30px;
+    text-align: center;
+  }
+
+  .participant-details {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+
+  #participantsBody {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+  }
+
+  #participantsBody::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  #participantsBody::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 2px;
+  }
+
+  #participantsBody::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 2px;
+  }
+
+  #participantsBody::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+
+  /* Phone search styles */
+  #phoneSearch {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+  }
+
+  #phoneSearch:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  /* Mobile responsive for participant row */
+  @media (max-width: 768px) {
+    .participant-item {
+      padding: 0.05rem 0.2rem !important;
+      margin-bottom: 0.02rem !important;
+    }
+    
+    .participant-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.2rem;
+      overflow: hidden;
+    }
+    
+    .participant-name {
+      font-size: 0.65rem;
+      font-weight: 600;
+      min-width: 50px;
+      max-width: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .participant-phone {
+      font-size: 0.5rem;
+      min-width: 70px;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .participant-time {
+      font-size: 0.45rem;
+      min-width: 60px;
+      max-width: 70px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .participant-number-container {
+      margin-left: auto;
+      min-width: 50px;
+      text-align: right;
+    }
+    
+    .participant-number-container span:first-child {
+      font-size: 0.5rem;
+    }
+    
+    .participant-number {
+      font-size: 0.6rem !important;
+      padding: 0.02rem 0.1rem !important;
+    }
+  }
+
+  /* Extra small mobile responsive */
+  @media (max-width: 480px) {
+    .participant-item {
+      padding: 0.05rem 0.25rem !important;
+      margin-bottom: 0.1rem !important;
+    }
+    
+    .participant-row {
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.1rem;
+      overflow: hidden;
+    }
+    
+    .participant-name {
+      font-size: 0.6rem;
+      min-width: 40px;
+      max-width: 50px;
+    }
+    
+    .participant-phone {
+      font-size: 0.45rem;
+      min-width: 60px;
+      max-width: 70px;
+    }
+    
+    .participant-time {
+      margin-left: 10px;
+      font-size: 0.4rem;
+      min-width: 50px;
+      max-width: 80px;
+    }
+    
+    .participant-number-container {
+      margin-left: auto;
+      min-width: 40px;
+    }
+    
+    .participant-number-container span:first-child {
+      font-size: 0.45rem;
+    }
+    
+    .participant-number {
+      font-size: 0.55rem !important;
+      padding: 0.01rem 0.08rem !important;
+    }
+  }
+
+  @media (min-width: 480px) {
+    .prize-name {
+      font-size: 0.7rem;
+      line-height: 1.25;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .prize-name {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #2d3748;
+      line-height: 1.3;
+    }
+  }
+
+  .prize-card:hover .prize-name {
+    color: #1a202c;
+  }
+
+  .prize-ribbon {
+    position: absolute;
+    top: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    padding: 2px 8px !important;
+    border-radius: 12px;
+    font-size: 0.6rem !important;
+    font-weight: 700;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+
+  /* === PRIZE RIBBON IN SIDEBAR === */
+  .winners-section .prize-ribbon {
+    padding: 1px 4px !important;
+    border-radius: 6px;
+    font-size: 0.45rem !important;
+    top: 2px;
+  }
+
+  @media (min-width: 480px) {
+    .prize-ribbon {
+      font-size: 0.65rem;
+      padding: 4px 10px;
+      border-radius: 14px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .prize-ribbon {
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 16px;
+    }
+  }
+
+  /* === PRIZE CARD ANIMATIONS === */
+  .prize-card.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .prize-card.loading {
+    background: #f8f9fa;
+  }
+
+  .prize-card.loading .prize-img {
+    background: #e9ecef;
+  }
+
+  .prize-card.loading .prize-name {
+    background: #e9ecef;
+    color: transparent;
+    border-radius: 4px;
+  }
+
+  /* === COUNTDOWN TIMER === */
+  .countdown-container {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    margin: 2rem 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .countdown-timer {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .countdown-item {
+    background: var(--success-gradient);
+    color: white;
+    padding: 1rem;
+    border-radius: 12px;
+    min-width: 80px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .countdown-number {
+    font-size: 2rem;
+    font-weight: 800;
+    display: block;
+  }
+
+  .countdown-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* === PARTICIPATION FORM === */
+  .participation-form {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  /* === RULES SECTION === */
+  .rules-section {
+    background: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 2rem 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: all 0.3s ease;
+    height: fit-content;
+  }
+
+  .rules-content {
+    max-height: 600px;
+    /* overflow-y: auto; */
+  }
+
+  .rule-item {
+    padding: 0.75rem;
+    border-radius: 8px;
+    background: #f8f9fa;
+    border-left: 3px solid #e9ecef;
+    transition: all 0.2s ease;
+  }
+
+  .rule-item:hover {
+    background: #e9ecef;
+    border-left-color: #007bff;
+  }
+
+  .rule-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(0, 123, 255, 0.1);
+    flex-shrink: 0;
+  }
+
+  .rule-item:nth-child(1) .rule-icon {
+    background: rgba(0, 123, 255, 0.1);
+  }
+
+  .rule-item:nth-child(2) .rule-icon {
+    background: rgba(40, 167, 69, 0.1);
+  }
+
+  .rule-item:nth-child(3) .rule-icon {
+    background: rgba(255, 193, 7, 0.1);
+  }
+
+  .rule-item:nth-child(4) .rule-icon {
+    background: rgba(220, 53, 69, 0.1);
+  }
+
+  .rule-item:nth-child(5) .rule-icon {
+    background: rgba(23, 162, 184, 0.1);
+  }
+
+  .rule-item:nth-child(6) .rule-icon {
+    background: rgba(40, 167, 69, 0.1);
+  }
+
+  @media (max-width: 991px) {
+    .rules-section {
+      margin-top: 2rem;
+    }
+  }
+
+  @media (min-width: 480px) {
+    .participation-form {
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      border-radius: 14px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .participation-form {
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      margin: 2rem 0;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  @media (min-width: 480px) {
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: var(--transition);
+    background: #ffffff;
+  }
+
+  @media (min-width: 480px) {
+    .form-control {
+      padding: 0.7rem 0.9rem;
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .form-control {
+      padding: 0.75rem 1rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 1rem;
+      background: rgba(255,255,255,0.9);
+    }
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  /* === MODERN NUMBER SELECTOR === */
+  .number-selector-container {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  
+  @keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .number-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+  }
+
+  @media (min-width: 480px) {
+    .number-selector {
+      gap: 0.75rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .number-selector {
+      gap: 1rem;
+    }
+  }
+
+  /* === NUMBER PILL (Hero Section) === */
+  .number-pill {
+    font-family: 'Courier New', monospace;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #2d3748;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    min-width: 80px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .number-pill:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+  }
+
+  @media (min-width: 480px) {
+    .number-pill {
+      font-size: 2.5rem;
+      padding: 0.75rem 1.5rem;
+      min-width: 100px;
+      border-radius: 10px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .number-pill {
+      font-size: 3rem;
+      background: var(--glass-bg);
+      border: 2px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1rem 2rem;
+      min-width: 120px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+  }
+
+  /* === NUMBER INPUT (Form Section) === */
+  .number-input {
+    font-family: 'Courier New', monospace;
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 3px solid #e9ecef;
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    min-width: 100px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .number-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2), 0 8px 32px rgba(0,0,0,0.15);
+    transform: scale(1.02);
+  }
+
+  @media (min-width: 480px) {
+    .number-input {
+      font-size: 3rem;
+      padding: 0.5rem 1rem;
+      min-width: 120px;
+      border-radius: 20px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .number-input {
+      font-size: 3.5rem;
+      padding: 0.5rem 1rem;
+      min-width: 140px;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    }
+  }
+
+  .btn-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 3px 12px rgba(102, 126, 234, 0.3);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-circle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 50%;
+  }
+
+  .btn-circle:hover::before {
+    opacity: 1;
+  }
+
+  .btn-circle i {
+    position: relative;
+    z-index: 1;
+  }
+
+  @media (min-width: 480px) {
+    .btn-circle {
+      width: 45px;
+      height: 45px;
+      font-size: 1.2rem;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .btn-circle {
+      width: 50px;
+      height: 50px;
+      font-size: 1.3rem;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    }
+  }
+
+  .btn-circle:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.5);
+  }
+
+  .btn-circle:active {
+    transform: scale(1.05) translateY(0);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-submit {
+    background: var(--success-gradient);
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    width: 100%;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* === WINNERS SECTION === */
+  .winners-section {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .winner-card {
+    background: rgba(255,255,255,0.9);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid #667eea;
+    transition: var(--transition);
+  }
+
+  .winner-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  /* === LOADING STATES === */
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === RESPONSIVE DESIGN === */
+  @media (max-width: 768px) {
+    .hero-lucky { padding: 1.5rem; }
+    .prize-tier { grid-template-columns: 1fr; }
+    .countdown-timer { gap: 0.5rem; }
+    .countdown-item { min-width: 60px; padding: 0.75rem; }
+    .countdown-number { font-size: 1.5rem; }
+    .number-pill { font-size: 2rem; padding: 0.75rem 1.5rem; }
+    .number-input { font-size: 2rem; padding: 0.25rem 0.1rem; }
+  }
+
+  /* === ACCESSIBILITY === */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* === PERFORMANCE OPTIMIZATIONS === */
+  .prize-card, .countdown-item, .btn-circle {
+    will-change: transform;
+  }
+
+  .prize-img {
+    will-change: transform;
+  }
+  .countdown { 
+    display: flex; 
+    gap: 8px; 
+    align-items: center; 
+  }
+  .cd-box { 
+    background: rgba(255,255,255,0.9); 
+    border: 1px solid #f4e8c9; 
+    border-radius: 8px; 
+    padding: 6px 8px; 
+    text-align: center; 
+    min-width: 50px; 
+    box-shadow: 0 2px 6px rgba(244, 232, 201, 0.2);
+  }
+  .cd-num { 
+    font-weight: 800; 
+    font-size: 14px; 
+    color: #8b6914; 
+    display: block;
+  }
+  .cd-lbl { 
+    font-size: 9px; 
+    color: #a67c00; 
+    text-transform: uppercase; 
+    letter-spacing: 0.3px;
+  }
+
+  @media (min-width: 480px) {
+    .countdown { 
+      gap: 10px; 
+    }
+    .cd-box { 
+      padding: 7px 10px; 
+      min-width: 60px; 
+      border-radius: 9px;
+    }
+    .cd-num { 
+      font-size: 16px; 
+    }
+    .cd-lbl { 
+      font-size: 10px; 
+      letter-spacing: 0.4px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .countdown { 
+      gap: 12px; 
+    }
+    .cd-box { 
+      padding: 8px 12px; 
+      min-width: 70px; 
+      border-radius: 10px; 
+      box-shadow: 0 2px 8px rgba(244, 232, 201, 0.3);
+    }
+    .cd-num { 
+      font-size: 18px; 
+    }
+    .cd-lbl { 
+      font-size: 11px; 
+      letter-spacing: 0.5px;
+    }
+  }
+</style>
+
+<!-- === OPTIMIZED LUCKY NUMBER PAGE === -->
+<section class="container py-4">
+  <div class="row g-4">
+    <!-- === HERO SECTION === -->
+    <div class="col-12">
+      <div class="hero-lucky">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="h3 mb-1" style="font-size: 2rem; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #fd0d0d;">
+              <i class="fas fa-clover me-2 text-danger"></i>
+              Số may mắn
+            </h1>
+            <div class="text-muted text-dark">Tham gia chọn số – Minh bạch – Trúng quà xịn!</div>
+            <div class="mb-2">
+              <span class="badge  fs-6" id="totalValueDisplay" style="background-color: #03d6147b; margin-top: 5px;color: #444444;">
+                <i class="fas fa-gift me-1"></i>
+                Tổng giá trị lên đến: <span id="totalValueAmount">--</span> VNĐ
+              </span>
+            </div>
+            <p class=" small mb-0 fw-bold" id="resultAnnouncementTime">
+                <i class="fas fa-bullhorn me-1"></i>
+                Kết quả công bố: <span id="endTimeDisplay">--</span>
+              </p>
+          </div>
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <!-- Countdown Timer -->
+            <div class="countdown" id="countdownWrap" style="display:none;">
+              <div class="cd-box">
+                <div class="cd-num" id="cd-days">0</div>
+                <div class="cd-lbl">ngày</div>
+              </div>
+              <div class="cd-box">
+                <div class="cd-num" id="cd-hours">00</div>
+                <div class="cd-lbl">giờ</div>
+              </div>
+              <div class="cd-box">
+                <div class="cd-num" id="cd-mins">00</div>
+                <div class="cd-lbl">phút</div>
+              </div>
+              <div class="cd-box">
+                <div class="cd-num" id="cd-secs">00</div>
+                <div class="cd-lbl">giây</div>
+              </div>
+            </div>
+            <!-- Selected Number Display -->
+            <div class="text-center">
+              <span class="text-muted d-block mb-2">Số bạn chọn</span>
+              <div class="number-pill" id="numberPreview" style="cursor: pointer;" title="Click để chọn số">...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === PARTICIPATION FORM & PRIZES === -->
+    <div class="col-12">
+      <div class="row g-4">
+        <!-- Tham gia sự kiện -->
+        <div class="col-12 col-lg-8">
+          <div class="participation-form fade-in">
+            <div class="text-center mb-4">
+              <h3 class="h4 mb-2">
+                <i class="fas fa-user-plus me-2 text-success"></i>
+                Tham gia sự kiện
+              </h3>
+              <p class="text-muted">Điền thông tin và chọn số may mắn (00-99)</p>
+            </div>
+        
+        <form id="joinForm" class="row g-4">
+          <!-- Smart Number Selector -->
+          <div class="col-12">
+            <div class="number-selector-container">
+              <label class="form-label text-center d-block mb-3">
+                <i class="fas fa-dice me-2 text-primary"></i>
+                <span class="fw-bold">Chọn số may mắn của bạn</span>
+              </label>
+              <div class="number-selector">
+                <button type="button" class="btn-circle" onclick="changeNumber(-1)" title="Giảm số">
+                  <i class="fas fa-minus"></i>
+                </button>
+                <input type="text" class="number-input" id="chosenNumber" value="" maxlength="2" placeholder="..." inputmode="numeric" pattern="[0-9]*">
+                <button type="button" class="btn-circle" onclick="changeNumber(1)" title="Tăng số">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div class="form-text text-center mt-2">
+                <i class="fas fa-info-circle me-1"></i>
+                Chọn số từ 00 đến 99 để tham gia
+              </div>
+            </div>
+          </div>
+
+          <!-- Personal Info -->
+          <div class="col-12">
+            <div class="row g-3">
+              <!-- Tên và SĐT cùng 1 hàng -->
+              <div class="col-12 col-md-6">
+                <label class="form-label">
+                  <i class="fas fa-user me-1 text-primary"></i>
+                  Tên của bạn
+                </label>
+                <input type="text" class="form-control" id="fullName" placeholder="Nhập tên của bạn" required>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label">
+                  <i class="fab fa-whatsapp me-1 text-success"></i>
+                  SĐT Zalo
+                </label>
+                <input type="tel" class="form-control" id="zaloPhone" placeholder="Nhập SĐT Zalo của bạn" required>
+                 <div class="form-text text-warning" style="font-size: 11px;">
+                   <i class="fas fa-exclamation-triangle me-1"></i>
+                   Điền sai mất quà nhé!.
+                 </div>
+              </div>
+              
+              <!-- Địa chỉ riêng 1 hàng -->
+              <div class="col-12">
+                <label class="form-label">
+                  <i class="fas fa-map-marker-alt me-1 text-info"></i>
+                  Địa chỉ
+                </label>
+                <input type="text" class="form-control" id="address" placeholder="Nhập địa chỉ đầy đủ để nhận quà" required>
+              </div>
+              
+              <!-- Lời chúc -->
+              <div class="col-12">
+                <label class="form-label">
+                  <i class="fas fa-heart me-1 text-danger"></i>
+                  Lời chúc đến BuddySkincare
+                </label>
+                <textarea class="form-control" id="message" rows="2" placeholder="Chúc BuddySkincare luôn phát triển và mang đến nhiều sản phẩm chất lượng!"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="col-12 text-center">
+            <button class="btn-submit" type="submit" id="submitBtn">
+              <i class="fas fa-paper-plane me-2"></i>
+              <span id="submitText">Gửi tham gia</span>
+              <div class="loading-spinner" id="submitSpinner" style="display:none;"></div>
+            </button>
+          </div>
+        </form>
+          </div>
+        </div>
+
+        <!-- Phần thưởng hấp dẫn -->
+        <div class="col-12 col-lg-4">
+          <div class="winners-section fade-in">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+              <h3 class="h4 mb-2">
+                <i class="fas fa-gift me-2 text-primary"></i>
+                Phần thưởng hấp dẫn
+              </h3>
+              <span class="badge bg-primary mb-2">Top 1-5</span>
+            </div>
+            <div id="prizeList" class="prize-tier">
+              <!-- Prizes will be loaded here -->
+            </div>
+            <div id="prizeLoading" class="text-center py-4">
+              <div class="loading-spinner"></div>
+              <p class="text-muted mt-2">Đang tải phần thưởng...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === RULES SECTION === -->
+    <div class="col-12">
+      <div class="rules-section fade-in">
+        <div class="text-center mb-4">
+          <h3 class="h4 mb-2">
+            <i class="fas fa-info-circle me-2 text-info"></i>
+            Thể lệ sự kiện
+          </h3>
+        </div>
+        
+        <div class="rules-content">
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="rule-item mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="rule-icon me-3">
+                    <i class="fas fa-calendar-alt text-primary"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Thời gian</h6>
+                    <p class="text-muted small mb-0">Sự kiện diễn ra từ ngày bắt đầu đến ngày kết thúc</p>
+                    
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="rule-item mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="rule-icon me-3">
+                    <i class="fas fa-dice text-success"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Cách chơi</h6>
+                    <p class="text-muted small mb-0">Chọn 1 số từ 00-99 và điền đầy đủ thông tin</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="rule-item mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="rule-icon me-3">
+                    <i class="fas fa-trophy text-warning"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Cách xác định thắng</h6>
+                    <p class="text-muted small mb-0">Số may mắn = 2 số cuối giải đặc biệt xổ số kiến thiết</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="rule-item mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="rule-icon me-3">
+                    <i class="fas fa-clock text-danger"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Ưu tiên</h6>
+                    <p class="text-muted small mb-0">Nếu nhiều người chọn cùng số, người gửi sớm nhất thắng</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="rule-item mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="rule-icon me-3">
+                    <i class="fas fa-gift text-primary"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Phần thưởng</h6>
+                    <p class="text-muted small mb-0">Phần thưởng sẽ được gửi đến người trúng thưởng qua Zalo</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-4">
+              <div class="rule-item">
+                <div class="d-flex align-items-start">
+                  <div class="rule-icon me-3">
+                    <i class="fas fa-shield-alt text-success"></i>
+                  </div>
+                  <div>
+                    <h6 class="mb-1">Lưu ý</h6>
+                    <p class="text-muted small mb-0">Mỗi người chỉ được tham gia 1 lần duy nhất</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+     <!-- === WINNERS & PARTICIPANTS SECTION === -->
+     <div class="col-12">
+       <div class="row g-4">
+        <!-- Danh sách người tham gia -->
+        <div class="col-12 col-lg-7">
+            <div class="participants-section fade-in">
+               <div class="d-flex align-items-center justify-content-between mb-4">
+                 <h3 class="h4 mb-2">
+                   <i class="fas fa-users me-2 text-info"></i>
+                   Danh sách tham gia <span id="participantCount" class="badge bg-info ms-2">0 người</span>
+                 </h3>
+                 <button class="btn btn-outline-info btn-sm" onclick="loadParticipants()">
+                   <i class="fas fa-sync-alt me-1"></i>
+                   Làm mới
+                 </button>
+               </div>
+               
+               <!-- Tra cứu theo SĐT -->
+               <div class="mb-3">
+                 <input type="text" id="phoneSearch" class="form-control" placeholder="Vui lòng nhập chính xác sđt để tra cứu..." maxlength="10">
+               </div>
+              
+              <div id="participantsList">
+                <div id="participantsLoading" class="text-center py-4">
+                  <div class="loading-spinner"></div>
+                  <p class="text-muted mt-2">Đang tải danh sách người tham gia...</p>
+                </div>
+                <div id="participantsBody">
+                  <!-- Participants will be loaded here -->
+                </div>
+              </div>
+            </div>
+          </div>
+         <!-- Danh sách trúng thưởng -->
+         <div class="col-12 col-lg-5">
+           <div class="winners-section fade-in" style="margin-top: 0px;">
+             <div class="d-flex align-items-center justify-content-between mb-4">
+               <h3 class="h4 mb-2">
+                 <i class="fas fa-trophy me-2 text-warning"></i>
+                 Danh sách trúng thưởng
+               </h3>
+               <button class="btn btn-outline-primary btn-sm" onclick="loadWinners()">
+                 <i class="fas fa-sync-alt me-1"></i>
+                 Làm mới
+               </button>
+             </div>
+             
+             <div id="winnersList">
+               <div id="winnersLoading" class="text-center py-4">
+                 <div class="loading-spinner"></div>
+                 <p class="text-muted mt-2">Đang tải danh sách người trúng thưởng...</p>
+               </div>
+               <div id="winnersBody" class="row g-3">
+                 <!-- Winners will be loaded here -->
+               </div>
+             </div>
+           </div>
+         </div>
+
+         
+       </div>
+     </div>
+  </div>
+</section>
+
+<!-- === SUCCESS MODAL === -->
+<div class="modal fade" id="successModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+        </div>
+        <h4 class="text-success mb-3">Tham gia thành công!</h4>
+        <p class="text-muted">Cảm ơn bạn đã tham gia sự kiện. Chúc bạn may mắn!</p>
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="errorModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <div class="mb-3">
+          <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+        </div>
+        <h4 class="text-danger mb-3">Tham gia thất bại!</h4>
+        <p class="text-muted" id="errorMessage">Có lỗi xảy ra khi tham gia sự kiện.</p>
+        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// === OPTIMIZED JAVASCRIPT WITH SMART FEATURES ===
+
+// Configuration
+const CONFIG = {
+  API_BASES: ['https://buddyskincare.pythonanywhere.com', ''],
+  TIMEOUT: 10000,
+  RETRY_ATTEMPTS: 3,
+  CACHE_DURATION: 300000, // 5 minutes
+  ANIMATION_DURATION: 300
+};
+
+// Cache management
+const cache = new Map();
+
+// Smart API client with caching and retry logic
+class SmartAPI {
+  static async fetchWithTimeout(resource, options = {}, timeoutMs = CONFIG.TIMEOUT) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    
+    try {
+      const response = await fetch(resource, { 
+        ...options, 
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...options.headers
+        }
+      });
+      return response;
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  static async getJson(path, useCache = true) {
+    const cacheKey = `GET:${path}`;
+    
+    // Check cache first
+    if (useCache && cache.has(cacheKey)) {
+      const cached = cache.get(cacheKey);
+      if (Date.now() - cached.timestamp < CONFIG.CACHE_DURATION) {
+        return cached.data;
+      }
+      cache.delete(cacheKey);
+    }
+
+    // Try each API base with retry logic
+    for (const base of CONFIG.API_BASES) {
+      for (let attempt = 0; attempt < CONFIG.RETRY_ATTEMPTS; attempt++) {
+        try {
+          const resp = await this.fetchWithTimeout(`${base}${path}`);
+          if (resp.ok) {
+            const data = await resp.json();
+            // Cache successful responses
+            if (useCache) {
+              cache.set(cacheKey, { data, timestamp: Date.now() });
+            }
+            return data;
+          }
+          if (resp.status === 204) return null;
+        } catch (e) {
+          if (attempt === CONFIG.RETRY_ATTEMPTS - 1) {
+            console.warn(`API call failed after ${CONFIG.RETRY_ATTEMPTS} attempts:`, e);
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static async postJson(path, body) {
+    for (const base of CONFIG.API_BASES) {
+      try {
+        const resp = await this.fetchWithTimeout(`${base}${path}`, {
+          method: 'POST',
+          body: JSON.stringify(body)
+        });
+        
+        if (resp.ok) {
+          const data = await resp.json().catch(() => ({}));
+          return data;
+        } else {
+          // Lỗi từ server - parse error message
+          const errorData = await resp.json().catch(() => ({}));
+          const error = new Error('Server error');
+          error.response = { data: errorData, status: resp.status };
+          throw error;
+        }
+      } catch (e) {
+        if (e.response) {
+          // Re-throw server errors
+          throw e;
+        }
+        console.warn('POST request failed:', e);
+      }
+    }
+    throw new Error('Không thể kết nối đến server. Vui lòng thử lại sau!');
+  }
+}
+
+// State management
+const state = {
+  activeEvent: null,
+  currentNumber: null,
+  isLoading: false,
+  isSubmitting: false
+};
+
+// Utility functions
+const utils = {
+  // Format number with leading zero
+  formatNumber(num) {
+    if (num === null || num === undefined) {
+      return '...';
+    }
+    return num.toString().padStart(2, '0');
+  },
+
+  // Show loading state
+  showLoading(elementId, show = true) {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.style.display = show ? 'block' : 'none';
+    }
+  },
+
+  // Show success message
+  showSuccess(message) {
+    const modal = new bootstrap.Modal(document.getElementById('successModal'));
+    const modalBody = document.querySelector('#successModal .modal-body p');
+    if (modalBody) modalBody.textContent = message;
+    modal.show();
+  },
+
+  // Show error message
+  showError(message) {
+    const modal = new bootstrap.Modal(document.getElementById('errorModal'));
+    const modalBody = document.querySelector('#errorModal #errorMessage');
+    if (modalBody) modalBody.textContent = message;
+    modal.show();
+  },
+
+  // Animate element
+  animate(element, animationClass) {
+    element.classList.add(animationClass);
+    setTimeout(() => {
+      element.classList.remove(animationClass);
+    }, CONFIG.ANIMATION_DURATION);
+  }
+};
+
+// Event handlers
+const handlers = {
+  // Number selection
+  changeNumber(delta) {
+    if (state.currentNumber === null) {
+      state.currentNumber = 0;
+    }
+    state.currentNumber = Math.max(0, Math.min(99, state.currentNumber + delta));
+    document.getElementById('chosenNumber').value = utils.formatNumber(state.currentNumber);
+    
+    // Update preview in hero section
+    const previewElement = document.getElementById('numberPreview');
+    if (previewElement) {
+      previewElement.textContent = utils.formatNumber(state.currentNumber);
+    }
+  },
+
+  // Handle direct input
+  handleNumberInput(event) {
+    let value = event.target.value.replace(/\D/g, ''); // Only allow digits
+    if (value.length > 2) value = value.slice(0, 2); // Max 2 digits
+    
+    // Update state but don't immediately format the input
+    if (value === '') {
+      state.currentNumber = null;
+    } else {
+      state.currentNumber = parseInt(value, 10);
+    }
+    
+    // Update preview in hero section
+    const previewElement = document.getElementById('numberPreview');
+    if (previewElement) {
+      if (state.currentNumber === null) {
+        previewElement.textContent = '...';
+      } else {
+        previewElement.textContent = utils.formatNumber(state.currentNumber);
+      }
+    }
+  },
+
+  // Form submission
+  async handleSubmit(event) {
+    event.preventDefault();
+    
+    if (state.isSubmitting) return;
+    
+    state.isSubmitting = true;
+    const submitBtn = document.getElementById('submitBtn');
+    const submitText = document.getElementById('submitText');
+    const submitSpinner = document.getElementById('submitSpinner');
+    
+    // Update UI
+    submitBtn.disabled = true;
+    submitText.textContent = 'Đang gửi...';
+    submitSpinner.style.display = 'inline-block';
+    
+    try {
+      const formData = {
+        event: state.activeEvent.id,
+        chosen_number: utils.formatNumber(state.currentNumber),
+        name: document.getElementById('fullName').value.trim(),
+        zalo_phone: document.getElementById('zaloPhone').value.trim(),
+        address: document.getElementById('address').value.trim(),
+        message: document.getElementById('message').value.trim()
+      };
+
+      // Validate form data
+      if (!formData.name || !formData.zalo_phone || !formData.address) {
+        throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      }
+
+      if (!formData.chosen_number || formData.chosen_number === '' || formData.chosen_number === '...' || state.currentNumber === null) {
+        throw new Error('Vui lòng điền số bạn chọn');
+      }
+
+      if (!/^\d{2}$/.test(formData.chosen_number)) {
+        throw new Error('Số may mắn phải là 2 chữ số (00-99)');
+      }
+
+      // Validate phone number format
+      if (!/^[0-9]{10,11}$/.test(formData.zalo_phone)) {
+        throw new Error('Số điện thoại phải có 10-11 chữ số');
+      }
+
+      // Submit data
+      await SmartAPI.postJson('/lucky-participants/', formData);
+      
+      // Success
+      utils.showSuccess('Cảm ơn bạn đã tham gia! Chúc bạn may mắn!');
+      document.getElementById('joinForm').reset();
+      state.currentNumber = 0;
+      document.getElementById('numberPreview').textContent = '00';
+      
+    } catch (error) {
+      // Xử lý lỗi từ API
+      let errorMessage = error.message;
+      
+      // Kiểm tra nếu là lỗi từ server
+      if (error.response && error.response.data) {
+        const errorData = error.response.data;
+        
+        // Lỗi validation từ Django
+        if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+          errorMessage = errorData.non_field_errors[0];
+        } else if (errorData.zalo_phone && errorData.zalo_phone.length > 0) {
+          errorMessage = errorData.zalo_phone[0];
+        } else if (errorData.chosen_number && errorData.chosen_number.length > 0) {
+          errorMessage = errorData.chosen_number[0];
+        } else if (errorData.name && errorData.name.length > 0) {
+          errorMessage = errorData.name[0];
+        } else if (errorData.address && errorData.address.length > 0) {
+          errorMessage = errorData.address[0];
+        }
+      }
+      
+      utils.showError(errorMessage);
+    } finally {
+      // Reset UI
+      state.isSubmitting = false;
+      submitBtn.disabled = false;
+      submitText.textContent = 'Gửi tham gia';
+      submitSpinner.style.display = 'none';
+    }
+  }
+};
+
+// Main functions
+async function loadActiveEvent() {
+  try {
+    utils.showLoading('prizeLoading', true);
+    
+    // Try active endpoint first
+    state.activeEvent = await SmartAPI.getJson('/lucky-events/active/');
+    
+    if (!state.activeEvent) {
+      // Fallback: get all events and find active one
+      const events = await SmartAPI.getJson('/lucky-events/');
+      if (events && events.length > 0) {
+        const now = new Date();
+        state.activeEvent = events.find(event => {
+          const start = new Date(event.start_at);
+          const end = new Date(event.end_at);
+          return start <= now && end >= now && event.is_active;
+        });
+      }
+    }
+    
+    if (state.activeEvent) {
+      afterLoadEvent();
+    } else {
+      showNoActiveEvent();
+    }
+  } catch (error) {
+    console.error('Error loading active event:', error);
+    showNoActiveEvent();
+  } finally {
+    utils.showLoading('prizeLoading', false);
+  }
+}
+
+function afterLoadEvent() {
+  if (!state.activeEvent) return;
+  
+  // Render prizes
+  renderPrizes(state.activeEvent.prizes || []);
+  
+  // Setup countdown
+  setupCountdown();
+  
+  // Display end time
+  displayEndTime();
+}
+
+function displayEndTime() {
+  if (!state.activeEvent) return;
+  
+  const endTimeElement = document.getElementById('endTimeDisplay');
+  if (!endTimeElement) return;
+  
+  const endTime = new Date(state.activeEvent.end_at);
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Ho_Chi_Minh'
+  };
+  
+  endTimeElement.textContent = endTime.toLocaleString('vi-VN', options);
+}
+
+function formatPrizeValue(value) {
+  if (!value || value === 0) return '0';
+  
+  // Chuyển đổi từ nghìn đồng sang đồng
+  const vndValue = parseFloat(value) * 1000;
+  
+  // Format theo định dạng Việt Nam
+  return vndValue.toLocaleString('vi-VN', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  });
+}
+
+// Tính tổng giá trị phần thưởng
+function calculateTotalValue(prizes) {
+  if (!prizes || prizes.length === 0) return 0;
+  
+  return prizes.reduce((total, prize) => {
+    const value = prize.value ? parseFloat(prize.value) : 0;
+    return total + value;
+  }, 0);
+}
+
+// Hiển thị tổng giá trị
+function displayTotalValue(prizes) {
+  const totalValueEl = document.getElementById('totalValueAmount');
+  if (!totalValueEl) return;
+  
+  const totalValue = calculateTotalValue(prizes);
+  const formattedValue = formatPrizeValue(totalValue);
+  
+  totalValueEl.textContent = formattedValue;
+}
+
+function renderPrizes(prizes) {
+  const container = document.getElementById('prizeList');
+  if (!container) return;
+  
+  // Hiển thị tổng giá trị
+  displayTotalValue(prizes);
+  
+  if (prizes.length === 0) {
+    container.innerHTML = '<p class="text-muted text-center">Chưa có phần thưởng nào</p>';
+    return;
+  }
+  
+  // Hiển thị loading state trước
+  container.innerHTML = prizes.map((_, index) => `
+    <div class="prize-card loading" style="animation-delay: ${index * 100}ms">
+      <div class="prize-img"></div>
+      <div class="prize-name"></div>
+    </div>
+  `).join('');
+  
+  // Sau 500ms hiển thị nội dung thực
+  setTimeout(() => {
+    container.innerHTML = prizes.map((prize, index) => `
+      <div class="prize-card fade-in" style="animation-delay: ${index * 100}ms">
+        ${index < 5 ? `<div class="prize-ribbon">Top ${index + 1}</div>` : ''}
+        <img src="${prize.image || '/static/image/logo.png'}" 
+             alt="${prize.name}" 
+             class="prize-img"
+             loading="lazy"
+             onerror="this.src='/static/image/logo.png'">
+        <h5 class="prize-name">${prize.name}</h5>
+        ${prize.value ? `<div class="prize-value"> Trị giá: ${formatPrizeValue(prize.value)} VNĐ</div>` : ''}
+      </div>
+    `).join('');
+  }, 500);
+}
+
+function setupCountdown() {
+  if (!state.activeEvent) return;
+  
+  const endTime = new Date(state.activeEvent.end_at);
+  const countdownWrap = document.getElementById('countdownWrap');
+  
+  if (endTime <= new Date()) {
+    countdownWrap.style.display = 'none';
+    return;
+  }
+  
+  countdownWrap.style.display = 'flex';
+  
+  function updateCountdown() {
+    const now = new Date();
+    const diff = endTime - now;
+    
+    if (diff <= 0) {
+      countdownWrap.style.display = 'none';
+      return;
+    }
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    document.getElementById('cd-days').textContent = days;
+    document.getElementById('cd-hours').textContent = utils.formatNumber(hours);
+    document.getElementById('cd-mins').textContent = utils.formatNumber(minutes);
+    document.getElementById('cd-secs').textContent = utils.formatNumber(seconds);
+  }
+  
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+}
+
+async function loadWinners() {
+  try {
+    utils.showLoading('winnersLoading', true);
+    
+    // Danh sách trúng thưởng - tạm thời để rỗng vì chưa có API winners
+    // Trong tương lai sẽ gọi /lucky-winners/ khi có dữ liệu
+    const winners = [];
+    renderWinners(winners);
+  } catch (error) {
+    console.error('Error loading winners:', error);
+    document.getElementById('winnersBody').innerHTML = '<p class="text-muted text-center">Không thể tải danh sách người trúng thưởng</p>';
+  } finally {
+    utils.showLoading('winnersLoading', false);
+  }
+}
+
+function renderWinners(winners) {
+  const container = document.getElementById('winnersBody');
+  if (!container) return;
+  
+  if (winners.length === 0) {
+    container.innerHTML = '<p class="text-muted text-center">Chưa có người trúng thưởng nào</p>';
+    return;
+  }
+  
+  container.innerHTML = winners.map(winner => `
+    <div class="col-md-6 col-lg-4">
+      <div class="winner-card fade-in">
+        <div class="d-flex align-items-center mb-2">
+          <i class="fas fa-trophy text-warning me-2"></i>
+          <strong>${winner.name}</strong>
+        </div>
+        <div class="text-muted mb-2">
+          <small>Số may mắn: <span class="badge bg-primary">${winner.chosen_number}</span></small>
+        </div>
+        <div class="text-muted mb-2">
+          <small>Phần thưởng: <strong>Đang chờ công bố</strong></small>
+        </div>
+        <div class="text-muted">
+          <small>Thời gian: ${new Date(winner.submitted_at).toLocaleString('vi-VN')}</small>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showNoActiveEvent() {
+  document.getElementById('prizeList').innerHTML = '<p class="text-muted text-center">Hiện tại chưa có sự kiện nào đang diễn ra</p>';
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', async () => {
+  // Setup event listeners
+  document.getElementById('joinForm').addEventListener('submit', handlers.handleSubmit);
+  
+  // Number input events
+  document.getElementById('chosenNumber').addEventListener('input', handlers.handleNumberInput);
+  document.getElementById('chosenNumber').addEventListener('blur', (e) => {
+    // Format the input when user finishes typing
+    if (state.currentNumber !== null && state.currentNumber !== '') {
+      e.target.value = utils.formatNumber(state.currentNumber);
+    } else {
+      e.target.value = '';
+      state.currentNumber = null;
+      document.getElementById('numberPreview').textContent = '...';
+    }
+  });
+  document.getElementById('chosenNumber').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      if (state.currentNumber !== null && state.currentNumber !== '') {
+        e.target.value = utils.formatNumber(state.currentNumber);
+      } else {
+        e.target.value = '';
+        state.currentNumber = null;
+        document.getElementById('numberPreview').textContent = '...';
+      }
+      e.target.blur(); // Remove focus
+    }
+  });
+  
+  // Click on number preview to focus input
+  document.getElementById('numberPreview').addEventListener('click', () => {
+    const input = document.getElementById('chosenNumber');
+    if (input) {
+      input.focus();
+      input.select(); // Select all text for easy replacement
+    }
+  });
+  
+  // Phone search input events - tự động tìm kiếm khi gõ
+  document.getElementById('phoneSearch').addEventListener('input', (e) => {
+    const searchPhone = e.target.value.trim();
+    
+    if (searchPhone === '') {
+      // Xóa tìm kiếm khi input rỗng
+      clearSearch();
+    } else {
+      // Tự động tìm kiếm khi có nội dung
+      searchByPhone();
+    }
+  });
+  
+  // Load data
+  await Promise.all([
+    loadActiveEvent(),
+    loadWinners(),
+    loadParticipants()
+  ]);
+});
+
+// Global state for participants
+let allParticipants = [];
+let searchMode = false;
+
+// Load participants
+async function loadParticipants() {
+  const loadingEl = document.getElementById('participantsLoading');
+  const bodyEl = document.getElementById('participantsBody');
+  
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (bodyEl) bodyEl.innerHTML = '';
+  
+  try {
+    const participants = await SmartAPI.getJson('/lucky-participants/');
+    
+    if (loadingEl) loadingEl.style.display = 'none';
+    
+    if (!participants || participants.length === 0) {
+      if (bodyEl) {
+        bodyEl.innerHTML = '<p class="text-muted text-center">Chưa có người tham gia nào</p>';
+      }
+      return;
+    }
+    
+    // Store all participants globally
+    allParticipants = participants;
+    searchMode = false;
+    
+    // Render participants with hidden info
+    renderParticipants(participants, false);
+    
+  } catch (error) {
+    console.error('Error loading participants:', error);
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (bodyEl) {
+      bodyEl.innerHTML = '<p class="text-danger text-center">Lỗi tải danh sách người tham gia</p>';
+    }
+  }
+}
+
+// Render participants with optional hiding
+function renderParticipants(participants, showFullInfo = false) {
+  const bodyEl = document.getElementById('participantsBody');
+  const countEl = document.getElementById('participantCount');
+  
+  if (!bodyEl) return;
+  
+  // Cập nhật số lượng người tham gia
+  if (countEl) {
+    const totalCount = allParticipants.length;
+    countEl.textContent = `${totalCount} người`;
+  }
+  
+  if (participants.length === 0) {
+    bodyEl.innerHTML = '<p class="text-muted text-center">Chưa có người tham gia nào</p>';
+    return;
+  }
+  
+  bodyEl.innerHTML = participants.map(participant => {
+    const phone = showFullInfo ? participant.zalo_phone : maskPhone(participant.zalo_phone);
+    const number = showFullInfo ? participant.chosen_number : 'xx';
+    
+    return `
+      <div class="participant-item">
+        <div class="participant-row">
+          <div class="participant-name">${participant.name}</div>
+          <div class="participant-phone">
+            <i class="fas fa-phone me-1"></i>
+            ${phone}
+          </div>
+          <div class="participant-time">
+            <i class="fas fa-clock me-1"></i>
+            ${new Date(participant.submitted_at).toLocaleString('vi-VN')}
+          </div>
+          <div class="participant-number-container">
+            <span>Số chọn:</span>
+            <span class="participant-number" style="font-size: 1rem;">${number}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Mask phone number: 0384909810 -> 0xxx xxx 810
+function maskPhone(phone) {
+  if (!phone || phone.length < 10) return phone;
+  return phone.substring(0, 1) + 'xxx xxx ' + phone.substring(7);
+}
+
+// Search by phone
+function searchByPhone() {
+  const phoneInput = document.getElementById('phoneSearch');
+  const searchPhone = phoneInput.value.trim();
+  
+  if (!searchPhone) {
+    // Show all participants with hidden info
+    searchMode = false;
+    renderParticipants(allParticipants, false);
+    return;
+  }
+  
+  // Find exact match
+  const foundParticipant = allParticipants.find(p => p.zalo_phone === searchPhone);
+  
+  if (foundParticipant) {
+    // Show only the found participant with full info
+    searchMode = true;
+    renderParticipants([foundParticipant], true);
+  } else {
+    // Show message that no participant found
+    const bodyEl = document.getElementById('participantsBody');
+    const countEl = document.getElementById('participantCount');
+    
+    if (bodyEl) {
+      bodyEl.innerHTML = `
+        <div class="text-center py-4">
+          <i class="fas fa-search text-muted mb-2" style="font-size: 2rem;"></i>
+          <p class="text-muted">Không tìm thấy người tham gia với số điện thoại: <strong>${searchPhone}</strong></p>
+          <button class="btn btn-outline-primary btn-sm" onclick="clearSearch()">
+            <i class="fas fa-times me-1"></i>
+            Xóa tìm kiếm
+          </button>
+        </div>
+      `;
+    }
+    
+    // Vẫn hiển thị tổng số người tham gia
+    if (countEl) {
+      const totalCount = allParticipants.length;
+      countEl.textContent = `${totalCount} người`;
+    }
+  }
+}
+
+// Clear search
+function clearSearch() {
+  const phoneInput = document.getElementById('phoneSearch');
+  phoneInput.value = '';
+  searchMode = false;
+  renderParticipants(allParticipants, false);
+}
+
+// Global functions for backward compatibility
+function changeNumber(delta) {
+  handlers.changeNumber(delta);
+}
+
+// Make functions globally available
+window.loadWinners = loadWinners;
+window.loadParticipants = loadParticipants;
+window.changeNumber = changeNumber;
+window.searchByPhone = searchByPhone;
+window.clearSearch = clearSearch;
+</script>
+{% endblock %}
+

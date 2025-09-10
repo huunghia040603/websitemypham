@@ -133,9 +133,14 @@
             <h1>
                 <i class="fas fa-box me-2"></i>Quản Lý Sản Phẩm
             </h1>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
-                <i class="fas fa-plus me-2"></i>Thêm Sản Phẩm
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" onclick="showImportModal()">
+                    <i class="fas fa-file-excel me-2"></i>Thêm bằng Excel
+                </button>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <i class="fas fa-plus me-2"></i>Thêm Sản Phẩm
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -176,6 +181,34 @@
                             <i class="fas fa-times me-1"></i>Xóa Lọc
                         </button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Excel Modal -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-file-excel me-2"></i>Nhập sản phẩm từ Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="excelFileInput" class="form-label">Chọn file .xlsx</label>
+                        <input type="file" class="form-control" id="excelFileInput" accept=".xlsx">
+                        <div class="form-text">Mẫu file nằm trong thư mục /static/dulieu/Products1.xlsx</div>
+                    </div>
+                    <div id="importResult" class="d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="importExcelBtn">
+                        <i class="fas fa-upload me-1"></i>Tải lên & nhập
+                    </button>
                 </div>
             </div>
         </div>
@@ -531,6 +564,9 @@
             
             // Update product
             document.getElementById('updateProductBtn').addEventListener('click', updateProduct);
+            
+            // Import Excel
+            document.getElementById('importExcelBtn').addEventListener('click', handleImportExcel);
         }
 
         function filterProducts() {
@@ -563,6 +599,84 @@
             
             renderProducts();
             updateProductCount();
+        }
+
+        function showImportModal() {
+            const modalEl = document.getElementById('importExcelModal');
+            document.getElementById('excelFileInput').value = '';
+            const result = document.getElementById('importResult');
+            result.className = 'd-none';
+            result.innerHTML = '';
+            new bootstrap.Modal(modalEl).show();
+        }
+
+        async function handleImportExcel() {
+            const input = document.getElementById('excelFileInput');
+            const file = input.files && input.files[0];
+            if (!file) {
+                showNotification('Vui lòng chọn file .xlsx', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('importExcelBtn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang nhập...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const resp = await fetch('https://buddyskincare.pythonanywhere.com/products/import-xlsx/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const isJson = resp.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await resp.json() : {};
+
+                if (!resp.ok || data.success === false) {
+                    const msg = data.detail || data.error || `Lỗi nhập Excel (HTTP ${resp.status})`;
+                    showNotification(msg, 'error');
+                    showImportResult(false, data);
+                    return;
+                }
+
+                const created = data.created ?? 0;
+                const updated = data.updated ?? 0;
+                const errCount = (data.errors || []).length;
+                showImportResult(true, data);
+                showNotification(`Nhập thành công: ${created} mới, ${updated} cập nhật, ${errCount} lỗi`, 'success');
+                await loadProducts();
+            } catch (e) {
+                showNotification('Không thể nhập Excel: ' + e.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function showImportResult(success, data) {
+            const box = document.getElementById('importResult');
+            box.className = success ? 'alert alert-success' : 'alert alert-danger';
+            const errors = data?.errors || [];
+            let html = '';
+            if (success) {
+                html += `<div><strong>Thành công</strong></div>`;
+                html += `<div>Tạo mới: <strong>${data.created ?? 0}</strong></div>`;
+                html += `<div>Cập nhật: <strong>${data.updated ?? 0}</strong></div>`;
+            } else {
+                html += `<div><strong>Thất bại</strong></div>`;
+            }
+            if (errors.length) {
+                html += '<hr><div><strong>Lỗi (tối đa 5):</strong></div><ul class="mb-0">';
+                errors.slice(0, 5).forEach(err => {
+                    html += `<li>Dòng ${err.row}: ${err.error}</li>`;
+                });
+                html += '</ul>';
+            }
+            box.innerHTML = html;
+            box.classList.remove('d-none');
         }
 
         function clearFilters() {
