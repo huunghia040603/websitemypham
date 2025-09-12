@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Kiểm tra trạng thái đăng nhập
    if (typeof isLoggedIn !== 'undefined' && isLoggedIn()) {
         const userProfile = getUserProfile();
-        const userName = userProfile.name || userProfile.phone_number;
+        const userName = userProfile.name || "";
         const token = userProfile.access_token;
 
         // BẮT ĐẦU CẬP NHẬT GIAO DIỆN TRƯỚC

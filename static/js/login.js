@@ -148,7 +148,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// Hàm xử lý đăng nhập Google
 async function handleCredentialResponse(response) {
     const googleToken = response.credential;
     console.log("ID Token của Google:", googleToken);
@@ -171,9 +170,12 @@ async function handleCredentialResponse(response) {
             const result = await fetchResponse.json();
             console.log('Đăng nhập bằng Google thành công:', result);
 
+            // Sửa đổi ở đây để lấy đúng dữ liệu từ `result`
             const userProfileData = {
                 access_token: result.access_token,
                 refresh_token: result.refresh_token,
+                // Lấy thông tin từ object "user_info" hoặc "user"
+                // Dựa trên dữ liệu bạn cung cấp, cả hai object này đều có cùng thông tin
                 phone_number: result.user.phone_number,
                 name: result.user.name,
                 address: result.user.address,
@@ -194,7 +196,6 @@ async function handleCredentialResponse(response) {
         alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
     }
 }
-
 // Render Google button with cleaner style once script is available
 window.addEventListener('load', () => {
     if (window.google && document.getElementById('googleCustomContainer')) {

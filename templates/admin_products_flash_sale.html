@@ -9,205 +9,105 @@
             <h1>
                 <i class="fas fa-bolt me-2"></i>Quản Lý Flash Sale
             </h1>
-            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addFlashSaleModal">
-                <i class="fas fa-plus me-2"></i>Thêm Flash Sale
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Filter and Search -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label for="searchInput" class="form-label">Tìm kiếm sản phẩm</label>
-                        <input type="text" class="form-control" id="searchInput" placeholder="Nhập tên sản phẩm...">
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="discountFilter" class="form-label">Giảm giá (%)</label>
-                        <select class="form-select" id="discountFilter">
-                            <option value="">Tất cả</option>
-                            <option value="over_90">Trên 90%</option>
-                            <option value="80_90">80-90%</option>
-                            <option value="60_80">60-80%</option>
-                            <option value="40_60">40-60%</option>
-                            <option value="under_40">Dưới 40%</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="brandFilter" class="form-label">Thương hiệu</label>
-                        <select class="form-select" id="brandFilter">
-                            <option value="">Tất cả thương hiệu</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="categoryFilter" class="form-label">Danh mục</label>
-                        <select class="form-select" id="categoryFilter">
-                            <option value="">Tất cả danh mục</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-3">
-                        <label for="stockFilter" class="form-label">Tồn kho</label>
-                        <select class="form-select" id="stockFilter">
-                            <option value="">Tất cả</option>
-                            <option value="in_stock">Còn hàng</option>
-                            <option value="low_stock">Sắp hết</option>
-                            <option value="out_of_stock">Hết hàng</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 mb-3">
-                        <label class="form-label">&nbsp;</label>
-                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTagModal">
+                    <i class="fas fa-tags me-2"></i>Thêm Tag Mới
+                </button>
+                <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addProductModal">
+                    <i class="fas fa-plus me-2"></i>Thêm Sản Phẩm vào Tag
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Flash Sale Products -->
 <div class="row">
     <div class="col-12">
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-bolt me-2"></i>Sản Phẩm Flash Sale
-                    <span class="badge bg-warning ms-2" id="productCount">0</span>
-                </h5>
+                <h5 class="mb-0">Danh sách các Tag</h5>
             </div>
             <div class="card-body">
-                <div id="productsContainer">
-                    <div class="loading-spinner show">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2 text-muted">Đang tải danh sách sản phẩm flash sale...</p>
+                <div id="tags-list" class="list-group">
                     </div>
-                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Add Flash Sale Modal -->
-<div class="modal fade" id="addFlashSaleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="addTagModal" tabindex="-1" aria-labelledby="addTagModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-bolt me-2"></i>Thêm Flash Sale
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="addTagModalLabel">Tạo Tag Flash Sale Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form id="addFlashSaleForm">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="productSelect" class="form-label">Chọn sản phẩm *</label>
-                            <select class="form-select" id="productSelect" required>
-                                <option value="">-- Chọn sản phẩm --</option>
+                <form id="addTagForm">
+                    <div class="mb-3">
+                        <label for="tagName" class="form-label">Tên Tag</label>
+                        <input type="text" class="form-control" id="tagName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tagCode" class="form-label">Mã Tag</label>
+                        <input type="text" class="form-control" id="tagCode" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tagDescription" class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="tagDescription" rows="2" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tagStatus" class="form-label">Trạng thái</label>
+                        <select class="form-select" id="tagStatus" required>
+                            <option value="upcoming" selected>Sắp diễn ra</option>
+                            <option value="active">Đang hoạt động</option>
+                            <option value="expired">Đã hết hạn</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tagStartDate" class="form-label">Ngày giờ bắt đầu</label>
+                        <input type="datetime-local" class="form-control" id="tagStartDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tagEndDate" class="form-label">Ngày giờ kết thúc</label>
+                        <input type="datetime-local" class="form-control" id="tagEndDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tagDiscount" class="form-label">Giá giảm tiếp tục (nghìn đồng)</label>
+                        <input type="number" class="form-control" id="tagDiscount" value="0">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Tạo Tag</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addProductModalLabel">Thêm sản phẩm vào Flash Sale</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label for="flashSaleTagId" class="form-label">Chọn Tag</label>
+                        <select class="form-select" id="flashSaleTagId" required>
                             </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="discountedPriceInput" class="form-label">Giá sau giảm (VND) *</label>
-                            <input type="number" class="form-control" id="discountedPriceInput" min="0" required>
-                        </div>
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="flashSaleStart" class="form-label">Thời gian bắt đầu</label>
-                            <input type="datetime-local" class="form-control" id="flashSaleStart">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="flashSaleEnd" class="form-label">Thời gian kết thúc</label>
-                            <input type="datetime-local" class="form-control" id="flashSaleEnd">
-                        </div>
-                    </div>
-                    
                     <div class="mb-3">
-                        <label for="flashSaleDescription" class="form-label">Mô tả flash sale</label>
-                        <textarea class="form-control" id="flashSaleDescription" rows="2" placeholder="Mô tả ngắn về chương trình flash sale..."></textarea>
+                        <label for="productSearch" class="form-label">Tìm kiếm sản phẩm</label>
+                        <input type="text" class="form-control" id="productSearch" placeholder="Nhập tên sản phẩm...">
                     </div>
+                    <div class="mb-3 product-list-container">
+                        <label class="form-label">Chọn sản phẩm</label>
+                        <div id="productCheckboxes" class="form-check-list">
+                            </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Thêm sản phẩm</button>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-warning" onclick="addFlashSale()">
-                    <i class="fas fa-bolt me-2"></i>Thêm Flash Sale
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Flash Sale Modal -->
-<div class="modal fade" id="editFlashSaleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-edit me-2"></i>Chỉnh Sửa Flash Sale
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editFlashSaleForm">
-                    <input type="hidden" id="editProductId">
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editProductName" class="form-label">Tên sản phẩm</label>
-                            <input type="text" class="form-control" id="editProductName" readonly>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="editDiscountRate" class="form-label">Tỷ lệ giảm giá (%) *</label>
-                            <input type="number" class="form-control" id="editDiscountRate" min="1" max="99" required>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="editOriginalPrice" class="form-label">Giá gốc</label>
-                            <input type="number" class="form-control" id="editOriginalPrice" readonly>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="editDiscountedPrice" class="form-label">Giá sau giảm</label>
-                            <input type="number" class="form-control" id="editDiscountedPrice" readonly>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="editStockQuantity" class="form-label">Tồn kho</label>
-                            <input type="number" class="form-control" id="editStockQuantity">
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="editFlashSaleStart" class="form-label">Thời gian bắt đầu</label>
-                            <input type="datetime-local" class="form-control" id="editFlashSaleStart">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="editFlashSaleEnd" class="form-label">Thời gian kết thúc</label>
-                            <input type="datetime-local" class="form-control" id="editFlashSaleEnd">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editFlashSaleDescription" class="form-label">Mô tả flash sale</label>
-                        <textarea class="form-control" id="editFlashSaleDescription" rows="2"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-warning" onclick="updateFlashSale()">
-                    <i class="fas fa-save me-2"></i>Cập Nhật
-                </button>
             </div>
         </div>
     </div>
@@ -216,458 +116,210 @@
 
 {% block extra_js %}
 <script>
-let allProducts = [];
-let filteredProducts = [];
+    document.addEventListener('DOMContentLoaded', function() {
+        const tagsListContainer = document.getElementById('tags-list');
+        const flashSaleTagIdSelect = document.getElementById('flashSaleTagId');
+        const productCheckboxesContainer = document.getElementById('productCheckboxes');
+        const productSearchInput = document.getElementById('productSearch');
+        const addProductForm = document.getElementById('addProductForm');
+        const addTagForm = document.getElementById('addTagForm');
+        let allProducts = []; // Biến để lưu trữ toàn bộ danh sách sản phẩm
 
-function isFlashSaleProduct(product) {
-    try {
-        const tags = product?.tags || [];
-        if (Array.isArray(tags)) {
-            return tags.some(t => {
-                if (typeof t === 'string') return t.toLowerCase() === 'flashsale';
-                if (t && typeof t === 'object') return (t.name || '').toLowerCase() === 'flashsale';
-                return false;
+        function translateStatus(status) {
+            switch (status) {
+                case 'active':
+                    return 'Đang hoạt động';
+                case 'upcoming':
+                    return 'Sắp diễn ra';
+                case 'expired':
+                    return 'Đã hết hạn';
+                default:
+                    return status;
+            }
+        }
+
+        function fetchAndRenderTags() {
+            fetch('https://buddyskincare.pythonanywhere.com/tags/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    tagsListContainer.innerHTML = '';
+                    if (data.length === 0) {
+                        tagsListContainer.innerHTML = '<p class="text-muted">Không có tag nào.</p>';
+                        return;
+                    }
+                    data.forEach(tag => {
+                        const tagItem = document.createElement('div');
+                        tagItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+                        
+                        const statusClass = tag.status === 'active' ? 'bg-success' :
+                                            tag.status === 'upcoming' ? 'bg-warning' :
+                                            'bg-danger';
+                        const translatedStatus = translateStatus(tag.status);
+
+                        tagItem.innerHTML = `
+                            <div class="d-flex flex-column">
+                                <h6 class="mb-1"><span class="badge ${statusClass}">${tag.code}</span></h6>
+                                <small class="text-muted">${tag.description}</small>
+                                <small>Bắt đầu: ${new Date(tag.start_date).toLocaleString()}</small>
+                                <small>Kết thúc: ${new Date(tag.end_date).toLocaleString()}</small>
+                            </div>
+                            <span class="badge ${statusClass} rounded-pill">${translatedStatus}</span>
+                        `;
+                        tagsListContainer.appendChild(tagItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching tags:', error);
+                    tagsListContainer.innerHTML = '<p class="text-danger">Không thể tải danh sách tag. Vui lòng thử lại.</p>';
+                });
+        }
+
+        // Hàm render danh sách sản phẩm dạng checkbox
+        function renderProductCheckboxes(products) {
+            productCheckboxesContainer.innerHTML = ''; // Xóa nội dung cũ
+            if (products.length === 0) {
+                productCheckboxesContainer.innerHTML = '<p class="text-muted">Không tìm thấy sản phẩm nào.</p>';
+                return;
+            }
+
+            products.forEach(product => {
+                const formCheckDiv = document.createElement('div');
+                formCheckDiv.classList.add('form-check');
+                formCheckDiv.innerHTML = `
+                    <input class="form-check-input" type="checkbox" value="${product.id}" id="product-${product.id}">
+                    <label class="form-check-label" for="product-${product.id}">
+                        ${product.name}
+                    </label>
+                `;
+                productCheckboxesContainer.appendChild(formCheckDiv);
             });
         }
-        return false;
-    } catch { return false; }
-}
 
-function mapStatusText(status) {
-    const s = (status || '').toString().toLowerCase();
-    if (s.includes('chiet')) return 'Chiết';
-    if (s === 'new') return 'New nguyên';
-    if (s.includes('newmh')) return 'New mất hộp';
-    if (s.includes('newm')) return 'New móp hộp';
-    if (s.includes('newrt')) return 'New rách tem';
-    if (s.includes('newmn')) return 'New móp nhẹ';
-    if (s.includes('newx')) return 'New xước nhẹ';
-    if (s.includes('newspx')) return 'New xước';
-    if (s.includes('test')) return 'Test 1-2 lần';
-    const m = s.match(/(\d{2})/);
-    return m ? `Còn ${m[1]}%` : (status || '');
-}
+        // Hàm fetch và populate các select/checkbox
+        function fetchAndPopulateData() {
+            // Fetch danh sách tất cả tags
+            fetch('https://buddyskincare.pythonanywhere.com/tags/')
+                .then(response => response.json())
+                .then(tags => {
+                    flashSaleTagIdSelect.innerHTML = tags.map(tag => `<option value="${tag.id}">${tag.name} (${tag.code})</option>`).join('');
+                })
+                .catch(error => console.error('Error fetching tags for modal:', error));
 
-document.addEventListener('DOMContentLoaded', async function() {
-    await loadFlashSaleProducts();
-    await loadAllProductsForSelect();
-    setupEventListeners();
-});
+            // Fetch danh sách tất cả sản phẩm và lưu vào biến
+            fetch('https://buddyskincare.pythonanywhere.com/products/')
+                .then(response => response.json())
+                .then(products => {
+                    allProducts = products;
+                    renderProductCheckboxes(allProducts);
+                })
+                .catch(error => console.error('Error fetching products:', error));
+        }
 
-async function loadFlashSaleProducts() {
-    try {
-        AdminAPI.showLoading('productsContainer');
-        // Fetch all products then filter by FlashSale tag on client for robustness
-        allProducts = await AdminAPI.fetchProducts();
-        filteredProducts = allProducts.filter(isFlashSaleProduct);
-        
-        renderProducts();
-        await populateFilters();
-        updateProductCount();
-        
-    } catch (error) {
-        console.error('Error loading flash sale products:', error);
-        document.getElementById('productsContainer').innerHTML = 
-            '<p class="text-danger text-center py-4">Lỗi khi tải danh sách sản phẩm flash sale</p>';
-    }
-}
-
-async function loadAllProductsForSelect() {
-    try {
-        const products = await AdminAPI.fetchProducts();
-        const productSelect = document.getElementById('productSelect');
-        
-        products.forEach(product => {
-            const option = document.createElement('option');
-            option.value = product.id;
-            option.textContent = `${product.name} - ${AdminAPI.formatPrice(product.original_price)}`;
-            productSelect.appendChild(option);
+        // Lọc sản phẩm khi nhập vào ô tìm kiếm
+        productSearchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const filteredProducts = allProducts.filter(product => 
+                product.name.toLowerCase().includes(searchTerm)
+            );
+            renderProductCheckboxes(filteredProducts);
         });
-        
-    } catch (error) {
-        console.error('Error loading products for select:', error);
-    }
-}
 
-function renderProducts() {
-    const container = document.getElementById('productsContainer');
-    
-    if (filteredProducts.length === 0) {
-        container.innerHTML = '<p class="text-muted text-center py-4">Không có sản phẩm flash sale nào</p>';
-        return;
-    }
-    
-    let html = '<div class="table-responsive"><table class="table table-admin">';
-    html += '<thead><tr><th>Hình Ảnh</th><th>Tên Sản Phẩm</th><th>Giá bán</th><th>Tồn Kho</th><th>Trạng Thái</th><th>Thao Tác</th></tr></thead><tbody>';
-    
-    filteredProducts.forEach(product => {
-        const imageUrl = product.image || '/static/image/default-product.jpg';
-        const salePrice = AdminAPI.formatPrice(product.discounted_price);
-        const statusClass = (product.status || '').toString().toLowerCase().includes('new') || (product.status || '').toString().toLowerCase().includes('chiet') ? 'status-confirmed' : 'status-pending';
-        const statusText = mapStatusText(product.status);
-        const stockBadge = product.stock_quantity > 0 ? 'bg-success' : 'bg-danger';
-        
-        html += `
-            <tr>
-                <td>
-                    <img src="${imageUrl}" alt="${product.name}" class="product-image" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
-                </td>
-                <td>
-                    <strong>${product.name}</strong>
-                    <br><small class="text-muted">ID: ${product.id} • ${product.brand_name || 'N/A'}</small>
-                </td>
-                <td>${salePrice || '-'}</td>
-                <td>
-                    <span class="badge ${stockBadge}">
-                        ${product.stock_quantity || 0}
-                    </span>
-                </td>
-                <td><span class="badge ${statusClass}" style="background:#eaf4ff;color:#1e56a0;border:1px solid #b8d4ff;font-weight:500;"> <i class="fas fa-circle-info me-1"></i>${statusText}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-outline-warning me-1" onclick="editFlashSale(${product.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="removeFlashSale(${product.id})" data-bs-toggle="tooltip" title="Gỡ Flash Sale">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </td>
-            </tr>
-        `;
+        // Xử lý form thêm tag mới
+        addTagForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const tagName = document.getElementById('tagName').value;
+            const tagCode = document.getElementById('tagCode').value;
+            const tagDescription = document.getElementById('tagDescription').value;
+            const tagStatus = document.getElementById('tagStatus').value;
+            const tagStartDate = document.getElementById('tagStartDate').value;
+            const tagEndDate = document.getElementById('tagEndDate').value;
+            const tagDiscount = document.getElementById('tagDiscount').value;
+            
+            const newTag = {
+                name: tagName,
+                code: tagCode,
+                description: tagDescription,
+                status: tagStatus,
+                start_date: tagStartDate,
+                end_date: tagEndDate,
+                discounted_price_reduction: tagDiscount,
+            };
+
+            fetch('https://buddyskincare.pythonanywhere.com/tags/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newTag)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(JSON.stringify(err)); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Tạo tag mới thành công!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addTagModal'));
+                modal.hide();
+                fetchAndRenderTags();
+                fetchAndPopulateData();
+            })
+            .catch(error => {
+                console.error('Error creating new tag:', error);
+                alert('Tạo tag thất bại. Lỗi: ' + error.message);
+            });
+        });
+
+        // Xử lý form thêm sản phẩm vào tag
+        addProductForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const selectedTagId = flashSaleTagIdSelect.value;
+            const selectedProductIds = Array.from(productCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
+
+            if (!selectedTagId || selectedProductIds.length === 0) {
+                alert('Vui lòng chọn Tag và ít nhất một sản phẩm.');
+                return;
+            }
+
+            // Gửi yêu cầu PATCH để thêm tag vào sản phẩm
+            // Lưu ý: Endpoint này cần được bạn tự xây dựng trong Django
+            // Ví dụ: PATCH /api/products/add_tag/1/
+            fetch(`https://buddyskincare.pythonanywhere.com/products/add_tag/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ tag_id: selectedTagId, product_ids: selectedProductIds })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => { throw new Error(JSON.stringify(err)); });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Sản phẩm đã được thêm vào Flash Sale thành công!');
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
+                modal.hide();
+            })
+            .catch(error => {
+                console.error('Error adding products to tag:', error);
+                alert('Thêm sản phẩm thất bại. Lỗi: ' + error.message);
+            });
+        });
+
+        // Gọi hàm để tải và hiển thị dữ liệu lần đầu
+        fetchAndRenderTags();
+        fetchAndPopulateData();
+
     });
-    
-    html += '</tbody></table></div>';
-    container.innerHTML = html;
-    
-    // Re-init tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
-}
-
-async function fetchBrandsFromAPI() {
-    try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/brands/');
-        if (response.ok) {
-            const brands = await response.json();
-            return brands.map(brand => brand.name || brand).filter(Boolean);
-        }
-    } catch (error) {
-        console.error('Error fetching brands from API:', error);
-    }
-    
-    // Fallback to local brands if API fails
-    return [...new Set(allProducts.map(p => p.brand_name).filter(Boolean))];
-}
-
-async function populateFilters() {
-    // Populate brand filter
-    const brands = await fetchBrandsFromAPI();
-    
-    // Sort brands alphabetically
-    brands.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
-    
-    const brandSelect = document.getElementById('brandFilter');
-    brandSelect.innerHTML = '<option value="">Tất cả thương hiệu</option>';
-    brands.forEach(brand => {
-        const option = document.createElement('option');
-        option.value = brand;
-        option.textContent = brand;
-        brandSelect.appendChild(option);
-    });
-    
-    // Populate category filter from API
-    try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/category/');
-        if (response.ok) {
-            const categories = await response.json();
-            const categorySelect = document.getElementById('categoryFilter');
-            
-            // Clear existing options except the first one
-            categorySelect.innerHTML = '<option value="">Tất cả danh mục</option>';
-            
-            if (Array.isArray(categories)) {
-                // Sort categories alphabetically
-                const sortedCategories = categories
-                    .map(item => ({
-                        name: item.name || item.title || '',
-                        item: item
-                    }))
-                    .filter(cat => cat.name)
-                    .sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }));
-                
-                sortedCategories.forEach(category => {
-                    const option = document.createElement('option');
-                    option.value = category.name;
-                    option.textContent = category.name;
-                    categorySelect.appendChild(option);
-                });
-            }
-        }
-    } catch (error) {
-        console.error('Error fetching categories:', error);
-        // Fallback to existing categories from products
-        const categories = [...new Set(allProducts.map(p => p.category?.name || p.category_name).filter(Boolean))];
-        const categorySelect = document.getElementById('categoryFilter');
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            categorySelect.appendChild(option);
-        });
-    }
-}
-
-function setupEventListeners() {
-    document.getElementById('searchInput').addEventListener('input', filterProducts);
-    document.getElementById('discountFilter').addEventListener('change', filterProducts);
-    document.getElementById('brandFilter').addEventListener('change', filterProducts);
-    document.getElementById('categoryFilter').addEventListener('change', filterProducts);
-    document.getElementById('stockFilter').addEventListener('change', filterProducts);
-    
-    // Auto calculate discounted price
-    document.getElementById('discountedPriceInput').addEventListener('input', calculateDiscountedPrice);
-    document.getElementById('editDiscountRate').addEventListener('input', calculateEditDiscountedPrice);
-}
-
-function filterProducts() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const discountFilter = document.getElementById('discountFilter').value;
-    const brandFilter = document.getElementById('brandFilter').value;
-    const categoryFilter = document.getElementById('categoryFilter').value;
-    const stockFilter = document.getElementById('stockFilter').value;
-    
-    filteredProducts = allProducts
-        .filter(isFlashSaleProduct)
-        .filter(product => {
-            const matchesSearch = product.name.toLowerCase().includes(searchTerm);
-            const matchesBrand = !brandFilter || product.brand_name === brandFilter;
-            const matchesCategory = !categoryFilter || 
-                (product.category?.name === categoryFilter) || 
-                (product.category_name === categoryFilter);
-            
-            let matchesDiscount = true;
-            if (discountFilter) {
-                const discount = parseFloat(product.discount_rate || 0);
-                if (discountFilter === 'over_90') matchesDiscount = discount > 90;
-                else if (discountFilter === '80_90') matchesDiscount = discount >= 80 && discount <= 90;
-                else if (discountFilter === '60_80') matchesDiscount = discount >= 60 && discount <= 80;
-                else if (discountFilter === '40_60') matchesDiscount = discount >= 40 && discount <= 60;
-                else if (discountFilter === 'under_40') matchesDiscount = discount < 40;
-            }
-            
-            let matchesStock = true;
-            if (stockFilter) {
-                const stock = product.stock_quantity || 0;
-                if (stockFilter === 'in_stock') matchesStock = stock > 10;
-                else if (stockFilter === 'low_stock') matchesStock = stock > 0 && stock <= 10;
-                else if (stockFilter === 'out_of_stock') matchesStock = stock === 0;
-            }
-            
-            return matchesSearch && matchesBrand && matchesCategory && matchesDiscount && matchesStock;
-        });
-    
-    renderProducts();
-    updateProductCount();
-}
-
-function clearFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('discountFilter').value = '';
-    document.getElementById('brandFilter').value = '';
-    document.getElementById('categoryFilter').value = '';
-    document.getElementById('stockFilter').value = '';
-    filterProducts();
-}
-
-function updateProductCount() {
-    document.getElementById('productCount').textContent = filteredProducts.length;
-}
-
-function calculateDiscountedPrice() {
-    const productSelect = document.getElementById('productSelect');
-    const discountedPriceInput = parseFloat(document.getElementById('discountedPriceInput').value) || 0;
-    
-    if (productSelect.value && discountedPriceInput > 0) {
-        const selectedProduct = allProducts.find(p => p.id == productSelect.value);
-        if (selectedProduct) {
-            const originalPrice = selectedProduct.original_price || 0;
-            const discountRate = ((originalPrice - discountedPriceInput) / originalPrice) * 100;
-            // You can show this in a preview area if needed
-        }
-    }
-}
-
-function calculateEditDiscountedPrice() {
-    const originalPrice = parseFloat(document.getElementById('editOriginalPrice').value) || 0;
-    const discountRate = parseFloat(document.getElementById('editDiscountRate').value) || 0;
-    
-    if (originalPrice > 0 && discountRate > 0) {
-        const discountedPrice = originalPrice * (1 - discountRate / 100);
-        document.getElementById('editDiscountedPrice').value = discountedPrice.toFixed(2);
-    }
-}
-
-function editFlashSale(productId) {
-    const product = allProducts.find(p => p.id === productId);
-    if (!product) return;
-    
-    // Populate edit form
-    document.getElementById('editProductId').value = product.id;
-    document.getElementById('editProductName').value = product.name;
-    document.getElementById('editDiscountRate').value = Math.round(product.discount_rate || 0);
-    document.getElementById('editOriginalPrice').value = product.original_price || 0;
-    document.getElementById('editDiscountedPrice').value = product.discounted_price || 0;
-    document.getElementById('editStockQuantity').value = product.stock_quantity || 0;
-    document.getElementById('editFlashSaleDescription').value = product.flash_sale_description || '';
-    
-    // Show modal
-    new bootstrap.Modal(document.getElementById('editFlashSaleModal')).show();
-}
-
-async function updateFlashSale() {
-    const productId = document.getElementById('editProductId').value;
-    const discountRate = parseFloat(document.getElementById('editDiscountRate').value);
-    const originalPrice = parseFloat(document.getElementById('editOriginalPrice').value);
-    const stockQuantity = parseInt(document.getElementById('editStockQuantity').value);
-    
-    const discountedPrice = originalPrice * (1 - discountRate / 100);
-    
-    const formData = {
-        discount_rate: discountRate,
-        discounted_price: discountedPrice,
-        stock_quantity: stockQuantity,
-        flash_sale_description: document.getElementById('editFlashSaleDescription').value
-    };
-    
-    try {
-        await AdminAPI.updateProduct(productId, formData);
-        AdminAPI.showNotification('Cập nhật flash sale thành công!', 'success');
-        
-        // Close modal and reload data
-        bootstrap.Modal.getInstance(document.getElementById('editFlashSaleModal')).hide();
-        await loadFlashSaleProducts();
-        
-    } catch (error) {
-        console.error('Error updating flash sale:', error);
-    }
-}
-
-async function addFlashSale() {
-    const productId = document.getElementById('productSelect').value;
-    const discountedPriceInput = parseFloat(document.getElementById('discountedPriceInput').value);
-    
-    if (!productId || isNaN(discountedPriceInput)) {
-        AdminAPI.showNotification('Vui lòng chọn sản phẩm và nhập giá sau giảm', 'warning');
-        return;
-    }
-    
-    try {
-        const selectedProduct = allProducts.find(p => p.id == productId);
-        if (!selectedProduct) {
-            AdminAPI.showNotification('Không tìm thấy sản phẩm được chọn', 'error');
-            return;
-        }
-        const originalPrice = parseFloat(selectedProduct.original_price || 0);
-        if (!(originalPrice > 0)) {
-            AdminAPI.showNotification('Giá gốc không hợp lệ để tính tỷ lệ giảm', 'error');
-            return;
-        }
-        const discountedPrice = Math.max(0, discountedPriceInput);
-        const discountRate = Math.max(0, Math.min(99, (1 - (discountedPrice / originalPrice)) * 100));
-        
-        const formData = {
-            discounted_price: discountedPrice,
-            discount_rate: discountRate,
-            flash_sale_description: document.getElementById('flashSaleDescription').value
-        };
-        
-        await AdminAPI.updateProduct(productId, formData);
-        AdminAPI.showNotification('Thêm flash sale thành công!', 'success');
-        
-        bootstrap.Modal.getInstance(document.getElementById('addFlashSaleModal')).hide();
-        document.getElementById('addFlashSaleForm').reset();
-        await loadFlashSaleProducts();
-        
-    } catch (error) {
-        console.error('Error adding flash sale:', error);
-    }
-}
-
-async function tryUpdateProductTags(productId, tagNames) {
-    // Try multiple payload shapes to match API expectations
-    const payloads = [
-        { tags: tagNames },
-        { tags: tagNames.map(n => ({ name: n })) },
-        { tag_names: tagNames },
-        { tags: tagNames.length ? tagNames : [] },
-        { tags: tagNames.length ? tagNames : null },
-        { tag_names: tagNames.length ? tagNames : null },
-        // Remove semantics some APIs support
-        { remove_tags: ['FlashSale'] },
-        { tags_to_remove: ['FlashSale'] },
-        { tags: ['FlashSale'], op: 'remove' }
-    ];
-    for (const body of payloads) {
-        try {
-            await AdminAPI.updateProduct(productId, body);
-            return true;
-        } catch (e) {
-            // try next shape
-        }
-    }
-    return false;
-}
-
-async function verifyFlashSaleRemoved(productId) {
-    try {
-        const res = await fetch(`https://buddyskincare.pythonanywhere.com/products/${productId}/`, { cache: 'no-store' });
-        if (!res.ok) return false;
-        const p = await res.json();
-        const tags = Array.isArray(p?.tags) ? p.tags : [];
-        const hasFlash = tags.some(t => (typeof t === 'string' ? t : (t && t.name) || '').toLowerCase() === 'flashsale');
-        return !hasFlash;
-    } catch { return false; }
-}
-
-async function removeFlashSale(productId) {
-    if (!confirm('Bạn có chắc chắn muốn xóa flash sale cho sản phẩm này?')) {
-        return;
-    }
-    
-    try {
-        // Find current product and its tags
-        const product = allProducts.find(p => String(p.id) === String(productId)) || {};
-        const rawTags = Array.isArray(product.tags) ? product.tags : [];
-        // Normalize to names
-        const currentNames = rawTags.map(t => typeof t === 'string' ? t : (t && t.name) || '').filter(Boolean);
-        // Remove FlashSale (case-insensitive)
-        const newNames = currentNames.filter(n => n.toLowerCase() !== 'flashsale');
-        
-        // Try via multiple payload shapes
-        let ok = await tryUpdateProductTags(productId, newNames);
-        if (!ok || !(await verifyFlashSaleRemoved(productId))) {
-            // Fallback: attempt PUT with only tags field via admin proxy
-            try {
-                const resp = await fetch(`/admin/api/products/${productId}`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tags: newNames.length ? newNames : [] })
-                });
-                ok = resp.ok && (await verifyFlashSaleRemoved(productId));
-            } catch {}
-        }
-        
-        if (!ok) {
-            AdminAPI.showNotification('Không thể gỡ tag FlashSale từ API. Vui lòng kiểm tra backend cho phép cập nhật tags.', 'error');
-            return;
-        }
-        
-        AdminAPI.showNotification('Đã gỡ Flash Sale khỏi sản phẩm.', 'success');
-        await loadFlashSaleProducts();
-        
-    } catch (error) {
-        console.error('Error removing flash sale:', error);
-        AdminAPI.showNotification('Có lỗi khi gỡ Flash Sale.', 'error');
-    }
-}
 </script>
 {% endblock %}
