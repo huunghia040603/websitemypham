@@ -1497,42 +1497,67 @@ function createFlashSaleProductCard(product) {
 
 // --- End of Dynamic Products Section ---
 
+let activeFlashSaleCode = null;
 // Countdown Timer for Flash Sale
+
 function initCountdownTimer() {
     const countdownElements = document.querySelectorAll('.countdown-number');
     if (countdownElements.length === 0) return;
 
-    // Set target date (2 days from now)
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + 2);
-    targetDate.setHours(15, 30, 45, 0);
+    fetch('https://buddyskincare.pythonanywhere.com/tags/?status=active')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.length === 0 || !data[0].end_date) {
+                countdownElements.forEach(el => el.textContent = '00');
+                console.log("No active flash sales found or end_date is missing.");
+                return;
+            }
 
-    function updateCountdown() {
-        const now = new Date().getTime();
-        const distance = targetDate.getTime() - now;
+            // Lưu mã code của flash sale vào biến toàn cục
+            activeFlashSaleCode = data[0].code;
 
-        if (distance < 0) {
-            // Countdown finished
+            const targetDate = new Date(data[0].end_date);
+
+            if (isNaN(targetDate)) {
+                countdownElements.forEach(el => el.textContent = '00');
+                console.error("Invalid end_date format received from API.");
+                return;
+            }
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const distance = targetDate.getTime() - now;
+
+                if (distance < 0) {
+                    countdownElements.forEach(el => el.textContent = '00');
+                    return;
+                }
+
+                const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                if (countdownElements[0]) countdownElements[0].textContent = days.toString().padStart(2, '0');
+                if (countdownElements[1]) countdownElements[1].textContent = hours.toString().padStart(2, '0');
+                if (countdownElements[2]) countdownElements[2].textContent = minutes.toString().padStart(2, '0');
+                if (countdownElements[3]) countdownElements[3].textContent = seconds.toString().padStart(2, '0');
+            }
+
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        })
+        .catch(error => {
+            console.error('Error fetching flash sale data:', error);
             countdownElements.forEach(el => el.textContent = '00');
-            return;
-        }
-
-        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-        // Update display
-        if (countdownElements[0]) countdownElements[0].textContent = days.toString().padStart(2, '0');
-        if (countdownElements[1]) countdownElements[1].textContent = hours.toString().padStart(2, '0');
-        if (countdownElements[2]) countdownElements[2].textContent = minutes.toString().padStart(2, '0');
-        if (countdownElements[3]) countdownElements[3].textContent = seconds.toString().padStart(2, '0');
-    }
-
-    // Update countdown every second
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
+        });
 }
+
 
 
 // Product Cards Interactions
@@ -3180,7 +3205,7 @@ console.log('- manualSelectPayment("bankTransfer") - Manually select bank transf
 
 // Hàm khởi tạo cho sản phẩm gợi ý trong checkout
 function initCheckoutSuggestedProducts() {
-    const suggestedProductsApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?tags=FlashSale&limit=10';
+    const suggestedProductsApiUrl = `https://buddyskincare.pythonanywhere.com/products/?tags=${activeFlashSaleCode}&limit=10`;
     const containerSelector = '#checkout-suggested-products';
     fetchAndRenderSuggestedProducts(suggestedProductsApiUrl, containerSelector);
     
