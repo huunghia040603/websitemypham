@@ -321,8 +321,17 @@ function initVoucherEvents() {
 // Helper function to parse price accurately
 function parsePrice(priceString) {
     if (!priceString) return 0;
+    
+    // If it's already a number, return it
+    if (typeof priceString === 'number') {
+        return priceString;
+    }
+    
+    // If it's not a string, convert to string first
+    const priceStr = String(priceString);
+    
     // Remove all non-numeric characters except dots and commas, then remove dots and commas
-    const cleanPrice = priceString.replace(/[^\d,.]/g, '').replace(/[,.]/g, '');
+    const cleanPrice = priceStr.replace(/[^\d,.]/g, '').replace(/[,.]/g, '');
     const result = parseInt(cleanPrice, 10) || 0;
     console.log(`parsePrice: "${priceString}" -> "${cleanPrice}" -> ${result}`);
     return result;

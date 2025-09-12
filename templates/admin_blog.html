@@ -1,0 +1,1487 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Quản Lý Blog - Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-blog-container {
+        padding: 1.5rem;
+        background: #f8fafc;
+        min-height: 100vh;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .controls {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        flex: 1;
+        min-width: 250px;
+        position: relative;
+    }
+
+    .search-box input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+    .filter-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e2e8f0;
+        background: white;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .filter-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+
+    .filter-btn:hover {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .filter-btn.active:hover {
+        background: #5a67d8;
+        color: white;
+    }
+
+    .blog-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .blog-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: 1px solid #e2e8f0;
+    }
+
+    .blog-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        border-color: #667eea;
+    }
+
+    .blog-image {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        background: #f3f4f6;
+    }
+
+    .blog-content {
+        padding: 1.5rem;
+    }
+
+    .blog-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .blog-meta {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        font-size: 0.8rem;
+        color: #64748b;
+        flex-wrap: wrap;
+    }
+
+    .blog-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .blog-excerpt {
+        font-size: 0.9rem;
+        color: #475569;
+        line-height: 1.5;
+        margin-bottom: 1rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .blog-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .btn-primary {
+        background: #667eea;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #5a67d8;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .btn-secondary:hover {
+        background: #cbd5e1;
+        color: #1e293b;
+    }
+
+    .btn-danger {
+        background: #ef4444;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #dc2626;
+        color: white;
+    }
+
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #059669;
+        color: white;
+    }
+
+    .tag-badge {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        background: #ede9fe;
+        color: #6d28d9;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+
+    .loading-state {
+        text-align: center;
+        padding: 3rem;
+        color: #64748b;
+    }
+
+    .error-state {
+        text-align: center;
+        padding: 3rem;
+        color: #ef4444;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #64748b;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #667eea;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    /* Rich Text Editor */
+    .rich-text-editor {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        overflow: hidden;
+    }
+
+    .rich-text-editor .toolbar {
+        background: #f8f9fa;
+        border-bottom: 1px solid #ced4da;
+        padding: 0.5rem;
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+    .rich-text-editor .toolbar .btn {
+        border: 1px solid #ced4da;
+        background: #fff;
+        color: #495057;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .rich-text-editor .toolbar .btn:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+    }
+
+    .rich-text-content {
+        min-height: 200px;
+        max-height: 400px;
+        padding: 0.75rem;
+        line-height: 1.5;
+        outline: none;
+        font-family: inherit;
+        overflow-y: auto;
+        overflow-x: hidden;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        background: #fff;
+    }
+
+    .rich-text-content:empty:before {
+        content: attr(data-placeholder);
+        color: #6c757d;
+        font-style: italic;
+    }
+
+    .rich-text-content:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .rich-text-content p {
+        margin-bottom: 0.5rem;
+    }
+
+    .rich-text-content p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Custom scrollbar for rich text content */
+    .rich-text-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .rich-text-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .rich-text-content::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+        transition: background 0.3s ease;
+    }
+
+    .rich-text-content::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* Firefox scrollbar */
+    .rich-text-content {
+        scrollbar-width: thin;
+        scrollbar-color: #c1c1c1 #f1f1f1;
+    }
+
+    /* Fullscreen mode */
+    .rich-text-editor.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        background: #fff;
+        border: none;
+        border-radius: 0;
+    }
+
+    .rich-text-editor.fullscreen .toolbar {
+        background: #f8f9fa;
+        border-bottom: 1px solid #ced4da;
+        padding: 1rem;
+    }
+
+    .rich-text-editor.fullscreen .rich-text-content {
+        height: calc(100vh - 80px);
+        max-height: none;
+        border: none;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .rich-text-editor.fullscreen .form-text {
+        display: none;
+    }
+
+    /* Link detection indicator */
+    .link-detection-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-left: auto;
+        padding: 0.5rem;
+        background: #e3f2fd;
+        border-radius: 6px;
+        border: 1px solid #bbdefb;
+    }
+
+    .detected-links {
+        display: flex;
+        gap: 0.3rem;
+        align-items: center;
+    }
+
+    .detected-links i {
+        color: #1976d2;
+        font-size: 0.9rem;
+    }
+
+    .link-detection-indicator .btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 768px) {
+        .admin-blog-container {
+            padding: 1rem;
+        }
+
+        .page-header {
+            padding: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .controls {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .search-box {
+            min-width: auto;
+        }
+
+        .blog-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .blog-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            justify-content: center;
+        }
+
+        .rich-text-editor .toolbar {
+            padding: 0.25rem;
+        }
+
+        .rich-text-editor .toolbar .btn {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+
+        .rich-text-content {
+            min-height: 150px;
+            max-height: 300px;
+            padding: 0.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-blog-container">
+    <!-- Page Header -->
+    <!-- <div class="page-header">
+        <h1>Quản Lý Blog</h1>
+        <p>Quản lý và chỉnh sửa các bài viết blog của website</p>
+    </div> -->
+
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-number" id="totalPosts">0</div>
+            <div class="stat-label">Tổng bài viết</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="publishedPosts">0</div>
+            <div class="stat-label">Đã xuất bản</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="totalViews">0</div>
+            <div class="stat-label">Tổng lượt xem</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="avgViews">0</div>
+            <div class="stat-label">Lượt xem TB</div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Tìm kiếm bài viết...">
+        </div>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-filter="all">Tất cả</button>
+            <button class="filter-btn" data-filter="HD">Hướng dẫn</button>
+            <button class="filter-btn" data-filter="UD">Ưu đãi</button>
+            <button class="filter-btn" data-filter="MLD">Mẹo làm đẹp</button>
+        </div>
+        <button class="btn btn-primary" onclick="openAddBlogModal()">
+            <i class="fas fa-plus"></i> Thêm bài viết
+        </button>
+    </div>
+
+    <!-- Blog Grid -->
+    <div id="blogGrid" class="blog-grid">
+        <!-- Loading state -->
+        <div id="loadingState" class="loading-state">
+            <i class="fas fa-spinner fa-spin fa-2x mb-3"></i>
+            <p>Đang tải danh sách bài viết...</p>
+        </div>
+        
+        <!-- Error state -->
+        <div id="errorState" class="error-state" style="display: none;">
+            <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+            <p>Không thể tải danh sách bài viết</p>
+            <button class="btn btn-primary" onclick="loadBlogPosts()">Thử lại</button>
+        </div>
+        
+        <!-- Empty state -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-newspaper fa-2x mb-3"></i>
+            <p>Chưa có bài viết nào</p>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Blog Modal -->
+<div class="modal fade" id="blogModal" tabindex="-1" aria-labelledby="blogModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="blogModalLabel">Thêm bài viết mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="blogForm">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="blogTitle" class="form-label">Tiêu đề bài viết *</label>
+                                <input type="text" class="form-control" id="blogTitle" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="blogContent" class="form-label">Nội dung bài viết *</label>
+                                <div class="rich-text-editor">
+                                    <div class="toolbar mb-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatText('bold')" title="In đậm">
+                                            <i class="fas fa-bold"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatText('italic')" title="In nghiêng">
+                                            <i class="fas fa-italic"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="formatText('underline')" title="Gạch chân">
+                                            <i class="fas fa-underline"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertLineBreak()" title="Xuống dòng">
+                                            <i class="fas fa-level-down-alt"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="insertParagraph()" title="Đoạn văn">
+                                            <i class="fas fa-paragraph"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleFullscreen()" title="Toàn màn hình">
+                                            <i class="fas fa-expand"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info" onclick="detectAndStyleLinks()" title="Phát hiện link">
+                                            <i class="fas fa-link"></i>
+                                        </button>
+                                    </div>
+                                    <div id="blogContent" class="form-control rich-text-content" contenteditable="true" style="min-height: 200px; border: 1px solid #ced4da; border-radius: 0.375rem; padding: 0.5rem;" data-placeholder="Nhập nội dung bài viết..."></div>
+                                    <textarea id="blogContentHidden" style="display: none;" required></textarea>
+                                </div>
+                                <div class="form-text">Sử dụng các nút trên để định dạng văn bản. Hỗ trợ in đậm, in nghiêng, gạch chân và xuống dòng. Nhấn nút link để phát hiện URLs, emails, số điện thoại trong nội dung.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="blogExcerpt" class="form-label">Mô tả ngắn</label>
+                                <textarea class="form-control" id="blogExcerpt" rows="3" placeholder="Mô tả ngắn gọn về bài viết..."></textarea>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="blogTag" class="form-label">Danh mục *</label>
+                                <select class="form-select" id="blogTag" required>
+                                    <option value="">Chọn danh mục</option>
+                                    <option value="HD">Hướng dẫn</option>
+                                    <option value="UD">Ưu đãi</option>
+                                    <option value="MLD">Mẹo làm đẹp</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="blogImage" class="form-label">Ảnh đại diện</label>
+                                <div class="input-group">
+                                    <input type="url" class="form-control" id="blogImage" placeholder="URL ảnh...">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="openImageUpload()">
+                                        <i class="fas fa-cloud-upload-alt"></i> Upload
+                                    </button>
+                                </div>
+                                <div class="form-text">Nhập URL ảnh hoặc upload ảnh lên Cloudinary.</div>
+                                
+                                <!-- Image preview -->
+                                <div id="imagePreview" class="mt-2" style="display: none;">
+                                    <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px; border: 1px solid #dee2e6;">
+                                    <div class="mt-1">
+                                        <small class="text-muted">Ảnh xem trước</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="blogStatus" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="blogStatus">
+                                    <option value="published">Đã xuất bản</option>
+                                    <option value="draft">Bản nháp</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="blogFeatured">
+                                    <label class="form-check-label" for="blogFeatured">
+                                        Bài viết nổi bật
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveBlog()">
+                    <i class="fas fa-save"></i> Lưu bài viết
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa bài viết này không?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Lưu ý:</strong> Hành động này không thể hoàn tác!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Xóa bài viết
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Upload Modal -->
+<div class="modal fade" id="imageUploadModal" tabindex="-1" aria-labelledby="imageUploadModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageUploadModalLabel">
+                    <i class="fas fa-cloud-upload-alt me-2"></i>Upload Ảnh Blog
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="imageFile" class="form-label">Chọn ảnh</label>
+                    <input type="file" class="form-control" id="imageFile" accept="image/*">
+                    <div class="form-text">Hỗ trợ: PNG, JPG, JPEG, GIF, WEBP (tối đa 10MB)</div>
+                </div>
+                
+                <!-- Upload progress -->
+                <div id="uploadProgress" class="mb-3" style="display: none;">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted">Đang upload...</small>
+                </div>
+                
+                <!-- Upload result -->
+                <div id="uploadResult" class="alert" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="uploadImage()" id="uploadBtn">
+                    <i class="fas fa-upload me-1"></i>Upload
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Global variables
+let allBlogPosts = [];
+let filteredPosts = [];
+let currentEditId = null;
+let currentDeleteId = null;
+
+// Blog tag mapping
+const tagMapping = {
+    'HD': 'Hướng dẫn',
+    'UD': 'Ưu đãi',
+    'MLD': 'Mẹo làm đẹp'
+};
+
+// Load blog posts from API
+async function loadBlogPosts() {
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const emptyState = document.getElementById('emptyState');
+    const blogGrid = document.getElementById('blogGrid');
+    
+    // Show loading state
+    loadingState.style.display = 'block';
+    errorState.style.display = 'none';
+    emptyState.style.display = 'none';
+    
+    try {
+        // Load all posts without pagination
+        const response = await fetch('https://buddyskincare.pythonanywhere.com/blog/');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        let posts = data.results || data;
+        
+        // If there are multiple pages, load all of them
+        if (data.next) {
+            console.log('🔍 Multiple pages detected, loading all posts...');
+            let allPosts = [...posts];
+            let nextUrl = data.next;
+            
+            while (nextUrl) {
+                try {
+                    const nextResponse = await fetch(nextUrl);
+                    if (nextResponse.ok) {
+                        const nextData = await nextResponse.json();
+                        allPosts = [...allPosts, ...(nextData.results || [])];
+                        nextUrl = nextData.next;
+                        console.log(`🔍 Loaded page ${nextData.current_page || 'unknown'}, total posts: ${allPosts.length}`);
+                    } else {
+                        break;
+                    }
+                } catch (error) {
+                    console.error('Error loading additional page:', error);
+                    break;
+                }
+            }
+            
+            posts = allPosts;
+            console.log(`✅ Loaded all posts: ${posts.length} total`);
+        }
+        
+        if (!posts || posts.length === 0) {
+            showEmptyState();
+            return;
+        }
+        
+        allBlogPosts = posts;
+        filteredPosts = [...posts];
+        
+        // Update stats
+        updateStats(posts);
+        
+        // Render blog posts
+        renderBlogPosts(posts);
+        
+    } catch (error) {
+        console.error('Error loading blog posts:', error);
+        showErrorState();
+    }
+}
+
+// Update statistics
+function updateStats(posts) {
+    const totalPosts = posts.length;
+    const publishedPosts = posts.filter(post => post.is_published !== false).length;
+    const totalViews = posts.reduce((sum, post) => sum + (post.views || 0), 0);
+    const avgViews = totalPosts > 0 ? Math.round(totalViews / totalPosts) : 0;
+    
+    document.getElementById('totalPosts').textContent = totalPosts;
+    document.getElementById('publishedPosts').textContent = publishedPosts;
+    document.getElementById('totalViews').textContent = totalViews.toLocaleString();
+    document.getElementById('avgViews').textContent = avgViews.toLocaleString();
+}
+
+// Show error state
+function showErrorState() {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+}
+
+// Show empty state
+function showEmptyState() {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('errorState').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'block';
+}
+
+// Render blog posts
+function renderBlogPosts(posts) {
+    const blogGrid = document.getElementById('blogGrid');
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const emptyState = document.getElementById('emptyState');
+    
+    // Hide states
+    loadingState.style.display = 'none';
+    errorState.style.display = 'none';
+    emptyState.style.display = 'none';
+    
+    if (!posts || posts.length === 0) {
+        showEmptyState();
+        return;
+    }
+    
+    const postsHTML = posts.map(post => createBlogCardHTML(post)).join('');
+    blogGrid.innerHTML = postsHTML;
+    
+    // Initialize filters
+    initializeFilters();
+}
+
+// Create HTML for a blog card
+function createBlogCardHTML(post) {
+    const imageUrl = post.img_thumbnail || '/static/image/default-blog.jpg';
+    const tagText = tagMapping[post.tag] || 'Bài viết';
+    const postDate = formatDate(post.post_date);
+    const excerpt = truncateText(post.short_description || post.content, 150);
+    const views = post.views || 0;
+    
+    return `
+        <div class="blog-card" data-tag="${post.tag}" data-title="${post.title.toLowerCase()}">
+            <img src="${imageUrl}" alt="${post.title}" class="blog-image" onerror="this.src='/static/image/default-blog.jpg'">
+            <div class="blog-content">
+                <div class="tag-badge">${tagText}</div>
+                <h3 class="blog-title">${post.title}</h3>
+                <div class="blog-meta">
+                    <span><i class="fas fa-calendar-alt"></i> ${postDate}</span>
+                    <span><i class="fas fa-eye"></i> ${views} lượt xem</span>
+                    <span><i class="fas fa-clock"></i> ${estimateReadTime(post.content)} phút</span>
+                </div>
+                <p class="blog-excerpt">${excerpt}</p>
+                <div class="blog-actions">
+                    <a href="/blog/${post.id}" class="btn btn-primary" target="_blank">
+                        <i class="fas fa-eye"></i> Xem
+                    </a>
+                    <button class="btn btn-secondary" onclick="editBlog(${post.id})">
+                        <i class="fas fa-edit"></i> Sửa
+                    </button>
+                    <button class="btn btn-success" onclick="duplicateBlog(${post.id})">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button class="btn btn-danger" onclick="deleteBlog(${post.id})">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Format date
+function formatDate(dateString) {
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('vi-VN', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+        });
+    } catch (error) {
+        return 'Không rõ ngày';
+    }
+}
+
+// Truncate text
+function truncateText(text, maxLength) {
+    if (!text) return '';
+    const cleanText = text.replace(/<[^>]*>/g, ''); // Remove HTML tags
+    if (cleanText.length <= maxLength) return cleanText;
+    return cleanText.substring(0, maxLength).trim() + '...';
+}
+
+// Estimate read time
+function estimateReadTime(content) {
+    if (!content) return 2;
+    const wordsPerMinute = 200;
+    const wordCount = content.replace(/<[^>]*>/g, '').split(/\s+/).length;
+    return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
+}
+
+// Initialize filters
+function initializeFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('searchInput');
+    const blogCards = document.querySelectorAll('.blog-card');
+
+    function applyFilters() {
+        const activeFilter = document.querySelector('.filter-btn.active');
+        const filter = activeFilter ? activeFilter.getAttribute('data-filter') : 'all';
+        const searchTerm = (searchInput.value || '').toLowerCase().trim();
+
+        blogCards.forEach(card => {
+            const cardTag = card.getAttribute('data-tag');
+            const cardTitle = card.getAttribute('data-title');
+            
+            const matchesFilter = (filter === 'all') || (cardTag === filter);
+            const matchesSearch = !searchTerm || cardTitle.includes(searchTerm);
+            
+            card.style.display = (matchesFilter && matchesSearch) ? 'block' : 'none';
+        });
+    }
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            applyFilters();
+        });
+    });
+
+    searchInput.addEventListener('input', applyFilters);
+    applyFilters();
+}
+
+// Blog actions
+function openAddBlogModal() {
+    currentEditId = null;
+    document.getElementById('blogModalLabel').textContent = 'Thêm bài viết mới';
+    document.getElementById('blogForm').reset();
+    document.getElementById('blogStatus').value = 'published';
+    document.getElementById('blogFeatured').checked = false;
+    
+    const modal = new bootstrap.Modal(document.getElementById('blogModal'));
+    modal.show();
+}
+
+function editBlog(blogId) {
+    const blog = allBlogPosts.find(post => post.id === blogId);
+    if (!blog) {
+        alert('Không tìm thấy bài viết!');
+        return;
+    }
+    
+    currentEditId = blogId;
+    document.getElementById('blogModalLabel').textContent = 'Chỉnh sửa bài viết';
+    
+    // Fill form with blog data
+    document.getElementById('blogTitle').value = blog.title || '';
+    document.getElementById('blogContent').innerHTML = blog.content || '';
+    document.getElementById('blogContentHidden').value = blog.content || '';
+    document.getElementById('blogExcerpt').value = blog.short_description || '';
+    document.getElementById('blogTag').value = blog.tag || '';
+    document.getElementById('blogImage').value = blog.img_thumbnail || '';
+    document.getElementById('blogStatus').value = blog.is_published !== false ? 'published' : 'draft';
+    document.getElementById('blogFeatured').checked = blog.is_featured || false;
+    
+    // Show image preview if exists
+    if (blog.img_thumbnail) {
+        showImagePreview(blog.img_thumbnail);
+    } else {
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('blogModal'));
+    modal.show();
+}
+
+function duplicateBlog(blogId) {
+    const blog = allBlogPosts.find(post => post.id === blogId);
+    if (!blog) {
+        alert('Không tìm thấy bài viết!');
+        return;
+    }
+    
+    currentEditId = null;
+    document.getElementById('blogModalLabel').textContent = 'Sao chép bài viết';
+    
+    // Fill form with blog data (for duplication)
+    document.getElementById('blogTitle').value = `${blog.title} (Bản sao)`;
+    document.getElementById('blogContent').innerHTML = blog.content || '';
+    document.getElementById('blogContentHidden').value = blog.content || '';
+    document.getElementById('blogExcerpt').value = blog.short_description || '';
+    document.getElementById('blogTag').value = blog.tag || '';
+    document.getElementById('blogImage').value = blog.img_thumbnail || '';
+    document.getElementById('blogStatus').value = 'draft'; // Always save as draft
+    document.getElementById('blogFeatured').checked = false; // Don't copy featured status
+    
+    const modal = new bootstrap.Modal(document.getElementById('blogModal'));
+    modal.show();
+}
+
+function deleteBlog(blogId) {
+    currentDeleteId = blogId;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Save blog (create or update)
+async function saveBlog() {
+    const form = document.getElementById('blogForm');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    // Sync rich text content before saving
+    syncRichTextContent();
+    
+    const blogData = {
+        title: document.getElementById('blogTitle').value.trim(),
+        content: document.getElementById('blogContentHidden').value.trim(),
+        short_description: document.getElementById('blogExcerpt').value.trim(),
+        tag: document.getElementById('blogTag').value,
+        img_thumbnail: document.getElementById('blogImage').value.trim(),
+        is_published: document.getElementById('blogStatus').value === 'published',
+        is_featured: document.getElementById('blogFeatured').checked
+    };
+    
+    try {
+        const saveButton = document.querySelector('#blogModal .btn-primary');
+        const originalText = saveButton.innerHTML;
+        saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+        saveButton.disabled = true;
+        
+        let response;
+        if (currentEditId) {
+            // Update existing blog
+            response = await fetch(`https://buddyskincare.pythonanywhere.com/blog/${currentEditId}/`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(blogData)
+            });
+        } else {
+            // Create new blog
+            response = await fetch('https://buddyskincare.pythonanywhere.com/blog/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(blogData)
+            });
+        }
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        // Close modal and reload data
+        const modal = bootstrap.Modal.getInstance(document.getElementById('blogModal'));
+        modal.hide();
+        
+        showNotification('Lưu bài viết thành công!', 'success');
+        loadBlogPosts();
+        
+    } catch (error) {
+        console.error('Error saving blog:', error);
+        showNotification('Lỗi khi lưu bài viết: ' + error.message, 'error');
+    } finally {
+        const saveButton = document.querySelector('#blogModal .btn-primary');
+        saveButton.innerHTML = '<i class="fas fa-save"></i> Lưu bài viết';
+        saveButton.disabled = false;
+    }
+}
+
+// Confirm delete
+async function confirmDelete() {
+    if (!currentDeleteId) return;
+    
+    try {
+        const deleteButton = document.querySelector('#deleteModal .btn-danger');
+        const originalText = deleteButton.innerHTML;
+        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
+        deleteButton.disabled = true;
+        
+        const response = await fetch(`https://buddyskincare.pythonanywhere.com/blog/${currentDeleteId}/`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        // Close modal and reload data
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
+        modal.hide();
+        
+        showNotification('Xóa bài viết thành công!', 'success');
+        loadBlogPosts();
+        
+    } catch (error) {
+        console.error('Error deleting blog:', error);
+        showNotification('Lỗi khi xóa bài viết: ' + error.message, 'error');
+    } finally {
+        const deleteButton = document.querySelector('#deleteModal .btn-danger');
+        deleteButton.innerHTML = '<i class="fas fa-trash"></i> Xóa bài viết';
+        deleteButton.disabled = false;
+        currentDeleteId = null;
+    }
+}
+
+// Rich Text Editor Functions
+function formatText(command) {
+    document.execCommand(command, false, null);
+    document.getElementById('blogContent').focus();
+}
+
+function insertLineBreak() {
+    document.execCommand('insertHTML', false, '<br>');
+    document.getElementById('blogContent').focus();
+}
+
+function insertParagraph() {
+    document.execCommand('insertHTML', false, '<p></p>');
+    document.getElementById('blogContent').focus();
+}
+
+function toggleFullscreen() {
+    const editor = document.querySelector('.rich-text-editor');
+    const fullscreenBtn = document.querySelector('[onclick="toggleFullscreen()"]');
+    const icon = fullscreenBtn.querySelector('i');
+    
+    if (editor.classList.contains('fullscreen')) {
+        // Exit fullscreen
+        editor.classList.remove('fullscreen');
+        icon.className = 'fas fa-expand';
+        fullscreenBtn.title = 'Toàn màn hình';
+    } else {
+        // Enter fullscreen
+        editor.classList.add('fullscreen');
+        icon.className = 'fas fa-compress';
+        fullscreenBtn.title = 'Thoát toàn màn hình';
+    }
+}
+
+// Image upload functions
+function openImageUpload() {
+    const modal = new bootstrap.Modal(document.getElementById('imageUploadModal'));
+    modal.show();
+    
+    // Reset form
+    document.getElementById('imageFile').value = '';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.getElementById('uploadResult').style.display = 'none';
+    document.getElementById('uploadBtn').disabled = false;
+}
+
+function uploadImage() {
+    const fileInput = document.getElementById('imageFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showUploadResult('Vui lòng chọn file ảnh', 'danger');
+        return;
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        showUploadResult('Định dạng file không được hỗ trợ. Chỉ chấp nhận PNG, JPG, JPEG, GIF, WEBP', 'danger');
+        return;
+    }
+    
+    // Validate file size (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        showUploadResult('File quá lớn. Kích thước tối đa là 10MB', 'danger');
+        return;
+    }
+    
+    // Show progress
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadResult').style.display = 'none';
+    document.getElementById('uploadBtn').disabled = true;
+    
+    // Create FormData
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Upload to server
+    fetch('/api/upload-blog-image', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('uploadProgress').style.display = 'none';
+        
+        if (data.success) {
+            // Set image URL in form
+            document.getElementById('blogImage').value = data.url;
+            
+            // Show preview
+            showImagePreview(data.url);
+            
+            // Show success message
+            showUploadResult('Upload ảnh thành công!', 'success');
+            
+            // Close modal after 1 second
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('imageUploadModal'));
+                modal.hide();
+            }, 1000);
+        } else {
+            showUploadResult(data.error || 'Có lỗi xảy ra khi upload', 'danger');
+            document.getElementById('uploadBtn').disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error);
+        document.getElementById('uploadProgress').style.display = 'none';
+        showUploadResult('Có lỗi xảy ra khi upload', 'danger');
+        document.getElementById('uploadBtn').disabled = false;
+    });
+}
+
+function showUploadResult(message, type) {
+    const resultDiv = document.getElementById('uploadResult');
+    resultDiv.className = `alert alert-${type}`;
+    resultDiv.textContent = message;
+    resultDiv.style.display = 'block';
+}
+
+function showImagePreview(url) {
+    const previewDiv = document.getElementById('imagePreview');
+    const previewImg = document.getElementById('previewImg');
+    
+    previewImg.src = url;
+    previewDiv.style.display = 'block';
+}
+
+// Update preview when URL changes
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('blogImage');
+    if (imageInput) {
+        imageInput.addEventListener('input', function() {
+            const url = this.value.trim();
+            if (url && isValidUrl(url)) {
+                showImagePreview(url);
+            } else {
+                document.getElementById('imagePreview').style.display = 'none';
+            }
+        });
+    }
+});
+
+function isValidUrl(string) {
+    try {
+        new URL(string);
+        return true;
+    } catch (_) {
+        return false;
+    }
+}
+
+// Sync rich text content with hidden textarea
+function syncRichTextContent() {
+    const richContent = document.getElementById('blogContent');
+    const hiddenTextarea = document.getElementById('blogContentHidden');
+    
+    if (richContent && hiddenTextarea) {
+        hiddenTextarea.value = richContent.innerHTML;
+    }
+}
+
+// Auto-detect and style links in rich text content
+function detectAndStyleLinks() {
+    const richContent = document.getElementById('blogContent');
+    if (!richContent) return;
+    
+    // Get all text content
+    const textContent = richContent.textContent || richContent.innerText || '';
+    
+    // Skip if content is too short or already has links
+    if (textContent.length < 5 || richContent.querySelector('a')) {
+        return;
+    }
+    
+    // URL regex patterns (more flexible)
+    const urlPattern = /(https?:\/\/[^\s<>"]+)/gi;
+    const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
+    const phonePattern = /(\+?[0-9\s\-\(\)]{10,})/g;
+    
+    // Check if content contains URLs, emails, or phones
+    const hasUrls = urlPattern.test(textContent);
+    const hasEmails = emailPattern.test(textContent);
+    const hasPhones = phonePattern.test(textContent);
+    
+    // Debug log
+    console.log('Link detection:', { hasUrls, hasEmails, hasPhones, textContent: textContent.substring(0, 100) });
+    
+    if (hasUrls || hasEmails || hasPhones) {
+        // Add link detection indicator
+        showLinkDetectionIndicator(hasUrls, hasEmails, hasPhones);
+    } else {
+        // Remove indicator if no links detected
+        const existingIndicator = document.getElementById('linkDetectionIndicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+    }
+}
+
+// Show link detection indicator
+function showLinkDetectionIndicator(hasUrls, hasEmails, hasPhones) {
+    const toolbar = document.querySelector('.rich-text-editor .toolbar');
+    if (!toolbar) return;
+    
+    // Remove existing indicator
+    const existingIndicator = document.getElementById('linkDetectionIndicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+    
+    // Create indicator
+    const indicator = document.createElement('div');
+    indicator.id = 'linkDetectionIndicator';
+    indicator.className = 'link-detection-indicator';
+    indicator.innerHTML = `
+        <span class="detected-links">
+            ${hasUrls ? '<i class="fas fa-link" title="URLs detected"></i>' : ''}
+            ${hasEmails ? '<i class="fas fa-envelope" title="Emails detected"></i>' : ''}
+            ${hasPhones ? '<i class="fas fa-phone" title="Phones detected"></i>' : ''}
+        </span>
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="convertTextToLinks()" title="Convert detected text to clickable links">
+            <i class="fas fa-magic"></i> Convert Links
+        </button>
+    `;
+    
+    toolbar.appendChild(indicator);
+}
+
+// Convert detected text to clickable links
+function convertTextToLinks() {
+    const richContent = document.getElementById('blogContent');
+    if (!richContent) return;
+    
+    let html = richContent.innerHTML;
+    
+    // Convert URLs to links
+    html = html.replace(/(https?:\/\/[^\s<>"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    
+    // Convert emails to mailto links
+    html = html.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1">$1</a>');
+    
+    // Convert phone numbers to tel links
+    html = html.replace(/(\+?[0-9\s\-\(\)]{10,})/g, function(match) {
+        const cleanPhone = match.replace(/[\s\-\(\)]/g, '');
+        if (cleanPhone.length >= 10) {
+            return `<a href="tel:${cleanPhone}">${match}</a>`;
+        }
+        return match;
+    });
+    
+    richContent.innerHTML = html;
+    
+    // Hide the indicator
+    const indicator = document.getElementById('linkDetectionIndicator');
+    if (indicator) {
+        indicator.remove();
+    }
+    
+    // Show success message
+    showNotification('Links converted successfully!', 'success');
+}
+
+// Add event listener for content changes
+function initLinkDetection() {
+    const richContent = document.getElementById('blogContent');
+    if (!richContent) return;
+    
+    // Remove existing listeners to avoid duplicates
+    richContent.removeEventListener('input', handleContentChange);
+    richContent.removeEventListener('paste', handlePaste);
+    
+    // Add new listeners
+    richContent.addEventListener('input', handleContentChange);
+    richContent.addEventListener('paste', handlePaste);
+    
+    // Also check on focus
+    richContent.addEventListener('focus', function() {
+        setTimeout(detectAndStyleLinks, 100);
+    });
+}
+
+// Handle content change
+function handleContentChange() {
+    setTimeout(detectAndStyleLinks, 300); // Debounce
+}
+
+// Handle paste
+function handlePaste() {
+    setTimeout(detectAndStyleLinks, 800); // Wait for paste to complete
+}
+
+// Initialize rich text editor
+function initRichTextEditor() {
+    const richContent = document.getElementById('blogContent');
+    const hiddenTextarea = document.getElementById('blogContentHidden');
+    
+    if (richContent && hiddenTextarea) {
+        // Sync on input
+        richContent.addEventListener('input', syncRichTextContent);
+        
+        // Sync on paste
+        richContent.addEventListener('paste', function(e) {
+            setTimeout(syncRichTextContent, 10);
+        });
+        
+        // Prevent default paste behavior to maintain formatting
+        richContent.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text/plain');
+            document.execCommand('insertText', false, text);
+        });
+        
+        // Initialize link detection
+        initLinkDetection();
+    }
+}
+
+// Show notification
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Load blog posts when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadBlogPosts();
+    initRichTextEditor();
+});
+</script>
+{% endblock %}

@@ -403,11 +403,36 @@ def add_to_cart():
             if product.get('stock_quantity', 0) < quantity:
                 return jsonify({'success': False, 'message': 'Số lượng không đủ'})
             
-            # Ở đây sẽ lưu vào session hoặc database (tạm thời trả về thành công)
+            # Initialize cart in session if not exists
+            if 'cart' not in session:
+                session['cart'] = {}
+            
+            # Add/update product in cart
+            cart = session['cart']
+            if str(product_id) in cart:
+                cart[str(product_id)]['quantity'] += quantity
+            else:
+                cart[str(product_id)] = {
+                    'product_id': product_id,
+                    'name': product.get('name', ''),
+                    'price': product.get('discounted_price', product.get('original_price', 0)),
+                    'image': product.get('image', ''),
+                    'brand': product.get('brand_name', ''),
+                    'quantity': quantity
+                }
+            
+            # Update session
+            session['cart'] = cart
+            session.modified = True
+            
+            # Calculate total items in cart
+            total_items = sum(item['quantity'] for item in cart.values())
+            
             return jsonify({
                 'success': True, 
                 'message': f'Đã thêm {quantity} {product.get("name", "sản phẩm")} vào giỏ hàng',
-                'cart_count': 3  # Demo
+                'cart_count': total_items,
+                'cart': cart
             })
         else:
             return jsonify({'success': False, 'message': 'Sản phẩm không tồn tại'})
@@ -415,6 +440,27 @@ def add_to_cart():
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching product for cart: {e}")
         return jsonify({'success': False, 'message': 'Lỗi khi tải thông tin sản phẩm'})
+
+@app.route('/api/cart', methods=['GET'])
+def get_cart():
+    """API lấy thông tin giỏ hàng"""
+    cart = session.get('cart', {})
+    total_items = sum(item['quantity'] for item in cart.values())
+    total_price = sum(item['price'] * item['quantity'] for item in cart.values())
+    
+    return jsonify({
+        'success': True,
+        'cart': cart,
+        'total_items': total_items,
+        'total_price': total_price
+    })
+
+@app.route('/api/cart/clear', methods=['POST'])
+def clear_cart():
+    """API xóa giỏ hàng"""
+    session['cart'] = {}
+    session.modified = True
+    return jsonify({'success': True, 'message': 'Đã xóa giỏ hàng'})
 
 @app.route('/api/newsletter', methods=['POST'])
 def newsletter_subscribe():
@@ -541,6 +587,11 @@ def login():
 def about():
     """Trang về chúng tôi"""
     return render_template('about.html')
+
+@app.route('/profile')
+def profile():
+    """Trang hồ sơ cá nhân"""
+    return render_template('profile.html')
 
 @app.route('/shipping-payment')
 def shipping_payment():
@@ -770,6 +821,417 @@ def admin_lucky_number():
 def admin_customer_data():
     """Admin - Dữ liệu tiệp khách hàng"""
     return render_template('admin_customer_data.html')
+
+@app.route('/admin/blog')
+def admin_blog():
+    """Admin - Quản lý Blog"""
+    return render_template('admin_blog.html')
+
+@app.route('/blog/<int:blog_id>')
+def blog_detail(blog_id):
+    """Chi tiết bài viết blog"""
+    return render_template('blog_detail.html', blog_id=blog_id)
+
+@app.route('/admin/email-analytics')
+def admin_email_analytics():
+    """Admin - Thống kê Email Marketing"""
+    return render_template('admin_email_analytics.html')
+
+@app.route('/admin/api/email-analytics', methods=['GET'])
+def admin_api_email_analytics():
+    """API lấy dữ liệu thống kê email từ Gmail và Google Analytics"""
+    try:
+        # Get date range from query parameters
+        start_date = request.args.get('start_date', '7daysAgo')
+        end_date = request.args.get('end_date', 'today')
+        
+        # Get Gmail data (emails sent)
+        gmail_data = get_gmail_data(start_date, end_date)
+        
+        # Get Google Analytics data (clicks, conversions)
+        analytics_data = get_google_analytics_data(start_date, end_date)
+        
+        # Combine data
+        combined_data = {}
+        
+        if gmail_data:
+            combined_data['total_emails'] = gmail_data['total_emails']
+            combined_data['flashsale_emails'] = gmail_data['flashsale_emails']
+            combined_data['luckygame_emails'] = gmail_data['luckygame_emails']
+            combined_data['other_emails'] = gmail_data['other_emails']
+        else:
+            # Fallback to mock data for emails
+            combined_data['total_emails'] = 0
+            combined_data['flashsale_emails'] = 0
+            combined_data['luckygame_emails'] = 0
+            combined_data['other_emails'] = 0
+        
+        if analytics_data:
+            combined_data.update(analytics_data)
+        else:
+            # Fallback to mock data for analytics
+            mock_data = get_mock_analytics_data()
+            combined_data.update(mock_data)
+        
+        return jsonify(combined_data)
+            
+    except Exception as e:
+        print(f"❌ Error in email analytics API: {e}")
+        return jsonify(get_mock_analytics_data())
+
+def get_gmail_data(start_date, end_date):
+    """Lấy dữ liệu thật từ Gmail API"""
+    try:
+        # Check if Gmail credentials are available
+        credentials_path = os.path.join(os.getcwd(), 'gmail-credentials.json')
+        
+        if not os.path.exists(credentials_path):
+            print("❌ Gmail credentials not found at:", credentials_path)
+            print("💡 To enable real Gmail data, create gmail-credentials.json")
+            return None
+        
+        # Try to import and use Gmail API
+        try:
+            from google.oauth2 import service_account
+            from googleapiclient.discovery import build
+        except ImportError:
+            print("❌ Gmail API not installed")
+            print("💡 Run: pip install google-api-python-client")
+            return None
+        
+        # Initialize Gmail service
+        credentials = service_account.Credentials.from_service_account_file(
+            credentials_path,
+            scopes=['https://www.googleapis.com/auth/gmail.readonly']
+        )
+        
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        print(f"🔍 Fetching Gmail data from buddyskincarevn@gmail.com ({start_date} to {end_date})")
+        
+        # Query for sent emails
+        query = f'from:buddyskincarevn@gmail.com after:{start_date} before:{end_date}'
+        
+        try:
+            results = service.users().messages().list(
+                userId='buddyskincarevn@gmail.com',
+                q=query,
+                maxResults=1000
+            ).execute()
+            
+            messages = results.get('messages', [])
+            
+            # Count emails by campaign
+            flashsale_count = 0
+            luckygame_count = 0
+            total_emails = len(messages)
+            
+            for message in messages:
+                msg = service.users().messages().get(
+                    userId='buddyskincarevn@gmail.com',
+                    id=message['id']
+                ).execute()
+                
+                # Check subject for campaign type
+                headers = msg['payload'].get('headers', [])
+                subject = ''
+                for header in headers:
+                    if header['name'] == 'Subject':
+                        subject = header['value']
+                        break
+                
+                if 'flash' in subject.lower() or 'sale' in subject.lower():
+                    flashsale_count += 1
+                elif 'lucky' in subject.lower() or 'game' in subject.lower():
+                    luckygame_count += 1
+            
+            return {
+                'total_emails': total_emails,
+                'flashsale_emails': flashsale_count,
+                'luckygame_emails': luckygame_count,
+                'other_emails': total_emails - flashsale_count - luckygame_count
+            }
+            
+        except Exception as e:
+            print(f"❌ Error querying Gmail: {e}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ Error setting up Gmail API: {e}")
+        return None
+
+def get_google_analytics_data(start_date, end_date):
+    """Lấy dữ liệu thật từ Google Analytics"""
+    try:
+        # Check if Google Analytics credentials are available
+        credentials_path = os.path.join(os.getcwd(), 'google-analytics-credentials.json')
+        
+        if not os.path.exists(credentials_path):
+            print("❌ Google Analytics credentials not found at:", credentials_path)
+            print("💡 To enable real data, follow the setup guide in GOOGLE_ANALYTICS_SETUP.md")
+            return None
+        
+        # Try to import and use Google Analytics Data API
+        try:
+            from google.analytics.data_v1beta import BetaAnalyticsDataClient
+            from google.analytics.data_v1beta.types import (
+                DateRange,
+                Dimension,
+                Metric,
+                RunReportRequest,
+            )
+        except ImportError:
+            print("❌ Google Analytics Data API not installed")
+            print("💡 Run: pip install google-analytics-data")
+            return None
+        
+        # Initialize client
+        client = BetaAnalyticsDataClient.from_service_account_file(credentials_path)
+        
+        # Your actual Property ID from Google Analytics
+        property_id = "504734762"  # Real Property ID from GA4
+        
+        print(f"🔍 Fetching GA4 data from property {property_id} ({start_date} to {end_date})")
+        
+        # Query for email campaign data
+        request = RunReportRequest(
+            property=f"properties/{property_id}",
+            dimensions=[
+                Dimension(name="campaignName"),
+                Dimension(name="source"),
+                Dimension(name="medium"),
+            ],
+            metrics=[
+                Metric(name="sessions"),
+                Metric(name="activeUsers"),
+                Metric(name="bounceRate"),
+                Metric(name="conversions"),
+                Metric(name="totalRevenue"),
+            ],
+            date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+            dimension_filter={
+                "filter": {
+                    "field_name": "medium",
+                    "string_filter": {
+                        "match_type": "EXACT",
+                        "value": "email"
+                    }
+                }
+            }
+        )
+        
+        response = client.run_report(request)
+        
+        # Process the response
+        campaigns = []
+        total_sessions = 0
+        total_users = 0
+        total_conversions = 0
+        total_revenue = 0
+        
+        for row in response.rows:
+            campaign_name = row.dimension_values[0].value
+            sessions = int(row.metric_values[0].value)
+            new_users = int(row.metric_values[1].value)
+            bounce_rate = float(row.metric_values[2].value)
+            conversions = int(row.metric_values[3].value)
+            revenue = float(row.metric_values[4].value)
+            
+            total_sessions += sessions
+            total_users += new_users
+            total_conversions += conversions
+            total_revenue += revenue
+            
+            campaigns.append({
+                'name': campaign_name,
+                'sessions': sessions,
+                'users': new_users,
+                'bounceRate': bounce_rate,
+                'conversions': conversions,
+                'revenue': revenue,
+                'roi': (revenue / sessions * 100) if sessions > 0 else 0
+            })
+        
+        # Get timeline data
+        timeline = get_timeline_data(client, property_id, start_date, end_date)
+        
+        # Get top pages data
+        top_pages = get_top_pages_data(client, property_id, start_date, end_date)
+        
+        result = {
+            'totalSessions': total_sessions,
+            'totalUsers': total_users,
+            'avgClickRate': (total_users / total_sessions * 100) if total_sessions > 0 else 0,
+            'avgConversionRate': (total_conversions / total_sessions * 100) if total_sessions > 0 else 0,
+            'campaigns': campaigns,
+            'timeline': timeline,
+            'topPages': top_pages,
+            'recentActivity': []  # This would need additional API calls
+        }
+        
+        print(f"✅ Successfully fetched {len(campaigns)} campaigns from Google Analytics")
+        return result
+        
+    except Exception as e:
+        print(f"❌ Error fetching Google Analytics data: {e}")
+        return None
+
+def get_timeline_data(client, property_id, start_date, end_date):
+    """Lấy dữ liệu timeline từ Google Analytics"""
+    try:
+        from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
+        request = RunReportRequest(
+            property=f"properties/{property_id}",
+            dimensions=[Dimension(name="date")],
+            metrics=[
+                Metric(name="sessions"),
+                Metric(name="activeUsers"),
+            ],
+            date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+            dimension_filter={
+                "filter": {
+                    "field_name": "medium",
+                    "string_filter": {
+                        "match_type": "EXACT",
+                        "value": "email"
+                    }
+                }
+            }
+        )
+        
+        response = client.run_report(request)
+        timeline = []
+        
+        for row in response.rows:
+            timeline.append({
+                'date': row.dimension_values[0].value,
+                'sessions': int(row.metric_values[0].value),
+                'users': int(row.metric_values[1].value)
+            })
+        
+        return timeline
+    except Exception as e:
+        print(f"❌ Error fetching timeline data: {e}")
+        return []
+
+def get_top_pages_data(client, property_id, start_date, end_date):
+    """Lấy dữ liệu top pages từ Google Analytics"""
+    try:
+        from google.analytics.data_v1beta.types import DateRange, Dimension, Metric, RunReportRequest
+        request = RunReportRequest(
+            property=f"properties/{property_id}",
+            dimensions=[Dimension(name="pagePath")],
+            metrics=[Metric(name="activeUsers")],
+            date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
+            dimension_filter={
+                "filter": {
+                    "field_name": "medium",
+                    "string_filter": {
+                        "match_type": "EXACT",
+                        "value": "email"
+                    }
+                }
+            },
+            order_bys=[{"metric": {"metric_name": "activeUsers"}, "desc": True}],
+            limit=10
+        )
+        
+        response = client.run_report(request)
+        top_pages = []
+        total_users = sum(int(row.metric_values[0].value) for row in response.rows)
+        
+        for row in response.rows:
+            users = int(row.metric_values[0].value)
+            percentage = (users / total_users * 100) if total_users > 0 else 0
+            
+            top_pages.append({
+                'page': row.dimension_values[0].value,
+                'users': users,
+                'percentage': percentage
+            })
+        
+        return top_pages
+    except Exception as e:
+        print(f"❌ Error fetching top pages data: {e}")
+        return []
+
+def get_mock_analytics_data():
+    """Mock data for demonstration"""
+    return {
+        'totalSessions': 1250,
+        'totalUsers': 187,
+        'avgClickRate': 14.96,
+        'avgConversionRate': 3.2,
+        'campaigns': [
+            {
+                'name': 'Flash Sale',
+                'sessions': 500,
+                'users': 89,
+                'bounceRate': 82.2,
+                'conversions': 18,
+                'revenue': 5400000,
+                'roi': 12.5
+            },
+            {
+                'name': 'Lucky Game',
+                'sessions': 400,
+                'users': 67,
+                'bounceRate': 83.25,
+                'conversions': 12,
+                'revenue': 3600000,
+                'roi': 10.2
+            },
+            {
+                'name': 'Newsletter',
+                'sessions': 350,
+                'users': 31,
+                'bounceRate': 91.14,
+                'conversions': 5,
+                'revenue': 1500000,
+                'roi': 6.8
+            }
+        ],
+        'timeline': [
+            {'date': '2024-01-01', 'sessions': 45, 'users': 7},
+            {'date': '2024-01-02', 'sessions': 52, 'users': 9},
+            {'date': '2024-01-03', 'sessions': 38, 'users': 6},
+            {'date': '2024-01-04', 'sessions': 67, 'users': 12},
+            {'date': '2024-01-05', 'sessions': 43, 'users': 8},
+            {'date': '2024-01-06', 'sessions': 55, 'users': 10},
+            {'date': '2024-01-07', 'sessions': 48, 'users': 9}
+        ],
+        'topPages': [
+            {'page': '/products', 'users': 89, 'percentage': 47.6},
+            {'page': '/events/lucky-number', 'users': 67, 'percentage': 35.8},
+            {'page': '/', 'users': 31, 'percentage': 16.6}
+        ],
+        'recentActivity': [
+            {
+                'time': '2024-01-07 14:30',
+                'campaign': 'Flash Sale',
+                'subject': 'Hàng mới về, flash sale ngập tràn!',
+                'sent': 500,
+                'clicks': 89,
+                'status': 'Delivered'
+            },
+            {
+                'time': '2024-01-06 10:15',
+                'campaign': 'Lucky Game',
+                'subject': 'Trò chơi may mắn tháng này!',
+                'sent': 400,
+                'clicks': 67,
+                'status': 'Delivered'
+            },
+            {
+                'time': '2024-01-05 16:45',
+                'campaign': 'Newsletter',
+                'subject': 'Tin tức mỹ phẩm tuần này',
+                'sent': 350,
+                'clicks': 31,
+                'status': 'Delivered'
+            }
+        ]
+    }
 
 # Preview invoice email template in browser
 @app.route('/templates/emails/invoice_email.html')
@@ -1471,6 +1933,58 @@ def admin_api_update_product(product_id):
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
+
+@app.route('/api/upload-blog-image', methods=['POST'])
+def upload_blog_image():
+    """API upload ảnh blog lên Cloudinary"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Không có file được chọn'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Không có file được chọn'}), 400
+        
+        if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            # Check file size (max 10MB)
+            file.seek(0, 2)  # Seek to end
+            file_size = file.tell()
+            file.seek(0)  # Reset to beginning
+            
+            if file_size > 10 * 1024 * 1024:  # 10MB limit
+                return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
+            
+            # Upload to Cloudinary with image optimization for blog
+            upload_result = cloudinary.uploader.upload(
+                file,
+                folder="blog_images",
+                public_id=f"blog_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+                resource_type="image",
+                # Image optimization settings for blog
+                quality="auto:good",  # Chất lượng tốt cho blog
+                fetch_format="auto",  # Tự động chọn format tối ưu
+                width=1200,  # Giới hạn chiều rộng tối đa
+                height=800,  # Giới hạn chiều cao tối đa (tỷ lệ 3:2)
+                crop="limit",  # Giữ nguyên tỷ lệ, chỉ resize nếu vượt quá giới hạn
+                flags="progressive",  # Tạo ảnh progressive JPEG
+                transformation=[
+                    {"width": 1200, "height": 800, "crop": "limit"},
+                    {"quality": "auto:good"},
+                    {"fetch_format": "auto"}
+                ]
+            )
+            
+            return jsonify({
+                'success': True,
+                'url': upload_result['secure_url'],
+                'public_id': upload_result['public_id']
+            })
+        else:
+            return jsonify({'error': 'Định dạng file không được hỗ trợ. Chỉ chấp nhận PNG, JPG, JPEG, GIF, WEBP'}), 400
+            
+    except Exception as e:
+        print(f"Error uploading blog image: {str(e)}")
+        return jsonify({'error': f'Lỗi upload: {str(e)}'}), 500
 
 @app.route('/api/upload-bank-transfer', methods=['POST'])
 def upload_bank_transfer():

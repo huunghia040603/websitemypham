@@ -946,14 +946,14 @@ class LuckyParticipantCreateSerializer(serializers.ModelSerializer):
         zalo_phone = attrs.get('zalo_phone')
         from django.utils import timezone
         now = timezone.now()
-        
+
         if not (event.is_active and event.start_at <= now <= event.end_at):
             raise serializers.ValidationError('Sự kiện không trong thời gian tham gia.')
-        
+
         # Kiểm tra số điện thoại đã tham gia chưa
         if LuckyParticipant.objects.filter(event=event, zalo_phone=zalo_phone).exists():
             raise serializers.ValidationError('Số điện thoại này đã tham gia sự kiện trước đó. Mỗi số điện thoại chỉ được tham gia 1 lần duy nhất!')
-        
+
         return attrs
 
     def create(self, validated_data):

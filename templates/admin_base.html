@@ -92,7 +92,7 @@
                     </li>
                     <!-- Group: Bán hàng -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_orders','admin_analytics','admin_customers','admin_customer_data'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_orders','admin_analytics','admin_customers','admin_customer_data','admin_email_analytics'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-store me-1"></i>Bán hàng
                         </a>
                         <ul class="dropdown-menu">
@@ -100,7 +100,14 @@
                             <li><a class="dropdown-item" href="/admin/analytics"><i class="fas fa-chart-line me-2"></i>Thống kê</a></li>
                             <li><a class="dropdown-item" href="/admin/customers"><i class="fas fa-users me-2"></i>Khách Hàng</a></li>
                             <li><a class="dropdown-item" href="/admin/customer-data"><i class="fas fa-database me-2"></i>Dữ liệu tệp KH</a></li>
+                            <li><a class="dropdown-item" href="/admin/email-analytics"><i class="fas fa-envelope-open-text me-2"></i>Thống kê Email</a></li>
                         </ul>
+                    </li>
+                    <!-- Group: Nội dung -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'admin_blog' %}active{% endif %}" href="/admin/blog">
+                            <i class="fas fa-newspaper me-1"></i>Quản lý Blog
+                        </a>
                     </li>
                     <!-- Group: Khuyến mãi & Sự kiện -->
                     <li class="nav-item dropdown">

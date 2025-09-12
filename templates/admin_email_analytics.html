@@ -1,0 +1,724 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Thống kê Email Marketing{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">📧 Thống kê Email Marketing</h1>
+    <div class="btn-group">
+      <button class="btn btn-outline-primary" onclick="refreshAnalytics()">
+        <i class="fas fa-sync-alt"></i> Làm mới
+      </button>
+      <button class="btn btn-outline-success" onclick="exportEmailStats()">
+        <i class="fas fa-download"></i> Xuất Excel
+      </button>
+      <button class="btn btn-outline-info" onclick="showDataSource()">
+        <i class="fas fa-info-circle"></i> Nguồn dữ liệu
+      </button>
+    </div>
+  </div>
+
+  <!-- Data Source Info -->
+  <div id="dataSourceInfo" class="alert alert-success" style="display: none;">
+    <h6><i class="fas fa-check-circle"></i> <strong>Dữ liệu thật từ Google Analytics</strong></h6>
+    <p id="dataSourceText" class="mb-0">Đang hiển thị dữ liệu thật từ Google Analytics Property ID: 504734762</p>
+  </div>
+
+  <!-- Date Range Filter -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-3">
+              <label class="form-label">Từ ngày:</label>
+              <input type="date" id="startDate" class="form-control" onchange="filterByDate()">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Đến ngày:</label>
+              <input type="date" id="endDate" class="form-control" onchange="filterByDate()">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Campaign:</label>
+              <select id="campaignFilter" class="form-select" onchange="filterByCampaign()">
+                <option value="">Tất cả campaigns</option>
+                <option value="flashsale">Flash Sale</option>
+                <option value="luckygame">Lucky Game</option>
+                <option value="newsletter">Newsletter</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <button class="btn btn-secondary mt-4" onclick="clearFilters()">
+                <i class="fas fa-times"></i> Xóa bộ lọc
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Tổng Email Gửi</h6>
+              <h3 id="totalEmails" class="mb-0">-</h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-envelope fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Tổng Clicks</h6>
+              <h3 id="totalClicks" class="mb-0">-</h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-mouse-pointer fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Click Rate</h6>
+              <h3 id="clickRate" class="mb-0">-</h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-percentage fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <h6 class="card-title">Conversion Rate</h6>
+              <h3 id="conversionRate" class="mb-0">-</h3>
+            </div>
+            <div class="align-self-center">
+              <i class="fas fa-chart-line fa-2x"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Campaign Performance -->
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">📊 Hiệu suất Campaign</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-dark sticky-top">
+                <tr>
+                  <th>Campaign</th>
+                  <th>Email Gửi</th>
+                  <th>Clicks</th>
+                  <th>Click Rate</th>
+                  <th>Conversions</th>
+                  <th>Revenue</th>
+                  <th>ROI</th>
+                </tr>
+              </thead>
+              <tbody id="campaignTable">
+                <tr>
+                  <td colspan="7" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Timeline -->
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">📈 Timeline Email</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="emailTimelineChart" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">🎯 Top Landing Pages</h5>
+        </div>
+        <div class="card-body">
+          <div id="topPages">
+            <div class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Email Activity -->
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">📋 Hoạt động Email gần đây</h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead class="table-dark sticky-top">
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Campaign</th>
+                  <th>Subject</th>
+                  <th>Gửi đến</th>
+                  <th>Clicks</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="recentActivityTable">
+                <tr>
+                  <td colspan="6" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                      <span class="visually-hidden">Loading...</span>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+let emailAnalytics = {
+  totalEmails: 0,
+  totalClicks: 0,
+  clickRate: 0,
+  conversionRate: 0,
+  campaigns: [],
+  timeline: [],
+  topPages: [],
+  recentActivity: []
+};
+
+// Google Analytics Configuration
+const GA_PROPERTY_ID = '504734762'; // Your Google Analytics Property ID (Real Property ID)
+const GA_MEASUREMENT_ID = 'G-JH1ST8ZFVK'; // Your Google Analytics Measurement ID
+const GA_STREAM_ID = '12149140651'; // Your Google Analytics Stream ID
+
+// Real data from Google Analytics API
+let realAnalyticsData = null;
+
+async function loadEmailAnalytics() {
+  showLoading();
+  
+  try {
+    // Try to load real data from Google Analytics
+    const realData = await fetchRealAnalyticsData();
+    if (realData) {
+      emailAnalytics = realData;
+      realAnalyticsData = realData; // Set flag for data source info
+      console.log('✅ Loaded real analytics data:', realData);
+      
+      // Show data source info
+      document.getElementById('dataSourceInfo').style.display = 'block';
+      document.getElementById('dataSourceText').textContent = 
+        `Đang hiển thị dữ liệu thật từ Google Analytics Property ID: 504734762 (${new Date().toLocaleString()})`;
+    } else {
+      // Fallback to mock data if real data unavailable
+      emailAnalytics = getMockData();
+      realAnalyticsData = null; // Set flag for data source info
+      console.log('⚠️ Using mock data - real analytics not available');
+      
+      // Hide data source info for mock data
+      document.getElementById('dataSourceInfo').style.display = 'none';
+    }
+  } catch (error) {
+    console.error('❌ Error loading analytics:', error);
+    emailAnalytics = getMockData();
+    document.getElementById('dataSourceInfo').style.display = 'none';
+  }
+  
+  updateSummaryCards();
+  updateCampaignTable();
+  updateTimelineChart();
+  updateTopPages();
+  updateRecentActivity();
+  hideLoading();
+}
+
+async function fetchRealAnalyticsData() {
+  try {
+    console.log('🔍 Fetching real analytics data from Google Analytics...');
+    
+    // Use Google Analytics Reporting API via our backend
+    const response = await fetch('/admin/api/email-analytics', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Real analytics data received:', data);
+      return processAnalyticsData(data);
+    } else {
+      console.log('❌ Analytics API not available, using mock data');
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error fetching real analytics:', error);
+    return null;
+  }
+}
+
+function processAnalyticsData(rawData) {
+  console.log('📊 Processing real analytics data:', rawData);
+  
+  // Process Google Analytics data into our format
+  const campaigns = [];
+  const timeline = [];
+  const topPages = [];
+  
+  // Process campaign data
+  if (rawData.campaigns && rawData.campaigns.length > 0) {
+    rawData.campaigns.forEach(campaign => {
+      campaigns.push({
+        name: campaign.name || 'Unknown Campaign',
+        emails: campaign.sessions || 0,
+        clicks: campaign.users || 0,
+        clickRate: campaign.bounceRate ? (100 - campaign.bounceRate) : 0,
+        conversions: campaign.conversions || 0,
+        revenue: campaign.revenue || 0,
+        roi: campaign.roi || 0
+      });
+    });
+  } else {
+    // If no campaigns, show a message
+    campaigns.push({
+      name: 'No email campaigns found',
+      emails: 0,
+      clicks: 0,
+      clickRate: 0,
+      conversions: 0,
+      revenue: 0,
+      roi: 0
+    });
+  }
+  
+  // Process timeline data
+  if (rawData.timeline && rawData.timeline.length > 0) {
+    rawData.timeline.forEach(day => {
+      timeline.push({
+        date: day.date,
+        emails: day.sessions || 0,
+        clicks: day.users || 0
+      });
+    });
+  } else {
+    // If no timeline data, show last 7 days with zeros
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      timeline.push({
+        date: date.toISOString().split('T')[0],
+        emails: 0,
+        clicks: 0
+      });
+    }
+  }
+  
+  // Process top pages
+  if (rawData.topPages && rawData.topPages.length > 0) {
+    rawData.topPages.forEach(page => {
+      topPages.push({
+        page: page.page,
+        clicks: page.users || 0,
+        percentage: page.percentage || 0
+      });
+    });
+  } else {
+    // If no top pages, show a message
+    topPages.push({
+      page: 'No email traffic found',
+      clicks: 0,
+      percentage: 0
+    });
+  }
+  
+  return {
+    totalEmails: rawData.total_emails || 0,  // From Gmail API
+    totalClicks: rawData.total_users || 0,   // From Google Analytics
+    clickRate: rawData.avg_click_rate || 0,
+    conversionRate: rawData.avg_conversion_rate || 0,
+    campaigns: campaigns,
+    timeline: timeline,
+    topPages: topPages,
+    recentActivity: rawData.recent_activity || [],
+    // Gmail data
+    flashsaleEmails: rawData.flashsale_emails || 0,
+    luckygameEmails: rawData.luckygame_emails || 0,
+    otherEmails: rawData.other_emails || 0
+  };
+}
+
+function getMockData() {
+  return {
+    totalEmails: 1250,
+    totalClicks: 187,
+    clickRate: 14.96,
+    conversionRate: 3.2,
+    campaigns: [
+      {
+        name: 'Flash Sale',
+        emails: 500,
+        clicks: 89,
+        clickRate: 17.8,
+        conversions: 18,
+        revenue: 5400000,
+        roi: 12.5
+      },
+      {
+        name: 'Lucky Game',
+        emails: 400,
+        clicks: 67,
+        clickRate: 16.75,
+        conversions: 12,
+        revenue: 3600000,
+        roi: 10.2
+      },
+      {
+        name: 'Newsletter',
+        emails: 350,
+        clicks: 31,
+        clickRate: 8.86,
+        conversions: 5,
+        revenue: 1500000,
+        roi: 6.8
+      }
+    ],
+    timeline: [
+      { date: '2024-01-01', emails: 45, clicks: 7 },
+      { date: '2024-01-02', emails: 52, clicks: 9 },
+      { date: '2024-01-03', emails: 38, clicks: 6 },
+      { date: '2024-01-04', emails: 67, clicks: 12 },
+      { date: '2024-01-05', emails: 43, clicks: 8 },
+      { date: '2024-01-06', emails: 55, clicks: 10 },
+      { date: '2024-01-07', emails: 48, clicks: 9 }
+    ],
+    topPages: [
+      { page: '/products', clicks: 89, percentage: 47.6 },
+      { page: '/events/lucky-number', clicks: 67, percentage: 35.8 },
+      { page: '/', clicks: 31, percentage: 16.6 }
+    ],
+    recentActivity: [
+      {
+        time: '2024-01-07 14:30',
+        campaign: 'Flash Sale',
+        subject: 'Hàng mới về, flash sale ngập tràn!',
+        sent: 500,
+        clicks: 89,
+        status: 'Delivered'
+      },
+      {
+        time: '2024-01-06 10:15',
+        campaign: 'Lucky Game',
+        subject: 'Trò chơi may mắn tháng này!',
+        sent: 400,
+        clicks: 67,
+        status: 'Delivered'
+      },
+      {
+        time: '2024-01-05 16:45',
+        campaign: 'Newsletter',
+        subject: 'Tin tức mỹ phẩm tuần này',
+        sent: 350,
+        clicks: 31,
+        status: 'Delivered'
+      }
+    ]
+  };
+}
+
+function updateSummaryCards() {
+  document.getElementById('totalEmails').textContent = emailAnalytics.totalEmails.toLocaleString();
+  document.getElementById('totalClicks').textContent = emailAnalytics.totalClicks.toLocaleString();
+  document.getElementById('clickRate').textContent = emailAnalytics.clickRate.toFixed(1) + '%';
+  document.getElementById('conversionRate').textContent = emailAnalytics.conversionRate.toFixed(1) + '%';
+}
+
+function updateCampaignTable() {
+  const tbody = document.getElementById('campaignTable');
+  tbody.innerHTML = '';
+  
+  emailAnalytics.campaigns.forEach(campaign => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${campaign.name}</strong></td>
+      <td>${campaign.emails.toLocaleString()}</td>
+      <td>${campaign.clicks.toLocaleString()}</td>
+      <td><span class="badge bg-info">${campaign.clickRate.toFixed(1)}%</span></td>
+      <td>${campaign.conversions}</td>
+      <td>${formatCurrency(campaign.revenue)}</td>
+      <td><span class="badge bg-success">${campaign.roi.toFixed(1)}%</span></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function updateTimelineChart() {
+  const ctx = document.getElementById('emailTimelineChart').getContext('2d');
+  
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: emailAnalytics.timeline.map(item => item.date),
+      datasets: [{
+        label: 'Email Gửi',
+        data: emailAnalytics.timeline.map(item => item.emails),
+        borderColor: '#0d6efd',
+        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+        tension: 0.4
+      }, {
+        label: 'Clicks',
+        data: emailAnalytics.timeline.map(item => item.clicks),
+        borderColor: '#198754',
+        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+}
+
+function updateTopPages() {
+  const container = document.getElementById('topPages');
+  container.innerHTML = '';
+  
+  emailAnalytics.topPages.forEach((page, index) => {
+    const div = document.createElement('div');
+    div.className = 'd-flex justify-content-between align-items-center mb-2';
+    div.innerHTML = `
+      <div>
+        <small class="text-muted">${index + 1}. ${page.page}</small>
+        <div class="small">${page.clicks} clicks</div>
+      </div>
+      <div class="text-end">
+        <span class="badge bg-primary">${page.percentage.toFixed(1)}%</span>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function updateRecentActivity() {
+  const tbody = document.getElementById('recentActivityTable');
+  tbody.innerHTML = '';
+  
+  emailAnalytics.recentActivity.forEach(activity => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${activity.time}</td>
+      <td><span class="badge bg-secondary">${activity.campaign}</span></td>
+      <td>${activity.subject}</td>
+      <td>${activity.sent.toLocaleString()}</td>
+      <td>${activity.clicks.toLocaleString()}</td>
+      <td><span class="badge bg-success">${activity.status}</span></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function filterByDate() {
+  const startDate = document.getElementById('startDate').value;
+  const endDate = document.getElementById('endDate').value;
+  
+  if (startDate && endDate) {
+    console.log('Filtering by date:', startDate, 'to', endDate);
+    // Implement date filtering logic here
+    loadEmailAnalytics();
+  }
+}
+
+function filterByCampaign() {
+  const campaign = document.getElementById('campaignFilter').value;
+  console.log('Filtering by campaign:', campaign);
+  // Implement campaign filtering logic here
+  loadEmailAnalytics();
+}
+
+function clearFilters() {
+  document.getElementById('startDate').value = '';
+  document.getElementById('endDate').value = '';
+  document.getElementById('campaignFilter').value = '';
+  loadEmailAnalytics();
+}
+
+function refreshAnalytics() {
+  loadEmailAnalytics();
+}
+
+function exportEmailStats() {
+  // Create Excel export
+  const data = [
+    ['Campaign', 'Email Gửi', 'Clicks', 'Click Rate', 'Conversions', 'Revenue', 'ROI'],
+    ...emailAnalytics.campaigns.map(c => [
+      c.name, c.emails, c.clicks, c.clickRate + '%', c.conversions, c.revenue, c.roi + '%'
+    ])
+  ];
+  
+  const html = `
+    <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head>
+      <meta charset="utf-8">
+      <meta name="ExcelCreated" content="01/01/2024">
+    </head>
+    <body>
+      <table>
+        ${data.map(row => 
+          `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`
+        ).join('')}
+      </table>
+    </body>
+    </html>
+  `;
+  
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `email_analytics_${new Date().toISOString().split('T')[0]}.xls`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(amount);
+}
+
+function showLoading() {
+  // Show loading indicators
+  const loadingElements = document.querySelectorAll('.spinner-border');
+  loadingElements.forEach(el => el.style.display = 'inline-block');
+}
+
+function hideLoading() {
+  // Hide loading indicators
+  const loadingElements = document.querySelectorAll('.spinner-border');
+  loadingElements.forEach(el => el.style.display = 'none');
+}
+
+function showDataSource() {
+  const infoDiv = document.getElementById('dataSourceInfo');
+  const textDiv = document.getElementById('dataSourceText');
+  
+  if (realAnalyticsData) {
+    textDiv.innerHTML = `
+      <strong>✅ Dữ liệu thật từ Google Analytics</strong><br/>
+      - Property ID: ${GA_PROPERTY_ID}<br/>
+      - Cập nhật: ${new Date().toLocaleString('vi-VN')}<br/>
+      - Nguồn: Google Analytics Reporting API<br/>
+      - UTM Campaigns: flashsale, luckygame, newsletter
+    `;
+  } else {
+    textDiv.innerHTML = `
+      <strong>⚠️ Dữ liệu mẫu (Mock Data)</strong><br/>
+      - Để lấy dữ liệu thật, cần setup Google Analytics API<br/>
+      - Xem hướng dẫn: <a href="/GOOGLE_ANALYTICS_SETUP.md" target="_blank">GOOGLE_ANALYTICS_SETUP.md</a><br/>
+      - UTM tracking đã được thêm vào email templates
+    `;
+  }
+  
+  infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Set default date range (last 7 days)
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 7);
+  
+  document.getElementById('endDate').value = endDate.toISOString().split('T')[0];
+  document.getElementById('startDate').value = startDate.toISOString().split('T')[0];
+  
+  loadEmailAnalytics();
+});
+</script>
+
+<style>
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.table-dark.sticky-top {
+  background: linear-gradient(135deg, #ff6b35 0%, #1e3c72 100%);
+  border: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.badge {
+  font-size: 0.75em;
+}
+
+.spinner-border {
+  width: 1rem;
+  height: 1rem;
+}
+</style>
+{% endblock %}

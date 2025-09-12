@@ -1090,9 +1090,22 @@ class LuckyEventViewSet(viewsets.ModelViewSet):
         event = self.get_object()
         # lấy lucky_number từ request nếu có (fallback thủ công)
         manual = (request.data or {}).get('lucky_number')
-        if manual and isinstance(manual, str) and len(manual) == 2 and manual.isdigit():
+
+        if manual is None:
+            # Clear the lucky_number and all winners
+            event.lucky_number = None
+            event.save(update_fields=['lucky_number'])
+            LuckyWinner.objects.filter(event=event).delete()
+            return Response({'detail': 'Đã xóa kết quả số may mắn'}, status=200)
+        elif manual and isinstance(manual, str) and len(manual) == 2 and manual.isdigit():
             event.lucky_number = manual
             event.save(update_fields=['lucky_number'])
+        elif manual == '':
+            # Handle empty string - also clear the result
+            event.lucky_number = None
+            event.save(update_fields=['lucky_number'])
+            LuckyWinner.objects.filter(event=event).delete()
+            return Response({'detail': 'Đã xóa kết quả số may mắn'}, status=200)
 
         if not event.lucky_number:
             return Response({'detail': 'Chưa có lucky_number'}, status=400)
@@ -1185,7 +1198,7 @@ class LuckyWinnerViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = LuckyWinner.objects.all()
     serializer_class = LuckyWinnerSerializer
     permission_classes = [AllowAny]
-    
+
     def get_queryset(self):
         """
         Lọc theo event nếu có
@@ -1356,18 +1369,18 @@ class CTVViewSet(viewsets.ReadOnlyModelViewSet):
         """Đăng nhập CTV bằng phone và password_text"""
         phone = (request.data.get('phone') or '').strip()
         password = (request.data.get('password') or '').strip()
-        
+
         if not phone or not password:
             return Response({'detail': 'Thiếu phone hoặc password'}, status=400)
-        
+
         try:
             ctv = CTV.objects.get(phone=phone, is_active=True)
             if not ctv.password_text:
                 return Response({'detail': 'CTV chưa có mật khẩu. Liên hệ admin.'}, status=400)
-            
+
             if ctv.password_text != password:
                 return Response({'detail': 'Mật khẩu không đúng'}, status=400)
-            
+
             return Response({
                 'detail': 'Đăng nhập thành công',
                 'ctv': CTVSerializer(ctv).data
