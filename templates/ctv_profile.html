@@ -1,0 +1,66 @@
+{% extends "ctv_base.html" %}
+
+{% block title %}Hồ sơ CTV{% endblock %}
+
+{% block ctv_body %}
+<div class="ctv-card p-3">
+  <h1 class="h6">Hồ sơ CTV</h1>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Mã CTV</label>
+      <input id="pCode" class="form-control" disabled>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Cấp bậc</label>
+      <input id="pLevel" class="form-control" disabled>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Họ tên</label>
+      <input id="pName" class="form-control" disabled>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Email</label>
+      <input id="pEmail" class="form-control" disabled>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">SĐT</label>
+      <input id="pPhone" class="form-control" disabled>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label">Địa chỉ</label>
+      <input id="pAddress" class="form-control" disabled>
+    </div>
+    <div class="col-12">
+      <div class="alert alert-info mt-2 small">Liên hệ admin để cập nhật thông tin nếu cần thay đổi.</div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Inject CTV data từ server-side session
+{% if g.ctv %}
+window.ctvData = {{ g.ctv | tojson }};
+{% else %}
+window.ctvData = null;
+{% endif %}
+
+function getCtv(){ 
+  try { 
+    return window.ctvData || null; 
+  } catch(e){ 
+    return null; 
+  } 
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const c = getCtv(); if (!c){ location.href='/ctv/login/'; return; }
+  document.getElementById('pCode').value = c.code||'';
+  document.getElementById('pLevel').value = c.level ? `${c.level.name} (${c.level.commission_percent}%)` : '—';
+  document.getElementById('pName').value = c.full_name||'';
+  document.getElementById('pEmail').value = c.email||'';
+  document.getElementById('pPhone').value = c.phone||'';
+  document.getElementById('pAddress').value = c.address||'';
+});
+</script>
+{% endblock %}
+

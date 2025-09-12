@@ -1,64 +1,133 @@
 {% extends "ctv_base.html" %}
-{% block title %}CTV - Đặt đơn đặc biệt{% endblock %}
-{% block ctv_content %}
-<div class="container py-4">
-  <h1 class="h5 mb-3">Đặt đơn CTV (giá đặc biệt)</h1>
-  <div class="card border-0 shadow-sm">
-    <div class="card-body">
-      <div class="row g-3">
-        <div class="col-md-4">
-          <label class="form-label">Mã CTV</label>
-          <input id="poCtvCode" class="form-control" placeholder="Tự điền từ hồ sơ">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Sản phẩm (ID)</label>
-          <input id="poProductId" class="form-control" placeholder="VD: 123">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Số lượng</label>
-          <input id="poQty" type="number" min="1" class="form-control" value="1">
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Giá CTV (VNĐ)</label>
-          <input id="poCtvPrice" type="number" class="form-control" placeholder="Nhập giá đặc biệt">
-        </div>
-        <div class="col-md-8">
-          <label class="form-label">Ghi chú</label>
-          <input id="poNote" class="form-control" placeholder="Mô tả ngắn">
-        </div>
+
+{% block title %}Tạo đơn đặc biệt{% endblock %}
+
+{% block ctv_body %}
+<div class="ctv-card p-3">
+  <h1 class="h6">Tạo đơn hàng đặc biệt</h1>
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label class="form-label">Chọn sản phẩm</label>
+      <select id="poProduct" class="form-select"></select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">Số lượng</label>
+      <input id="poQty" type="number" min="1" value="1" class="form-control">
+    </div>
+    <div class="col-md-4">
+      <label class="form-label">Giá bán đề xuất (đ/đơn vị)</label>
+      <input id="poPrice" type="number" class="form-control" placeholder="vd: 1200000">
+      <div class="small text-muted" id="poRef"></div>
+    </div>
+    <div class="col-12">
+      <button id="btnCalc" class="btn btn-outline-secondary">Tính hoa hồng</button>
+      <button id="btnCreate" class="btn btn-primary">Tạo đơn</button>
+      <span id="poMsg" class="small ms-2"></span>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-3">
+    <div class="col-md-4">
+      <div class="ctv-card p-3">
+        <div class="text-muted small">Giá niêm yết</div>
+        <div class="h5" id="poListed">-</div>
       </div>
-      <div class="mt-3 d-flex gap-2">
-        <button id="poBtn" class="btn btn-primary">Tạo đơn</button>
-        <div id="poMsg" class="text-muted"></div>
+    </div>
+    <div class="col-md-4">
+      <div class="ctv-card p-3">
+        <div class="text-muted small">Lợi nhuận</div>
+        <div class="h5" id="poProfit">-</div>
       </div>
-      <div class="small text-muted mt-2">Đơn CTV sẽ được review để chốt hoa hồng theo cấp.</div>
+    </div>
+    <div class="col-md-4">
+      <div class="ctv-card p-3">
+        <div class="text-muted small">Hoa hồng dự kiến</div>
+        <div class="h5" id="poCommission">-</div>
+      </div>
     </div>
   </div>
 </div>
 {% endblock %}
+
 {% block extra_js %}
 <script>
-(function(){
-  const API = 'https://buddyskincare.pythonanywhere.com';
-  let ctv = null;
-  async function init(){
-    const list = await fetch(`${API}/ctvs/`).then(r=>r.ok?r.json():[]);
-    ctv = list[0]; if(!ctv) return;
-    document.getElementById('poCtvCode').value = ctv.code;
-    document.getElementById('poBtn').addEventListener('click', createOrder);
+// Inject CTV data từ server-side session
+{% if g.ctv %}
+window.ctvData = {{ g.ctv | tojson }};
+{% else %}
+window.ctvData = null;
+{% endif %}
+
+function getCtv(){ 
+  try { 
+    return window.ctvData || null; 
+  } catch(e){ 
+    return null; 
+  } 
+}
+function fmt(n){return (Number(n)||0).toLocaleString('vi-VN')+" đ"}
+
+async function loadProducts(){
+  const sel = document.getElementById('poProduct'); sel.innerHTML='';
+  const res = await fetch('/products/').then(r=>r.json());
+  for (const p of res){
+    const opt = document.createElement('option');
+    opt.value = p.id; opt.textContent = `${p.name}`;
+    opt.dataset.original = p.original_price; opt.dataset.discounted = p.discounted_price;
+    sel.appendChild(opt);
   }
-  async function createOrder(){
-    const code = document.getElementById('poCtvCode').value.trim();
-    const product = document.getElementById('poProductId').value.trim();
-    const qty = parseInt(document.getElementById('poQty').value||'1',10);
-    const cprice = parseFloat(document.getElementById('poCtvPrice').value||'0');
-    if(!code||!product||qty<=0||!cprice) return msg('Vui lòng nhập đủ thông tin');
-    // Placeholder: gửi đơn đặc biệt, backend cần endpoint riêng nếu muốn tách biệt
-    msg('Đã gửi yêu cầu tạo đơn CTV (demo).');
-  }
-  function msg(t){ document.getElementById('poMsg').textContent = t; }
-  document.addEventListener('DOMContentLoaded', init);
-})();
+  updateRef();
+}
+
+function updateRef(){
+  const sel = document.getElementById('poProduct');
+  const opt = sel.options[sel.selectedIndex]; if (!opt) return;
+  const original = Number(opt.dataset.original||0), discounted = Number(opt.dataset.discounted||0);
+  document.getElementById('poRef').textContent = `Giá niêm yết: ${fmt(original)} • Giá hiện bán: ${fmt(discounted)}`;
+  document.getElementById('poListed').textContent = fmt(original);
+}
+
+function calc(){
+  const sel = document.getElementById('poProduct'); const opt = sel.options[sel.selectedIndex];
+  if (!opt) return;
+  const qty = Number(document.getElementById('poQty').value||1);
+  const original = Number(opt.dataset.original||0);
+  let sell = Number(document.getElementById('poPrice').value||0);
+  if (!sell) sell = Number(opt.dataset.discounted||0);
+  const profit = Math.max(0, (original - sell) * qty);
+  const ctv = getCtv(); const percent = (ctv && ctv.level ? Number(ctv.level.commission_percent||10) : 10)/100.0;
+  const commission = profit*percent;
+  document.getElementById('poProfit').textContent = fmt(profit);
+  document.getElementById('poCommission').textContent = fmt(commission);
+}
+
+async function createOrder(){
+  const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
+  const sel = document.getElementById('poProduct'); const opt = sel.options[sel.selectedIndex];
+  const productId = Number(sel.value); const qty = Number(document.getElementById('poQty').value||1);
+  const sell = Number(document.getElementById('poPrice').value||0) || Number(opt.dataset.discounted||0);
+  const msg = document.getElementById('poMsg');
+  const payload = {
+    customer_name: 'Khách của '+(ctv.full_name||ctv.code),
+    phone_number: 'N/A',
+    items_data: [{product: productId, quantity: qty}],
+    shipping_fee: 0,
+    collaborator_code: ctv.code,
+  };
+  // Chúng ta ghi đè price_at_purchase phía admin khi xác nhận; ở đây tạo đơn nháp
+  const resp = await fetch('/orders/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  const data = await resp.json().catch(()=>({}));
+  if (!resp.ok){ msg.textContent = data.detail || JSON.stringify(data) || 'Không tạo được đơn'; msg.className='small text-danger'; return; }
+  msg.textContent = `Đã tạo đơn #${data.id || ''} (mã: ${data.order_code||''}). Vui lòng gửi thông tin cho admin xác nhận.`; msg.className='small text-success';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
+  loadProducts();
+  document.getElementById('poProduct')?.addEventListener('change', updateRef);
+  document.getElementById('btnCalc')?.addEventListener('click', calc);
+  document.getElementById('btnCreate')?.addEventListener('click', createOrder);
+});
 </script>
 {% endblock %}
 

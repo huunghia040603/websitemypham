@@ -7,6 +7,8 @@ from django.contrib.auth.models import UserManager as BaseUserManager
 from django.utils import timezone
 import uuid
 from django.db.models import JSONField
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 # Helper functions
 def calculate_discount_rate(original_price, discounted_price):
@@ -596,6 +598,7 @@ class LuckyParticipant(models.Model):
     chosen_number = models.CharField(max_length=2, verbose_name="Số chọn (00-99)")
     name = models.CharField(max_length=100, verbose_name="Tên")
     zalo_phone = models.CharField(max_length=20, verbose_name="SĐT Zalo")
+    email = models.EmailField(verbose_name="Email")
     address = models.CharField(max_length=255, verbose_name="Địa chỉ")
     message = models.CharField(max_length=255, blank=True, null=True, verbose_name="Lời chúc")
     submitted_at = models.DateTimeField(default=timezone.now, verbose_name="Thời gian gửi")
@@ -627,8 +630,65 @@ class LuckyWinner(models.Model):
     def __str__(self):
         return f"Winner {self.participant.name} ({self.participant.chosen_number})"
 
-# class ReceiveNews(models.Model):
-#     email = models.CharField(max_length=255, verbose_name="Email nhận bản tin")
+class CustomerLead(models.Model):
+    """Kho dữ liệu tiệp khách hàng (4 trường theo yêu cầu)."""
+    name = models.CharField(max_length=150, blank=True, null=True, verbose_name="Tên")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="SĐT")
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Địa chỉ")
+    # Mặc định là thời điểm hiện tại nếu để trống
+    created_at = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    # Tự động cập nhật khi lưu
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Tiệp khách hàng"
+        verbose_name_plural = "Tiệp khách hàng"
+        indexes = [
+            models.Index(fields=["phone"]),
+            models.Index(fields=["email"]),
+        ]
+
+    def __str__(self):
+        return f"{self.name or ''} - {self.phone or self.email or ''}".strip()
+
+    @staticmethod
+    def upsert(name: str = None, phone: str = None, email: str = None, address: str = None) -> "CustomerLead":
+        """Upsert theo số điện thoại.
+
+        - Có số điện thoại: tạo mới hoặc cập nhật điền khuyết theo phone.
+        - Không có số điện thoại: KHÔNG lưu (bỏ qua).
+        """
+        key_phone = (phone or "").strip()
+        key_email = (email or "").strip()
+
+        try:
+            if not key_phone:
+                # Yêu cầu mới: Không lưu bản ghi nếu không có SĐT
+                return None
+
+            lead = CustomerLead.objects.filter(phone=key_phone).first()
+            if not lead:
+                return CustomerLead.objects.create(
+                    name=(name or "").strip() or None,
+                    phone=key_phone,
+                    email=key_email or None,
+                    address=(address or "").strip() or None,
+                )
+
+            # Cập nhật điền khuyết cho lead cùng số điện thoại
+            changed = False
+            if (not lead.name) and name:
+                lead.name = name.strip(); changed = True
+            if (not lead.email) and key_email:
+                lead.email = key_email; changed = True
+            if (not lead.address) and address:
+                lead.address = address.strip(); changed = True
+            if changed:
+                lead.save(update_fields=["name","email","address","updated_at"])
+            return lead
+        except Exception:
+            return None
 
 
 
@@ -654,6 +714,7 @@ class CTVApplication(models.Model):
     phone = models.CharField(max_length=20)
     email = models.EmailField()
     address = models.CharField(max_length=255, blank=True, null=True)
+    desired_code = models.CharField(max_length=20, blank=True, null=True)
     bank_name = models.CharField(max_length=120)
     bank_number = models.CharField(max_length=50)
     bank_holder = models.CharField(max_length=150)
@@ -682,13 +743,17 @@ class CTV(models.Model):
     bank_name = models.CharField(max_length=120)
     bank_number = models.CharField(max_length=50)
     bank_holder = models.CharField(max_length=150)
+    cccd_front_url = models.CharField(max_length=500, blank=True, null=True, verbose_name="Ảnh CCCD mặt trước")
+    cccd_back_url = models.CharField(max_length=500, blank=True, null=True, verbose_name="Ảnh CCCD mặt sau")
+    password_text = models.CharField(max_length=255, blank=True, null=True, verbose_name="Mật khẩu đăng nhập")
+    total_revenue = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Tổng doanh thu bán được (VND)")
     level = models.ForeignKey(CTVLevel, on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     joined_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        verbose_name = "CTV"
-        verbose_name_plural = "CTV"
+        verbose_name = "Cộng tác viên"
+        verbose_name_plural = "Cộng tác viên"
 
     def __str__(self):
         return f"{self.code} - {self.full_name}"
@@ -725,3 +790,40 @@ class CTVWithdrawal(models.Model):
         return f"Withdraw {self.ctv.code} {self.amount} ({self.status})"
 
 
+# --- Signals to keep CustomerLead in sync ---
+@receiver(post_save, sender=Order)
+def _lead_upsert_from_order(sender, instance, created, **kwargs):
+    try:
+        name = instance.customer_name
+        phone = instance.phone_number
+        email = instance.email
+        address = ', '.join(filter(None, [instance.street, instance.ward, instance.district, instance.province]))
+        CustomerLead.upsert(name=name, phone=phone, email=email, address=address)
+    except Exception:
+        pass
+
+
+@receiver(post_save, sender=LuckyParticipant)
+def _lead_upsert_from_participant(sender, instance, created, **kwargs):
+    try:
+        CustomerLead.upsert(
+            name=instance.name,
+            phone=instance.zalo_phone,
+            email=instance.email,
+            address=instance.address,
+        )
+    except Exception:
+        pass
+
+
+@receiver(post_save, sender=Customer)
+def _lead_upsert_from_customer(sender, instance, created, **kwargs):
+    try:
+        CustomerLead.upsert(
+            name=getattr(instance, 'name', None),
+            phone=getattr(instance, 'phone_number', None),
+            email=getattr(instance, 'email', None),
+            address=getattr(instance, 'address', None),
+        )
+    except Exception:
+        pass

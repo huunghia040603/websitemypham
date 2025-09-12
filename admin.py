@@ -4,6 +4,8 @@ from django.db import models
 from ckeditor.widgets import CKEditorWidget
 from .models import *
 from django import forms
+from django.utils import timezone
+from django.contrib import messages
 
 
 # Tạo một trang admin tùy chỉnh
@@ -198,7 +200,8 @@ class BlogAdmin(admin.ModelAdmin):
 # --- Đăng ký các models với admin_site tùy chỉnh ---
 admin_site.register(User, CustomUserAdmin)
 admin_site.register(Admin)
-admin_site.register(Collaborator, CollaboratorAdmin)
+# Ẩn model Collaborator cũ để tránh nhầm lẫn
+# admin_site.register(Collaborator, CollaboratorAdmin)
 admin_site.register(Staff)
 admin_site.register(Customer, CustomerAdmin)
 admin_site.register(Brand, BrandAdmin)
@@ -241,13 +244,13 @@ class LuckyEventAdmin(admin.ModelAdmin):
 
 
 class LuckyParticipantAdmin(admin.ModelAdmin):
-    list_display = ('id', 'event', 'name', 'zalo_phone', 'chosen_number', 'submitted_at')
+    list_display = ('id', 'event', 'name', 'zalo_phone', 'email', 'chosen_number', 'submitted_at')
     list_filter = ('event', 'chosen_number')
-    search_fields = ('name', 'zalo_phone', 'address', 'message')
-    readonly_fields = ()
+    search_fields = ('name', 'zalo_phone', 'email', 'address', 'message')
+    readonly_fields = ('submitted_at',)
     fieldsets = (
-        (None, {'fields': ('event', 'chosen_number', 'name', 'zalo_phone')}),
-        ('Thông tin khác', {'fields': ('address', 'message', 'submitted_at')}),
+        ('Thông tin cơ bản', {'fields': ('event', 'chosen_number', 'name', 'zalo_phone', 'email', 'address')}),
+        ('Thông tin khác', {'fields': ('message', 'submitted_at')}),
     )
 
 
@@ -266,4 +269,122 @@ class LuckyWinnerAdmin(admin.ModelAdmin):
 admin_site.register(LuckyEvent, LuckyEventAdmin)
 admin_site.register(LuckyParticipant, LuckyParticipantAdmin)
 admin_site.register(LuckyWinner, LuckyWinnerAdmin)
+
+
+# --- CTV (Affiliate) Admin ---
+class CTVLevelAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'commission_percent')
+    search_fields = ('name',)
+
+
+class CTVApplicationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'full_name', 'phone', 'email', 'desired_code', 'status', 'created_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('full_name', 'phone', 'email', 'desired_code')
+    readonly_fields = ('created_at',)
+
+
+class CTVAdminForm(forms.ModelForm):
+    class Meta:
+        model = CTV
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Hiển thị mật khẩu text đã lưu
+        if self.instance and self.instance.pk and self.instance.password_text:
+            self.fields['password_text'].help_text = 'Mật khẩu hiện tại (có thể sửa).'
+        else:
+            self.fields['password_text'].help_text = 'Nhập mật khẩu để tạo/cập nhật tài khoản đăng nhập.'
+
+
+class CTVAdmin(admin.ModelAdmin):
+    list_display = ('id', 'code', 'full_name', 'phone', 'email', 'level', 'total_revenue', 'is_active', 'joined_at')
+    list_filter = ('is_active', 'level')
+    search_fields = ('code', 'full_name', 'phone', 'email')
+    readonly_fields = ('joined_at',)
+    form = CTVAdminForm
+    fieldsets = (
+        ('Thông tin Cộng tác viên', {'fields': ('code', 'full_name', 'phone', 'email', 'is_active', 'level')}),
+        ('Thông tin liên hệ', {'fields': ('address',)}),
+        ('Tài khoản nhận hoa hồng', {'fields': ('bank_name', 'bank_number', 'bank_holder')}),
+        ('Xác minh danh tính', {'fields': ('cccd_front_url', 'cccd_back_url')}),
+        ('Chỉ số kinh doanh', {'fields': ('total_revenue',)}),
+        ('Tài khoản đăng nhập', {'fields': ('password_text',)}),
+        ('Khác', {'fields': ('joined_at',)}),
+    )
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        # Nếu admin nhập mật khẩu, tạo/cập nhật tài khoản User đăng nhập bằng SĐT
+        pwd = obj.password_text
+        # Lấy mật khẩu cũ để so sánh
+        old_password_text = obj.password_text if change else ''
+        
+        # Chỉ xử lý nếu có mật khẩu mới
+        if pwd:
+            try:
+                # Tìm hoặc tạo User theo số điện thoại
+                user = User.objects.filter(phone_number=obj.phone).first()
+                if not user:
+                    user = User.objects.create_user(
+                        phone_number=obj.phone,
+                        email=obj.email or None,
+                        password=pwd,
+                        is_google_user=False,
+                        name=obj.full_name,
+                        is_active=True,
+                    )
+                    messages.success(request, f"✅ Đã tạo tài khoản đăng nhập cho CTV {obj.code} bằng SĐT {obj.phone}.")
+                else:
+                    user.name = user.name or obj.full_name
+                    if obj.email and not user.email:
+                        user.email = obj.email
+                    user.is_active = True
+                    user.set_password(pwd)
+                    user.save()
+                    messages.success(request, f"✅ Đã cập nhật mật khẩu cho CTV {obj.code} (SĐT: {obj.phone}).")
+            except Exception as e:
+                messages.error(request, f"❌ Không thể tạo/cập nhật tài khoản đăng nhập: {e}")
+        else:
+            # Kiểm tra xem CTV đã có tài khoản đăng nhập chưa
+            try:
+                user = User.objects.get(phone_number=obj.phone)
+                if user.has_usable_password():
+                    messages.info(request, f"ℹ️ CTV {obj.code} đã có tài khoản đăng nhập (SĐT: {obj.phone}).")
+                else:
+                    messages.warning(request, f"⚠️ CTV {obj.code} chưa có mật khẩu đăng nhập. Nhập mật khẩu để thiết lập.")
+            except User.DoesNotExist:
+                messages.warning(request, f"⚠️ CTV {obj.code} chưa có tài khoản đăng nhập. Nhập mật khẩu để tạo.")
+
+
+class CTVWalletAdmin(admin.ModelAdmin):
+    list_display = ('ctv', 'balance', 'pending', 'updated_at')
+    search_fields = ('ctv__code', 'ctv__full_name', 'ctv__phone')
+    readonly_fields = ('updated_at',)
+
+
+class CTVWithdrawalAdmin(admin.ModelAdmin):
+    list_display = ('id', 'ctv', 'amount', 'status', 'requested_at', 'processed_at')
+    list_filter = ('status',)
+    search_fields = ('ctv__code', 'ctv__full_name', 'ctv__phone')
+    readonly_fields = ('requested_at',)
+
+
+admin_site.register(CTVLevel, CTVLevelAdmin)
+admin_site.register(CTVApplication, CTVApplicationAdmin)
+admin_site.register(CTV, CTVAdmin)
+admin_site.register(CTVWallet, CTVWalletAdmin)
+admin_site.register(CTVWithdrawal, CTVWithdrawalAdmin)
+
+# CustomerLead admin
+from .models import CustomerLead
+
+class CustomerLeadAdmin(admin.ModelAdmin):
+    list_display = ('name', 'phone', 'email', 'address', 'updated_at')
+    search_fields = ('name', 'phone', 'email', 'address')
+    list_filter = ('updated_at',)
+    readonly_fields = ('created_at', 'updated_at')
+
+admin_site.register(CustomerLead, CustomerLeadAdmin)
 

@@ -1215,8 +1215,19 @@
                  </div>
               </div>
               
-              <!-- Địa chỉ riêng 1 hàng -->
-              <div class="col-12">
+              <!-- Email và Địa chỉ cùng 1 hàng -->
+              <div class="col-12 col-md-6">
+                <label class="form-label">
+                  <i class="fas fa-envelope me-1 text-info"></i>
+                  Email
+                </label>
+                <input type="email" class="form-control" id="email" placeholder="Nhập email của bạn" required>
+                <div class="form-text text-muted" style="font-size: 11px;">
+                  <i class="fas fa-info-circle me-1"></i>
+                  Email để nhận thông báo kết quả
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
                 <label class="form-label">
                   <i class="fas fa-map-marker-alt me-1 text-info"></i>
                   Địa chỉ
@@ -1717,12 +1728,13 @@ const handlers = {
         chosen_number: utils.formatNumber(state.currentNumber),
         name: document.getElementById('fullName').value.trim(),
         zalo_phone: document.getElementById('zaloPhone').value.trim(),
+        email: document.getElementById('email').value.trim(),
         address: document.getElementById('address').value.trim(),
         message: document.getElementById('message').value.trim()
       };
 
       // Validate form data
-      if (!formData.name || !formData.zalo_phone || !formData.address) {
+      if (!formData.name || !formData.zalo_phone || !formData.email || !formData.address) {
         throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc');
       }
 
@@ -1737,6 +1749,11 @@ const handlers = {
       // Validate phone number format
       if (!/^[0-9]{10,11}$/.test(formData.zalo_phone)) {
         throw new Error('Số điện thoại phải có 10-11 chữ số');
+      }
+
+      // Validate email format
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        throw new Error('Email không hợp lệ');
       }
 
       // Submit data

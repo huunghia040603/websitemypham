@@ -255,6 +255,18 @@ class RegistrationSerializer(serializers.ModelSerializer):
             elif user_type == 'staff':
                 Staff.objects.create(user_ptr=user, **validated_data)
 
+            # Upsert CustomerLead
+            try:
+                from .models import CustomerLead
+                CustomerLead.upsert(
+                    name=user.name,
+                    phone=user.phone_number,
+                    email=user.email,
+                    address=user.address,
+                )
+            except Exception:
+                pass
+
             return user
 
 
@@ -794,6 +806,22 @@ class OrderSerializer(serializers.ModelSerializer):
 
         order = Order.objects.create(**validated_data)
 
+        # Upsert CustomerLead
+        try:
+            from .models import CustomerLead
+            name = validated_data.get('customer_name')
+            phone = validated_data.get('phone_number')
+            email = validated_data.get('email')
+            address = ', '.join(filter(None, [
+                validated_data.get('street'),
+                validated_data.get('ward'),
+                validated_data.get('district'),
+                validated_data.get('province')
+            ]))
+            CustomerLead.upsert(name=name, phone=phone, email=email, address=address)
+        except Exception:
+            pass
+
         for item_data in items_data:
             product = item_data['product']
             quantity = item_data['quantity']
@@ -911,7 +939,7 @@ class LuckyParticipantCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LuckyParticipant
-        fields = ['event', 'chosen_number', 'name', 'zalo_phone', 'address', 'message']
+        fields = ['event', 'chosen_number', 'name', 'zalo_phone', 'email', 'address', 'message']
 
     def validate(self, attrs):
         event = attrs.get('event')
@@ -931,14 +959,25 @@ class LuckyParticipantCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # Tự động set thời gian gửi khi tạo mới
         from django.utils import timezone
-        validated_data['submitted_at'] = timezone.now()
-        return super().create(validated_data)
+        instance = super().create({**validated_data, 'submitted_at': timezone.now()})
+        # Upsert CustomerLead
+        try:
+            from .models import CustomerLead
+            CustomerLead.upsert(
+                name=instance.name,
+                phone=instance.zalo_phone,
+                email=instance.email,
+                address=instance.address,
+            )
+        except Exception:
+            pass
+        return instance
 
 
 class LuckyParticipantSerializer(serializers.ModelSerializer):
     class Meta:
         model = LuckyParticipant
-        fields = ['id', 'chosen_number', 'name', 'zalo_phone', 'address', 'message', 'submitted_at']
+        fields = ['id', 'chosen_number', 'name', 'zalo_phone', 'email', 'address', 'message', 'submitted_at']
 
 
 class LuckyWinnerSerializer(serializers.ModelSerializer):
@@ -961,7 +1000,7 @@ class CTVApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CTVApplication
         fields = [
-            'id', 'full_name', 'phone', 'email', 'address',
+            'id', 'full_name', 'phone', 'email', 'address', 'desired_code',
             'bank_name', 'bank_number', 'bank_holder',
             'cccd_front_url', 'cccd_back_url', 'sales_plan',
             'agreed', 'status', 'created_at'
@@ -974,6 +1013,17 @@ class CTVApplicationSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({f: 'Trường này là bắt buộc'})
         if not attrs.get('agreed', False):
             raise serializers.ValidationError({'agreed': 'Bạn phải đồng ý với quy định'})
+
+        # Validate desired_code uniqueness if provided
+        desired = (attrs.get('desired_code') or '').strip()
+        if desired:
+            if len(desired) < 3 or len(desired) > 20:
+                raise serializers.ValidationError({'desired_code': 'Mã CTV phải 3-20 ký tự'})
+            import re
+            if not re.match(r'^[A-Za-z0-9_-]+$', desired):
+                raise serializers.ValidationError({'desired_code': 'Chỉ cho phép chữ, số, gạch dưới, gạch nối'})
+            if CTV.objects.filter(code__iexact=desired).exists():
+                raise serializers.ValidationError({'desired_code': 'Mã này đã được sử dụng'})
         return attrs
 
 
@@ -984,7 +1034,8 @@ class CTVSerializer(serializers.ModelSerializer):
         model = CTV
         fields = [
             'id', 'code', 'full_name', 'phone', 'email', 'address',
-            'bank_name', 'bank_number', 'bank_holder', 'level', 'is_active', 'joined_at'
+            'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url',
+            'password_text', 'total_revenue', 'level', 'is_active', 'joined_at'
         ]
 
 
@@ -998,4 +1049,10 @@ class CTVWithdrawalSerializer(serializers.ModelSerializer):
     class Meta:
         model = CTVWithdrawal
         fields = ['id', 'amount', 'status', 'requested_at', 'processed_at', 'note']
+
+
+class CustomerLeadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomerLead
+        fields = ['id', 'name', 'phone', 'email', 'address', 'updated_at']
 

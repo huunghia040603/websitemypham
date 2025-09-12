@@ -1,0 +1,33 @@
+{% extends "ctv_base.html" %}
+
+{% block title %}Tài nguyên Marketing{% endblock %}
+
+{% block ctv_body %}
+<div class="ctv-card p-3">
+  <h1 class="h6">Tài nguyên Marketing</h1>
+  <p class="text-muted small">Tải xuống banner, ảnh sản phẩm, và nội dung mẫu để chia sẻ.</p>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="ctv-card p-3">
+        <div class="h6">Banner sự kiện</div>
+        <a class="btn btn-sm btn-outline-primary" href="/static/image/sukien/banner01.png" download>Banner 1</a>
+        <a class="btn btn-sm btn-outline-primary ms-2" href="/static/image/sukien/banner02.png" download>Banner 2</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="ctv-card p-3">
+        <div class="h6">Ảnh sản phẩm demo</div>
+        <a class="btn btn-sm btn-outline-primary" href="/static/image/demo/47e547c3-bc87-4c3a-a0da-eeddf358e0f5.webp" download>Ảnh 1</a>
+        <a class="btn btn-sm btn-outline-primary ms-2" href="/static/image/demo/6fde01da-d545-435d-ab71-50ed3184afe0.webp" download>Ảnh 2</a>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="ctv-card p-3">
+        <div class="h6">Nội dung mẫu</div>
+        <a class="btn btn-sm btn-outline-primary" href="/templates/news.html">Bài tin demo</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

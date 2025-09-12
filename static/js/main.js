@@ -852,6 +852,13 @@ async function handlePlaceOrder() {
                 const result = await response.json();
                 console.log('[Checkout] Order created successfully:', result);
     
+                // Send email notification to admin
+                try {
+                    await notifyAdminNewOrder(result.id);
+                } catch (e) {
+                    console.warn('Failed to send order notification email:', e);
+                }
+    
     // Success flow: show pretty modal, then clear and redirect on OK
     showOrderSuccessModal(() => {
         // Clear cart
@@ -4447,3 +4454,31 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Cache bust: 1757233662
+
+// Function to send new order notification to admin
+async function notifyAdminNewOrder(orderId) {
+    try {
+        console.log(`[Order Notification] Sending notification for order ${orderId}`);
+        
+        const response = await fetch('/api/send-new-order-notification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ order_id: orderId })
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('[Order Notification] Email sent successfully:', result);
+            return result;
+        } else {
+            const errorData = await response.json();
+            console.error('[Order Notification] Failed to send email:', errorData);
+            throw new Error(errorData.message || 'Failed to send notification email');
+        }
+    } catch (error) {
+        console.error('[Order Notification] Error:', error);
+        throw error;
+    }
+}

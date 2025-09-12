@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, session
 import os
 from datetime import datetime, timedelta
 import cloudinary
@@ -16,6 +16,9 @@ except Exception:
 
 app = Flask(__name__)
 app.secret_key = 'buddyskincare_secret_key_2024'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # API URL for PythonAnywhere
 API_BASE_URL = 'https://buddyskincare.pythonanywhere.com'
@@ -529,23 +532,6 @@ def lucky_number_event():
     """Trang Số may mắn"""
     return render_template('lucky-number.html')
 
-# --- CTV Pages ---
-@app.route('/ctv/dashboard')
-def ctv_dashboard():
-    return render_template('ctv_dashboard.html')
-
-@app.route('/ctv/orders')
-def ctv_orders():
-    return render_template('ctv_orders.html')
-
-@app.route('/ctv/wallet')
-def ctv_wallet():
-    return render_template('ctv_wallet.html')
-
-@app.route('/ctv/place-order')
-def ctv_place_order():
-    return render_template('ctv_place_order.html')
-
 @app.route('/login')
 def login():
     """Trang đăng nhập"""
@@ -780,6 +766,11 @@ def admin_lucky_number():
     """Admin - Quản lý sự kiện Số may mắn"""
     return render_template('admin_lucky_number.html')
 
+@app.route('/admin/customer-data')
+def admin_customer_data():
+    """Admin - Dữ liệu tiệp khách hàng"""
+    return render_template('admin_customer_data.html')
+
 # Preview invoice email template in browser
 @app.route('/templates/emails/invoice_email.html')
 def preview_invoice_email():
@@ -834,6 +825,64 @@ def preview_invoice_email():
             ]
         }
     return render_template('emails/invoice_email.html', order=order)
+
+# Preview flash sale announcement email
+@app.route('/templates/emails/flash_sale_announcement.html')
+def preview_flash_sale_announcement():
+    """Preview flash sale announcement email template."""
+    return render_template('emails/flash_sale_announcement.html')
+
+# Preview lucky game announcement email
+@app.route('/templates/emails/lucky_game_announcement.html')
+def preview_lucky_game_announcement():
+    """Preview lucky game announcement email template.
+    Lấy dữ liệu sự kiện từ API lucky-events và truyền vào template.
+    """
+    import requests
+    event = None
+    prizes = []
+    total_value_vnd = 0
+    end_time_display = None
+    try:
+        resp = requests.get(f'{API_BASE_URL}/lucky-events/', timeout=15)
+        if resp.status_code == 200:
+            events = resp.json() or []
+            # Ưu tiên sự kiện active, nếu không có lấy sự kiện mới nhất
+            active = [e for e in events if e.get('is_active')]
+            event = (active[0] if active else (events[0] if events else None))
+            if event:
+                prizes = event.get('prizes') or []
+                try:
+                    total_value_vnd = int(sum(float(p.get('value') or 0) for p in prizes) * 1000)
+                except Exception:
+                    total_value_vnd = 0
+                # Format end time
+                try:
+                    raw = event.get('end_at')
+                    if raw:
+                        dt = datetime.fromisoformat(str(raw).replace('Z', '+00:00'))
+                        end_time_display = dt.strftime('%d/%m/%Y %H:%M')
+                except Exception:
+                    end_time_display = None
+    except Exception:
+        event = None
+        prizes = []
+        total_value_vnd = 0
+        end_time_display = None
+
+    def fmt_vnd(n: int) -> str:
+        try:
+            return f"{n:,.0f}".replace(',', '.') + 'đ'
+        except Exception:
+            return '0đ'
+
+    return render_template(
+        'emails/lucky_game_announcement.html',
+        event=event,
+        prizes=prizes,
+        total_value_display=fmt_vnd(total_value_vnd),
+        end_time_display=end_time_display
+    )
 
 # Preview new order notification email template in browser
 @app.route('/templates/emails/new_order_notification.html')
@@ -1581,19 +1630,23 @@ def send_new_order_notification():
         
         if not (smtp_user and smtp_pass):
             # Development fallback: save email HTML to file
+            print(f"🔍 SMTP not configured, saving email to file for order {order_id}")
             try:
                 fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
                 os.makedirs(fallback_dir, exist_ok=True)
                 filename = f'new_order_notification_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
                 file_path = os.path.join(fallback_dir, filename)
+                print(f"🔍 Saving email to: {file_path}")
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(html_content)
+                print(f"✅ Email saved successfully to: {file_path}")
                 return jsonify({
                     'success': True, 
                     'message': f'Đã lưu thông báo đơn hàng mới vào file: {file_path}',
                     'saved_path': file_path
                 }), 200
             except Exception as e:
+                print(f"❌ Error saving email file: {e}")
                 return jsonify({'success': False, 'message': f'SMTP chưa cấu hình và lưu file thất bại: {str(e)}'}), 500
         
         try:
@@ -1672,5 +1725,102 @@ if __name__ == '__main__':
     print("- Add to cart với animation")
     print("- Newsletter subscription")
     print("\n🔧 Để dừng server: Ctrl+C")
-    
+
+# --- CTV Pages (Flask render) ---
+@app.route('/ctv/login')
+@app.route('/ctv/login/')
+def ctv_login_page():
+    return render_template('ctv_login.html')
+
+
+@app.route('/ctv/dashboard')
+@app.route('/ctv/dashboard/')
+def ctv_dashboard_page():
+    return render_template('ctv_dashboard.html')
+
+
+@app.route('/ctv/wallet')
+@app.route('/ctv/wallet/')
+def ctv_wallet_page():
+    return render_template('ctv_wallet.html')
+
+
+@app.route('/ctv/orders')
+@app.route('/ctv/orders/')
+def ctv_orders_page():
+    return render_template('ctv_orders.html')
+
+
+@app.route('/ctv/profile')
+@app.route('/ctv/profile/')
+def ctv_profile_page():
+    return render_template('ctv_profile.html')
+
+
+@app.route('/ctv/place-order')
+@app.route('/ctv/place-order/')
+def ctv_place_order_page():
+    return render_template('ctv_place_order.html')
+
+
+@app.route('/ctv/resources')
+@app.route('/ctv/resources/')
+def ctv_resources_page():
+    return render_template('ctv_resources.html')
+
+
+# --- CTV Auth (server-side session) ---
+@app.route('/ctv/auth/login', methods=['POST'])
+def ctv_auth_login():
+    import requests
+    try:
+        data = request.get_json(silent=True) or {}
+        print(f"🔍 Login attempt: {data}")
+        # Login CTV bằng phone và password_text
+        resp = requests.post(f"{API_BASE_URL}/ctvs/login/", json=data, timeout=20)
+        print(f"🔍 API Response status: {resp.status_code}")
+        print(f"🔍 API Response content: {resp.text}")
+        
+        if resp.status_code != 200:
+            return (resp.text, resp.status_code, resp.headers.items())
+        payload = resp.json()
+        print(f"🔍 API Payload: {payload}")
+        
+        # Set session với CTV data
+        session['ctv'] = payload.get('ctv', {})
+        print(f"✅ Session set: {session.get('ctv', {}).get('code', 'Unknown')}")
+        print(f"✅ Session data: {session.get('ctv')}")
+        
+        return jsonify({'success': True, 'ctv': payload.get('ctv', {})})
+    except Exception as e:
+        print(f"❌ Login error: {str(e)}")
+        return jsonify({'detail': f'Lỗi đăng nhập: {str(e)}'}), 502
+
+
+@app.route('/ctv/auth/logout')
+def ctv_auth_logout():
+    session.pop('ctv', None)
+    session.pop('access_token', None)
+    return redirect('/ctv/login')
+
+
+@app.before_request
+def _guard_ctv_pages():
+    path = request.path or ''
+    print(f"🔍 Before request - Path: {path}")
+    if path.startswith('/ctv/') and not path.startswith('/ctv/login') and not path.startswith('/ctv/auth/'):
+        ctv_session = session.get('ctv')
+        print(f"🔍 CTV Guard - Path: {path}, Session CTV: {ctv_session}")
+        print(f"🔍 Session keys: {list(session.keys())}")
+        if not ctv_session:
+            print(f"❌ Redirecting to login - No CTV session found")
+            return redirect('/ctv/login')
+        else:
+            print(f"✅ CTV session found: {ctv_session.get('code', 'Unknown')}")
+            # Thêm thông tin CTV vào context để template có thể sử dụng
+            from flask import g
+            g.ctv = ctv_session
+
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

@@ -28,10 +28,26 @@
 
   <div class="col-lg-4">
     <div class="card h-100 glass">
-      <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
         <div class="d-flex align-items-center gap-2">
           <strong>Người tham gia</strong>
           <span class="badge bg-primary" id="participantsCount">0</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button id="btnViewDetails" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#participantDetailsModal">
+              <i class="fas fa-eye me-1"></i>Chi tiết
+            </button>
+            <button id="btnCopyAllPhones" class="btn btn-outline-warning btn-sm">
+              <i class="fas fa-copy me-1"></i>Copy SĐT
+            </button>
+            <button id="btnCopyAllEmails" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-envelope me-1"></i>Copy Email
+            </button>
+            <button id="btnExportCSV" class="btn btn-outline-success btn-sm">
+              <i class="fas fa-file-excel me-1"></i>Excel
+            </button>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-2">
           <div class="input-group input-group-sm" style="width: 220px;">
@@ -54,12 +70,13 @@
             <tr>
               <th>Tên</th>
               <th>SĐT</th>
+              <th>Email</th>
               <th>Số</th>
               <th>Gửi lúc</th>
             </tr>
           </thead>
           <tbody id="participantsTable">
-            <tr><td colspan="4" class="text-center text-muted py-3">Đang tải...</td></tr>
+            <tr><td colspan="5" class="text-center text-muted py-3">Đang tải...</td></tr>
           </tbody>
         </table>
       </div>
@@ -89,6 +106,78 @@
     </div>
   </div>
 </div>
+
+<!-- Modal xem chi tiết khách hàng -->
+<div class="modal fade" id="participantDetailsModal" tabindex="-1" aria-labelledby="participantDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="participantDetailsModalLabel">
+          <i class="fas fa-users me-2"></i>Chi tiết khách hàng tham gia
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" class="form-control" id="modalSearchPhone" placeholder="Tìm theo SĐT...">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-dice"></i></span>
+              <input type="text" class="form-control" id="modalSearchNumber" placeholder="Tìm theo số may mắn..." maxlength="2">
+            </div>
+          </div>
+        </div>
+        
+        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+          <table class="table table-hover">
+            <thead class="table-light sticky-top">
+              <tr>
+                <th width="4%"><input type="checkbox" id="modalSelectAll"></th>
+                <th width="5%">#</th>
+                <th width="20%">Tên</th>
+                <th width="15%">SĐT</th>
+                <th width="20%">Email</th>
+                <th width="30%">Địa chỉ</th>
+                <th width="5%">Số</th>
+                <th width="5%">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="participantDetailsTable">
+              <tr><td colspan="8" class="text-center text-muted py-3">Đang tải...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div class="d-flex justify-content-between w-100">
+          <div>
+            <button type="button" class="btn btn-outline-warning btn-sm" id="modalCopyAllPhones">
+              <i class="fas fa-copy me-1"></i>Copy tất cả SĐT
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="modalCopyAllEmails">
+              <i class="fas fa-envelope me-1"></i>Copy tất cả Email
+            </button>
+          </div>
+          <div>
+            <button type="button" class="btn btn-outline-success btn-sm" id="modalExportExcel">
+              <i class="fas fa-file-excel me-1"></i>Xuất Excel
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" id="modalDeleteSelected">
+              <i class="fas fa-trash me-1"></i>Xóa đã chọn
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Winners full-width row -->
 <div class="row mt-3">
   <div class="col-12">
@@ -110,17 +199,18 @@
         <table class="table table-sm mb-0 winners-table align-middle">
           <thead class="table-light sticky-top">
             <tr>
-              <th style="width:12%">Tên</th>
-              <th style="width:10%">SĐT</th>
+              <th style="width:10%">Tên</th>
+              <th style="width:8%">SĐT</th>
+              <th style="width:12%">Email</th>
               <th style="width:6%">Số</th>
-              <th style="width:24%">Giải</th>
-              <th style="width:22%">Địa chỉ</th>
-              <th style="width:10%">Thời gian</th>
-              <th style="width:22%">Lời chúc</th>
+              <th style="width:20%">Giải</th>
+              <th style="width:18%">Địa chỉ</th>
+              <th style="width:8%">Thời gian</th>
+              <th style="width:18%">Lời chúc</th>
             </tr>
           </thead>
           <tbody id="winnersTable">
-            <tr><td colspan="7" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>
           </tbody>
         </table>
       </div>
@@ -185,10 +275,10 @@ async function loadParticipants(eventId) {
     const list = await fetchJson(`${API}/lucky-participants/?event=${eventId}`);
     allParticipantsCache = list;
     document.getElementById('participantsCount').textContent = list.length;
-    if (!list.length) { tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Chưa có người tham gia</td></tr>'; return; }
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có người tham gia</td></tr>'; return; }
     tbody.innerHTML = list.map(p => rowHtml(p)).join('');
   } catch (e) {
-    tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Lỗi tải danh sách</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center">Lỗi tải danh sách</td></tr>';
   }
 }
 
@@ -196,10 +286,13 @@ function rowHtml(p) {
   const mask = document.getElementById('toggleMask')?.checked;
   const phone = String(p.zalo_phone||'');
   const masked = mask && phone.length >= 9 ? (phone.substring(0,3) + ' xxxx ' + phone.substring(phone.length-3)) : phone;
+  const email = String(p.email||'');
+  const maskedEmail = mask && email ? (email.split('@')[0].substring(0,2) + '***@' + email.split('@')[1]) : email;
   return `
       <tr>
         <td class="fw-semibold">${p.name || ''}</td>
         <td>${masked}</td>
+        <td class="small">${maskedEmail}</td>
         <td><span class="badge bg-dark">${String(p.chosen_number||'').padStart(2,'0')}</span></td>
         <td class="text-muted small">${new Date(p.submitted_at).toLocaleString('vi-VN')}</td>
       </tr>`;
@@ -223,7 +316,7 @@ async function loadWinnersAdmin(eventId){
   try{
     const list = await fetchJson(`${API}/lucky-winners/?event=${eventId}`);
     if (!list || list.length===0){
-      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>';
       return;
     }
     const countEl = document.getElementById('winnersCount');
@@ -232,23 +325,25 @@ async function loadWinnersAdmin(eventId){
       const p = w.participant || {};
       const prize = w.prize || {};
       const phone = p.zalo_phone || '';
+      const email = p.email || '';
       const mask = document.getElementById('toggleMaskWinners')?.checked;
       const masked = mask && phone && phone.length>=9 ? (phone.substring(0,3)+' xxxx '+phone.substring(phone.length-3)) : phone;
+      const maskedEmail = mask && email ? (email.split('@')[0].substring(0,2) + '***@' + email.split('@')[1]) : email;
       return `
         <tr>
           <td>${p.name || ''}</td>
           <td>${masked}</td>
+          <td class="small">${maskedEmail}</td>
           <td><span class="badge bg-dark">${String(p.chosen_number||'').padStart(2,'0')}</span></td>
           <td>${prize.name || '-'}</td>
           <td>${p.address || '-'}</td>
         <td class="text-muted small">${p.submitted_at ? new Date(p.submitted_at).toLocaleString('vi-VN') : '-'}</td>
-
           <td>${p.message || '-'}</td>
         </tr>
       `;
     }).join('');
   }catch(e){
-    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Lỗi tải danh sách trúng thưởng</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-3">Lỗi tải danh sách trúng thưởng</td></tr>';
   }
 }
 
@@ -266,6 +361,87 @@ async function finalizeEvent() {
     alert('Đã chốt kết quả!');
     loadCurrentEvent();
   } catch (e) { alert('Lỗi chốt kết quả: ' + e.message); }
+}
+
+// Function để load chi tiết khách hàng vào modal
+function loadParticipantDetails() {
+  const tbody = document.getElementById('participantDetailsTable');
+  if (!tbody) return;
+  
+  tbody.innerHTML = allParticipantsCache.length ? 
+    allParticipantsCache.map((p, idx) => modalRowHtml(p, idx + 1)).join('') : 
+    '<tr><td colspan="8" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>';
+}
+
+// Function để tạo HTML cho row trong modal
+function modalRowHtml(p, index) {
+  return `
+    <tr>
+      <td><input type="checkbox" class="modal-cb" data-id="${p.id}"></td>
+      <td>${index}</td>
+      <td class="fw-semibold">${p.name || ''}</td>
+      <td>
+        <span class="text-primary">${p.zalo_phone || ''}</span>
+        <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyToClipboard('${p.zalo_phone || ''}')" title="Copy SĐT">
+          <i class="fas fa-copy"></i>
+        </button>
+      </td>
+      <td>
+        <span class="text-info">${p.email || ''}</span>
+        <button class="btn btn-sm btn-outline-info ms-1" onclick="copyToClipboard('${p.email || ''}')" title="Copy Email">
+          <i class="fas fa-copy"></i>
+        </button>
+      </td>
+      <td class="small">${p.address || ''}</td>
+      <td><span class="badge bg-dark">${String(p.chosen_number||'').padStart(2,'0')}</span></td>
+      <td>
+        <div class="btn-group" role="group">
+          <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('${p.name || ''} - ${p.zalo_phone || ''} - ${p.email || ''} - ${p.address || ''}')" title="Copy tất cả thông tin">
+            <i class="fas fa-copy"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteParticipant(${p.id})" title="Xóa người tham gia">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>
+  `;
+}
+
+// Function để copy text vào clipboard
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    // Tạo toast notification
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `
+      <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+          <div class="toast-body">
+            <i class="fas fa-check-circle me-2"></i>Đã copy vào clipboard!
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    
+    // Auto remove sau 3 giây
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 3000);
+  }).catch(() => {
+    // Fallback cho trình duyệt cũ
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert('Đã copy vào clipboard!');
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -306,14 +482,284 @@ document.addEventListener('DOMContentLoaded', () => {
     clearTimeout(t2); t2 = setTimeout(applyFilters, 200);
   });
   document.getElementById('btnExportCSV')?.addEventListener('click', () => {
-    const rows = [['Name','Phone','Number','Submitted At'], ...allParticipantsCache.map(p => [p.name||'', p.zalo_phone||'', String(p.chosen_number||'').padStart(2,'0'), new Date(p.submitted_at).toLocaleString('vi-VN')])];
-    const csv = rows.map(r => r.map(x => '"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    // Tạo header
+    const headers = ['Tên', 'SĐT', 'Email', 'Số may mắn', 'Thời gian gửi'];
+    
+    // Tạo dữ liệu
+    const data = allParticipantsCache.map(p => [
+      p.name || '',
+      `="${p.zalo_phone || ''}"`, // Sử dụng ="..." để Excel hiểu là text
+      p.email || '',
+      String(p.chosen_number || '').padStart(2, '0'),
+      new Date(p.submitted_at).toLocaleString('vi-VN')
+    ]);
+    
+    // Tạo HTML table để Excel có thể import đúng
+    const htmlContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+            xmlns:x="urn:schemas-microsoft-com:office:excel" 
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <meta name="ExcelCreated" content="1">
+        <!--[if gte mso 9]><xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Danh sách tham gia</x:Name>
+                <x:WorksheetOptions>
+                  <x:DefaultRowHeight>285</x:DefaultRowHeight>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml><![endif]-->
+      </head>
+      <body>
+        <table>
+          <tr>
+            ${headers.map(h => `<th style="background-color: #4472C4; color: white; font-weight: bold; padding: 8px; border: 1px solid #000;">${h}</th>`).join('')}
+          </tr>
+          ${data.map(row => `
+            <tr>
+                ${row.map(cell => `<td style="padding: 4px; border: 1px solid #ccc;">${cell}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </table>
+      </body>
+      </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'lucky_participants.csv'; a.click();
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lucky_participants.xls';
+    a.click();
     URL.revokeObjectURL(url);
   });
+
+  // Copy tất cả SĐT
+  document.getElementById('btnCopyAllPhones')?.addEventListener('click', () => {
+    const phones = allParticipantsCache.map(p => p.zalo_phone || '').filter(phone => phone.trim());
+    const phoneText = phones.join('\n');
+    navigator.clipboard.writeText(phoneText).then(() => {
+      alert(`Đã copy ${phones.length} số điện thoại vào clipboard!`);
+    }).catch(() => {
+      // Fallback cho trình duyệt cũ
+      const textArea = document.createElement('textarea');
+      textArea.value = phoneText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`Đã copy ${phones.length} số điện thoại vào clipboard!`);
+    });
+  });
+
+  // Copy tất cả Email
+  document.getElementById('btnCopyAllEmails')?.addEventListener('click', () => {
+    const emails = allParticipantsCache.map(p => p.email || '').filter(email => email.trim());
+    const emailText = emails.join('\n');
+    navigator.clipboard.writeText(emailText).then(() => {
+      alert(`Đã copy ${emails.length} email vào clipboard!`);
+    }).catch(() => {
+      // Fallback cho trình duyệt cũ
+      const textArea = document.createElement('textarea');
+      textArea.value = emailText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`Đã copy ${emails.length} email vào clipboard!`);
+    });
+  });
+
+  // Load chi tiết khách hàng vào modal
+  document.getElementById('btnViewDetails')?.addEventListener('click', () => {
+    loadParticipantDetails();
+  });
+
+  // Copy SĐT trong modal
+  document.getElementById('modalCopyAllPhones')?.addEventListener('click', () => {
+    const phones = allParticipantsCache.map(p => p.zalo_phone || '').filter(phone => phone.trim());
+    const phoneText = phones.join('\n');
+    navigator.clipboard.writeText(phoneText).then(() => {
+      alert(`Đã copy ${phones.length} số điện thoại vào clipboard!`);
+    }).catch(() => {
+      const textArea = document.createElement('textarea');
+      textArea.value = phoneText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`Đã copy ${phones.length} số điện thoại vào clipboard!`);
+    });
+  });
+
+  // Copy Email trong modal
+  document.getElementById('modalCopyAllEmails')?.addEventListener('click', () => {
+    const emails = allParticipantsCache.map(p => p.email || '').filter(email => email.trim());
+    const emailText = emails.join('\n');
+    navigator.clipboard.writeText(emailText).then(() => {
+      alert(`Đã copy ${emails.length} email vào clipboard!`);
+    }).catch(() => {
+      const textArea = document.createElement('textarea');
+      textArea.value = emailText;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert(`Đã copy ${emails.length} email vào clipboard!`);
+    });
+  });
+
+  // Xuất Excel trong modal
+  document.getElementById('modalExportExcel')?.addEventListener('click', () => {
+    // Tạo header chi tiết
+    const headers = ['STT', 'Tên', 'SĐT', 'Email', 'Địa chỉ', 'Số may mắn', 'Thời gian gửi', 'Lời chúc'];
+    
+    // Tạo dữ liệu chi tiết
+    const data = allParticipantsCache.map((p, idx) => [
+      idx + 1,
+      p.name || '',
+      `="${p.zalo_phone || ''}"`, // Sử dụng ="..." để Excel hiểu là text
+      p.email || '',
+      p.address || '',
+      String(p.chosen_number || '').padStart(2, '0'),
+      new Date(p.submitted_at).toLocaleString('vi-VN'),
+      p.message || ''
+    ]);
+    
+    // Tạo HTML table để Excel có thể import đúng
+    const htmlContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+            xmlns:x="urn:schemas-microsoft-com:office:excel" 
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <meta name="ExcelCreated" content="1">
+        <!--[if gte mso 9]><xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Chi tiết tham gia</x:Name>
+                <x:WorksheetOptions>
+                  <x:DefaultRowHeight>285</x:DefaultRowHeight>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml><![endif]-->
+      </head>
+      <body>
+        <table>
+          <tr>
+            ${headers.map(h => `<th style="background-color: #4472C4; color: white; font-weight: bold; padding: 8px; border: 1px solid #000;">${h}</th>`).join('')}
+          </tr>
+          ${data.map(row => `
+            <tr>
+                ${row.map(cell => `<td style="padding: 4px; border: 1px solid #ccc;">${cell}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </table>
+      </body>
+      </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'lucky_participants_detailed.xls';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Tìm kiếm trong modal
+  let modalT1, modalT2;
+  const applyModalFilters = () => {
+    const qPhone = (document.getElementById('modalSearchPhone')?.value || '').trim();
+    const qNumRaw = (document.getElementById('modalSearchNumber')?.value || '').replace(/\D/g,'').slice(0,2);
+    if (document.getElementById('modalSearchNumber')) document.getElementById('modalSearchNumber').value = qNumRaw;
+    let list = allParticipantsCache;
+    if (qPhone) list = list.filter(p => (p.zalo_phone||'').includes(qPhone));
+    if (qNumRaw) {
+      const qNum = qNumRaw.padStart(2,'0');
+      list = list.filter(p => String(p.chosen_number||'').padStart(2,'0') === qNum);
+    }
+    const tbody = document.getElementById('participantDetailsTable');
+    tbody.innerHTML = list.length ? list.map((p, idx) => modalRowHtml(p, idx + 1)).join('') : '<tr><td colspan="7" class="text-center text-muted py-3">Không tìm thấy</td></tr>';
+  };
+
+  document.getElementById('modalSearchPhone')?.addEventListener('input', () => {
+    clearTimeout(modalT1); modalT1 = setTimeout(applyModalFilters, 250);
+  });
+  document.getElementById('modalSearchNumber')?.addEventListener('input', () => {
+    clearTimeout(modalT2); modalT2 = setTimeout(applyModalFilters, 200);
+  });
+  // Select all in modal
+  document.getElementById('modalSelectAll')?.addEventListener('change', (e) => {
+    const checked = e.target.checked;
+    document.querySelectorAll('.modal-cb').forEach(cb => cb.checked = checked);
+  });
+  // Bulk delete
+  document.getElementById('modalDeleteSelected')?.addEventListener('click', deleteSelectedParticipants);
 });
+
+// Xóa người tham gia
+async function deleteParticipant(id){
+  try{
+    if(!id) return;
+    if(!confirm('Xóa người tham gia này?')) return;
+    const res = await fetch(`${API}/lucky-participants/${id}/`, { method: 'DELETE' });
+    if(res.status === 204){
+      // Cập nhật cache và giao diện
+      allParticipantsCache = (allParticipantsCache||[]).filter(p => p.id !== id);
+      const countEl = document.getElementById('participantsCount');
+      if (countEl) countEl.textContent = allParticipantsCache.length;
+      const tbody = document.getElementById('participantsTable');
+      if (tbody) tbody.innerHTML = allParticipantsCache.length ? allParticipantsCache.map(p => rowHtml(p)).join('') : '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có người tham gia</td></tr>';
+      // Cập nhật modal nếu đang mở
+      const modalTbody = document.getElementById('participantDetailsTable');
+      if (modalTbody) loadParticipantDetails();
+      alert('Đã xóa');
+    }else{
+      const text = await res.text();
+      alert('Xóa thất bại: ' + (text||res.status));
+    }
+  }catch(e){
+    alert('Lỗi xóa: ' + e.message);
+  }
+}
+
+// Bulk delete participants (modal)
+async function deleteSelectedParticipants(){
+  const ids = Array.from(document.querySelectorAll('.modal-cb:checked'))
+    .map(cb => parseInt(cb.getAttribute('data-id')))
+    .filter(Boolean);
+  if (!ids.length){ alert('Chưa chọn người tham gia nào'); return; }
+  if (!confirm(`Xóa ${ids.length} người tham gia đã chọn?`)) return;
+  let ok = 0;
+  for (const id of ids){
+    try{
+      const res = await fetch(`${API}/lucky-participants/${id}/`, { method: 'DELETE' });
+      if (res.status === 204) ok++;
+    }catch(e){ /* ignore */ }
+  }
+  if (ok){
+    allParticipantsCache = (allParticipantsCache||[]).filter(p => !ids.includes(p.id));
+    const countEl = document.getElementById('participantsCount');
+    if (countEl) countEl.textContent = allParticipantsCache.length;
+    const tbody = document.getElementById('participantsTable');
+    if (tbody) tbody.innerHTML = allParticipantsCache.length ? allParticipantsCache.map(p => rowHtml(p)).join('') : '<tr><td colspan="5" class="text-center text-muted py-3">Chưa có người tham gia</td></tr>';
+    loadParticipantDetails();
+    const selAll = document.getElementById('modalSelectAll'); if (selAll) selAll.checked = false;
+    alert(`Đã xóa ${ok}/${ids.length}`);
+  }else{
+    alert('Xóa thất bại');
+  }
+}
 </script>
 {% endblock %}
 
@@ -350,6 +796,36 @@ document.addEventListener('DOMContentLoaded', () => {
 .winners-table{font-size:12px}
 .winners-table td, .winners-table th{padding:.5rem .6rem}
 .winners-table .badge{font-size:.75rem}
+
+/* Toast notification */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  min-width: 300px;
+}
+
+/* Modal styles */
+.modal-xl {
+  max-width: 90%;
+}
+
+.modal-body .table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.modal-body .table td {
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.modal-body .table .btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
 
 </style>
 {% endblock %}

@@ -13,6 +13,49 @@
     <link href="/static/admin/css/admin.css" rel="stylesheet">
     
     {% block extra_css %}{% endblock %}
+    <style>
+    /* GHN-like admin theme */
+    :root{
+        --ghn-primary:#ff6600; /* cam GHN */
+        --ghn-dark:#0f172a;
+        --ghn-bg:#f8fafc;
+        --ghn-card:#ffffff;
+        --ghn-blue:#1e40af;
+        --ghn-green:#16a34a;
+        --ghn-gray:#475569;
+    }
+    body{background:var(--ghn-bg)}
+    .navbar.bg-dark{background:var(--ghn-dark)!important}
+    .navbar .nav-link{color:#cbd5e1!important}
+    .navbar .nav-link.active{color:#fff!important;border-bottom:2px solid var(--ghn-primary)}
+    .btn-primary{background:var(--ghn-primary);border-color:var(--ghn-primary)}
+    .btn-outline-primary{color:var(--ghn-primary);border-color:var(--ghn-primary)}
+    .btn-outline-primary:hover{background:var(--ghn-primary);color:#fff}
+    .badge.bg-primary{background:var(--ghn-primary)!important}
+    .table-dark{background:var(--ghn-dark)!important}
+    .table thead.sticky-top{top:0;z-index:5;box-shadow:0 2px 10px rgba(15,23,42,.2)}
+    /* Enhanced sticky dark header */
+    thead.table-dark.sticky-top, .table-dark thead.sticky-top{
+        position: sticky; top: 0; z-index: 6;
+        background: linear-gradient(180deg, rgba(15,23,42,.98) 0%, rgba(15,23,42,.92) 100%) !important;
+        border-bottom: 1px solid rgba(255,255,255,.08);
+        box-shadow: 0 8px 18px rgba(15,23,42,.35);
+        backdrop-filter: saturate(120%) blur(2px);
+    }
+    .table-dark thead.sticky-top th, thead.table-dark.sticky-top th{
+        color: #e5e7eb; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+        font-size: .75rem; border-color: rgba(255,255,255,.08)!important;
+        padding-top: .75rem; padding-bottom: .75rem;
+    }
+    .table-dark thead.sticky-top th:first-child{border-top-left-radius:8px}
+    .table-dark thead.sticky-top th:last-child{border-top-right-radius:8px}
+    .card{border:1px solid #e2e8f0;border-radius:12px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+    .input-group-text{background:#fff;color:var(--ghn-gray)}
+    .form-control:focus{border-color:var(--ghn-primary);box-shadow:0 0 0 .2rem rgba(255,102,0,.15)}
+    .btn-outline-danger{border-radius:10px}
+    .btn-outline-warning{border-radius:10px}
+    .btn-outline-secondary{border-radius:10px}
+    </style>
 </head>
 <body>
     <!-- Admin Navigation -->
@@ -47,30 +90,29 @@
                             </a></li>
                         </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_orders' %}active{% endif %}" href="/admin/orders">
-                            <i class="fas fa-shopping-cart me-1"></i>Đơn Hàng
+                    <!-- Group: Bán hàng -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_orders','admin_analytics','admin_customers','admin_customer_data'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-store me-1"></i>Bán hàng
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Đơn Hàng</a></li>
+                            <li><a class="dropdown-item" href="/admin/analytics"><i class="fas fa-chart-line me-2"></i>Thống kê</a></li>
+                            <li><a class="dropdown-item" href="/admin/customers"><i class="fas fa-users me-2"></i>Khách Hàng</a></li>
+                            <li><a class="dropdown-item" href="/admin/customer-data"><i class="fas fa-database me-2"></i>Dữ liệu tệp KH</a></li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_analytics' %}active{% endif %}" href="/admin/analytics">
-                            <i class="fas fa-chart-line me-1"></i>Thống kê
+                    <!-- Group: Khuyến mãi & Sự kiện -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_vouchers','admin_lucky_number'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-gift me-1"></i>Khuyến mãi & Sự kiện
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_customers' %}active{% endif %}" href="/admin/customers">
-                            <i class="fas fa-users me-1"></i>Khách Hàng
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_vouchers' %}active{% endif %}" href="/admin/vouchers">
-                            <i class="fas fa-ticket-alt me-1"></i>Voucher
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_lucky_number' %}active{% endif %}" href="/admin/lucky-number">
-                            <i class="fas fa-clover me-1"></i>Số may mắn
-                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/vouchers"><i class="fas fa-ticket-alt me-2"></i>Voucher</a></li>
+                            <li><a class="dropdown-item" href="/admin/lucky-number"><i class="fas fa-clover me-2"></i>Số may mắn</a></li>
+                            <li><a class="dropdown-item" href="/templates/emails/flash_sale_announcement.html" target="_blank"><i class="fas fa-bullhorn me-2"></i>Email: Flash Sale</a></li>
+                            <li><a class="dropdown-item" href="/templates/emails/lucky_game_announcement.html" target="_blank"><i class="fas fa-bullseye me-2"></i>Email: Trò chơi may mắn</a></li>
+                        </ul>
                     </li>
                 </ul>
                 

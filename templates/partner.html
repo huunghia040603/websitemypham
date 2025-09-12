@@ -15,6 +15,9 @@
   .pt-benefit{display:flex;gap:.75rem;align-items:flex-start}
   .pt-benefit .ico{width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
   .fw-semibold{ color: #0b0061 !important; }
+  .pt-section-title{display:flex;align-items:center;gap:.5rem;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:.5rem .75rem;margin:.25rem 0 .25rem}
+  .pt-section-title .badge-req{color:#b91c1c;background:#fee2e2;border:1px solid #fecaca;border-radius:6px;padding:.1rem .4rem;font-size:.7rem}
+  .pt-divider{height:1px;background:linear-gradient(90deg,#cbd5e1,#e2e8f0);margin:.5rem 0}
 </style>
 {% endblock %}
 
@@ -51,27 +54,35 @@
   <div class="row g-4">
     <div class="col-lg-6">
       <div class="pt-card p-4">
-        <h2 class="h5 mb-3">Thông tin đăng ký</h2>
+        <div class="pt-section-title"><strong>Thông tin đăng ký</strong></div>
+        <div class="pt-divider"></div>
         <form id="partnerForm" class="row g-3 pt-form" enctype="multipart/form-data">
           <div class="col-md-6">
             <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
-            <input id="ptFullName" name="full_name" class="form-control" placeholder="VD: Nguyễn Văn A" required>
+            <input id="ptFullName" name="full_name" class="form-control" required>
           </div>
           <div class="col-md-6">
             <label class="form-label">Số điện thoại Zalo <span class="text-danger">*</span></label>
-            <input id="ptPhone" name="phone" class="form-control" placeholder="VD: 0987xxxxxx" inputmode="tel" pattern="^[0-9]{10,11}$" required>
+            <input id="ptPhone" name="phone" class="form-control"  inputmode="tel" pattern="^[0-9]{10,11}$" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Mã CTV mong muốn</label>
+            <input id="ptDesiredCode" name="desired_code" class="form-control" placeholder="VD: NGUYENVANA" maxlength="20">
+            <div class="form-text" style="font-size: 10px;" >Chỉ dùng chữ/số/_/-, tối đa 20 ký tự. Có thể để trống.</div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email <span class="text-danger">*</span></label>
+            <input id="ptEmail" type="email" name="email" class="form-control"  required>
           </div>
           <div class="col-12">
             <label class="form-label">Địa chỉ</label>
             <input id="ptAddress" name="address" class="form-control" placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành">
           </div>
-          <div class="col-12">
-            <label class="form-label">Email <span class="text-danger">*</span></label>
-            <input id="ptEmail" type="email" name="email" class="form-control" placeholder="you@example.com" required>
-          </div>
 
           <div class="col-12 mt-2">
-            <h3 class="h6 mb-2">Thông tin ngân hàng nhận hoa hồng <span class="text-danger">*</span></h3>
+            <div class="pt-divider"></div>
+            <div class="pt-section-title"><strong>Thông tin ngân hàng nhận hoa hồng</strong> <span class="badge-req">Bắt buộc</span></div>
+            
           </div>
           <div class="col-md-4">
             <label class="form-label">Tên ngân hàng <span class="text-danger">*</span></label>
@@ -85,9 +96,10 @@
             <label class="form-label">Tên thẻ ngân hàng <span class="text-danger">*</span></label>
             <input id="ptBankHolder" name="bank_holder" class="form-control" placeholder="VD: NGUYEN VAN A" required>
           </div>
-
           <div class="col-12 mt-2">
-            <h3 class="h6 mb-2">Xác minh CCCD <span class="text-danger">*</span></h3>
+            <div class="pt-divider"></div>
+            <div class="pt-section-title"><strong>Xác minh CCCD</strong> <span class="badge-req">Bắt buộc</span></div>
+            
           </div>
           <div class="col-md-6">
             <label class="form-label">Ảnh mặt trước CCCD <span class="text-danger">*</span></label>
@@ -173,8 +185,17 @@
 
 {% block extra_js %}
 <script>
+let partnerSubmitting = false;
 document.getElementById('partnerForm')?.addEventListener('submit', async function(e){
   e.preventDefault();
+  if (partnerSubmitting) return;
+  partnerSubmitting = true;
+  const submitBtn = this.querySelector('button[type="submit"]');
+  const btnOriginalHTML = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn){
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Đang gửi...';
+  }
   const fullName = document.getElementById('ptFullName').value.trim();
   const phone = document.getElementById('ptPhone').value.trim();
   const email = document.getElementById('ptEmail').value.trim();
@@ -194,30 +215,35 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
   if (!front || !back) return alert('Vui lòng tải lên ảnh CCCD (mặt trước & mặt sau)');
   if (!agree) return alert('Vui lòng đồng ý với quy định và thoả thuận của BuddySkincare');
 
-  // Convert images to base64 (simple client approach)
-  const toBase64 = (file) => new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-
   try {
     const fFile = document.getElementById('ptCccdFront').files[0];
     const bFile = document.getElementById('ptCccdBack').files[0];
-    const front64 = await toBase64(fFile);
-    const back64 = await toBase64(bFile);
+
+    // Upload to Cloudinary via server proxy to get short URL
+    async function uploadImage(file){
+      const fd = new FormData();
+      fd.append('file', file);
+      const resp = await fetch('/api/upload-bank-transfer', { method: 'POST', body: fd });
+      if (!resp.ok) throw new Error('Upload ảnh thất bại');
+      const data = await resp.json();
+      if (!data.success || !data.url) throw new Error('Upload ảnh thất bại');
+      return data.url;
+    }
+
+    const frontUrl = await uploadImage(fFile);
+    const backUrl = await uploadImage(bFile);
 
     const payload = {
       full_name: fullName,
       phone: phone,
       email: email,
       address: document.getElementById('ptAddress').value.trim(),
+      desired_code: document.getElementById('ptDesiredCode')?.value.trim() || '',
       bank_name: bankName,
       bank_number: bankNumber,
       bank_holder: bankHolder,
-      cccd_front_url: front64,
-      cccd_back_url: back64,
+      cccd_front_url: frontUrl,
+      cccd_back_url: backUrl,
       sales_plan: document.getElementById('ptPlan').value.trim(),
       agreed: true
     };
@@ -236,7 +262,15 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
     e.target.reset();
   } catch (err) {
     alert('Có lỗi khi gửi đăng ký: ' + (err?.message || err));
+  } finally {
+    partnerSubmitting = false;
+    if (submitBtn){
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = btnOriginalHTML || 'Gửi đăng ký';
+    }
   }
 });
+
+// Đơn giản hóa: bỏ kiểm tra mã, để admin duyệt và sinh mã nếu trùng
 </script>
 {% endblock %} 

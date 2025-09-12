@@ -116,6 +116,18 @@
                 <i class="fas fa-shopping-cart me-2"></i>Quản Lý Đơn Hàng
             </h1>
             <div class="d-flex gap-2">
+                <button class="btn btn-outline-success" onclick="showCustomerDetails()">
+                    <i class="fas fa-users me-2"></i>Chi tiết KH
+                </button>
+                <button class="btn btn-outline-info" onclick="copyAllCustomerInfo()">
+                    <i class="fas fa-copy me-2"></i>Copy thông tin KH
+                </button>
+                <button class="btn btn-outline-warning" onclick="copyAllPhones()">
+                    <i class="fas fa-phone me-2"></i>Copy SĐT
+                </button>
+                <button class="btn btn-outline-secondary" onclick="copyAllEmails()">
+                    <i class="fas fa-envelope me-2"></i>Copy Email
+                </button>
                 <button class="btn btn-outline-primary" onclick="exportOrders()">
                     <i class="fas fa-download me-2"></i>Xuất Excel
                 </button>
@@ -399,6 +411,94 @@
         </div>
     </div>
 </div>
+
+<!-- Modal xem chi tiết khách hàng -->
+<div class="modal fade" id="customerDetailsModal" tabindex="-1" aria-labelledby="customerDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="customerDetailsModalLabel">
+          <i class="fas fa-users me-2"></i>Chi tiết khách hàng đơn hàng
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-search"></i></span>
+              <input type="text" class="form-control" id="customerSearchPhone" placeholder="Tìm theo SĐT">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="input-group">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>
+              <input type="text" class="form-control" id="customerSearchName" placeholder="Tìm theo tên">
+            </div>
+          </div>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <span class="badge bg-primary" id="customerCount">0</span> khách hàng
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-primary" onclick="copyAllCustomerPhones()">
+              <i class="fas fa-phone me-1"></i>Copy SĐT
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="copyAllCustomerEmails()">
+              <i class="fas fa-envelope me-1"></i>Copy Email
+            </button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportCustomerDetails()">
+              <i class="fas fa-download me-1"></i>Xuất Excel
+            </button>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>STT</th>
+                <th>Tên khách hàng</th>
+                <th>SĐT</th>
+                <th>Email</th>
+                <th>Địa chỉ</th>
+                <th>Số đơn hàng</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="customerDetailsTable">
+              <tr>
+                <td colspan="9" class="text-center text-muted py-3">Đang tải dữ liệu...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+  <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <i class="fas fa-check-circle text-success me-2"></i>
+      <strong class="me-auto">Thành công</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body" id="copyToastMessage">
+      Đã copy thành công!
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -768,6 +868,9 @@ function renderOrders() {
                     </button>
                     <a class="btn btn-sm btn-outline-success ms-1" href="/admin/orders/${order.id}/invoice" target="_blank" data-bs-toggle="tooltip" title="Xuất hóa đơn / In">
                         <i class="fas fa-file-invoice"></i>
+                    </a>
+                    <a class="btn btn-sm btn-outline-info ms-1" href="/templates/emails/invoice_email.html?order_id=${order.id}" target="_blank" data-bs-toggle="tooltip" title="Xem trước email hóa đơn">
+                        <i class="fas fa-envelope-open-text"></i>
                     </a>
                 </td>
             </tr>
@@ -1486,7 +1589,104 @@ function refreshOrders() {
 }
 
 function exportOrders() {
-    AdminAPI.showNotification('Tính năng xuất Excel cần được implement', 'info');
+    if (filteredOrders.length === 0) {
+        showNotification('Không có dữ liệu để xuất Excel', 'warning');
+        return;
+    }
+    
+    // Tạo header
+    const headers = ['ID', 'Tên khách hàng', 'SĐT', 'Email', 'Địa chỉ', 'Sản phẩm', 'Số lượng SP', 'Tổng tiền', 'Phí ship', 'Phương thức TT', 'Trạng thái', 'Xác nhận', 'Ngày tạo', 'Ghi chú'];
+    
+    // Tạo dữ liệu
+    const data = filteredOrders.map(order => {
+        const itemCount = order.items ? order.items.length : 0;
+        const productNames = order.items ? order.items.map(item => 
+            (item.product && item.product.name) ? item.product.name : 'N/A'
+        ).join('; ') : 'N/A';
+        
+        const address = [
+            order.street || '',
+            order.ward || '',
+            order.district || '',
+            order.province || ''
+        ].filter(Boolean).join(', ');
+        
+        const statusText = {
+            'pending': 'Chờ xử lý',
+            'confirmed': 'Đã xác nhận',
+            'processing': 'Đang xử lý',
+            'shipped': 'Đã giao hàng',
+            'delivered': 'Đã nhận hàng',
+            'cancelled': 'Đã hủy',
+            'completed': 'Hoàn thành'
+        }[order.status] || order.status;
+        
+        const paymentMethod = order.payment_method === 'bank' ? 'Chuyển khoản' : 'Thu COD';
+        const confirmationText = order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận';
+        
+        return [
+            order.id,
+            order.customer_name || 'N/A',
+            `="${order.phone_number || 'N/A'}"`, // Sử dụng ="..." để Excel hiểu là text
+            order.email || 'N/A',
+            address || 'N/A',
+            productNames,
+            itemCount,
+            formatPrice(order.total_amount || 0),
+            formatShippingFee(order.shipping_fee || 0),
+            paymentMethod,
+            statusText,
+            confirmationText,
+            formatDate(order.order_date),
+            order.notes || ''
+        ];
+    });
+    
+    // Tạo HTML table để Excel có thể import đúng
+    const htmlContent = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+            xmlns:x="urn:schemas-microsoft-com:office:excel" 
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <meta name="ExcelCreated" content="1">
+        <!--[if gte mso 9]><xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Danh sách đơn hàng</x:Name>
+                <x:WorksheetOptions>
+                  <x:DefaultRowHeight>285</x:DefaultRowHeight>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml><![endif]-->
+      </head>
+      <body>
+        <table>
+          <tr>
+            ${headers.map(h => `<th style="background-color: #4472C4; color: white; font-weight: bold; padding: 8px; border: 1px solid #000;">${h}</th>`).join('')}
+          </tr>
+          ${data.map(row => `
+            <tr>
+              ${row.map(cell => `<td style="padding: 4px; border: 1px solid #ccc;">${cell}</td>`).join('')}
+            </tr>
+          `).join('')}
+        </table>
+      </body>
+      </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `don_hang_${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification(`Đã xuất ${filteredOrders.length} đơn hàng ra file Excel`, 'success');
 }
 
 function showBankTransferImage(imageUrl, orderId) {
@@ -1692,6 +1892,320 @@ async function autoCompleteShippedOrders() {
 setInterval(async () => {
     await autoCompleteShippedOrders();
 }, 2 * 60 * 1000); // 2 minutes for testing
+
+// Copy functions for admin orders
+function copyAllCustomerInfo() {
+    if (filteredOrders.length === 0) {
+        showNotification('Không có dữ liệu để copy', 'warning');
+        return;
+    }
+    
+    const customerInfo = filteredOrders.map(order => {
+        const address = [
+            order.street || '',
+            order.ward || '',
+            order.district || '',
+            order.province || ''
+        ].filter(Boolean).join(', ');
+        
+        return `Đơn hàng #${order.id}:
+- Tên: ${order.customer_name || 'N/A'}
+- SĐT: ${order.phone_number || 'N/A'}
+- Email: ${order.email || 'N/A'}
+- Địa chỉ: ${address || 'N/A'}
+- Trạng thái: ${order.status}
+- Tổng tiền: ${formatPrice(order.total_amount || 0)}
+---`;
+    }).join('\n\n');
+    
+    copyToClipboard(customerInfo);
+    showNotification(`Đã copy thông tin ${filteredOrders.length} đơn hàng vào clipboard`, 'success');
+}
+
+function copyAllPhones() {
+    if (filteredOrders.length === 0) {
+        showNotification('Không có dữ liệu để copy', 'warning');
+        return;
+    }
+    
+    const phones = filteredOrders
+        .map(order => order.phone_number)
+        .filter(phone => phone && phone.trim())
+        .join('\n');
+    
+    if (!phones) {
+        showNotification('Không có số điện thoại nào để copy', 'warning');
+        return;
+    }
+    
+    copyToClipboard(phones);
+    showNotification(`Đã copy ${filteredOrders.filter(o => o.phone_number).length} số điện thoại vào clipboard`, 'success');
+}
+
+function copyAllEmails() {
+    if (filteredOrders.length === 0) {
+        showNotification('Không có dữ liệu để copy', 'warning');
+        return;
+    }
+    
+    const emails = filteredOrders
+        .map(order => order.email)
+        .filter(email => email && email.trim())
+        .join('\n');
+    
+    if (!emails) {
+        showNotification('Không có email nào để copy', 'warning');
+        return;
+    }
+    
+    copyToClipboard(emails);
+    showNotification(`Đã copy ${filteredOrders.filter(o => o.email).length} email vào clipboard`, 'success');
+}
+
+// Function để hiển thị modal chi tiết khách hàng
+function showCustomerDetails() {
+    if (filteredOrders.length === 0) {
+        showNotification('Không có dữ liệu để hiển thị', 'warning');
+        return;
+    }
+    
+    loadCustomerDetails();
+    const modal = new bootstrap.Modal(document.getElementById('customerDetailsModal'));
+    modal.show();
+}
+
+// Function để load chi tiết khách hàng vào modal
+function loadCustomerDetails() {
+    const tbody = document.getElementById('customerDetailsTable');
+    if (!tbody) return;
+    
+    // Tạo danh sách khách hàng unique từ đơn hàng
+    const customerMap = new Map();
+    filteredOrders.forEach(order => {
+        const key = order.phone_number || order.customer_phone || 'unknown';
+        if (!customerMap.has(key)) {
+            customerMap.set(key, {
+                name: order.customer_name || 'N/A',
+                phone: order.phone_number || order.customer_phone || 'N/A',
+                email: order.email || 'N/A',
+                address: [
+                    order.street || '',
+                    order.ward || '',
+                    order.district || '',
+                    order.province || ''
+                ].filter(Boolean).join(', ') || 'N/A',
+                orderCount: 0,
+                totalAmount: 0,
+                status: order.status || 'N/A'
+            });
+        }
+        
+        const customer = customerMap.get(key);
+        customer.orderCount++;
+        customer.totalAmount += parseFloat(order.total_amount || 0);
+    });
+    
+    const customers = Array.from(customerMap.values());
+    document.getElementById('customerCount').textContent = customers.length;
+    
+    tbody.innerHTML = customers.length ? 
+        customers.map((c, idx) => customerRowHtml(c, idx + 1)).join('') : 
+        '<tr><td colspan="9" class="text-center text-muted py-3">Chưa có dữ liệu</td></tr>';
+}
+
+// Function để tạo HTML cho row khách hàng trong modal
+function customerRowHtml(customer, index) {
+    return `
+        <tr>
+            <td>${index}</td>
+            <td class="fw-semibold">${customer.name}</td>
+            <td>
+                <span class="text-primary">${customer.phone}</span>
+                <button class="btn btn-sm btn-outline-primary ms-1" onclick="copyToClipboard('${customer.phone}')" title="Copy SĐT">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </td>
+            <td>
+                <span class="text-info">${customer.email}</span>
+                <button class="btn btn-sm btn-outline-info ms-1" onclick="copyToClipboard('${customer.email}')" title="Copy Email">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </td>
+            <td class="text-muted small">${customer.address}</td>
+            <td><span class="badge bg-secondary">${customer.orderCount}</span></td>
+            <td class="fw-bold text-success">${formatCurrency(customer.totalAmount)}</td>
+            <td><span class="badge bg-${getStatusColor(customer.status)}">${getStatusText(customer.status)}</span></td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="copyCustomerInfo('${customer.name}', '${customer.phone}', '${customer.email}', '${customer.address}')" title="Copy thông tin">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+// Function để copy thông tin khách hàng
+function copyCustomerInfo(name, phone, email, address) {
+    const info = `Tên: ${name}\nSĐT: ${phone}\nEmail: ${email}\nĐịa chỉ: ${address}`;
+    copyToClipboard(info);
+    showNotification('Đã copy thông tin khách hàng', 'success');
+}
+
+// Function để copy tất cả SĐT khách hàng
+function copyAllCustomerPhones() {
+    const tbody = document.getElementById('customerDetailsTable');
+    if (!tbody) return;
+    
+    const phones = Array.from(tbody.querySelectorAll('tr'))
+        .map(row => {
+            const phoneCell = row.querySelector('td:nth-child(3) span');
+            return phoneCell ? phoneCell.textContent.trim() : '';
+        })
+        .filter(phone => phone && phone !== 'N/A')
+        .join('\n');
+    
+    if (!phones) {
+        showNotification('Không có SĐT nào để copy', 'warning');
+        return;
+    }
+    
+    copyToClipboard(phones);
+    showNotification(`Đã copy ${phones.split('\n').length} SĐT khách hàng`, 'success');
+}
+
+// Function để copy tất cả Email khách hàng
+function copyAllCustomerEmails() {
+    const tbody = document.getElementById('customerDetailsTable');
+    if (!tbody) return;
+    
+    const emails = Array.from(tbody.querySelectorAll('tr'))
+        .map(row => {
+            const emailCell = row.querySelector('td:nth-child(4) span');
+            return emailCell ? emailCell.textContent.trim() : '';
+        })
+        .filter(email => email && email !== 'N/A')
+        .join('\n');
+    
+    if (!emails) {
+        showNotification('Không có email nào để copy', 'warning');
+        return;
+    }
+    
+    copyToClipboard(emails);
+    showNotification(`Đã copy ${emails.split('\n').length} email khách hàng`, 'success');
+}
+
+// Function để xuất Excel chi tiết khách hàng
+function exportCustomerDetails() {
+    const tbody = document.getElementById('customerDetailsTable');
+    if (!tbody) return;
+    
+    const rows = Array.from(tbody.querySelectorAll('tr')).map(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        if (cells.length < 8) return null;
+        
+        return [
+            cells[0].textContent.trim(), // STT
+            cells[1].textContent.trim(), // Tên
+            `="${cells[2].querySelector('span').textContent.trim()}"`, // SĐT với ="..." để Excel hiểu là text
+            cells[3].querySelector('span').textContent.trim(), // Email
+            cells[4].textContent.trim(), // Địa chỉ
+            cells[5].textContent.trim(), // Số đơn hàng
+            cells[6].textContent.trim(), // Tổng tiền
+            cells[7].textContent.trim()  // Trạng thái
+        ];
+    }).filter(Boolean);
+    
+    if (rows.length === 0) {
+        showNotification('Không có dữ liệu để xuất Excel', 'warning');
+        return;
+    }
+    
+    // Tạo header
+    const headers = ['STT', 'Tên khách hàng', 'SĐT', 'Email', 'Địa chỉ', 'Số đơn hàng', 'Tổng tiền', 'Trạng thái'];
+    
+    // Tạo HTML table cho Excel
+    const htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <meta name="ExcelCreated" content="01/01/2024">
+            <!--[if gte mso 9]>
+            <xml>
+                <x:ExcelWorkbook>
+                    <x:ExcelWorksheets>
+                        <x:ExcelWorksheet>
+                            <x:Name>Chi tiết khách hàng</x:Name>
+                            <x:WorksheetOptions>
+                                <x:DefaultRowHeight>285</x:DefaultRowHeight>
+                            </x:WorksheetOptions>
+                        </x:ExcelWorksheet>
+                    </x:ExcelWorksheets>
+                </x:ExcelWorkbook>
+            </xml>
+            <![endif]-->
+            <style>
+                table { border-collapse: collapse; width: 100%; }
+                th { background-color: #007bff; color: white; font-weight: bold; padding: 8px; border: 1px solid #ddd; }
+                td { padding: 6px; border: 1px solid #ddd; }
+                tr:nth-child(even) { background-color: #f2f2f2; }
+            </style>
+        </head>
+        <body>
+            <table>
+                <thead>
+                    <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+                </thead>
+                <tbody>
+                    ${rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `;
+    
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chi_tiet_khach_hang_${new Date().toISOString().split('T')[0]}.xls`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showNotification('Đã xuất Excel chi tiết khách hàng', 'success');
+}
+
+// Function để format currency
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+    }).format(amount);
+}
+
+// Function để lấy màu status
+function getStatusColor(status) {
+    const colors = {
+        'pending': 'warning',
+        'processing': 'info',
+        'shipped': 'primary',
+        'completed': 'success',
+        'cancelled': 'danger'
+    };
+    return colors[status] || 'secondary';
+}
+
+// Function để lấy text status
+function getStatusText(status) {
+    const texts = {
+        'pending': 'Chờ xử lý',
+        'processing': 'Đang xử lý',
+        'shipped': 'Đã giao hàng',
+        'completed': 'Hoàn thành',
+        'cancelled': 'Đã hủy'
+    };
+    return texts[status] || status;
+}
 
 </script>
 

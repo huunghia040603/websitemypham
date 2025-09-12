@@ -19,6 +19,7 @@ from django.core.mail import EmailMessage, get_connection
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.shortcuts import render
 
 User = get_user_model()
 
@@ -1196,11 +1197,121 @@ class LuckyWinnerViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset
 
 
+class CustomerLeadViewSet(viewsets.ModelViewSet):
+    queryset = CustomerLead.objects.all().order_by('-updated_at')
+    serializer_class = CustomerLeadSerializer
+    permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        """Prevent duplicate phone numbers by using CustomerLead.upsert.
+        If no phone is provided, skip (do not create).
+        """
+        name = (request.data.get('name') or '').strip()
+        phone = (request.data.get('phone') or '').strip()
+        email = (request.data.get('email') or '').strip()
+        address = (request.data.get('address') or '').strip()
+
+        lead = CustomerLead.upsert(name=name, phone=phone, email=email, address=address)
+        if not lead:
+            return Response({'detail': 'Thiếu SĐT'}, status=status.HTTP_400_BAD_REQUEST)
+        ser = self.get_serializer(lead)
+        # 201 if newly created else 200; khó phân biệt an toàn => trả 200 để tránh lỗi phía client
+        return Response(ser.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='sync')
+    def sync(self, request):
+        created_or_updated = 0
+        try:
+            for o in Order.objects.all().only('customer_name','phone_number','email','street','ward','district','province'):
+                addr = ', '.join(filter(None, [o.street, o.ward, o.district, o.province]))
+                if CustomerLead.upsert(o.customer_name, o.phone_number, o.email, addr):
+                    created_or_updated += 1
+            for p in LuckyParticipant.objects.all().only('name','zalo_phone','email','address'):
+                if CustomerLead.upsert(p.name, p.zalo_phone, p.email, p.address):
+                    created_or_updated += 1
+            for u in Customer.objects.all().only('name','phone_number','email','address'):
+                if CustomerLead.upsert(u.name, u.phone_number, u.email, u.address):
+                    created_or_updated += 1
+        except Exception as e:
+            return Response({'detail': f'Lỗi đồng bộ: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'detail': 'Đã đồng bộ', 'count': created_or_updated})
+
+    @action(detail=False, methods=['post'], url_path='dedupe')
+    def dedupe(self, request):
+        """Xóa các bản ghi trùng SĐT, giữ lại bản ghi cập nhật gần nhất."""
+        from collections import defaultdict
+        buckets = defaultdict(list)
+        for lead in CustomerLead.objects.exclude(phone__isnull=True).exclude(phone=''):
+            buckets[lead.phone.strip()].append(lead)
+        removed = 0
+        for phone, items in buckets.items():
+            if len(items) <= 1:
+                continue
+            # giữ lại item mới nhất theo updated_at
+            items.sort(key=lambda x: (x.updated_at or x.created_at or timezone.now()), reverse=True)
+            keep = items[0]
+            for d in items[1:]:
+                d.delete(); removed += 1
+        return Response({'detail': 'Đã xóa trùng', 'removed': removed})
+
+
 # --- CTV (Affiliate) Views ---
 class CTVApplicationViewSet(viewsets.ModelViewSet):
     queryset = CTVApplication.objects.all().order_by('-created_at')
     serializer_class = CTVApplicationSerializer
     permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['get'], url_path='check-code')
+    def check_code(self, request):
+        code = (request.query_params.get('code') or '').strip()
+        if not code:
+            return Response({'detail': 'Thiếu mã cần kiểm tra'}, status=400)
+        import re
+        if len(code) < 3 or len(code) > 20 or not re.match(r'^[A-Za-z0-9_-]+$', code):
+            return Response({'available': False, 'reason': 'Mã không hợp lệ (3-20 ký tự, chữ/số/_/-)'}, status=200)
+        exists = CTV.objects.filter(code__iexact=code).exists()
+        return Response({'available': not exists})
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        """Duyệt đơn CTV: tạo CTV + ví, gán level mặc định, set status=approved"""
+        app = self.get_object()
+        if app.status == 'approved':
+            return Response({'detail': 'Đơn đã được duyệt trước đó'}, status=400)
+
+        # Chọn mã: ưu tiên desired_code, fallback theo phone
+        desired = (getattr(app, 'desired_code', '') or '').strip()
+        code = desired or f"CTV{app.phone[-4:] if app.phone else ''}"
+        base = code or 'CTV'
+        candidate = base
+        suffix = 1
+        while CTV.objects.filter(code__iexact=candidate).exists():
+            candidate = f"{base}{suffix}"
+            suffix += 1
+
+        # Lấy level mặc định
+        level = CTVLevel.objects.order_by('id').first()
+
+        ctv = CTV.objects.create(
+            code=candidate,
+            full_name=app.full_name,
+            phone=app.phone,
+            email=app.email,
+            address=app.address,
+            bank_name=app.bank_name,
+            bank_number=app.bank_number,
+            bank_holder=app.bank_holder,
+            cccd_front_url=app.cccd_front_url,
+            cccd_back_url=app.cccd_back_url,
+            level=level,
+            is_active=True,
+        )
+        CTVWallet.objects.get_or_create(ctv=ctv)
+
+        app.status = 'approved'
+        app.save(update_fields=['status'])
+
+        return Response({'detail': 'Đã duyệt đơn', 'ctv': CTVSerializer(ctv).data})
 
 
 class CTVLevelViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1213,6 +1324,56 @@ class CTVViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = CTV.objects.all().select_related('level')
     serializer_class = CTVSerializer
     permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['get'], url_path='by-code')
+    def by_code(self, request):
+        code = (request.query_params.get('code') or '').strip()
+        if not code:
+            return Response({'detail': 'Thiếu mã CTV'}, status=400)
+        ctv = CTV.objects.filter(code__iexact=code).select_related('level').first()
+        if not ctv:
+            return Response({'detail': 'Không tìm thấy CTV với mã này'}, status=404)
+        return Response(CTVSerializer(ctv).data)
+
+    @action(detail=False, methods=['get'], url_path='by-phone')
+    def by_phone(self, request):
+        phone = (request.query_params.get('phone') or '').strip()
+        email = (request.query_params.get('email') or '').strip()
+        if not phone and not email:
+            return Response({'detail': 'Thiếu phone hoặc email'}, status=400)
+        q = CTV.objects.all()
+        if phone:
+            q = q.filter(phone=phone)
+        if email:
+            q = q.filter(email=email)
+        ctv = q.select_related('level').first()
+        if not ctv:
+            return Response({'detail': 'Không tìm thấy CTV'}, status=404)
+        return Response(CTVSerializer(ctv).data)
+
+    @action(detail=False, methods=['post'], url_path='login')
+    def login(self, request):
+        """Đăng nhập CTV bằng phone và password_text"""
+        phone = (request.data.get('phone') or '').strip()
+        password = (request.data.get('password') or '').strip()
+        
+        if not phone or not password:
+            return Response({'detail': 'Thiếu phone hoặc password'}, status=400)
+        
+        try:
+            ctv = CTV.objects.get(phone=phone, is_active=True)
+            if not ctv.password_text:
+                return Response({'detail': 'CTV chưa có mật khẩu. Liên hệ admin.'}, status=400)
+            
+            if ctv.password_text != password:
+                return Response({'detail': 'Mật khẩu không đúng'}, status=400)
+            
+            return Response({
+                'detail': 'Đăng nhập thành công',
+                'ctv': CTVSerializer(ctv).data
+            })
+        except CTV.DoesNotExist:
+            return Response({'detail': 'Không tìm thấy CTV với số điện thoại này'}, status=404)
 
     @action(detail=True, methods=['get'], url_path='wallet')
     def wallet(self, request, pk=None):
@@ -1239,4 +1400,96 @@ class CTVViewSet(viewsets.ReadOnlyModelViewSet):
         wallet.save()
         CTVWithdrawal.objects.create(ctv=ctv, amount=amt, status='pending')
         return Response({'detail': 'Đã tạo yêu cầu rút, chờ duyệt', 'wallet': CTVWalletSerializer(wallet).data})
+
+    @action(detail=True, methods=['get'], url_path='withdrawals')
+    def withdrawals(self, request, pk=None):
+        ctv = self.get_object()
+        qs = ctv.withdrawals.all().order_by('-requested_at')
+        return Response(CTVWithdrawalSerializer(qs, many=True).data)
+
+    @action(detail=True, methods=['get'], url_path='stats')
+    def stats(self, request, pk=None):
+        """Tổng quan: tổng đơn, doanh thu, hoa hồng đã ghi nhận theo ví."""
+        ctv = self.get_object()
+        code = ctv.code
+        orders = Order.objects.filter(collaborator_code=code, is_confirmed=True).exclude(status='cancelled')
+        total_orders = orders.count()
+        total_revenue = float(sum([o.total_amount or 0 for o in orders]))
+        # Commission = số dư ví + pending + tổng số đã rút
+        wallet, _ = CTVWallet.objects.get_or_create(ctv=ctv)
+        withdrawn_total = float(sum([w.amount for w in ctv.withdrawals.filter(status='approved')]))
+        data = {
+            'total_orders': total_orders,
+            'total_revenue': total_revenue,
+            'commission_balance': float(wallet.balance),
+            'commission_pending': float(wallet.pending),
+            'commission_withdrawn': withdrawn_total,
+        }
+        return Response(data)
+
+    @action(detail=True, methods=['get'], url_path='commissions')
+    def commissions(self, request, pk=None):
+        """Danh sách đơn có mã CTV và hoa hồng ước tính theo level hiện tại.
+        Hoa hồng = max(0, (Giá niêm yết - price_at_purchase) * percent). Nếu thiếu price_at_purchase thì dùng discounted_price.
+        """
+        ctv = self.get_object()
+        percent = float(ctv.level.commission_percent if ctv.level else 10.0) / 100.0
+        orders = Order.objects.filter(collaborator_code=ctv.code, is_confirmed=True).exclude(status='cancelled').prefetch_related('items__product')
+        items = []
+        total_revenue_sum = 0.0
+        for o in orders:
+            for it in o.items.all():
+                listed = float(getattr(it.product, 'original_price', 0) or 0)
+                sold = float(it.price_at_purchase or getattr(it.product, 'discounted_price', 0) or 0)
+                if listed < 1000:
+                    listed *= 1000
+                if sold < 1000:
+                    sold *= 1000
+                profit = max(0.0, (listed - sold) * float(it.quantity or 0))
+                commission = profit * percent
+                total_revenue_sum += sold * float(it.quantity or 0)
+                items.append({
+                    'order_code': getattr(o, 'order_code', f"#{o.id}"),
+                    'product_name': getattr(it.product, 'name', f"#{it.product_id}"),
+                    'quantity': it.quantity,
+                    'profit': round(profit, 2),
+                    'commission': round(commission, 2),
+                })
+        # cập nhật tổng doanh thu bán được cho CTV
+        try:
+            ctv.total_revenue = float(ctv.total_revenue or 0)  # ensure exists
+            ctv.total_revenue = float(total_revenue_sum)
+            ctv.save(update_fields=['total_revenue'])
+        except Exception:
+            pass
+        return Response(items)
+
+
+# --- CTV Pages (Templates) ---
+def ctv_login_page(request):
+    return render(request, 'ctv_login.html')
+
+
+def ctv_dashboard_page(request):
+    return render(request, 'ctv_dashboard.html')
+
+
+def ctv_wallet_page(request):
+    return render(request, 'ctv_wallet.html')
+
+
+def ctv_orders_page(request):
+    return render(request, 'ctv_orders.html')
+
+
+def ctv_profile_page(request):
+    return render(request, 'ctv_profile.html')
+
+
+def ctv_place_order_page(request):
+    return render(request, 'ctv_place_order.html')
+
+
+def ctv_resources_page(request):
+    return render(request, 'ctv_resources.html')
 

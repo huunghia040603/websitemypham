@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Trò chơi May mắn hàng tháng </title>
+<style>
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f6f7fb;color:#1f2937;line-height:1.5;font-size:12.5px}
+  .container{max-width:720px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 10px 32px rgba(2,6,23,.1);border:1px solid #eef2f7}
+  .header{background:#0f172a;color:#fff;padding:18px 18px 12px;text-align:left}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand img{width:28px;height:28px;border-radius:6px;background:#fff}
+  .brand-name{font-weight:800;letter-spacing:.2px}
+  .hero{background:linear-gradient(135deg,#1aa7ff,#7cc5ff);color:#0f172a;padding:18px 22px;border-bottom:1px solid #dbeafe}
+  .hero h1{margin:0 0 2px 0;font-size:15px}
+  .hero-sub{font-size:11px;color:#334155;opacity:.9}
+  .content{padding:20px}
+  .highlight{background:#eef2ff;border:1px solid #dbeafe;border-radius:10px;padding:12px;margin:10px 0}
+  .prize{background:#ecfeff;border:1px dashed #a5f3fc;border-radius:10px;padding:12px;margin:10px 0}
+  .btn{display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:9px 14px;border-radius:6px;font-weight:700;font-size:12px}
+  .list a{color:#0ea5e9;text-decoration:none}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .badge-pill{background:#fff1f2;border:1px solid #ffe4e6;color:#be123c;border-radius:999px;padding:6px 10px;font-size:11.5px}
+  .grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .grid .box{background:#fff;border:1px solid #e5e7eb;border-radius:8px;height:110px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-weight:700;color:#111827;overflow:hidden}
+  .grid .box img{max-width:100%;max-height:72px;object-fit:cover;display:block}
+  .grid .box .label{font-size:11px;color:#374151;margin-top:6px;padding:0 6px;text-align:center}
+  .mini-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .mini-tile{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:10px;text-align:center}
+  .mini-tile .emoji{font-size:22px;line-height:1}
+  .footer{padding:18px 22px;text-align:center;color:#6b7280;font-size:12px;border-top:1px solid #eef2f7}
+  @media (max-width:600px){
+    body{font-size:11.5px}
+    .content{padding:14px}
+    .header{padding:16px}
+    .header h1{font-size:14px}
+    .btn{padding:8px 12px;font-size:11px;border-radius:6px}
+    .grid{grid-template-columns:repeat(2,1fr)}
+    .grid .box{height:90px}
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <img src="https://res.cloudinary.com/deoknys7k/image/upload/v1756526188/logo_wkypfq.png" alt="BuddySkincare Logo" onerror="this.style.display='none'" />
+        <div class="brand-name">BuddySkincare</div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <h1>Thông tin trò chơi may mắn hàng tháng<br> {% if end_time_display %}<span class="note" style=" color: #c10000; font-size: 14px;">Kết thúc: {{ end_time_display }}</span>{% endif %}</h1>
+      <div class="hero-sub">Thể lệ rõ ràng • Công bố kết quả trên kênh chính thức • Dành cho mọi khách</div>
+    </div>
+
+    <div class="content">
+      <p>Chào bạn,</p>
+      <p>BuddySkincare mang tới sân chơi hàng tháng với phần quà thiết thực. Thể lệ đơn giản, công bố kết quả rõ ràng trên các kênh chính thức — bạn chỉ cần <strong>chọn số mình yêu thích</strong> để tham gia.</p>
+
+      <div class="highlight" style="border-left:4px solid #2563eb">
+        <p style="margin:0">Tham gia trò chơi định kỳ với thể lệ đơn giản. Kết quả được công bố công khai trên các kênh chính thức của BuddySkincare.</p>
+        <div class="badges">
+          <span class="badge-pill">Chọn số yêu thích</span>
+          <span class="badge-pill">Công bố minh bạch</span>
+          <span class="badge-pill">Quà tặng thiết thực</span>
+        </div>
+      </div>
+
+      <div class="prize" style="border-left:4px solid #0ea5e9">
+        <p style="margin:0 0 8px 0"><strong>Tổng giải thưởng:</strong> {{ total_value_display or '—' }}</p>
+        <p style="margin:0 0 10px 0">Top phần quà hấp dẫn:</p>
+        <div class="grid">
+          {% if prizes and prizes|length > 0 %}
+            {% for p in prizes[:5] %}
+              <div class="box">
+                {% if p.image %}
+                  <img src="{{ p.image }}" alt="{{ p.name or ('Quà #' ~ loop.index) }}" />
+                {% else %}
+                  <div style="font-size:28px;line-height:1">🎁</div>
+                {% endif %}
+                <div class="label">{{ p.name or ('Quà #' ~ loop.index) }}</div>
+              </div>
+            {% endfor %}
+          {% else %}
+              <div class="box">Quà #1</div>
+              <div class="box">Quà #2</div>
+              <div class="box">Quà #3</div>
+              <div class="box">Quà #4</div>
+              <div class="box">Quà #5</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <p><strong>Cách tham gia (3 bước):</strong></p>
+      <ol style="margin-top:6px">
+        <li>Truy cập website chính thức của BuddySkincare</li>
+        <li>Tìm và điền thông tin vào form tham gia trò chơi.</li>
+        <li>Theo dõi thông báo trên Zalo và Facebook để biết kết quả!</li>
+      </ol>
+
+      <p style="text-align:center;margin:22px 0">
+        <a class="btn" href="https://www.buddyskincare.vn/events/lucky-number?utm_source=gmail&utm_medium=email&utm_campaign=luckygame" target="_blank" rel="noopener">Xem chi tiết</a>
+      </p>
+      <div class="mini-grid">
+        <div class="mini-tile">Chọn số 00–99</div>
+        <div class="mini-tile">Công bố công khai</div>
+        <div class="mini-tile">Nhận quà nhanh</div>
+      </div>
+
+      <div class="highlight" style="border-left:4px solid #10b981">
+        <p style="margin:0 0 8px 0;font-weight:700">Liên hệ và theo dõi:</p>
+        <div class="list">
+          <div>• Zalo: <strong>0987 789 274</strong></div>
+          <div>• Facebook: <a href="https://www.facebook.com/share/1AaJoDe9id/" target="_blank" rel="noopener">facebook.com/share/1AaJoDe9id/</a></div>
+          <div style="margin-top:8px;font-weight:700">Tham gia nhóm Zalo:</div>
+          <div>• Nhóm 01: <a href="https://zalo.me/g/hhvqsb252" target="_blank" rel="noopener">https://zalo.me/g/hhvqsb252</a></div>
+          <div>• Nhóm 02: <a href="https://zalo.me/g/bymelm149" target="_blank" rel="noopener">https://zalo.me/g/bymelm149</a></div>
+          <div>• Nhóm 03: <a href="https://zalo.me/g/imyspi781" target="_blank" rel="noopener">https://zalo.me/g/imyspi781</a></div>
+        </div>
+      </div>
+
+      <p>Chúc bạn thật nhiều may mắn! 🍀</p>
+      <p style="font-size:13px;color:#6b7280">Thân mến,<br/>Đội ngũ BuddySkincare</p>
+    </div>
+
+    <div class="footer">
+      © BuddySkincare • Zalo 0987 789 274<br/>
+      Bạn nhận email này vì đã từng giao dịch hoặc đăng ký nhận thông tin tại BuddySkincare. 
+      Nếu không muốn nhận thêm, vui lòng <a href="https://www.buddyskincare.vn?utm_source=gmail&utm_medium=email&utm_campaign=luckygame" style="color:#64748b;text-decoration:underline">hủy đăng ký</a>.
+    </div>
+  </div>
+</body>
+</html>

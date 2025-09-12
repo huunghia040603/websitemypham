@@ -1,0 +1,103 @@
+{% extends "ctv_base.html" %}
+
+{% block title %}Đăng nhập CTV{% endblock %}
+
+{% block ctv_body %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="ctv-card p-4">
+      <h1 class="h5 mb-3">Đăng nhập CTV</h1>
+      <div class="mb-3 small text-muted">Đăng nhập bằng SĐT và mật khẩu tài khoản.</div>
+      <form id="ctvLoginForm">
+        <div class="mb-3">
+          <label class="form-label">Số điện thoại</label>
+          <input id="ctvPhone" name="phone" class="form-control" placeholder="VD: 0987xxxxxx" inputmode="tel" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Mật khẩu</label>
+          <input id="ctvPass" name="password" type="password" class="form-control" placeholder="••••••" required>
+        </div>
+        <div class="d-grid">
+          <button id="btnLogin" class="btn btn-primary" type="submit">Đăng nhập</button>
+        </div>
+        <div class="small mt-2" id="ctvLoginHelp"></div>
+      </form>
+      <hr>
+      <div class="small text-muted">Hoặc tra cứu nhanh theo mã CTV nếu đã biết:</div>
+      <div class="input-group mt-2">
+        <input id="ctvCode" class="form-control" placeholder="Nhập mã CTV (VD: NGUYENVANA)">
+        <button id="btnGo" class="btn btn-outline-secondary" type="button">Tiếp tục</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('btnGo')?.addEventListener('click', async () => {
+  const code = (document.getElementById('ctvCode')?.value || '').trim();
+  const help = document.getElementById('ctvLoginHelp');
+  if (!code) { help.textContent = 'Vui lòng nhập mã CTV'; help.className='small text-danger'; return; }
+  try {
+    const resp = await fetch(`/ctvs/by-code/?code=${encodeURIComponent(code)}`);
+    if (!resp.ok) { help.textContent = 'Không tìm thấy CTV'; help.className='small text-danger'; return; }
+    const ctv = await resp.json();
+    sessionStorage.setItem('ctv', JSON.stringify(ctv));
+    location.href = '/ctv/dashboard/';
+  } catch(e) { help.textContent = 'Lỗi, thử lại sau'; help.className='small text-danger'; }
+});
+
+document.getElementById('ctvLoginForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const phone = (document.getElementById('ctvPhone')?.value || '').trim();
+  const password = (document.getElementById('ctvPass')?.value || '').trim();
+  const help = document.getElementById('ctvLoginHelp');
+  if (!phone || !password){ help.textContent='Nhập SĐT và mật khẩu'; help.className='small text-danger'; return; }
+  
+  // Disable button và hiển thị loading
+  const btn = document.getElementById('btnLogin');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Đang đăng nhập...';
+  
+  try {
+    const resp = await fetch('/ctv/auth/login', {
+      method: 'POST', 
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ phone: phone, password: password }),
+      credentials: 'same-origin'  // Quan trọng: gửi cookie session
+    });
+    const data = await resp.json().catch(()=>({}));
+    console.log('Login response status:', resp.status);
+    console.log('Login response data:', data);
+    
+    if (!resp.ok){ 
+      help.textContent = (data && (data.detail||data.message)) || 'Đăng nhập thất bại'; 
+      help.className='small text-danger'; 
+      return; 
+    }
+    // Đăng nhập thành công
+    help.textContent = 'Đăng nhập thành công!';
+    help.className = 'small text-success';
+    
+    // Lưu thông tin CTV vào localStorage
+    if (data.ctv) {
+      localStorage.setItem('ctv', JSON.stringify(data.ctv));
+      console.log('CTV data saved to localStorage:', data.ctv);
+    }
+    
+    // Redirect ngay lập tức
+    console.log('Redirecting to dashboard...');
+    window.location.replace('/ctv/dashboard/');
+  } catch(e){ 
+    help.textContent = 'Lỗi kết nối, thử lại sau'; 
+    help.className='small text-danger'; 
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+});
+</script>
+{% endblock %}
+

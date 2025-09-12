@@ -1,0 +1,562 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Dữ liệu tiệp khách hàng{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-users me-2"></i>Dữ liệu tiệp khách hàng        <div class="mt-2"><span class="badge bg-primary fs-6" id="customerCount">0</span> Khách hàng</div>
+
+            </h1>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-warning" onclick="copyAllPhones()">
+                    <i class="fas fa-phone me-2"></i>Copy SĐT hợp lệ
+                </button>
+                <button class="btn btn-outline-secondary" onclick="copyAllEmails()">
+                    <i class="fas fa-envelope me-2"></i>Copy Email hợp lệ
+                </button>
+                <button class="btn btn-outline-danger" onclick="deleteSelectedLeads()">
+                    <i class="fas fa-trash me-2"></i>Xóa đã chọn
+                </button>
+                <button class="btn btn-outline-success" onclick="exportCustomerData()">
+                    <i class="fas fa-download me-2"></i>Xuất Excel
+                </button>
+                
+                <label class="btn btn-primary mb-0">
+                    <i class="fas fa-upload me-2"></i>Tải Excel lên
+                    <input id="excelUpload" type="file" accept=".xlsx,.xls" hidden>
+                </label>
+                <button class="btn btn-outline-danger" onclick="dedupeServer()">
+                    <i class="fas fa-broom me-2"></i>Xóa trùng SĐT
+                </button>
+                <button class="btn btn-outline-primary" onclick="refreshCustomerData()">
+                    <i class="fas fa-sync me-2"></i>Làm Mới
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tìm kiếm & Lọc theo ngày -->
+<div class="row g-2 mb-4 align-items-end">
+    <div class="col-md-4">
+        <label class="form-label small text-muted">Tìm kiếm</label>
+        <div class="input-group">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" class="form-control" id="customerSearch" placeholder="Tìm theo tên, SĐT, email, địa chỉ...">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small text-muted">Từ ngày</label>
+        <input type="date" class="form-control" id="dateFrom">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small text-muted">Đến ngày</label>
+        <input type="date" class="form-control" id="dateTo">
+    </div>
+    <div class="col-md-2 text-end">
+        <button class="btn btn-outline-secondary w-100" id="btnClearDates"><i class="fas fa-eraser me-1"></i>Xóa ngày</button>
+    </div>
+    <div class="col-md-2 d-flex align-items-end">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="emailOnly">
+            <label class="form-check-label" for="emailOnly">Chỉ khách có email</label>
+        </div>
+    </div>
+    
+</div>
+
+<!-- Bảng dữ liệu khách hàng -->
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive" style="max-height: 600px; overflow-y: auto; border-radius-bottom-left: 8px; border-radius-bottom-right: 8px!important;">
+            <table class="table table-hover mb-0">
+                <thead class="" style="background: linear-gradient(180deg, rgba(255,102,0,0.95) 0%, rgba(15,23,42,0.95) 100%) !important; border-radius-top-left: 8px; border-radius-top-right: 8px;">
+                    <tr>
+                        <th style="width: 4%"><input type="checkbox" id="cbSelectAll"></th>
+                        <th style="width: 5%">STT</th>
+                        <th style="width: 10%">Tên</th>
+                        <th style="width: 20%">SĐT</th>
+                        <th style="width: 25%">Địa chỉ</th>
+                        <th style="width: 25%">Email</th>
+                        
+                        <th style="width: 10%">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="customerDataTable">
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="copyToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="fas fa-check-circle text-success me-2"></i>
+            <strong class="me-auto">Thành công</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="copyToastMessage">
+            Đã copy thành công!
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+const API_ROOT = 'https://buddyskincare.pythonanywhere.com';
+const API_LEADS = API_ROOT + '/customer-leads/';
+const API_SYNC = API_ROOT + '/customer-leads/sync/';
+
+let allCustomerData = [];
+let filteredCustomerData = [];
+
+// Tải dữ liệu từ 3 nguồn và gộp 4 trường: name, phone, email, address
+async function loadCustomerData() {
+    try {
+        showLoading();
+        // Gọi đồng bộ để backfill nếu cần
+        await fetch(API_SYNC, { method: 'POST' }).catch(() => {});
+        const res = await fetch(API_LEADS);
+        let leads = res.ok ? await res.json() : [];
+        // Bỏ các bản ghi không có SĐT (ẩn dữ liệu cũ thiếu phone)
+        leads = (leads || []).filter(x => (x.phone || '').toString().trim() !== '');
+        // Hiển thị id lớn trước (sắp xếp theo khóa chính giảm dần)
+        leads = leads.sort((a,b) => (b.id||0) - (a.id||0));
+        allCustomerData = leads.map((x, idx) => ({
+            id: idx + 1,
+            _pk: x.id,
+            name: x.name || '',
+            phone: x.phone || '',
+            email: x.email || '',
+            address: x.address || '',
+            updated_at: x.updated_at || null
+        }));
+        filteredCustomerData = [...allCustomerData];
+        renderCustomerData();
+        updateCustomerCount();
+    } catch (err) {
+        console.error('Error loading customer data:', err);
+        showNotification('Lỗi tải dữ liệu khách hàng', 'error');
+    }
+}
+
+// Gộp dữ liệu: ưu tiên điền các trường còn trống, key theo phone nếu có; nếu không có phone, dùng email;
+function processCustomerData(orders, luckyParticipants, customers) {
+    const byKey = new Map();
+
+    const upsert = (name, phone, email, address) => {
+        phone = (phone || '').trim();
+        email = (email || '').trim();
+        const key = phone || email;
+        if (!key) return; // bỏ record không có cả phone và email
+        if (!byKey.has(key)) byKey.set(key, { name: '', phone: '', email: '', address: '' });
+        const c = byKey.get(key);
+        if (!c.name && name) c.name = name;
+        if (!c.phone && phone) c.phone = phone;
+        if (!c.email && email) c.email = email;
+        if (!c.address && address) c.address = address;
+    };
+
+    (orders || []).forEach(o => {
+        const address = [o.street || '', o.ward || '', o.district || '', o.province || ''].filter(Boolean).join(', ');
+        upsert(o.customer_name || '', o.phone_number || o.customer_phone || '', o.email || '', address);
+    });
+
+    (luckyParticipants || []).forEach(p => {
+        upsert(p.name || '', p.zalo_phone || '', p.email || '', p.address || '');
+    });
+
+    (customers || []).forEach(u => {
+        upsert(u.name || '', u.phone_number || '', u.email || '', u.address || '');
+    });
+
+    return Array.from(byKey.values()).map((c, idx) => ({ id: idx + 1, ...c }));
+}
+
+function renderCustomerData() {
+    const tbody = document.getElementById('customerDataTable');
+    if (!tbody) return;
+    if (!filteredCustomerData.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Không có dữ liệu khách hàng</td></tr>';
+        return;
+    }
+    // Bỏ trùng theo phone ngay trên UI (giữ record id lớn nhất)
+    const byPhone = new Map();
+    for (const c of filteredCustomerData){
+        const phone = (c.phone||'').trim();
+        if (!phone) continue;
+        if (!byPhone.has(phone) || (c._pk||0) > (byPhone.get(phone)._pk||0)){
+            byPhone.set(phone, c);
+        }
+    }
+    const uiList = Array.from(byPhone.values());
+    tbody.innerHTML = uiList.map(c => `
+        <tr>
+            <td><input type="checkbox" class="cb-lead" data-id="${c._pk || ''}"></td>
+            <td><span class="tbl-chip tbl-id">${c.id}</span></td>
+            <td class="fw-semibold text-truncate" style="max-width:220px">${c.name || ''}</td>
+            <td>
+                ${c.phone ? `
+                    <span class=\"tbl-chip tbl-phone\"><i class=\"fas fa-phone me-1\"></i>${c.phone}</span>
+                    <button class=\"btn btn-sm btn-outline-primary ms-1\" title=\"Copy SĐT\" onclick=\"copyToClipboard('${c.phone}')\">
+                        <i class=\"fas fa-copy\"></i>
+                    </button>
+                ` : '<span class="text-muted">-</span>'}
+            </td>
+            <td class="text-muted small text-truncate" style="max-width:280px">${c.address || ''}</td>
+            <td>
+                ${c.email ? `<span class="tbl-chip tbl-email"><i class=\"fas fa-envelope me-1\"></i>${c.email}</span>` : '<span class="text-muted">-</span>'}
+            </td>
+            
+            <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteLead(${c._pk || 'null'})" ${c._pk ? '' : 'disabled'} title="Xóa">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function filterCustomerData() {
+    const searchInput = document.getElementById('customerSearch');
+    const q = (searchInput ? searchInput.value : '').toLowerCase();
+    const from = document.getElementById('dateFrom')?.value;
+    const to = document.getElementById('dateTo')?.value;
+    const emailOnly = !!document.getElementById('emailOnly')?.checked;
+    const fromDate = from ? new Date(from + 'T00:00:00') : null;
+    const toDate = to ? new Date(to + 'T23:59:59') : null;
+    filteredCustomerData = allCustomerData.filter(c => {
+        const textOk = (!q) ||
+            (c.name && c.name.toLowerCase().includes(q)) ||
+            (c.phone && c.phone.toLowerCase().includes(q)) ||
+            (c.email && c.email.toLowerCase().includes(q)) ||
+            (c.address && c.address.toLowerCase().includes(q));
+        const t = c.updated_at ? new Date(c.updated_at) : null;
+        const dateOk = (!fromDate && !toDate) ||
+            (!t) ||
+            ((fromDate ? t >= fromDate : true) && (toDate ? t <= toDate : true));
+        const emailOk = !emailOnly || (c.email && isValidEmail(c.email));
+        return textOk && dateOk && emailOk;
+    });
+    renderCustomerData();
+    updateCustomerCount();
+}
+
+function updateCustomerCount() {
+    const el = document.getElementById('customerCount');
+    if (el) el.textContent = filteredCustomerData.length;
+}
+
+function exportCustomerData() {
+    if (!filteredCustomerData.length) {
+        showNotification('Không có dữ liệu để xuất Excel', 'warning');
+        return;
+    }
+    const headers = ['STT', 'Tên', 'SĐT', 'Email', 'Địa chỉ'];
+    const data = filteredCustomerData.map(c => [
+        c.id,
+        c.name || '',
+        `="${c.phone || ''}"`, // giữ số 0 đầu
+        c.email || '',
+        c.address || ''
+    ]);
+    const htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <style>table{border-collapse:collapse;width:100%}th{background:#007bff;color:#fff;font-weight:bold;padding:8px;border:1px solid #ddd}td{padding:6px;border:1px solid #ddd}tr:nth-child(even){background:#f2f2f2}</style>
+        </head>
+        <body>
+            <table>
+                <thead><tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+                <tbody>${data.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+        </body>
+        </html>`;
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `du_lieu_khach_hang_${new Date().toISOString().split('T')[0]}.xls`; a.click();
+    URL.revokeObjectURL(url);
+    showNotification('Đã xuất Excel dữ liệu khách hàng', 'success');
+}
+
+function showNotification(message, type = 'info') {
+    const toast = document.getElementById('copyToast');
+    const toastMessage = document.getElementById('copyToastMessage');
+    if (!toast || !toastMessage) return;
+    toastMessage.textContent = message;
+    const toastHeader = toast.querySelector('.toast-header');
+    const icon = toastHeader ? toastHeader.querySelector('i') : null;
+    if (icon){
+        icon.className = type === 'success' ? 'fas fa-check-circle text-success me-2' : type === 'error' ? 'fas fa-exclamation-circle text-danger me-2' : type === 'warning' ? 'fas fa-exclamation-triangle text-warning me-2' : 'fas fa-info-circle text-info me-2';
+    }
+    const bsToast = new bootstrap.Toast(toast);
+    bsToast.show();
+}
+
+function showLoading() {
+    const tbody = document.getElementById('customerDataTable');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...</td></tr>';
+}
+
+function refreshCustomerData() { loadCustomerData(); }
+
+// DOM ready
+window.addEventListener('DOMContentLoaded', () => {
+    loadCustomerData();
+    const searchInput = document.getElementById('customerSearch');
+    if (searchInput) searchInput.addEventListener('input', filterCustomerData);
+    document.getElementById('dateFrom')?.addEventListener('change', filterCustomerData);
+    document.getElementById('dateTo')?.addEventListener('change', filterCustomerData);
+    document.getElementById('btnClearDates')?.addEventListener('click', () => {
+        const f = document.getElementById('dateFrom');
+        const t = document.getElementById('dateTo');
+        if (f) f.value = '';
+        if (t) t.value = '';
+        filterCustomerData();
+    });
+    document.getElementById('cbSelectAll')?.addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        document.querySelectorAll('.cb-lead').forEach(cb => cb.checked = checked);
+    });
+    // Excel upload handler
+    document.getElementById('excelUpload')?.addEventListener('change', handleExcelUpload);
+    document.getElementById('emailOnly')?.addEventListener('change', filterCustomerData);
+});
+
+async function deleteLead(id){
+    if (!id) return;
+    if (!confirm('Xóa khách hàng này?')) return;
+    try{
+        const res = await fetch(API_LEADS + id + '/', { method: 'DELETE' });
+        if (res.status === 204){
+            allCustomerData = allCustomerData.filter(x => x._pk !== id);
+            filterCustomerData();
+            showNotification('Đã xóa', 'success');
+        }else{
+            showNotification('Xóa thất bại', 'error');
+        }
+    }catch(e){ showNotification('Lỗi xóa', 'error'); }
+}
+
+async function deleteSelectedLeads(){
+    const ids = Array.from(document.querySelectorAll('.cb-lead:checked'))
+        .map(cb => parseInt(cb.getAttribute('data-id')))
+        .filter(Boolean);
+    if (!ids.length){ showNotification('Chưa chọn bản ghi nào', 'warning'); return; }
+    if (!confirm(`Xóa ${ids.length} khách hàng đã chọn?`)) return;
+    try{
+        // Xóa lần lượt (có thể tối ưu server-side bulk sau)
+        let ok = 0;
+        for (const id of ids){
+            const res = await fetch(API_LEADS + id + '/', { method: 'DELETE' });
+            if (res.status === 204){ ok++; }
+        }
+        if (ok){
+            allCustomerData = allCustomerData.filter(x => !ids.includes(x._pk));
+            filterCustomerData();
+            showNotification(`Đã xóa ${ok}/${ids.length} bản ghi`, 'success');
+            const selAll = document.getElementById('cbSelectAll'); if (selAll) selAll.checked = false;
+        }else{
+            showNotification('Xóa thất bại', 'error');
+        }
+    }catch(e){ showNotification('Lỗi xóa', 'error'); }
+}
+
+function isValidPhone(phone){
+    if (!phone) return false;
+    const digits = String(phone).replace(/\D/g,'');
+    return digits.length === 10 || digits.length === 11;
+}
+
+function isValidEmail(email){
+    if (!email) return false;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+}
+
+function copyAllPhones(){
+    const list = filteredCustomerData
+        .map(c => c.phone)
+        .filter(p => isValidPhone(p));
+    if (!list.length){ showNotification('Không có SĐT hợp lệ (10-11 số)', 'warning'); return; }
+    copyToClipboard(list.join('\n'));
+    showNotification(`Đã copy ${list.length} SĐT hợp lệ`, 'success');
+}
+
+function copyAllEmails(){
+    const list = filteredCustomerData
+        .map(c => c.email)
+        .filter(e => isValidEmail(e));
+    if (!list.length){ showNotification('Không có email hợp lệ', 'warning'); return; }
+    copyToClipboard(list.join('\n'));
+    showNotification(`Đã copy ${list.length} email hợp lệ`, 'success');
+}
+
+function copyToClipboard(text){
+    if (!text){ showNotification('Không có dữ liệu để copy', 'warning'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(() => {
+            showNotification('Đã copy vào clipboard', 'success');
+        }).catch(() => {
+            legacyCopy(text);
+        });
+        return;
+    }
+    legacyCopy(text);
+}
+
+function legacyCopy(text){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showNotification('Đã copy vào clipboard', 'success'); }
+    catch(e){ showNotification('Lỗi copy', 'error'); }
+    finally { document.body.removeChild(ta); }
+}
+
+// --- Excel Upload ---
+function normalizeHeader(h){
+    if (!h) return '';
+    return String(h).trim().toLowerCase()
+        .replace(/\s+/g,' ')
+        .replaceAll('điện thoại','sđt')
+        .replaceAll('so dien thoai','sđt')
+        .replaceAll('phone','sđt')
+        .replaceAll('sdt','sđt');
+}
+
+function parseCreatedAt(v){
+    // Hỗ trợ định dạng dd/mm/yyyy (VD: 29/06/2025)
+    try{
+        if (!v) return null;
+        if (typeof v === 'number'){ // Excel date serial
+            const d = XLSX.SSF.parse_date_code(v);
+            if (!d) return null;
+            const js = new Date(Date.UTC(d.y, d.m-1, d.d));
+            return js.toISOString();
+        }
+        const s = String(v).trim();
+        const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (m){
+            const dd = parseInt(m[1],10), mm = parseInt(m[2],10)-1, yy = parseInt(m[3],10);
+            return new Date(yy, mm, dd).toISOString();
+        }
+        const dt = new Date(s);
+        return isNaN(dt.getTime()) ? null : dt.toISOString();
+    }catch{ return null; }
+}
+
+async function handleExcelUpload(evt){
+    try{
+        const file = evt.target.files && evt.target.files[0];
+        if (!file){ return; }
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        if (!rows || rows.length < 2){ showNotification('File rỗng hoặc sai định dạng', 'error'); return; }
+
+        const header = rows[0].map(normalizeHeader);
+        // Tìm index các cột
+        const idxName = header.findIndex(h => ['tên','ten','name'].includes(h));
+        const idxPhone = header.findIndex(h => ['sđt','sdt','phone'].includes(h));
+        const idxEmail = header.findIndex(h => ['email'].includes(h));
+        const idxAddress = header.findIndex(h => ['địa chỉ','dia chi','address'].includes(h));
+        const idxCreated = header.findIndex(h => ['created_at','ngày tạo','ngay tao'].includes(h));
+
+        if (idxPhone === -1){ showNotification('Không tìm thấy cột SĐT', 'error'); return; }
+
+        // Map dữ liệu
+        const payloads = [];
+        for (let i=1;i<rows.length;i++){
+            const r = rows[i] || [];
+            const phone = (r[idxPhone] || '').toString().trim();
+            if (!phone) continue; // bỏ bản ghi không có SĐT
+            payloads.push({
+                name: (idxName>-1 ? String(r[idxName]).trim() : ''),
+                phone: phone,
+                email: (idxEmail>-1 ? String(r[idxEmail]).trim() : ''),
+                address: (idxAddress>-1 ? String(r[idxAddress]).trim() : ''),
+                _created_at_raw: (idxCreated>-1 ? r[idxCreated] : null),
+                _created_at_iso: (idxCreated>-1 ? parseCreatedAt(r[idxCreated]) : null),
+            });
+        }
+        if (!payloads.length){ showNotification('Không có dữ liệu hợp lệ (thiếu SĐT)', 'warning'); return; }
+
+        // Gửi lần lượt để tránh quá tải API
+        let ok = 0, fail = 0;
+        for (const pl of payloads){
+            try{
+                // API chỉ cần 4 trường, created_at sẽ do server tự set
+                const res = await fetch(API_LEADS, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: pl.name, phone: pl.phone, email: pl.email, address: pl.address })
+                });
+                if (res.ok) ok++; else fail++;
+            }catch(e){ fail++; }
+        }
+        showNotification(`Import xong: ${ok} thành công, ${fail} lỗi`, fail ? 'warning' : 'success');
+        refreshCustomerData();
+        evt.target.value = '';
+    }catch(e){
+        console.error(e);
+        showNotification('Lỗi đọc file Excel', 'error');
+    }
+}
+
+// Gọi API dọn trùng theo SĐT ở server
+async function dedupeServer(){
+    try{
+        const res = await fetch(API_LEADS + 'dedupe/', { method: 'POST' });
+        const data = await res.json().catch(()=>({}));
+        if (res.ok){
+            showNotification(`Đã xóa trùng: ${data.removed || 0} bản ghi`, 'success');
+            refreshCustomerData();
+        }else{
+            showNotification('Xóa trùng thất bại', 'error');
+        }
+    }catch(e){ showNotification('Lỗi xóa trùng', 'error'); }
+}
+</script>
+<style>
+/* Bảng hiện đại, tối ưu hiển thị giống dashboard vận hành */
+.table-hover tbody tr:hover{background:#fff7ed}
+.table thead th{font-weight:700; letter-spacing:.3px; text-transform:uppercase; font-size:.75rem}
+.table td, .table th{vertical-align:middle}
+.tbl-chip{display:inline-flex; align-items:center; gap:6px; padding:.25rem .5rem; border-radius:999px; font-size:.8rem; font-weight:600}
+.tbl-phone{background:#fff7ed; color:#9a3412; border:1px solid #fdba74}
+.tbl-email{background:#eff6ff; color:#1e40af; border:1px solid #93c5fd}
+.tbl-id{background:#f1f5f9; color:#0f172a; border:1px solid #e2e8f0}
+.table td.text-truncate, .table th.text-truncate{max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.table-responsive{scrollbar-width:thin}
+.table-responsive::-webkit-scrollbar{height:8px}
+.table-responsive::-webkit-scrollbar-thumb{background:#cbd5e1; border-radius:999px}
+.table-responsive::-webkit-scrollbar-track{background:#f1f5f9}
+/* Two-tone gradient just for this page's dark sticky header */
+thead.table-dark.sticky-top{
+  background: linear-gradient(180deg, rgba(255,102,0,0.95) 0%, rgba(15,23,42,0.95) 100%) !important;
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 8px 18px rgba(15,23,42,.35);
+}
+thead.table-dark.sticky-top th{
+  color:#f8fafc; font-weight:800; letter-spacing:.04em; text-transform:uppercase; font-size:.75rem;
+}
+thead.table-dark.sticky-top th:first-child{border-top-left-radius:8px}
+thead.table-dark.sticky-top th:last-child{border-top-right-radius:8px}
+</style>
+{% endblock %}

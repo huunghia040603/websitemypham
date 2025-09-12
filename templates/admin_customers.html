@@ -13,6 +13,9 @@
                 <button class="btn btn-outline-primary" onclick="exportCustomers()">
                     <i class="fas fa-download me-2"></i>Xuất Excel
                 </button>
+                <button class="btn btn-outline-secondary" onclick="copyAllEmails()">
+                    <i class="fas fa-envelope me-2"></i>Copy Email
+                </button>
                 <button class="btn btn-primary" onclick="refreshCustomers()">
                     <i class="fas fa-sync me-2"></i>Làm Mới
                 </button>
@@ -485,6 +488,30 @@ function refreshCustomers() {
 
 function exportCustomers() {
     AdminAPI.showNotification('Tính năng xuất Excel đang được phát triển', 'info');
+}
+
+function isValidEmail(email){
+    if (!email) return false;
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+}
+
+function copyAllEmails(){
+    try{
+        const list = filteredCustomers
+            .map(c => c.email || '')
+            .filter(e => isValidEmail(e));
+        if (!list.length){ AdminAPI.showNotification('Không có email hợp lệ để copy', 'warning'); return; }
+        const text = list.join('\n');
+        navigator.clipboard.writeText(text).then(() => {
+            AdminAPI.showNotification(`Đã copy ${list.length} email`, 'success');
+        }).catch(() => {
+            const ta = document.createElement('textarea');
+            ta.value = text; document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+            AdminAPI.showNotification(`Đã copy ${list.length} email`, 'success');
+        });
+    }catch(e){ AdminAPI.showNotification('Lỗi copy email', 'error'); }
 }
 </script>
 {% endblock %}

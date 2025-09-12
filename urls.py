@@ -30,6 +30,7 @@ r.register(r'lucky-winners', views.LuckyWinnerViewSet, basename='lucky-winner')
 r.register(r'ctv-applications', views.CTVApplicationViewSet, basename='ctv-application')
 r.register(r'ctv-levels', views.CTVLevelViewSet, basename='ctv-level')
 r.register(r'ctvs', views.CTVViewSet, basename='ctv')
+r.register(r'customer-leads', views.CustomerLeadViewSet, basename='customer-lead')
 
 
 
@@ -48,4 +49,13 @@ urlpatterns = [
 
     # Other URLs
     path('orders/by-code/<str:order_code>/', OrderByCodeView.as_view(), name='order-by-code'),
+
+    # CTV Pages
+    path('ctv/login/', views.ctv_login_page, name='ctv-login-page'),
+    path('ctv/dashboard/', views.ctv_dashboard_page, name='ctv-dashboard-page'),
+    path('ctv/wallet/', views.ctv_wallet_page, name='ctv-wallet-page'),
+    path('ctv/orders/', views.ctv_orders_page, name='ctv-orders-page'),
+    path('ctv/profile/', views.ctv_profile_page, name='ctv-profile-page'),
+    path('ctv/place-order/', views.ctv_place_order_page, name='ctv-place-order-page'),
+    path('ctv/resources/', views.ctv_resources_page, name='ctv-resources-page'),
 ]
