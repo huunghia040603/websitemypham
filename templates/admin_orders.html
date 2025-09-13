@@ -119,9 +119,9 @@
                 <button class="btn btn-outline-success" onclick="showCustomerDetails()">
                     <i class="fas fa-users me-2"></i>Chi tiết KH
                 </button>
-                <button class="btn btn-outline-info" onclick="copyAllCustomerInfo()">
+                <!-- <button class="btn btn-outline-info" onclick="copyAllCustomerInfo()">
                     <i class="fas fa-copy me-2"></i>Copy thông tin KH
-                </button>
+                </button> -->
                 <button class="btn btn-outline-warning" onclick="copyAllPhones()">
                     <i class="fas fa-phone me-2"></i>Copy SĐT
                 </button>
@@ -129,8 +129,14 @@
                     <i class="fas fa-envelope me-2"></i>Copy Email
                 </button>
                 <button class="btn btn-outline-primary" onclick="exportOrders()">
-                    <i class="fas fa-download me-2"></i>Xuất Excel
+                    <i class="fas fa-download me-2"></i>Xuất Excel Tất Cả
                 </button>
+                <button class="btn btn-outline-success" onclick="exportSelectedOrders()" id="exportSelectedBtn" disabled>
+                    <i class="fas fa-download me-2"></i>Excel Đã Chọn (<span id="selectedCount">0</span>)
+                </button>
+                <!-- <button class="btn btn-outline-info" onclick="selectAllOrders()" id="selectAllBtn">
+                    <i class="fas fa-check-square me-2"></i>Chọn Tất Cả
+                </button> -->
                 <button class="btn btn-primary" onclick="refreshOrders()">
                     <i class="fas fa-sync me-2"></i>Làm Mới
                 </button>
@@ -803,7 +809,7 @@ function renderOrders() {
     }
     
     let html = '<div class="table-responsive"><table class="table table-admin">';
-    html += '<thead><tr><th>ID</th><th>Khách Hàng</th><th>Sản Phẩm</th><th>Tổng Tiền</th><th>Thanh Toán</th><th>Trạng Thái</th><th>Xác Nhận</th><th>Ngày Tạo</th><th>Thao Tác</th></tr></thead><tbody>';
+    html += '<thead><tr><th><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th><th>ID</th><th>Khách Hàng</th><th>Sản Phẩm</th><th>Tổng Tiền</th><th>Thanh Toán</th><th>Trạng Thái</th><th>Xác Nhận</th><th>Ngày Tạo</th><th>Thao Tác</th></tr></thead><tbody>';
     
     filteredOrders.forEach(order => {
         const statusClass = {
@@ -841,6 +847,7 @@ function renderOrders() {
         
         html += `
             <tr class="${rowClass}">
+                <td><input type="checkbox" class="order-checkbox" value="${order.id}" onchange="updateSelectedCount()"></td>
                 <td><strong>#${order.id}</strong></td>
                 <td>
                     <div>${order.customer_name || 'N/A'}</div>
@@ -885,6 +892,9 @@ function renderOrders() {
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
+    
+    // Update selected count after rendering
+    updateSelectedCount();
 }
 
 function setupEventListeners() {
@@ -2205,6 +2215,175 @@ function getStatusText(status) {
         'cancelled': 'Đã hủy'
     };
     return texts[status] || status;
+}
+
+// ===== SELECTED ORDERS MANAGEMENT =====
+
+// Toggle select all orders
+function toggleSelectAll() {
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateSelectedCount();
+}
+
+// Select all orders (button)
+function selectAllOrders() {
+    const orderCheckboxes = document.querySelectorAll('.order-checkbox');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    
+    orderCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = true;
+    }
+    
+    updateSelectedCount();
+}
+
+// Update selected count and button state
+function updateSelectedCount() {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    const selectedCount = selectedCheckboxes.length;
+    const totalCheckboxes = document.querySelectorAll('.order-checkbox').length;
+    
+    // Update count display
+    const countSpan = document.getElementById('selectedCount');
+    if (countSpan) {
+        countSpan.textContent = selectedCount;
+    }
+    
+    // Enable/disable export button
+    const exportBtn = document.getElementById('exportSelectedBtn');
+    if (exportBtn) {
+        exportBtn.disabled = selectedCount === 0;
+    }
+    
+    // Update select all checkbox state
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        if (selectedCount === 0) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        } else if (selectedCount === totalCheckboxes) {
+            selectAllCheckbox.checked = true;
+            selectAllCheckbox.indeterminate = false;
+        } else {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = true;
+        }
+    }
+}
+
+// Export selected orders to Excel
+function exportSelectedOrders() {
+    const selectedCheckboxes = document.querySelectorAll('.order-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showNotification('Vui lòng chọn ít nhất một đơn hàng để xuất Excel', 'warning');
+        return;
+    }
+    
+    const selectedOrderIds = Array.from(selectedCheckboxes).map(checkbox => parseInt(checkbox.value));
+    const selectedOrders = filteredOrders.filter(order => selectedOrderIds.includes(order.id));
+    
+    if (selectedOrders.length === 0) {
+        showNotification('Không có dữ liệu để xuất Excel', 'warning');
+        return;
+    }
+    
+    // Create Excel content
+    let excelContent = `
+        <table>
+            <tr>
+                <th>ID Đơn Hàng</th>
+                <th>Tên Khách Hàng</th>
+                <th>Số Điện Thoại</th>
+                <th>Địa Chỉ</th>
+                <th>Sản Phẩm</th>
+                <th>Tổng Tiền</th>
+                <th>Phương Thức Thanh Toán</th>
+                <th>Trạng Thái</th>
+                <th>Xác Nhận</th>
+                <th>Ngày Tạo</th>
+                <th>Ghi Chú</th>
+            </tr>
+    `;
+    
+    selectedOrders.forEach(order => {
+        const products = order.items ? order.items.map(item => 
+            `${item.product_name || 'N/A'} (SL: ${item.quantity || 0})`
+        ).join('; ') : 'N/A';
+        
+        const statusText = getStatusText(order.status);
+        const confirmationText = order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận';
+        const paymentMethod = order.payment_method === 'bank' ? 'Chuyển khoản' : 'Thu COD';
+        const createdDate = formatDate(order.order_date);
+        
+        excelContent += `
+            <tr>
+                <td>${order.id}</td>
+                <td>${order.customer_name || 'N/A'}</td>
+                <td>="${order.phone_number || 'N/A'}"</td>
+                <td>${order.customer_address || 'N/A'}</td>
+                <td>${products}</td>
+                <td>${formatPrice(order.total_amount || 0)}</td>
+                <td>${paymentMethod}</td>
+                <td>${statusText}</td>
+                <td>${confirmationText}</td>
+                <td>${createdDate}</td>
+                <td>${order.notes || 'N/A'}</td>
+            </tr>
+        `;
+    });
+    
+    excelContent += '</table>';
+    
+    // Create HTML file for Excel
+    const htmlContent = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" 
+              xmlns:x="urn:schemas-microsoft-com:office:excel" 
+              xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+            <meta charset="utf-8">
+            <meta name="ExcelCreated" content="1">
+            <style>
+                table { border-collapse: collapse; width: 100%; }
+                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+            </style>
+            <x:ExcelWorkbook>
+                <x:ExcelWorksheets>
+                    <x:ExcelWorksheet>
+                        <x:Name>Đơn Hàng Đã Chọn</x:Name>
+                    </x:ExcelWorksheet>
+                </x:ExcelWorksheets>
+            </x:ExcelWorkbook>
+        </head>
+        <body>
+            ${excelContent}
+        </body>
+        </html>
+    `;
+    
+    // Create and download file
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `don_hang_da_chon_${new Date().toISOString().split('T')[0]}.xls`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    showNotification(`Đã xuất ${selectedOrders.length} đơn hàng đã chọn ra file Excel`, 'success');
 }
 
 </script>

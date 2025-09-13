@@ -351,14 +351,33 @@ async function finalizeEvent() {
   const eventId = document.getElementById('currentEventBox').dataset.eventId;
   if (!eventId) return;
   const manual = prompt('Nhập số may mắn (2 số) để chốt (tùy chọn):');
+  
+  // Handle empty input - if user cancels or enters empty string, clear the result
+  let luckyNumber = null;
+  if (manual !== null && manual.trim() !== '') {
+    // Validate input - should be 2 digits
+    const cleanNumber = manual.trim().replace(/\D/g, '');
+    if (cleanNumber.length === 2) {
+      luckyNumber = cleanNumber;
+    } else {
+      alert('Vui lòng nhập đúng 2 số (00-99)');
+      return;
+    }
+  }
+  
   try {
     const res = await fetch(`${API}/lucky-events/${eventId}/finalize/`, {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ lucky_number: manual })
+      body: JSON.stringify({ lucky_number: luckyNumber })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail||'Finalize failed');
-    alert('Đã chốt kết quả!');
+    
+    if (luckyNumber === null) {
+      alert('Đã xóa kết quả số may mắn!');
+    } else {
+      alert('Đã chốt kết quả số may mắn: ' + luckyNumber);
+    }
     loadCurrentEvent();
   } catch (e) { alert('Lỗi chốt kết quả: ' + e.message); }
 }
