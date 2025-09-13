@@ -1463,7 +1463,7 @@ function createFlashSaleProductCard(product) {
                 </div>
             </div>
             <div class="card-body d-flex flex-column">
-                <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
+                <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
                     <a href="/product/${product.id}" class="text-decoration-none text-dark">${productName}</a>
                 </h6>
                 <p class="text-muted small mb-1" style="font-size: 12px;">${brandName} <span class="text-success ms-1"><i class="fas fa-badge-check"></i> Chính hãng</span></p>
@@ -3293,7 +3293,7 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
                                 </div>
                             </div>
                             <div class="card-body p-1 position-relative">
-                                <h6 class="card-title small fw-bold mb-1" style="font-size: 9px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                <h6 class="card-title small fw-bold mb-1" style="font-size: 9px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                     <span class="suggested-product-name text-decoration-none text-dark" data-product-id="${product.id}" style="cursor: pointer;">${product.name}</span>
                                 </h6>
                                 <div class="d-flex align-items-center mb-1">
@@ -3489,7 +3489,7 @@ function initProductsPage() {
             }
 
             // Helpers
-                const priceVnd = p => (p.discounted_price || 0);
+                const priceVnd = p => (p.discounted_price || 0) * 1000;
             const rate = p => parseFloat(p.discount_rate || 0) || 0;
 
             // Price ranges
@@ -3591,10 +3591,16 @@ function initProductsPage() {
 // Render pagination
 function renderPagination(currentPage, totalPages, totalProducts) {
     const paginationContainer = document.getElementById('products-pagination');
-    if (!paginationContainer) return;
+    if (!paginationContainer) {
+        console.log('❌ Pagination container not found');
+        return;
+    }
+    
+    console.log(`🔍 renderPagination called: page=${currentPage}, totalPages=${totalPages}, products=${totalProducts}`);
     
     if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
+        console.log('❌ Only 1 page, hiding pagination');
         return;
     }
     
@@ -3602,12 +3608,12 @@ function renderPagination(currentPage, totalPages, totalProducts) {
     
     // Previous button
     if (currentPage > 1) {
-        paginationHTML += `<li class="page-item">
-            <a class="page-link" href="#" data-page="${currentPage - 1}">Trước</a>
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Trước</a>
         </li>`;
     } else {
-        paginationHTML += `<li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Trước</a>
+        paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" tabindex="-1" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Trước</a>
         </li>`;
     }
     
@@ -3616,39 +3622,41 @@ function renderPagination(currentPage, totalPages, totalProducts) {
     const endPage = Math.min(totalPages, currentPage + 2);
     
     if (startPage > 1) {
-        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" data-page="1" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">1</a></li>`;
         if (startPage > 2) {
-            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;"><span class="page-link" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">...</span></li>`;
         }
     }
     
     for (let i = startPage; i <= endPage; i++) {
         if (i === currentPage) {
-            paginationHTML += `<li class="page-item active"><a class="page-link" href="#">${i}</a></li>`;
+            paginationHTML += `<li class="page-item active" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important; background: #667eea !important; color: white !important;">${i}</a></li>`;
         } else {
-            paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" data-page="${i}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">${i}</a></li>`;
         }
     }
     
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
-            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;"><span class="page-link" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">...</span></li>`;
         }
-        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" data-page="${totalPages}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">${totalPages}</a></li>`;
     }
     
     // Next button
     if (currentPage < totalPages) {
-        paginationHTML += `<li class="page-item">
-            <a class="page-link" href="#" data-page="${currentPage + 1}">Sau</a>
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Sau</a>
         </li>`;
     } else {
-        paginationHTML += `<li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Sau</a>
+        paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" tabindex="-1" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Sau</a>
         </li>`;
     }
     
     paginationContainer.innerHTML = paginationHTML;
+    console.log('✅ Pagination HTML created:', paginationHTML);
+    console.log('✅ Pagination container display:', paginationContainer.style.display);
     
     // Add click event listeners
     paginationContainer.addEventListener('click', function(e) {
@@ -3668,7 +3676,7 @@ function attachPerPageFilter(products, renderCallback) {
     
     // Set current value
     const urlParams = new URLSearchParams(window.location.search);
-    const currentPerPage = parseInt(urlParams.get('per_page')) || 12;
+    const currentPerPage = parseInt(urlParams.get('per_page')) || 20;
     
     if (perPageSelect) {
         perPageSelect.value = currentPerPage;

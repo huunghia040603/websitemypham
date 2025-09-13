@@ -181,6 +181,173 @@ def index():
                          testimonials=testimonials_data,
                          flash_sale_end=flash_sale_end)
 
+@app.route('/api/filters/data')
+def api_filters_data():
+    """API endpoint để lấy dữ liệu filters (danh mục, thương hiệu, tags) - cache để không load lại"""
+    try:
+        print(f"🔍 Loading REAL filters data from {API_BASE_URL}")
+        
+        # Get categories
+        try:
+            categories_response = requests.get(f"{API_BASE_URL}/category/", timeout=10)
+            print(f"🔍 Categories response status: {categories_response.status_code}")
+            categories = categories_response.json() if categories_response.status_code == 200 else []
+            print(f"🔍 Found {len(categories)} categories")
+        except Exception as e:
+            print(f"❌ Categories error: {e}")
+            categories = []
+        
+        # Get brands
+        try:
+            brands_response = requests.get(f"{API_BASE_URL}/brands/", timeout=10)
+            print(f"🔍 Brands response status: {brands_response.status_code}")
+            brands = brands_response.json() if brands_response.status_code == 200 else []
+            print(f"🔍 Found {len(brands)} brands")
+        except Exception as e:
+            print(f"❌ Brands error: {e}")
+            brands = []
+        
+        # Get products for tags (only get first page to avoid timeout)
+        try:
+            products_response = requests.get(f"{API_BASE_URL}/products/?page=1&per_page=50", timeout=10)
+            print(f"🔍 Products response status: {products_response.status_code}")
+            products = products_response.json().get('results', []) if products_response.status_code == 200 else []
+            print(f"🔍 Found {len(products)} products for tags")
+        except Exception as e:
+            print(f"❌ Products error: {e}")
+            products = []
+        
+        # Get tags from products
+        all_tags = set()
+        for product in products:
+            tags = product.get('tags', [])
+            if isinstance(tags, list):
+                for tag in tags:
+                    if isinstance(tag, str) and tag.strip():
+                        all_tags.add(tag.strip())
+                    elif isinstance(tag, dict) and tag.get('name'):
+                        all_tags.add(tag['name'].strip())
+        
+        tags_with_stock = sorted(list(all_tags))
+        print(f"🔍 Found {len(tags_with_stock)} tags")
+        
+        result = {
+            'categories': categories,
+            'brands': brands,
+            'tags': tags_with_stock
+        }
+        
+        print(f"✅ Returning REAL filters data: {len(result['categories'])} categories, {len(result['brands'])} brands, {len(result['tags'])} tags")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Error in api_filters_data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Lỗi server'}), 500
+
+@app.route('/api/products/filtered')
+def api_products_filtered():
+    """API endpoint để lấy sản phẩm đã lọc mà không cần reload trang"""
+    try:
+        # Get filter parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 12, type=int)
+        search_query = request.args.get('search', '').strip()
+        category_name = request.args.get('category_name', '').strip()
+        brands_name = request.args.get('brands_name', '').strip()
+        tags = request.args.get('tags', '').strip()
+        condition = request.args.get('condition', '').strip()
+        price_range = request.args.get('price_range', '').strip()
+        discount_range = request.args.get('discount_range', '').strip()
+        sort_by = request.args.get('sort', 'newest')
+
+        print(f"🔍 Filtering products with: page={page}, per_page={per_page}, search='{search_query}', category='{category_name}', brand='{brands_name}', tags='{tags}', condition='{condition}', price='{price_range}', discount='{discount_range}', sort='{sort_by}'")
+
+        # Build API URL with filters
+        api_params = {
+            'page': page,
+            'per_page': per_page
+        }
+        
+        # Add ordering
+        if sort_by == 'newest':
+            api_params['ordering'] = '-id'
+        elif sort_by == 'price_asc':
+            api_params['ordering'] = 'discounted_price'
+        elif sort_by == 'price_desc':
+            api_params['ordering'] = '-discounted_price'
+        elif sort_by == 'sales':
+            api_params['ordering'] = '-sold_quantity'
+        elif sort_by == 'discount':
+            api_params['ordering'] = '-discount_rate'
+        
+        if search_query:
+            api_params['search'] = search_query
+        if category_name:
+            api_params['category_name'] = category_name
+        if brands_name:
+            api_params['brands_name'] = brands_name
+        if tags:
+            api_params['tags'] = tags
+        if condition and condition != 'all':
+            api_params['condition'] = condition
+
+        # Get products from Django API
+        api_url = f"{API_BASE_URL}/products/"
+        print(f"🔍 Fetching from: {api_url} with params: {api_params}")
+        response = requests.get(api_url, params=api_params, timeout=30)
+        
+        if response.status_code != 200:
+            print(f"❌ API Error: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Không thể lấy dữ liệu sản phẩm'}), 500
+            
+        data = response.json()
+        print(f"🔍 Got {len(data.get('results', []))} products from API")
+        
+        # Apply client-side filters for price and discount
+        filtered_products = data.get('results', [])
+        
+        # Price filter (VND)
+        if price_range:
+            print(f"🔍 DEBUG: Price range filter: {price_range}")
+            print(f"🔍 DEBUG: Total products before filter: {len(filtered_products)}")
+            def price_vnd(x):
+                return (x.get('discounted_price', 0) or 0) * 1000
+            if price_range == 'under_200k':
+                filtered_products = [p for p in filtered_products if price_vnd(p) < 200_000]
+                print(f"🔍 DEBUG: Products under 200k: {len(filtered_products)}")
+            elif price_range == '200_500':
+                filtered_products = [p for p in filtered_products if 200_000 <= price_vnd(p) < 500_000]
+            elif price_range == '500_1m':
+                filtered_products = [p for p in filtered_products if 500_000 <= price_vnd(p) < 1_000_000]
+            elif price_range == 'over_1m':
+                filtered_products = [p for p in filtered_products if price_vnd(p) >= 1_000_000]
+
+        # Discount filter
+        if discount_range:
+            def discount_rate(p):
+                return float(p.get('discount_rate', 0) or 0)
+            if discount_range == 'under_30':
+                filtered_products = [p for p in filtered_products if discount_rate(p) < 30]
+            elif discount_range == '50_70':
+                filtered_products = [p for p in filtered_products if 50 <= discount_rate(p) < 70]
+            elif discount_range == 'over_70':
+                filtered_products = [p for p in filtered_products if discount_rate(p) >= 70]
+
+        # Update data with filtered results
+        data['results'] = filtered_products
+        data['count'] = len(filtered_products)
+        
+        print(f"✅ Returning REAL products data: {len(filtered_products)} products")
+        return jsonify(data)
+        
+    except Exception as e:
+        print(f"❌ Error in api_products_filtered: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Lỗi server'}), 500
+
 @app.route('/products')
 def products():
     """Trang danh sách sản phẩm"""
@@ -195,9 +362,9 @@ def products():
     sort_by = request.args.get('sort', 'newest')
     condition = request.args.get('condition', 'all')
 
-    # Hỗ trợ tên tham số mới theo yêu cầu
-    category_name = request.args.get('category_name') or category
-    brands_name = request.args.get('brands_name') or brand
+    # Hỗ trợ tên tham số mới theo yêu cầu - hỗ trợ multiple values
+    category_names = request.args.getlist('category_name') or ([category] if category else [])
+    brands_names = request.args.getlist('brands_name') or ([brand] if brand else [])
     new_price_range = request.args.get('price_range') or price_range
     new_discount = request.args.get('discount_range') or discount
     tags_filter = request.args.get('tags')
@@ -205,12 +372,17 @@ def products():
     # Filter sản phẩm
     filtered_products = all_products.copy()
     
-    if category_name:
-        target = category_name.strip().lower()
-        filtered_products = [p for p in filtered_products if _extract_category_name(p).lower() == target]
+    # Filter by multiple categories
+    if category_names:
+        category_targets = [name.strip().lower() for name in category_names if name.strip()]
+        if category_targets:
+            filtered_products = [p for p in filtered_products if _extract_category_name(p).lower() in category_targets]
     
-    if brands_name:
-        filtered_products = [p for p in filtered_products if (p.get('brand_name') or (p.get('brand') or {}).get('name') or '').strip() == brands_name]
+    # Filter by multiple brands
+    if brands_names:
+        brand_targets = [name.strip() for name in brands_names if name.strip()]
+        if brand_targets:
+            filtered_products = [p for p in filtered_products if (p.get('brand_name') or (p.get('brand') or {}).get('name') or '').strip() in brand_targets]
     
     if condition != 'all':
         filtered_products = [p for p in filtered_products if p.get('status') == condition]
@@ -234,10 +406,13 @@ def products():
     
     # Khoảng giá mới (VND)
     if new_price_range:
+        print(f"🔍 DEBUG: Price range filter: {new_price_range}")
+        print(f"🔍 DEBUG: Total products before filter: {len(filtered_products)}")
         def price_vnd(x):
             return (x.get('discounted_price', 0) or 0) * 1000
         if new_price_range == 'under_200k':
             filtered_products = [p for p in filtered_products if price_vnd(p) < 200_000]
+            print(f"🔍 DEBUG: Products under 200k: {len(filtered_products)}")
         elif new_price_range == '200_500':
             filtered_products = [p for p in filtered_products if 200_000 <= price_vnd(p) < 500_000]
         elif new_price_range == '500_1m':
@@ -287,8 +462,163 @@ def products():
     else:  # newest
         filtered_products.sort(key=lambda x: x.get('id', 0), reverse=True)
     
+    # Pagination logic
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # Calculate pagination
+    total_products = len(filtered_products)
+    total_pages = (total_products + per_page - 1) // per_page
+    
+    # Get products for current page
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_products = filtered_products[start_idx:end_idx]
+    
+    # Check if this is an AJAX request
+    is_ajax = request.args.get('ajax') == '1'
+    
+    if is_ajax:
+        # Return only the products grid HTML for AJAX requests
+        from flask import render_template_string
+        return render_template_string('''
+            <div id="products-page-grid" class="row g-4">
+                {% for product in products %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    {% set image_url = product.image or '/static/image/default-product.jpg' %}
+                    {% set brand_name = product.brand_name or 'Không rõ' %}
+                    {% set status_text = (product.status or '').lower() %}
+                    {% set is_new_by_status = 'new' in status_text or 'chiet' in status_text %}
+                    {% set remaining_percent = None %}
+                    {% if not is_new_by_status %}
+                        {% set remaining_percent = None %}
+                    {% endif %}
+                    {% set used_label = None %}
+                    {% if not is_new_by_status %}
+                        {% if 'test' in status_text %}
+                            {% set used_label = 'Test 1-2 lần' %}
+                        {% elif remaining_percent %}
+                            {% set used_label = 'Còn ' + remaining_percent + '%' %}
+                        {% endif %}
+                    {% endif %}
+                    {% set new_label = None %}
+                    {% if is_new_by_status %}
+                        {% if 'chiet' in status_text %}
+                            {% set new_label = 'Chiết' %}
+                        {% elif status_text == 'new' %}
+                            {% set new_label = 'New đẹp' %}
+                        {% elif 'newmh' in status_text %}
+                            {% set new_label = 'New mất hộp' %}
+                        {% elif 'newm' in status_text %}
+                            {% set new_label = 'New móp hộp' %}
+                        {% elif 'newrt' in status_text %}
+                            {% set new_label = 'New rách tem' %}
+                        {% elif 'newmn' in status_text %}
+                            {% set new_label = 'New móp nhẹ' %}
+                        {% elif 'newx' in status_text %}
+                            {% set new_label = 'New xước nhẹ' %}
+                        {% elif 'newspx' in status_text %}
+                            {% set new_label = 'New xước' %}
+                        {% else %}
+                            {% set new_label = 'New' %}
+                        {% endif %}
+                    {% endif %}
+                    {% set info_label = new_label if is_new_by_status else used_label %}
+                    {% set original_price = product.original_price * 1000 if product.original_price else None %}
+                    {% set discounted_price = product.discounted_price * 1000 if product.discounted_price else 0 %}
+                    {% set rating = product.rating | float if product.rating else 0 %}
+                    {% set full_stars = rating | int %}
+                    {% set has_half_star = (rating % 1) >= 0.5 and (rating % 1) < 1 %}
+                    {% set discount_rate = (product.discount_rate | float | round | int) if product.discount_rate else 0 %}
+                    {% set stock_quantity = product.stock_quantity or 0 %}
+                    {% set is_out_of_stock = stock_quantity <= 0 %}
+                    
+                    <div class="product-card card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <a href="/product/{{ product.id }}" class="text-decoration-none">
+                                <img src="{{ image_url }}" 
+                                     class="card-img-top" alt="{{ product.name }}"
+                                     style="height: 220px; object-fit: cover;{% if is_out_of_stock %} filter: grayscale(100%);{% endif %}"
+                                     onerror="this.src='/static/image/default-product.jpg'">
+                            </a>
+                            {% if is_out_of_stock %}
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                                 style="background-color: rgba(0,0,0,0.7); border-radius: 6px;">
+                                <div class="text-center text-white">
+                                    <i class="fas fa-times-circle fa-2x mb-1"></i>
+                                    <h6 class="fw-bold mb-0">HẾT HÀNG</h6>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <button class="fav-toggle position-absolute top-0 end-0 m-2" 
+                                    title="Thêm vào yêu thích" 
+                                    data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    data-image="{{ image_url }}"
+                                    data-brand="{{ brand_name }}"
+                                    data-price="{{ discounted_price }}"
+                                    style="border:none;background:transparent;cursor:pointer;">
+                                <i class="far fa-heart" style="font-size: 18px; color:#fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
+                            </button>
+                            <div class="position-absolute bottom-0 start-0 m-1">
+                                <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
+                            </div>
+                            <div class="product-badges-row position-absolute" style="top:8px;left:10px;display:flex;gap:6px;align-items:center;z-index:2;">
+                                {% if discount_rate > 0 %}
+                                <div class="badge bg-danger discount-badge-left" style="font-size: 11px; padding: 4px 8px;">-{{ discount_rate }}%</div>
+                                {% endif %}
+                                {% if info_label %}
+                                <div class="product-info-badge" style="font-size: 10px; padding: 1px 6px; background:#eaf4ff; border:1px solid #b8d4ff; color:#1e56a0; border-radius:6px;"><i class="fas fa-circle-info me-1"></i>{{ info_label }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
+                                <a href="/product/{{ product.id }}" class="text-decoration-none text-dark">{{ product.name }}</a>
+                            </h6>
+                            <p class="text-muted small mb-2" style="font-size: 10px;">{{ brand_name }}{% if info_label %} • {{ info_label }}{% endif %}</p>
+                            <div class="d-flex align-items-center mb-1">
+                                {% if original_price %}
+                                <span class="text-decoration-line-through text-muted me-1" style="font-size: 11px;">{{ "{:,.0f}".format(original_price) }}đ</span>
+                                {% endif %}
+                                <span class="text-danger fw-bold" style="font-size: 15px;">{{ "{:,.0f}".format(discounted_price) }}đ</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="stars text-warning me-2" style="font-size: 12px;">
+                                    {% for i in range(5) %}
+                                        {% if i < full_stars %}
+                                        <i class="fas fa-star"></i>
+                                        {% elif i == full_stars and has_half_star %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                        <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted" style="font-size: 11px;">({{ rating }})</small>
+                                <span class="badge {% if is_out_of_stock %}bg-danger{% else %}bg-success{% endif %}" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">{% if is_out_of_stock %}Hết hàng{% else %}Còn {{ stock_quantity }}{% endif %}</span>
+                            </div>
+                            <button class="btn w-100 add-to-cart-btn {% if is_out_of_stock %}btn-secondary{% else %}btn-light text-dark border{% endif %}" 
+                                    data-product-id="{{ product.id }}" 
+                                    style="font-size: 13px; padding: 8px;" 
+                                    {% if is_out_of_stock %}disabled{% endif %}>
+                                {% if is_out_of_stock %}Hết hàng{% else %}Thêm vào giỏ{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="products-showing">{{ products|length }}</div>
+            <div id="products-total">{{ total_products }}</div>
+        ''', products=paginated_products, total_products=total_products)
+    
     return render_template('products.html',
-                         products=filtered_products,
+                         products=paginated_products,
+                         total_products=total_products,
+                         total_pages=total_pages,
+                         current_page=page,
+                         per_page=per_page,
                          categories=categories_data,
                          brands=brands_data,
                          current_condition=condition)
@@ -1518,7 +1848,7 @@ def admin_api_confirm_order(order_id):
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
             f'{API_BASE_URL}/orders/{order_id}/', 
-            json=update_data,
+            data=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
@@ -1575,7 +1905,7 @@ def admin_api_cancel_order(order_id):
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
             f'{API_BASE_URL}/orders/{order_id}/', 
-            json=update_data,
+            data=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
@@ -1628,7 +1958,7 @@ def admin_api_ship_order(order_id):
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
             f'{API_BASE_URL}/orders/{order_id}/', 
-            json=update_data,
+            data=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
@@ -1686,7 +2016,7 @@ def admin_api_auto_complete_orders():
                             
                             update_response = requests.patch(
                                 f'{API_BASE_URL}/orders/{order["id"]}/',
-                                json=update_data,
+                                data=update_data,
                                 timeout=30
                             )
                             
@@ -1866,7 +2196,7 @@ def admin_api_update_product(product_id):
         print(f"🎯 Trying minimal update with: {minimal_data}")
         
         response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
-                                json=minimal_data, timeout=30)
+                                data=minimal_data, timeout=30)
         
         # If the minimal update works, try to update additional fields in separate requests
         if response.status_code == 200 and len(cleaned_data) > len(minimal_data):
@@ -1884,7 +2214,7 @@ def admin_api_update_product(product_id):
             if price_data:
                 print(f"💰 Trying price update with: {price_data}")
                 price_response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
-                                              json=price_data, timeout=30)
+                                              data=price_data, timeout=30)
                 if price_response.status_code != 200:
                     print(f"⚠️ Price update failed: {price_response.status_code}")
                 else:
@@ -1900,7 +2230,7 @@ def admin_api_update_product(product_id):
             if quantity_data:
                 print(f"📦 Trying quantity update with: {quantity_data}")
                 quantity_response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
-                                                  json=quantity_data, timeout=30)
+                                                  data=quantity_data, timeout=30)
                 if quantity_response.status_code != 200:
                     print(f"⚠️ Quantity update failed: {quantity_response.status_code}")
                 else:
