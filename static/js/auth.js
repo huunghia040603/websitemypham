@@ -10,7 +10,7 @@ function saveLoginState(data) {
             address: data.address,
             dob: data.dob,
             email: data.email,
-            avatar: data.avatar
+            avatar: data.user.avatar || data.avatar
             
         };
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
