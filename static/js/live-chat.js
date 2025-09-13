@@ -7,6 +7,7 @@
     const logoUrl = "{{ url_for('static', filename='image/logo.png') }}";
     
     let currentUserId = null;
+    let currentToken = null; // Khai báo biến token ở đây
 
     // Hàm để tạo và thêm một tin nhắn vào giao diện người dùng
     function appendMessage(senderId, text, timestamp) {
@@ -46,9 +47,11 @@
         const userProfile = getUserProfile();
         // Lấy ID người dùng và đảm bảo rằng nó là một chuỗi
         currentUserId = userProfile.id ? String(userProfile.id) : null;
+        currentToken = userProfile.access_token ? String(userProfile.access_token) : null;
         const adminId = "admin_001";
         
         console.log(`Bước 2: Dữ liệu người dùng thực tế. currentUserId: ${currentUserId}`);
+        console.log(`Bước 6: Dữ liệu người dùng thực tế. Token: ${currentToken}`);
 
         const firebaseConfig = {
             apiKey: "AIzaSyBl_8N53eSIGEbBN2TBSGW36vabMdq2lbI",
@@ -89,7 +92,9 @@
                 text: text,
                 senderId: currentUserId,
                 receiverId: adminId,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                // Thêm authToken vào đây để gửi đi
+                authToken: currentToken
             };
 
             console.log("Bước 4: Chuẩn bị gửi tin nhắn tới Flask:", messageData);
@@ -107,6 +112,7 @@
             })
             .then(data => {
                 console.log('Bước 4.2: Dữ liệu phản hồi từ Flask:', data);
+                
                 if (data.error) {
                     console.error('Lỗi từ Flask:', data.error);
                 } else {
