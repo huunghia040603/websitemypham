@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Tin Tức - BuddySkincare{% endblock %}
+{% block title %}Danh sách blog làm đẹp - BuddySkincare{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -220,7 +220,7 @@
                     <h5>Chưa có bài viết nào</h5>
                     <p class="text-muted">Hãy quay lại sau để xem những bài viết mới nhất.</p>
                     </div>
-                    </div>
+            </div>
 
             <!-- Debug Test Button (Hidden - no pagination needed) -->
             <div class="text-center mb-3" style="display: none;">
@@ -303,461 +303,199 @@ async function loadBlogPosts(page = 1) {
             throw new Error(`HTTP ${response.status}`);
         }
         
-        const data = await response.json();
-        let posts = data.results || data;
+        .blog-meta .date-views {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Pagination styles */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            gap: 10px;
+        }
+
+        .pagination-btn {
+            padding: 10px 15px;
+            font-size: 1em;
+            color: #007bff;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .pagination-btn:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .pagination-btn.active {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+            pointer-events: none;
+        }
         
-        // If there are multiple pages, load all of them
-        if (data.next) {
-            console.log('🔍 Multiple pages detected, loading all posts...');
-            let allPosts = [...posts];
-            let nextUrl = data.next;
-            
-            while (nextUrl) {
-                try {
-                    const nextResponse = await fetch(nextUrl);
-                    if (nextResponse.ok) {
-                        const nextData = await nextResponse.json();
-                        allPosts = [...allPosts, ...(nextData.results || [])];
-                        nextUrl = nextData.next;
-                        console.log(`🔍 Loaded page ${nextData.current_page || 'unknown'}, total posts: ${allPosts.length}`);
-                    } else {
-                        break;
-                    }
-                } catch (error) {
-                    console.error('Error loading additional page:', error);
-                    break;
-                }
+        .pagination-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .blog-list {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             }
-            
-            posts = allPosts;
-            console.log(`✅ Loaded all posts: ${posts.length} total`);
         }
-        
-        if (!posts || posts.length === 0) {
-            showEmptyState();
-            return;
+
+        @media (max-width: 600px) {
+            .blog-list {
+                grid-template-columns: 1fr;
+            }
         }
-        
-        // Store all posts (no pagination needed)
-        allBlogPosts = posts;
-        filteredPosts = [...posts];
-        
-        console.log('🔍 loadBlogPosts - all posts loaded:');
-        console.log('📊 Total posts:', posts.length);
-        console.log('📝 First post title:', posts[0]?.title || 'N/A');
-        
-        renderBlogPosts(posts);
-        
-        // Hide pagination since we're showing all posts
-        const paginationContainer = document.getElementById('paginationContainer');
-        if (paginationContainer) {
-            paginationContainer.style.display = 'none';
-            console.log('✅ Pagination hidden - showing all posts');
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="blog-container">
+        <h1>Các bài viết mới nhất</h1>
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-tag="all">Tất cả</button>
+            <button class="filter-btn" data-tag="MLD">Mẹo làm đẹp</button>
+            <button class="filter-btn" data-tag="UD">Ưu đãi</button>
+            <button class="filter-btn" data-tag="HD">Hướng dẫn</button>
+        </div>
+        <div id="blog-list" class="blog-list">
+        </div>
+        <div id="pagination-container" class="pagination-container">
+        </div>
+    </div>
+
+    <style>
+        .blog-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
         }
-        
-        // Initialize filters
-        setTimeout(() => {
-            console.log('🔍 Initializing filters');
-            initializeFilters();
-        }, 100);
-        
-    } catch (error) {
-        console.error('Error loading blog posts:', error);
-        showErrorState();
-    }
-}
-
-// Show error state
-function showErrorState() {
-    document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('errorState').style.display = 'block';
-    document.getElementById('emptyState').style.display = 'none';
-}
-
-// Show empty state
-function showEmptyState() {
-    document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('errorState').style.display = 'none';
-    document.getElementById('emptyState').style.display = 'block';
-}
-
-// Render blog posts
-function renderBlogPosts(posts) {
-    const articleList = document.getElementById('articleList');
-    const loadingState = document.getElementById('loadingState');
-    const errorState = document.getElementById('errorState');
-    const emptyState = document.getElementById('emptyState');
-    
-    // Hide states
-    loadingState.style.display = 'none';
-    errorState.style.display = 'none';
-    emptyState.style.display = 'none';
-    
-    if (!posts || posts.length === 0) {
-        showEmptyState();
-        return;
-    }
-    
-    const postsHTML = posts.map(post => createBlogPostHTML(post)).join('');
-    articleList.innerHTML = postsHTML;
-    
-    // Don't initialize filters here - it's done after renderPagination
-}
-
-// Create HTML for a blog post
-function createBlogPostHTML(post) {
-    const imageUrl = post.img_thumbnail || '/static/image/default-blog.jpg';
-    const tag = tagMapping[post.tag] || 'guide';
-    const tagText = getTagText(post.tag);
-    const postDate = formatDateTime(post.post_date);
-    const excerpt = truncateText(post.short_description, 150);
-    const readTime = estimateReadTime(post.content);
-    const views = post.views || 0;
-    
-    return `
-        <article class="article" data-cat="${tag}">
-            <a href="/blog/${post.id}" style="text-decoration: none; color: inherit;">
-                <div class="thumb" style="cursor: pointer;">
-                    <img src="${imageUrl}" alt="${post.title}" onerror="this.src='/static/image/default-blog.jpg'">
-                    <span class="badge">${tagText}</span>
-                </div>
-            </a>
-            <div class="content">
-                <a href="/blog/${post.id}" style="text-decoration: none; color: inherit;">
-                    <h3 class="title" style="cursor: pointer;">${post.title}</h3>
-                </a>
-                <div class="meta">
-                    <span><i class="fas fa-calendar-alt"></i> ${postDate}</span>
-                    <span><i class="fas fa-eye"></i> ${views} lượt xem</span>
-                    <span><i class="fas fa-clock"></i> ${readTime} phút</span>
-                </div>
-                <p class="excerpt">${excerpt}</p>
-                <a class="read-more" href="/blog/${post.id}">
-                    Đọc tiếp <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </article>
-    `;
-}
-
-// Get tag text - matches BLOG_TAG_CHOICES from models
-function getTagText(tag) {
-    const tagTexts = {
-        'HD': 'Hướng dẫn',
-        'UD': 'Ưu đãi',
-        'MLD': 'Mẹo làm đẹp'
-    };
-    return tagTexts[tag] || 'Bài viết';
-}
-
-// Format date with time
-function formatDateTime(dateString) {
-    try {
-        const date = new Date(dateString);
-        const time = date.toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false
-        });
-        const dateStr = date.toLocaleDateString('vi-VN', {
-            day: '2-digit',
-            month: '2-digit', 
-            year: 'numeric'
-        });
-        return `${time} ${dateStr}`;
-    } catch (error) {
-        return 'Không rõ ngày';
-    }
-}
-
-// Truncate text
-function truncateText(text, maxLength) {
-    if (!text) return '';
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + '...';
-}
-
-// Estimate read time
-function estimateReadTime(content) {
-    if (!content) return 2;
-    const wordsPerMinute = 200;
-    const wordCount = content.replace(/<[^>]*>/g, '').split(/\s+/).length;
-    return Math.max(1, Math.ceil(wordCount / wordsPerMinute));
-}
-
-// Initialize filters
-function initializeFilters() {
-    const chips = document.querySelectorAll('.chip');
-    const searchInput = document.getElementById('searchInput');
-    const items = document.querySelectorAll('.article');
-
-    function applyFilters() {
-        const activeChip = document.querySelector('.chip.active');
-        const cat = activeChip ? activeChip.getAttribute('data-cat') : 'all';
-        const q = (searchInput.value || '').toLowerCase().trim();
-        
-
-        items.forEach(it => {
-            const inCat = (cat === 'all') || it.getAttribute('data-cat').includes(cat);
-            const text = it.innerText.toLowerCase();
-            const match = !q || text.includes(q);
-            it.style.display = (inCat && match) ? '' : 'none';
-        });
-        
-        // Hide pagination since we're showing all posts
-        const paginationContainer = document.getElementById('paginationContainer');
-        if (paginationContainer) {
-            paginationContainer.style.display = 'none';
-            console.log('✅ Pagination hidden - showing all posts without pagination');
+        .filter-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 10px;
         }
-    }
-
-    chips.forEach(chip => chip.addEventListener('click', () => {
-        chips.forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        applyFilters();
-    }));
-
-    searchInput.addEventListener('input', applyFilters);
-    applyFilters();
-}
-
-// Render pagination
-function renderPagination() {
-    console.log('🔍 renderPagination called');
-    console.log('📊 paginationData:', paginationData);
-    console.log('📄 totalPages:', totalPages);
-    
-    try {
-        const paginationContainer = document.getElementById('paginationContainer');
-        const paginationList = document.getElementById('paginationList');
-        
-        console.log('📦 paginationContainer:', paginationContainer);
-        console.log('📦 paginationList:', paginationList);
-        
-        if (!paginationContainer || !paginationList) {
-            console.log('❌ Missing pagination elements');
-            return;
+        .filter-btn {
+            background-color: #f1f1f1;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s, color 0.3s;
         }
-        
-        if (!paginationData || totalPages <= 1) {
-            console.log('❌ No pagination data or only 1 page');
-            paginationContainer.style.display = 'none';
-            return;
+        .filter-btn.active {
+            background-color: #007bff;
+            color: white;
         }
-    } catch (error) {
-        console.error('❌ Error in renderPagination:', error);
-        return;
-    }
-    
-    console.log('✅ Showing pagination');
-    paginationContainer.style.display = 'flex';
-    paginationList.innerHTML = '';
-    
-    console.log('🔍 Creating pagination elements...');
-    
-    // Previous button
-    const prevLi = document.createElement('li');
-    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-    const prevLink = document.createElement('a');
-    prevLink.className = 'page-link';
-    prevLink.href = '#';
-    prevLink.innerHTML = '«';
-    prevLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        console.log('🔍 Previous button clicked');
-        if (currentPage > 1) {
-            console.log('🔍 Loading page:', currentPage - 1);
-            loadBlogPosts(currentPage - 1);
+        .filter-btn:hover:not(.active) {
+            background-color: #e2e6ea;
         }
-    });
-    prevLi.appendChild(prevLink);
-    paginationList.appendChild(prevLi);
-    
-    console.log('✅ Added previous button');
-    
-    // Page numbers
-    const startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, currentPage + 2);
-    
-    console.log(`🔍 Page range: ${startPage} to ${endPage}`);
-    
-    // First page if not in range
-    if (startPage > 1) {
-        const firstLi = createPageItem(1);
-        paginationList.appendChild(firstLi);
-        console.log('✅ Added first page');
-        
-        if (startPage > 2) {
-            const ellipsisLi = document.createElement('li');
-            ellipsisLi.className = 'page-item disabled';
-            ellipsisLi.innerHTML = '<span class="page-link">...</span>';
-            paginationList.appendChild(ellipsisLi);
-            console.log('✅ Added ellipsis');
+        .blog-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
-    }
-    
-    // Page range
-    for (let i = startPage; i <= endPage; i++) {
-        const pageLi = createPageItem(i);
-        paginationList.appendChild(pageLi);
-        console.log(`✅ Added page ${i}`);
-    }
-    
-    // Last page if not in range
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            const ellipsisLi = document.createElement('li');
-            ellipsisLi.className = 'page-item disabled';
-            ellipsisLi.innerHTML = '<span class="page-link">...</span>';
-            paginationList.appendChild(ellipsisLi);
+        .blog-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
         }
-        
-        const lastLi = createPageItem(totalPages);
-        paginationList.appendChild(lastLi);
-    }
-    
-    // Next button
-    const nextLi = document.createElement('li');
-    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-    const nextLink = document.createElement('a');
-    nextLink.className = 'page-link';
-    nextLink.href = '#';
-    nextLink.innerHTML = '»';
-    nextLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        console.log('🔍 Next button clicked');
-        if (currentPage < totalPages) {
-            console.log('🔍 Loading page:', currentPage + 1);
-            loadBlogPosts(currentPage + 1);
+        .blog-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
         }
-    });
-    nextLi.appendChild(nextLink);
-    paginationList.appendChild(nextLi);
-    
-    console.log('✅ Added next button');
-    console.log('🔍 Final pagination HTML:', paginationList.innerHTML);
-}
+        .blog-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .blog-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .blog-content {
+            padding: 15px;
+        }
+        .blog-tag {
+            display: inline-block;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .blog-tag-mld { background-color: #ff6347; }
+        .blog-tag-ud { background-color: #4682b4; }
+        .blog-tag-hd { background-color: #3cb371; }
+        .blog-title {
+            font-size: 1.2em;
+            margin: 0 0 10px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .blog-description {
+            font-size: 0.9em;
+            color: #555;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .blog-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            font-size: 0.8em;
+            color: #888;
+        }
+        .date-views span {
+            margin-right: 15px;
+        }
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 5px;
+        }
+        .pagination-btn {
+            background-color: #f1f1f1;
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .pagination-btn.active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        .pagination-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+    </style>
 
-// Create page item
-function createPageItem(pageNum) {
-    const li = document.createElement('li');
-    li.className = `page-item ${pageNum === currentPage ? 'active' : ''}`;
-    
-    const link = document.createElement('a');
-    link.className = 'page-link';
-    link.href = '#';
-    link.textContent = pageNum;
-    link.addEventListener('click', (e) => {
-        e.preventDefault();
-        console.log('🔍 Page button clicked:', pageNum);
-        if (pageNum !== currentPage) {
-            console.log('🔍 Loading page:', pageNum);
-            loadBlogPosts(pageNum);
-        } else {
-            console.log('🔍 Already on page:', pageNum);
-        }
-    });
-    
-    li.appendChild(link);
-    return li;
-}
-
-// Newsletter subscription
-function subscribeNews() {
-    const input = document.getElementById('newsEmail');
-    const val = (input.value || '').trim();
-    if (!val) { 
-        alert('Vui lòng nhập email.'); 
-        return; 
-    }
-    
-    // Call newsletter API
-    fetch('/api/newsletter', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: val })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Đăng ký bản tin thành công!');
-    input.value = '';
-        } else {
-            alert(data.message || 'Có lỗi xảy ra, vui lòng thử lại.');
-        }
-    })
-    .catch(error => {
-        console.error('Newsletter subscription error:', error);
-        alert('Có lỗi xảy ra, vui lòng thử lại.');
-    });
-}
-
-
-// Test pagination function
-function testPagination() {
-    console.log('🔍 TEST PAGINATION CLICKED');
-    console.log('📊 Current paginationData:', paginationData);
-    console.log('📄 Current totalPages:', totalPages);
-    console.log('📄 Current currentPage:', currentPage);
-    
-    const paginationContainer = document.getElementById('paginationContainer');
-    const paginationList = document.getElementById('paginationList');
-    
-    console.log('📦 paginationContainer:', paginationContainer);
-    console.log('📦 paginationList:', paginationList);
-    console.log('📦 paginationContainer display:', paginationContainer ? paginationContainer.style.display : 'N/A');
-    
-    if (paginationData && totalPages > 1) {
-        console.log('✅ Forcing pagination display');
-        paginationContainer.style.display = 'flex';
-        console.log('🔍 Calling renderPagination()...');
-        renderPagination();
-        console.log('🔍 renderPagination() completed');
-    } else {
-        console.log('❌ No pagination data or only 1 page');
-    }
-}
-
-// Simple test pagination function
-function testSimplePagination() {
-    console.log('🔍 SIMPLE TEST PAGINATION CLICKED');
-    
-    const paginationContainer = document.getElementById('paginationContainer');
-    const paginationList = document.getElementById('paginationList');
-    
-    console.log('📦 paginationContainer:', paginationContainer);
-    console.log('📦 paginationList:', paginationList);
-    
-    if (paginationContainer && paginationList) {
-        console.log('✅ Elements found, creating simple pagination...');
-        paginationContainer.style.display = 'flex';
-        paginationList.innerHTML = `
-            <li class="page-item disabled">
-                <span class="page-link">«</span>
-            </li>
-            <li class="page-item active">
-                <span class="page-link">1</span>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#" onclick="event.preventDefault(); loadBlogPosts(2); return false;">2</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#" onclick="event.preventDefault(); loadBlogPosts(2); return false;">»</a>
-            </li>
-        `;
-        console.log('✅ Simple pagination created');
-        console.log('📦 Final HTML:', paginationList.innerHTML);
-    } else {
-        console.log('❌ Elements not found');
-    }
-}
-
-// Load blog posts when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    loadBlogPosts();
-});
-</script>
+    <script src="{{ url_for('static', filename='js/news.js') }}"></script>
 {% endblock %}

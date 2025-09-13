@@ -965,6 +965,7 @@ async function handlePlaceOrder() {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize all components
     initCountdownTimer();
+    initFlashSaleProducts();
     initProductCards();
     initNewsletterForm();
     initAnimations();
@@ -974,7 +975,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSearch();
     initLazyLoading();
     initSmoothScrolling();
-    initFlashSaleProducts(); // Khởi tạo Flash Sale
+     // Khởi tạo Flash Sale
     initNewProducts(); // Khởi tạo sản phẩm mới
     initFeaturedProducts(); // Khởi tạo sản phẩm nổi bật
     initCart(); // Khởi tạo giỏ hàng
@@ -1047,7 +1048,7 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
         const products = await response.json();
         
         if (products.length === 0) {
-            container.innerHTML = '<p class="text-muted text-center py-4">Không có sản phẩm nào để hiển thị.</p>';
+            
             return;
         }
 
@@ -1136,7 +1137,8 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
 
 // Hàm khởi tạo cho Flash Sale
 function initFlashSaleProducts() {
-    const flashSaleApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?tags=FlashSale';
+    const flashSaleApiUrl = `https://buddyskincare.pythonanywhere.com/products/?tags=${activeFlashSaleCode}`;
+    console.log("activeFlashSaleCode", activeFlashSaleCode);
     const containerSelector = '#flash-sale-products';
     const flashSaleButton = `
         
@@ -1505,7 +1507,6 @@ function createFlashSaleProductCard(product) {
 }
 
 // --- End of Dynamic Products Section ---
-
 let activeFlashSaleCode = null;
 // Countdown Timer for Flash Sale
 
@@ -1524,11 +1525,16 @@ function initCountdownTimer() {
             if (data.length === 0 || !data[0].end_date) {
                 countdownElements.forEach(el => el.textContent = '00');
                 console.log("No active flash sales found or end_date is missing.");
+                // Thêm hàm này để xử lý khi không có flash sale
+                initFlashSaleProducts(); 
                 return;
             }
 
             // Lưu mã code của flash sale vào biến toàn cục
             activeFlashSaleCode = data[0].code;
+
+            // Gọi hàm render sản phẩm flash sale tại đây
+            initFlashSaleProducts(); 
 
             const targetDate = new Date(data[0].end_date);
 
@@ -1544,6 +1550,9 @@ function initCountdownTimer() {
 
                 if (distance < 0) {
                     countdownElements.forEach(el => el.textContent = '00');
+                    // Khi hết giờ, xóa flash sale code để không fetch nữa
+                    activeFlashSaleCode = null;
+                    initFlashSaleProducts(); 
                     return;
                 }
 
@@ -1564,9 +1573,10 @@ function initCountdownTimer() {
         .catch(error => {
             console.error('Error fetching flash sale data:', error);
             countdownElements.forEach(el => el.textContent = '00');
+            // Thêm hàm này để xử lý khi API lỗi
+            initFlashSaleProducts(); 
         });
 }
-
 
 
 // Product Cards Interactions
