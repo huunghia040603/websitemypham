@@ -68,6 +68,110 @@
             <!-- Messages will be loaded here -->
           </div>
           
+          <style>
+          /* Chat Modal Styles - Đồng bộ với live-chat.js */
+          #chatModalBody .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            max-width: 85%;
+          }
+          
+          #chatModalBody .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+          }
+          
+          #chatModalBody .message.agent {
+            align-self: flex-start;
+          }
+          
+          #chatModalBody .message-avatar {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+          }
+          
+          #chatModalBody .message.user .message-avatar {
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e2e8f0;
+          }
+          
+          #chatModalBody .message.agent .message-avatar {
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e2e8f0;
+          }
+          
+          #chatModalBody .message-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+          
+          #chatModalBody .message-bubble {
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.3;
+            word-wrap: break-word;
+            position: relative;
+          }
+          
+          #chatModalBody .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+          }
+          
+          #chatModalBody .message.agent .message-bubble {
+            background: white;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          }
+          
+          #chatModalBody .message-time {
+            font-size: 9px;
+            color: #9ca3af;
+            padding: 0 4px;
+            text-align: right;
+            margin-top: 1px;
+          }
+          
+          #chatModalBody .message.user .message-time {
+            text-align: right;
+          }
+          
+          #chatModalBody .message.agent .message-time {
+            text-align: left;
+          }
+          
+          #chatModalBody .emoji-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+          }
+          
+          #chatModalBody .emoji-btn:hover {
+            background: #f1f5f9;
+          }
+          </style>
+          
           <div class="chat-input-area" style="border-radius: 20px;padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
             <div class="input-wrapper" style="flex: 1; position: relative;">
               <textarea id="chatModalInput" class="chat-input" placeholder="Nhập tin nhắn..." rows="1" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 8px 12px; font-size: 14px; transition: all 0.2s ease; resize: none; min-height: 35px; max-height: 80px;"></textarea>
@@ -301,14 +405,21 @@
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'added') {
                         const message = change.doc.data();
+                        console.log(`New message from Firebase. Sender: ${message.senderId}, Content: ${message.text}, MessageId: ${message.messageId}`);
+                        
+                        // Use the messageId from Firebase, or create a fallback
                         const messageId = message.messageId || `${message.senderId}_${message.text}_${message.timestamp?.seconds || Date.now()}`;
                         
+                        // Check if we already displayed this message
                         if (displayedMessages.has(messageId)) {
+                            console.log('Skipping duplicate message - already in displayedMessages:', messageId);
                             return;
                         }
                         
+                        // Check if we already have this message displayed in DOM
                         const existingMessage = document.querySelector(`[data-message-id="${messageId}"]`);
                         if (existingMessage) {
+                            console.log('Skipping duplicate message - already in DOM:', messageId);
                             return;
                         }
                         
@@ -319,58 +430,63 @@
         }
     }
     
-    // Append message to chat
+    // Hàm để tạo và thêm một tin nhắn vào giao diện người dùng - Giống live-chat.js
     function appendMessage(senderId, text, timestamp, messageId = null) {
         const isUserMessage = (senderId === currentUserId);
         
+        // Check if this message was already displayed
         if (messageId && displayedMessages.has(messageId)) {
+            console.log('Skipping duplicate message in appendMessage:', messageId);
             return;
         }
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUserMessage ? 'user' : 'agent'}`;
-        messageDiv.style.cssText = `
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            max-width: 85%;
-            ${isUserMessage ? 'align-self: flex-end; flex-direction: row-reverse;' : 'align-self: flex-start;'}
-        `;
         
+        // Add messageId as data attribute for tracking
         if (messageId) {
             messageDiv.setAttribute('data-message-id', messageId);
-            displayedMessages.add(messageId);
+            displayedMessages.add(messageId); // Track as displayed
         }
-        
+
         const displayTime = timestamp ? new Date(timestamp.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Vừa xong';
-        const escapedText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        
+
+        // Escape HTML để tránh lỗi hiển thị
+        const escapedText = text.replace(/&/g, '&amp;')
+                               .replace(/</g, '&lt;')
+                               .replace(/>/g, '&gt;')
+                               .replace(/"/g, '&quot;')
+                               .replace(/'/g, '&#39;');
+
         let messageHTML = '';
         if (isUserMessage) {
+            // Get user avatar from API login response
             const userProfile = getUserProfile();
             const userAvatar = userProfile?.avatar || '/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg';
             messageHTML = `
-                <div class="message-avatar" style="width: 25px; height: 25px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                <div class="message-avatar">
                     <img src="${userAvatar}" alt="User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg'">
                 </div>
-                <div class="message-content" style="display: flex; flex-direction: column; gap: 2px;">
-                    <div class="message-bubble" style="padding: 6px 10px; border-radius: 10px; font-size: 14px; line-height: 1.3; word-wrap: break-word; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom-right-radius: 4px;">${escapedText}</div>
-                    <div class="message-time" style="font-size: 9px; color: #9ca3af; padding: 0 4px; text-align: right; margin-top: 1px;">${displayTime}</div>
+                <div class="message-content">
+                    <div class="message-bubble">${escapedText}</div>
+                    <div class="message-time">${displayTime}</div>
                 </div>`;
         } else {
+            // Use logo.png for agent
             messageHTML = `
-                <div class="message-avatar" style="width: 25px; height: 25px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                <div class="message-avatar">
                     <img src="/static/image/logo.png" alt="BuddySkincare" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/logo.png'">
                 </div>
-                <div class="message-content" style="display: flex; flex-direction: column; gap: 2px;">
-                    <div class="message-bubble" style="padding: 6px 10px; border-radius: 10px; font-size: 14px; line-height: 1.3; word-wrap: break-word; background: white; color: #2d3748; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">${escapedText}</div>
-                    <div class="message-time" style="font-size: 9px; color: #9ca3af; padding: 0 4px; text-align: left; margin-top: 1px;">${displayTime}</div>
+                <div class="message-content">
+                    <div class="message-bubble">${escapedText}</div>
+                    <div class="message-time">${displayTime}</div>
                 </div>`;
         }
-        
+
         messageDiv.innerHTML = messageHTML;
         chatModalBody.appendChild(messageDiv);
         
+        // Auto scroll to bottom with smooth animation
         setTimeout(() => {
             chatModalBody.scrollTo({
                 top: chatModalBody.scrollHeight,
@@ -379,50 +495,93 @@
         }, 100);
     }
     
-    // Force clear input
+    // Force clear input function - Giống live-chat.js
     function forceClearInput() {
-        isClearing = true;
+        isClearing = true; // Set flag to prevent event listener interference
+        
+        const tempValue = chatModalInput.value;
+        
+        // Method 1: Direct value clear
         chatModalInput.value = '';
+        
+        // Method 2: Clear all possible properties
         chatModalInput.innerHTML = '';
         chatModalInput.textContent = '';
         chatModalInput.innerText = '';
+        
+        // Method 3: Force clear using setAttribute
         chatModalInput.setAttribute('value', '');
+        
+        // Method 4: Reset height to default
         chatModalInput.style.height = '35px';
+        
+        // Method 5: Force focus and select all then clear
         chatModalInput.focus();
         chatModalInput.select();
         
+        // Method 6: Use document.execCommand for textarea
         if (chatModalInput.tagName.toLowerCase() === 'textarea') {
             try {
                 document.execCommand('selectAll', false, null);
                 document.execCommand('delete', false, null);
-            } catch (e) {}
+            } catch (e) {
+                // Fallback if execCommand fails
+            }
         }
         
+        console.log('Input cleared. Previous value:', tempValue, 'New value:', chatModalInput.value);
+        
+        // Verify it's actually cleared
+        if (chatModalInput.value !== '') {
+            console.warn('Input still has value after clear:', chatModalInput.value);
+            // Force clear one more time
+            chatModalInput.value = '';
+        }
+        
+        // Reset flag after a short delay
         setTimeout(() => {
             isClearing = false;
         }, 50);
     }
     
-    // Send message
+    // Send message - Giống live-chat.js
     function sendMessage() {
         const text = (chatModalInput.value || '').trim();
-        if (!text || isSending) return;
-        
-        isSending = true;
+        if (!text || isSending) return; // Prevent duplicate sends
+
+        isSending = true; // Set flag to prevent duplicate sends
+
+        // Create unique message ID to track duplicates
         const messageId = `${currentUserId}_${text}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         sentMessages.add(messageId);
-        
+
+        // Clear input immediately for better UX
         forceClearInput();
         
+        // Force clear multiple times to ensure it's cleared
+        setTimeout(() => {
+            forceClearInput();
+        }, 10);
+        
+        setTimeout(() => {
+            forceClearInput();
+        }, 50);
+        
+        setTimeout(() => {
+            forceClearInput();
+        }, 100);
+
         const messageData = {
             text: text,
             senderId: currentUserId,
             receiverId: "admin_001",
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             authToken: currentToken,
-            messageId: messageId
+            messageId: messageId // Add unique ID to track
         };
-        
+
+        console.log("Sending message:", messageData);
+
         fetch('https://buddyhotro.pythonanywhere.com/api/messages', {
             method: 'POST',
             headers: {
@@ -434,17 +593,22 @@
         .then(data => {
             if (data.error) {
                 console.error('Error from Flask:', data.error);
+                // Restore input if error
                 chatModalInput.value = text;
+                autoResize();
             } else {
                 console.log('Message sent successfully.');
             }
         })
         .catch(error => {
             console.error('Error sending message:', error);
+            // Restore input if error
             chatModalInput.value = text;
+            autoResize();
         })
         .finally(() => {
-            isSending = false;
+            isSending = false; // Reset flag after request completes
+            cleanupSentMessages(); // Cleanup old sent messages
         });
     }
     
@@ -521,5 +685,5 @@
             }
         }
     });
-});
+})();
 </script>
