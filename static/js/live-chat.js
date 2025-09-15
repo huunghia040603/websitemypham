@@ -8,13 +8,15 @@
     const loginPrompt = document.getElementById('loginPrompt');
     
     let currentUserId = null;
+    let currentUserName = null; // Thêm biến để lưu tên người dùng
+    let currentUserAvatar = null; // Thêm biến để lưu avatar người dùng
     let currentToken = null;
     let isEmojiPanelOpen = false;
     let isSending = false; // Flag to prevent duplicate sends
     let sentMessages = new Set(); // Track sent messages to prevent duplicates
 
     // Hàm để tạo và thêm một tin nhắn vào giao diện người dùng
-    function appendMessage(senderId, text, timestamp) {
+    function appendMessage(senderId, text, timestamp, senderName, senderAvatar) {
         const isUserMessage = (senderId === currentUserId);
         
         const messageDiv = document.createElement('div');
@@ -31,12 +33,11 @@
 
         let messageHTML = '';
         if (isUserMessage) {
-            // Get user avatar from API login response
-            const userProfile = getUserProfile();
-            const userAvatar = userProfile?.avatar || '/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg';
+            // Sử dụng avatar và tên đã lấy được
+            const avatarUrl = senderAvatar || '/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg';
             messageHTML = `
                 <div class="message-avatar">
-                    <img src="${userAvatar}" alt="User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg'">
+                    <img src="${avatarUrl}" alt="${senderName || 'Người dùng'}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg'">
                 </div>
                 <div class="message-content">
                     <div class="message-bubble">${escapedText}</div>
@@ -101,13 +102,14 @@
         sentMessages.add(messageId);
 
         // Hiển thị tin nhắn ngay lập tức cho user
-        appendMessage(currentUserId, text, null);
+        appendMessage(currentUserId, text, null, currentUserName, currentUserAvatar); // Truyền tên và avatar
 
         const messageData = {
             text: text,
             senderId: currentUserId,
+            senderName: currentUserName, // Gửi tên người dùng
+            senderAvatar: currentUserAvatar, // Gửi avatar người dùng
             receiverId: "admin_001",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             authToken: currentToken,
             messageId: messageId // Add unique ID to track
         };
@@ -185,10 +187,12 @@
 
         const userProfile = getUserProfile();
         currentUserId = userProfile.id ? String(userProfile.id) : null;
+        currentUserName = userProfile.name; // Gán tên người dùng
+        currentUserAvatar = userProfile.avatar; // Gán avatar người dùng
         currentToken = userProfile.access_token ? String(userProfile.access_token) : null;
         const adminId = "admin_001";
         
-        console.log(`Current user ID: ${currentUserId}`);
+        console.log(`Current user ID: ${currentUserId}, Name: ${currentUserName}, Avatar: ${currentUserAvatar}`);
         console.log(`Current token: ${currentToken}`);
 
         const firebaseConfig = {
@@ -222,7 +226,8 @@
                         return; // Skip this message as we already displayed it
                     }
                     
-                    appendMessage(message.senderId, message.text, message.timestamp);
+                    // Thêm tham số tên và avatar khi hiển thị tin nhắn từ Firebase
+                    appendMessage(message.senderId, message.text, message.timestamp, message.senderName, message.senderAvatar);
                 }
             });
         });
