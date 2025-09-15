@@ -86,7 +86,7 @@ async function loadDashboard(){
   const id = ctv.id;
   const s = await fetch(`/ctvs/${id}/stats/`).then(r=>r.json());
   document.getElementById('mTotalOrders').textContent = s.total_orders ?? 0;
-  document.getElementById('mTotalRevenue').textContent = fmt(s.total_revenue ?? 0);
+  document.getElementById('mTotalRevenue').textContent = fmt((s.total_revenue ?? 0) * 1000);
   document.getElementById('mCommissionBal').textContent = fmt(s.commission_balance ?? 0);
   document.getElementById('mCommissionPending').textContent = fmt(s.commission_pending ?? 0);
   document.getElementById('mCommissionWithdrawn').textContent = fmt(s.commission_withdrawn ?? 0);
@@ -101,7 +101,7 @@ async function loadDashboard(){
   document.getElementById('commissionEmpty').textContent='';
   for (const it of list.slice(0, 20)){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${it.order_code}</td><td>${it.product_name}</td><td>${it.quantity}</td><td>${fmt(it.profit)}</td><td><strong>${fmt(it.commission)}</strong></td>`;
+    tr.innerHTML = `<td>${it.order_code}</td><td>${it.product_name}</td><td>${it.quantity}</td><td>${fmt(it.profit * 1000)}</td><td><strong>${fmt(it.commission * 1000)}</strong></td>`;
     tbody.appendChild(tr);
   }
 }

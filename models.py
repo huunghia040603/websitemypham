@@ -263,6 +263,16 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        # Enforce unique active flash sale
+        if self.status == 'active':
+            # Check for existing active tags (excluding the current one if it's an update)
+            active_tags = Tag.objects.filter(status='active').exclude(pk=self.pk)
+            if active_tags.exists():
+                raise ValidationError("Chỉ một tag có thể ở trạng thái 'active' tại một thời điểm.")
+
+        super().save(*args, **kwargs)
+
 
 class Gift(models.Model):
     name = models.CharField(max_length=255, verbose_name="Tên quà tặng")
@@ -304,7 +314,10 @@ class Product(models.Model):
     status = models.CharField(max_length=10, choices=PRODUCT_STATUS_CHOICES, default='new', verbose_name="Trạng thái sản phẩm")
     description = RichTextField(verbose_name="Mô tả sản phẩm")
     ingredients = RichTextField(verbose_name="Thành phần", blank=True, null=True)
-    image = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh")
+    image = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh chính")
+    image_2 = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh 2")
+    image_3 = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh 3")
+    image_4 = models.CharField(max_length=255, null=True, blank=True, verbose_name="Ảnh 4")
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, verbose_name="Hãng mỹ phẩm")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, verbose_name="Danh mục")
     tags = models.ManyToManyField(Tag, blank=True, verbose_name="Tag")
@@ -324,6 +337,23 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name}"
+    
+    def get_all_images(self):
+        """Lấy tất cả ảnh của sản phẩm (tối đa 4 ảnh)"""
+        images = []
+        if self.image:
+            images.append(self.image)
+        if self.image_2:
+            images.append(self.image_2)
+        if self.image_3:
+            images.append(self.image_3)
+        if self.image_4:
+            images.append(self.image_4)
+        return images
+    
+    def get_image_count(self):
+        """Đếm số lượng ảnh có sẵn"""
+        return len(self.get_all_images())
 
 # --- Order-related Models ---
 class Voucher(models.Model):
@@ -736,6 +766,7 @@ class CTVApplication(models.Model):
 
 class CTV(models.Model):
     code = models.CharField(max_length=20, unique=True)
+    desired_code = models.CharField(max_length=20, blank=True, null=True)
     full_name = models.CharField(max_length=150)
     phone = models.CharField(max_length=20)
     email = models.EmailField()
@@ -827,3 +858,166 @@ def _lead_upsert_from_customer(sender, instance, created, **kwargs):
         )
     except Exception:
         pass
+
+
+# --- Signal to update CTV wallet when order is confirmed and shipped ---
+@receiver(post_save, sender=Order)
+def _update_ctv_wallet_on_order_completion(sender, instance, created, **kwargs):
+    """
+    Tự động cập nhật ví CTV khi đơn hàng được xác nhận và giao hàng thành công.
+    Chỉ cập nhật khi:
+    - is_confirmed = True
+    - status = 'shipped' hoặc 'delivered'
+    - có collaborator_code
+    - chưa được cộng hoa hồng trước đó
+    """
+    try:
+        # Chỉ xử lý khi đơn hàng được xác nhận và giao hàng
+        if not instance.is_confirmed or instance.status not in ['shipped', 'delivered']:
+            return
+
+        # Chỉ xử lý đơn hàng có CTV
+        if not instance.collaborator_code:
+            return
+
+        # Tìm CTV theo mã
+        try:
+            ctv = CTV.objects.get(code=instance.collaborator_code, is_active=True)
+        except CTV.DoesNotExist:
+            print(f"❌ CTV not found with code: {instance.collaborator_code}")
+            return
+
+        # Kiểm tra xem đơn hàng đã được cộng hoa hồng chưa
+        # Sử dụng trường notes để đánh dấu đã cộng hoa hồng
+        if hasattr(instance, 'notes') and instance.notes and 'CTV_COMMISSION_PAID' in str(instance.notes):
+            print(f"⚠️ Commission already paid for order {instance.id}")
+            return
+
+        # Tính hoa hồng cho đơn hàng này
+        commission_amount = _calculate_order_commission(instance, ctv)
+        if commission_amount <= 0:
+            print(f"⚠️ No commission for order {instance.id} - amount: {commission_amount}")
+            return
+
+        # Lấy hoặc tạo ví CTV
+        wallet, created = CTVWallet.objects.get_or_create(ctv=ctv)
+
+        # Cập nhật số dư ví
+        old_balance = float(wallet.balance)
+        wallet.balance = float(wallet.balance) + commission_amount
+        wallet.save()
+
+        # Cập nhật tổng doanh thu CTV (từ nghìn đồng sang VND)
+        order_total_vnd = float(instance.total_amount)
+        old_revenue = float(ctv.total_revenue)
+        ctv.total_revenue = old_revenue + order_total_vnd
+        ctv.save(update_fields=['total_revenue'])
+
+        # Đánh dấu đơn hàng đã được cộng hoa hồng
+        current_notes = instance.notes or ""
+        commission_note = f"CTV_COMMISSION_PAID_{commission_amount:,.0f}VND_{timezone.now().strftime('%Y%m%d_%H%M%S')}"
+        instance.notes = f"{current_notes}\n{commission_note}".strip()
+        instance.save(update_fields=['notes'])
+
+        print(f"✅ Updated CTV wallet: {ctv.code}")
+        print(f"   Order: #{instance.id}")
+        print(f"   Commission: {commission_amount:,.0f} VND")
+        print(f"   Balance: {old_balance:,.0f} → {float(wallet.balance):,.0f} VND")
+        print(f"   Revenue: {old_revenue:,.0f} → {float(ctv.total_revenue):,.0f} VND")
+
+    except Exception as e:
+        print(f"❌ Error updating CTV wallet for order {instance.id}: {e}")
+
+
+def _calculate_order_commission(order, ctv):
+    """
+    Tính hoa hồng cho đơn hàng theo công thức:
+    Lợi nhuận = Tổng tiền - Phí ship - Giảm giá - Giá nhập
+    Hoa hồng = Lợi nhuận * phần trăm hoa hồng
+    """
+    try:
+        # Lấy phần trăm hoa hồng từ level CTV
+        commission_percent = float(ctv.level.commission_percent if ctv.level else 10.0) / 100.0
+
+        # Tính tổng giá nhập của đơn hàng
+        total_import_cost = 0.0
+        for item in order.items.all():
+            import_price = float(getattr(item.product, 'import_price', 0) or 0)
+            quantity = float(item.quantity or 0)
+            total_import_cost += import_price * quantity
+
+        # Tính lợi nhuận: Tổng tiền - Phí ship - Giảm giá - Giá nhập
+        order_total = float(order.total_amount or 0)
+        shipping_fee = float(order.shipping_fee or 0)
+        discount_applied = float(order.discount_applied or 0)
+
+        # Tất cả giá trị đều ở đơn vị nghìn đồng
+        order_profit = order_total - shipping_fee - discount_applied - total_import_cost
+
+        # Tính hoa hồng
+        commission = max(0.0, order_profit * commission_percent)
+
+        # Chuyển từ nghìn đồng sang VND (nhân 1000)
+        return commission
+
+    except Exception as e:
+        print(f"❌ Error calculating commission: {e}")
+        return 0.0
+
+class MarketingResource(models.Model):
+    """
+    Model để quản lý tài nguyên marketing cho CTV
+    """
+    RESOURCE_TYPE_CHOICES = [
+        ('new_product', 'Ảnh sản phẩm mới'),
+        ('event', 'Ảnh sự kiện'),
+        ('product', 'Ảnh sản phẩm'),
+        ('article', 'Bài viết mẫu'),
+    ]
+
+    name = models.CharField(max_length=255, verbose_name="Tên tài nguyên")
+    description = models.TextField(blank=True, null=True, verbose_name="Mô tả")
+    resource_type = models.CharField(max_length=20, choices=RESOURCE_TYPE_CHOICES, verbose_name="Loại tài nguyên")
+    file_url = models.CharField(max_length=500, verbose_name="URL file")
+    thumbnail_url = models.CharField(max_length=500, blank=True, null=True, verbose_name="URL thumbnail")
+    file_size = models.IntegerField(blank=True, null=True, verbose_name="Kích thước file (bytes)")
+    download_count = models.PositiveIntegerField(default=0, verbose_name="Số lượt tải")
+    is_active = models.BooleanField(default=True, verbose_name="Trạng thái hoạt động")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Ngày tạo")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Ngày cập nhật")
+
+    # Liên kết với sản phẩm nếu là ảnh sản phẩm
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, blank=True, null=True, verbose_name="Sản phẩm liên quan")
+
+    class Meta:
+        verbose_name = "Tài nguyên Marketing"
+        verbose_name_plural = "Tài nguyên Marketing"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_resource_type_display()})"
+
+    def get_file_extension(self):
+        """Lấy phần mở rộng của file"""
+        if self.file_url:
+            return self.file_url.split('.')[-1].lower()
+        return ''
+
+    def is_image(self):
+        """Kiểm tra xem có phải là file ảnh không"""
+        image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']
+        return self.get_file_extension() in image_extensions
+
+    def get_file_size_display(self):
+        """Hiển thị kích thước file dễ đọc"""
+        if not self.file_size:
+            return "Không xác định"
+
+        size = self.file_size
+        if size < 1024:
+            return f"{size} B"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        else:
+            return f"{size / (1024 * 1024):.1f} MB"
+

@@ -63,7 +63,7 @@
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="/admin">
                 <img src="/static/image/logo.png" alt="Logo" style="width:34px;height:34px;object-fit:contain;border-radius:6px;background:#fff;padding:2px;margin-right:10px;" onerror="this.style.display='none'">
-                <span>Admin Dashboard</span>
+              
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
@@ -92,22 +92,40 @@
                     </li>
                     <!-- Group: Bán hàng -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_orders','admin_analytics','admin_customers','admin_customer_data','admin_email_analytics'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_orders','admin_analytics','admin_email_analytics'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-store me-1"></i>Bán hàng
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Đơn Hàng</a></li>
+                            <li><a class="dropdown-item" href="/admin/orders"><i class="fas fa-shopping-cart me-2"></i>Đơn hàng</a></li>
                             <li><a class="dropdown-item" href="/admin/analytics"><i class="fas fa-chart-line me-2"></i>Thống kê</a></li>
-                            <li><a class="dropdown-item" href="/admin/customers"><i class="fas fa-users me-2"></i>Khách Hàng</a></li>
-                            <li><a class="dropdown-item" href="/admin/customer-data"><i class="fas fa-database me-2"></i>Dữ liệu tệp KH</a></li>
-                            <li><a class="dropdown-item" href="/admin/email-analytics"><i class="fas fa-envelope-open-text me-2"></i>Thống kê Email</a></li>
+                            <li><a class="dropdown-item" href="/admin/email-analytics"><i class="fas fa-envelope-open-text me-2"></i>Thống kê email</a></li>
                         </ul>
                     </li>
-                    <!-- Group: Nội dung -->
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'admin_blog' %}active{% endif %}" href="/admin/blog">
-                            <i class="fas fa-newspaper me-1"></i>Quản lý Blog
+                    <!-- Group: Quản lý -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.endpoint in ['admin_blog','admin_messages','admin_ctv','admin_customers','admin_customer_data'] %}active{% endif %}" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-cogs me-1"></i>Quản lý
                         </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/blog">
+                                <i class="fas fa-newspaper me-2"></i>Quản lý blog
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/messages">
+                                <i class="fas fa-comments me-2"></i>Quản lý tin nhắn
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/ctv">
+                                <i class="fas fa-user-tie me-2"></i>Quản lý CTV
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/customers">
+                                <i class="fas fa-users me-2"></i>Quản lý khách hàng
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/customer-data">
+                                <i class="fas fa-database me-2"></i>Quản lý tệp khách hàng
+                            </a></li>
+                            <li><a class="dropdown-item" href="/admin/resources">
+                                <i class="fas fa-images me-2"></i>Tài Nguyên Marketing
+                            </a></li>
+                        </ul>
                     </li>
                     <!-- Group: Khuyến mãi & Sự kiện -->
                     <li class="nav-item dropdown">

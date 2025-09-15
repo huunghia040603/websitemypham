@@ -8,6 +8,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from io import BytesIO
+import requests
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -1754,6 +1755,279 @@ def preview_new_order_notification():
                          pending_orders=pending_orders,
                          current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
 
+# Orders API Endpoints
+@app.route('/orders/', methods=['GET'])
+def api_orders():
+    """API lấy danh sách đơn hàng (public endpoint for CTV orders)"""
+    import requests
+    
+    try:
+        # Get query parameters
+        collaborator_code = request.args.get('collaborator_code__isnull', '')
+        ctv_code = request.args.get('collaborator_code', '')
+        start_date = request.args.get('order_date__gte', '')
+        end_date = request.args.get('order_date__lte', '')
+        
+        print(f"🔍 Fetching orders from: {API_BASE_URL}/orders/")
+        print(f"📋 Query params: collaborator_code__isnull={collaborator_code}, collaborator_code={ctv_code}")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        # Build query URL
+        query_params = []
+        if collaborator_code == 'false':
+            query_params.append('collaborator_code__isnull=false')
+        if ctv_code:
+            query_params.append(f'collaborator_code={ctv_code}')
+        if start_date:
+            query_params.append(f'order_date__gte={start_date}')
+        if end_date:
+            query_params.append(f'order_date__lte={end_date}')
+        
+        query_string = '&'.join(query_params)
+        url = f'{API_BASE_URL}/orders/?ordering=-order_date'
+        if query_string:
+            url += f'&{query_string}'
+            
+        print(f"📡 Full URL: {url}")
+        
+        response = requests.get(url, headers=headers, timeout=30)
+        print(f"📡 Orders API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            orders = response.json()
+            print(f"✅ Successfully fetched {len(orders)} orders")
+            return jsonify(orders)
+        else:
+            print(f"❌ Orders API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy danh sách đơn hàng. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Orders API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+# CTVs API Endpoints
+@app.route('/ctvs/', methods=['GET'])
+def api_ctvs():
+    """API lấy danh sách CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTVs from: {API_BASE_URL}/ctvs/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/', headers=headers, timeout=30)
+        print(f"📡 CTVs API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            ctvs = response.json()
+            print(f"✅ Successfully fetched {len(ctvs)} CTVs")
+            return jsonify(ctvs)
+        else:
+            print(f"❌ CTVs API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy danh sách CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTVs API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/by-code/', methods=['GET'])
+def api_ctvs_by_code():
+    """API lấy CTV theo mã"""
+    import requests
+    
+    try:
+        code = request.args.get('code', '').strip()
+        if not code:
+            return jsonify({'error': 'Thiếu mã CTV'}), 400
+        
+        print(f"🔍 Fetching CTV by code: {code} from: {API_BASE_URL}/ctvs/by-code/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/by-code/?code={code}', headers=headers, timeout=30)
+        print(f"📡 CTV by code API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            ctv = response.json()
+            print(f"✅ Successfully fetched CTV: {ctv.get('code', 'N/A')}")
+            return jsonify(ctv)
+        elif response.status_code == 404:
+            print(f"❌ CTV not found with code: {code}")
+            return jsonify({'error': 'Không tìm thấy CTV với mã này'}), 404
+        else:
+            print(f"❌ CTV by code API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy thông tin CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV by code API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/stats/', methods=['GET'])
+def api_ctv_stats(ctv_id):
+    """API lấy thống kê CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV stats for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/stats/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/stats/', headers=headers, timeout=30)
+        print(f"📡 CTV stats API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            stats = response.json()
+            print(f"✅ Successfully fetched CTV stats for ID: {ctv_id}")
+            return jsonify(stats)
+        elif response.status_code == 404:
+            print(f"❌ CTV stats not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy thống kê CTV'}), 404
+        else:
+            print(f"❌ CTV stats API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy thống kê CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV stats API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/commissions/', methods=['GET'])
+def api_ctv_commissions(ctv_id):
+    """API lấy danh sách hoa hồng CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV commissions for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/commissions/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/commissions/', headers=headers, timeout=30)
+        print(f"📡 CTV commissions API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            commissions = response.json()
+            print(f"✅ Successfully fetched CTV commissions for ID: {ctv_id}")
+            return jsonify(commissions)
+        elif response.status_code == 404:
+            print(f"❌ CTV commissions not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy hoa hồng CTV'}), 404
+        else:
+            print(f"❌ CTV commissions API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy hoa hồng CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV commissions API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/wallet/', methods=['GET'])
+def api_ctv_wallet(ctv_id):
+    """API lấy thông tin ví CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV wallet for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/wallet/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/wallet/', headers=headers, timeout=30)
+        print(f"📡 CTV wallet API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            wallet = response.json()
+            print(f"✅ Successfully fetched CTV wallet for ID: {ctv_id}")
+            return jsonify(wallet)
+        elif response.status_code == 404:
+            print(f"❌ CTV wallet not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy ví CTV'}), 404
+        else:
+            print(f"❌ CTV wallet API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy ví CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV wallet API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/withdrawals/', methods=['GET'])
+def api_ctv_withdrawals(ctv_id):
+    """API lấy lịch sử rút tiền CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV withdrawals for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/withdrawals/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/withdrawals/', headers=headers, timeout=30)
+        print(f"📡 CTV withdrawals API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            withdrawals = response.json()
+            print(f"✅ Successfully fetched CTV withdrawals for ID: {ctv_id}")
+            return jsonify(withdrawals)
+        elif response.status_code == 404:
+            print(f"❌ CTV withdrawals not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy lịch sử rút tiền CTV'}), 404
+        else:
+            print(f"❌ CTV withdrawals API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy lịch sử rút tiền CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV withdrawals API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/withdraw/', methods=['POST'])
+def api_ctv_withdraw(ctv_id):
+    """API gửi yêu cầu rút tiền CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Sending CTV withdrawal request for ID: {ctv_id} to: {API_BASE_URL}/ctvs/{ctv_id}/withdraw/")
+        
+        # Lấy dữ liệu từ request body
+        data = request.get_json()
+        print(f"📋 Withdrawal data: {data}")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.post(f'{API_BASE_URL}/ctvs/{ctv_id}/withdraw/', json=data, headers=headers, timeout=30)
+        print(f"📡 CTV withdraw API response status: {response.status_code}")
+        
+        if response.status_code == 200 or response.status_code == 201:
+            result = response.json()
+            print(f"✅ Successfully sent CTV withdrawal request for ID: {ctv_id}")
+            return jsonify(result)
+        elif response.status_code == 400:
+            error_data = response.json()
+            print(f"❌ CTV withdraw validation error: {error_data}")
+            return jsonify({'error': error_data.get('detail', 'Dữ liệu không hợp lệ')}), 400
+        elif response.status_code == 404:
+            print(f"❌ CTV not found for withdrawal ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy CTV'}), 404
+        else:
+            print(f"❌ CTV withdraw API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể gửi yêu cầu rút tiền. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV withdraw API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
 # Admin API Endpoints
 @app.route('/admin/api/orders', methods=['GET'])
 def admin_api_orders():
@@ -1848,7 +2122,7 @@ def admin_api_confirm_order(order_id):
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
             f'{API_BASE_URL}/orders/{order_id}/', 
-            data=update_data,
+            json=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
@@ -1905,7 +2179,7 @@ def admin_api_cancel_order(order_id):
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
             f'{API_BASE_URL}/orders/{order_id}/', 
-            data=update_data,
+            json=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
@@ -1958,7 +2232,7 @@ def admin_api_ship_order(order_id):
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
             f'{API_BASE_URL}/orders/{order_id}/', 
-            data=update_data,
+            json=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
@@ -2368,6 +2642,59 @@ def upload_bank_transfer():
         print(f"❌ Error uploading bank transfer image: {e}")
         return jsonify({'error': f'Lỗi upload ảnh: {str(e)}'}), 500
 
+@app.route('/api/upload-marketing-resource', methods=['POST'])
+def upload_marketing_resource():
+    """API upload ảnh tài nguyên marketing lên Cloudinary"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Không có file được chọn'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Không có file được chọn'}), 400
+        
+        if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            # Check file size (max 10MB)
+            file.seek(0, 2)  # Seek to end
+            file_size = file.tell()
+            file.seek(0)  # Reset to beginning
+            
+            if file_size > 10 * 1024 * 1024:  # 10MB limit
+                return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
+            
+            # Upload to Cloudinary with image optimization for marketing resources
+            upload_result = cloudinary.uploader.upload(
+                file,
+                folder="marketing_resources",
+                public_id=f"resource_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename.split('.')[0]}",
+                resource_type="image",
+                # Image optimization settings
+                quality="auto:good",  # Chất lượng tốt cho marketing materials
+                fetch_format="auto",  # Tự động chọn format tối ưu
+                width=2000,  # Giới hạn chiều rộng tối đa cho marketing
+                height=2000,  # Giới hạn chiều cao tối đa cho marketing
+                crop="limit",  # Giữ nguyên tỷ lệ
+                flags="progressive",  # Tạo ảnh progressive
+                transformation=[
+                    {"width": 2000, "height": 2000, "crop": "limit"},
+                    {"quality": "auto:good"},
+                    {"fetch_format": "auto"}
+                ]
+            )
+            
+            return jsonify({
+                'success': True,
+                'url': upload_result['secure_url'],
+                'public_id': upload_result['public_id'],
+                'file_size': file_size
+            })
+        else:
+            return jsonify({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}), 400
+            
+    except Exception as e:
+        print(f"❌ Error uploading marketing resource image: {e}")
+        return jsonify({'error': f'Lỗi upload ảnh: {str(e)}'}), 500
+
 @app.route('/api/product-stock/<int:product_id>')
 def api_product_stock(product_id):
     """API lấy thông tin stock của sản phẩm"""
@@ -2647,6 +2974,102 @@ def ctv_auth_logout():
     session.pop('access_token', None)
     return redirect('/ctv/login')
 
+
+@app.route('/admin/messages')
+def admin_messages():
+    """Admin page for managing customer messages."""
+    return render_template('admin_messages.html')
+
+@app.route('/admin/ctv')
+def admin_ctv():
+    """Admin page for managing CTVs."""
+    return render_template('admin_ctv.html')
+
+@app.route('/admin/resources')
+def admin_resources():
+    """Admin page for managing marketing resources."""
+    return render_template('admin_resources.html')
+
+@app.route('/admin/api/ctvs/<int:ctv_id>/send-welcome-email', methods=['POST'])
+def send_ctv_welcome_email(ctv_id):
+    """Send welcome email to CTV with login credentials."""
+    try:
+        # Get CTV data from API
+        resp = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/', timeout=30)
+        if resp.status_code != 200:
+            return jsonify({'success': False, 'message': 'Không tìm thấy CTV'}), 404
+        
+        ctv_data = resp.json()
+        
+        # Get data from request
+        data = request.get_json(silent=True) or {}
+        ctv_name = data.get('ctv_name') or ctv_data.get('full_name', '')
+        ctv_email = data.get('ctv_email') or ctv_data.get('email', '')
+        ctv_phone = ctv_data.get('phone', '')
+        ctv_password = ctv_data.get('password_text', '')
+        
+        if not ctv_email or '@' not in ctv_email:
+            return jsonify({'success': False, 'message': 'Email CTV không hợp lệ'}), 400
+        
+        if not ctv_password:
+            return jsonify({'success': False, 'message': 'CTV chưa có mật khẩu. Vui lòng cập nhật mật khẩu trước khi gửi email.'}), 400
+        
+        # Create login URL
+        login_url = f"{request.url_root}ctv/login"
+        
+        # Render email template
+        html_content = render_template('emails/ctv_welcome_email.html', 
+                                     ctv_name=ctv_name,
+                                     ctv_phone=ctv_phone,
+                                     ctv_password=ctv_password,
+                                     login_url=login_url)
+        
+        # SMTP configuration
+        smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        smtp_user = os.getenv('SMTP_USER', 'buddyskincarevn@gmail.com')
+        smtp_pass = os.getenv('SMTP_PASS', 'pyvd idcm rsrf apjn')
+        sender = os.getenv('SMTP_SENDER', smtp_user)
+        
+        # Create email message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f'🎉 Chào mừng đến với BuddySkincare - Thông tin tài khoản CTV'
+        msg['From'] = sender
+        msg['To'] = ctv_email
+        
+        # Attach HTML content
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        
+        # Send email
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(sender, [ctv_email], msg.as_string())
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Đã gửi email chào mừng đến {ctv_email}',
+            'email_sent': True
+        }), 200
+        
+    except smtplib.SMTPAuthenticationError:
+        return jsonify({
+            'success': False, 
+            'message': 'Lỗi xác thực email. Vui lòng kiểm tra cấu hình SMTP.',
+            'email_sent': False
+        }), 500
+    except smtplib.SMTPException as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Lỗi khi gửi email: {str(e)}',
+            'email_sent': False
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Lỗi hệ thống: {str(e)}',
+            'email_sent': False
+        }), 500
 
 @app.before_request
 def _guard_ctv_pages():

@@ -344,17 +344,29 @@ class ProductSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
+    
+    # Hiển thị tất cả ảnh
+    all_images = serializers.SerializerMethodField()
+    image_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
-            'id', 'name', 'description', 'image', 'brand', 'brand_name',
-            'category', 'category_name', 'tags', 'tags_write', 'gifts',
-            'stock_quantity', 'sold_quantity', 'rating', 'savings_price',
-            'import_price', 'original_price', 'discount_rate',
+            'id', 'name', 'description', 'image', 'image_2', 'image_3', 'image_4', 
+            'all_images', 'image_count', 'brand', 'brand_name', 'category', 'category_name', 
+            'tags', 'tags_write', 'gifts', 'stock_quantity', 'sold_quantity', 'rating', 
+            'savings_price', 'import_price', 'original_price', 'discount_rate',
             'discounted_price', 'status'
         )
         read_only_fields = ('savings_price', 'discount_rate')
+
+    def get_all_images(self, obj):
+        """Lấy tất cả ảnh của sản phẩm"""
+        return obj.get_all_images()
+    
+    def get_image_count(self, obj):
+        """Đếm số lượng ảnh"""
+        return obj.get_image_count()
 
     def create(self, validated_data):
         tags_data = validated_data.pop('tags_write', [])
@@ -749,7 +761,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'id', 'customer', 'customer_name', 'phone_number', 'email', 'street',
             'ward', 'district', 'province', 'notes', 'order_note', 'payment_method',
             'bank_transfer_image', 'order_date', 'total_amount', 'shipping_fee', 'collaborator_code',
-            'discount_applied', 'items', 'items_data', 'voucher_code', 'is_confirmed', 'status'
+            'discount_applied', 'items', 'items_data', 'voucher_code', 'voucher', 'is_confirmed', 'status'
         )
         read_only_fields = ('total_amount', 'discount_applied')
 
@@ -803,6 +815,9 @@ class OrderSerializer(serializers.ModelSerializer):
         validated_data['discount_applied'] = discount_amount
         if voucher:
             validated_data['voucher'] = voucher
+            # Tự động map mã voucher vào collaborator_code nếu chưa có
+            if not validated_data.get('collaborator_code'):
+                validated_data['collaborator_code'] = voucher.code
 
         order = Order.objects.create(**validated_data)
 
@@ -1007,14 +1022,18 @@ class CTVApplicationSerializer(serializers.ModelSerializer):
         ]
 
     def validate(self, attrs):
-        required = ['full_name', 'phone', 'email', 'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url']
-        for f in required:
-            if not attrs.get(f):
-                raise serializers.ValidationError({f: 'Trường này là bắt buộc'})
-        if not attrs.get('agreed', False):
-            raise serializers.ValidationError({'agreed': 'Bạn phải đồng ý với quy định'})
+        # Chỉ validate các trường bắt buộc khi tạo mới (instance is None)
+        if self.instance is None:
+            required = ['full_name', 'phone', 'email', 'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url']
+            for f in required:
+                if not attrs.get(f):
+                    raise serializers.ValidationError({f: 'Trường này là bắt buộc'})
 
-        # Validate desired_code uniqueness if provided
+            # Validate agreed khi tạo mới
+            if not attrs.get('agreed', False):
+                raise serializers.ValidationError({'agreed': 'Bạn phải đồng ý với quy định'})
+
+        # Validate desired_code uniqueness if provided (chỉ khi có desired_code mới)
         desired = (attrs.get('desired_code') or '').strip()
         if desired:
             if len(desired) < 3 or len(desired) > 20:
@@ -1027,32 +1046,62 @@ class CTVApplicationSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class CTVSerializer(serializers.ModelSerializer):
-    level = CTVLevelSerializer(read_only=True)
-
-    class Meta:
-        model = CTV
-        fields = [
-            'id', 'code', 'full_name', 'phone', 'email', 'address',
-            'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url',
-            'password_text', 'total_revenue', 'level', 'is_active', 'joined_at'
-        ]
-
-
 class CTVWalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = CTVWallet
         fields = ['balance', 'pending', 'updated_at']
 
 
+class CTVSerializer(serializers.ModelSerializer):
+    level = CTVLevelSerializer(read_only=True)
+    wallet = CTVWalletSerializer(read_only=True)
+
+    class Meta:
+        model = CTV
+        fields = [
+            'id', 'code', 'desired_code', 'full_name', 'phone', 'email', 'address',
+            'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url',
+            'password_text', 'total_revenue', 'level', 'wallet', 'is_active', 'joined_at'
+        ]
+
+
 class CTVWithdrawalSerializer(serializers.ModelSerializer):
+    ctv_name = serializers.CharField(source='ctv.full_name', read_only=True, allow_null=True)
+    ctv_code = serializers.CharField(source='ctv.code', read_only=True, allow_null=True)
+    ctv_phone = serializers.CharField(source='ctv.phone', read_only=True, allow_null=True)
+    ctv_email = serializers.CharField(source='ctv.email', read_only=True, allow_null=True)
+    ctv_bank_name = serializers.CharField(source='ctv.bank_name', read_only=True, allow_null=True)
+    ctv_bank_number = serializers.CharField(source='ctv.bank_number', read_only=True, allow_null=True)
+    ctv_bank_holder = serializers.CharField(source='ctv.bank_holder', read_only=True, allow_null=True)
+
     class Meta:
         model = CTVWithdrawal
-        fields = ['id', 'amount', 'status', 'requested_at', 'processed_at', 'note']
+        fields = [
+            'id', 'amount', 'status', 'requested_at', 'processed_at', 'note',
+            'ctv_name', 'ctv_code', 'ctv_phone', 'ctv_email',
+            'ctv_bank_name', 'ctv_bank_number', 'ctv_bank_holder'
+        ]
 
 
 class CustomerLeadSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerLead
         fields = ['id', 'name', 'phone', 'email', 'address', 'updated_at']
+
+class MarketingResourceSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    file_size_display = serializers.CharField(source='get_file_size_display', read_only=True)
+    file_extension = serializers.CharField(source='get_file_extension', read_only=True)
+    is_image = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = MarketingResource
+        fields = [
+            'id', 'name', 'description', 'resource_type', 'file_url',
+            'thumbnail_url', 'file_size', 'file_size_display', 'file_extension',
+            'download_count', 'is_active', 'created_at', 'updated_at',
+            'product', 'product_name', 'is_image'
+        ]
+        read_only_fields = ['download_count', 'created_at', 'updated_at']
+
 
