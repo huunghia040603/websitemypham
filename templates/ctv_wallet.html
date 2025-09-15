@@ -26,10 +26,13 @@
 
 <div class="ctv-card p-3 mt-3">
   <h2 class="h6">Rút tiền</h2>
+  <div class="alert alert-info py-2 mb-3">
+    <small><i class="fas fa-info-circle me-1"></i><strong>Quy định rút tiền:</strong> Tối thiểu 50,000đ, tối đa 1,000,000đ. Có thể chia làm nhiều lần rút.</small>
+  </div>
   <div class="row g-2 align-items-end">
     <div class="col-md-4">
-      <label class="form-label">Số tiền</label>
-      <input id="wAmount" type="number" class="form-control" placeholder="vd: 500000">
+      <label class="form-label">Số tiền (50,000đ - 1,000,000đ)</label>
+      <input id="wAmount" type="number" class="form-control" placeholder="vd: 500000" min="50000" max="1000000" step="1000">
     </div>
     <div class="col-md-3">
       <button id="btnWithdraw" class="btn btn-primary">Gửi yêu cầu</button>
@@ -42,7 +45,7 @@
   <h2 class="h6">Lịch sử rút tiền</h2>
   <div class="table-responsive">
     <table class="table align-middle">
-      <thead><tr><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th></tr></thead>
+      <thead><tr><th>Ngày</th><th>Số tiền</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
       <tbody id="wRows"></tbody>
     </table>
   </div>
@@ -67,6 +70,15 @@ function getCtv(){
 }
 function fmt(n){return (Number(n)||0).toLocaleString('vi-VN')+" đ"}
 
+function getWithdrawalStatusText(status) {
+    switch(status) {
+        case 'pending': return 'Chờ duyệt';
+        case 'approved': return 'Đã duyệt';
+        case 'rejected': return 'Từ chối';
+        default: return status;
+    }
+}
+
 async function loadWallet(){
   const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
   const id = ctv.id;
@@ -79,7 +91,8 @@ async function loadWallet(){
   const tbody = document.getElementById('wRows'); tbody.innerHTML='';
   for (const it of withdrawals){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${new Date(it.requested_at).toLocaleString('vi-VN')}</td><td>${fmt(it.amount)}</td><td>${it.status}</td>`;
+    const statusText = getWithdrawalStatusText(it.status);
+    tr.innerHTML = `<td>${new Date(it.requested_at).toLocaleString('vi-VN')}</td><td>${fmt(it.amount)}</td><td>${statusText}</td><td>${it.note || '-'}</td>`;
     tbody.appendChild(tr);
   }
 }
@@ -88,7 +101,35 @@ async function doWithdraw(){
   const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
   const id = ctv.id; const amt = Number(document.getElementById('wAmount').value||0);
   const msg = document.getElementById('wMsg');
-  if (!amt || amt<=0){ msg.textContent = 'Số tiền không hợp lệ'; msg.className='small text-danger'; return; }
+  
+  // Validation
+  if (!amt || amt<=0){ 
+    msg.textContent = 'Số tiền không hợp lệ'; 
+    msg.className='small text-danger'; 
+    return; 
+  }
+  
+  // Check minimum amount
+  if (amt < 50000) {
+    msg.textContent = 'Số tiền rút tối thiểu là 50,000đ'; 
+    msg.className='small text-danger'; 
+    return;
+  }
+  
+  // Check maximum amount
+  if (amt > 1000000) {
+    msg.textContent = 'Số tiền rút tối đa là 1,000,000đ'; 
+    msg.className='small text-danger'; 
+    return;
+  }
+  
+  // Check if amount is multiple of 1000
+  if (amt % 1000 !== 0) {
+    msg.textContent = 'Số tiền phải là bội số của 1,000đ'; 
+    msg.className='small text-danger'; 
+    return;
+  }
+  
   const resp = await fetch(`/ctvs/${id}/withdraw/`, {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({amount: amt})});
   const data = await resp.json().catch(()=>({}));
   if (!resp.ok){ msg.textContent = data.detail || 'Không gửi được yêu cầu'; msg.className='small text-danger'; return; }

@@ -44,7 +44,7 @@ const createBlogCard = (blog) => {
     const tagClass = getTagClass(blog.tag);
 
     blogCard.innerHTML = `
-        <a href="/blog_detail/${blog.id}" class="blog-card-link">
+        <a href="/blog/${blog.id}" class="blog-card-link">
             <img src="${blog.img_thumbnail}" alt="${blog.title}" class="blog-image">
             <div class="blog-content">
                 <span class="blog-tag ${tagClass}">${tagName}</span>

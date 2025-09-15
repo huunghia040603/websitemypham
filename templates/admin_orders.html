@@ -1175,6 +1175,8 @@ async function loadOrderDetail(order) {
                         <p><strong>Tổng tiền:</strong> <strong>${formatPrice(order.total_amount || 0)}</strong></p>
                         <p><strong>Phí ship:</strong> <strong>${formatShippingFee(order.shipping_fee || 0)}</strong></p>
                         ${order.discount_applied ? `<p><strong>Giảm giá:</strong> ${formatPrice(order.discount_applied)}</p>` : ''}
+                        ${order.voucher ? `<p><strong>Mã voucher:</strong> <span class="badge bg-success">${order.voucher.code || order.voucher}</span></p>` : ''}
+                        ${order.collaborator_code ? `<p><strong>CTV:</strong> <span class="badge bg-info">${order.collaborator_code}</span> <span id="ctvName-${order.id}" class="text-muted">(Đang tải tên...)</span></p>` : ''}
                     </div>
                 </div>
             </div>
@@ -1234,6 +1236,11 @@ async function loadOrderDetail(order) {
     }
     
     container.innerHTML = html;
+    
+    // Load CTV name if collaborator_code exists
+    if (order.collaborator_code) {
+        loadCTVName(order.id, order.collaborator_code);
+    }
     
     // Show/hide and enable/disable action buttons based on order status
     const confirmBtn = document.getElementById('confirmOrderBtn');
@@ -1611,7 +1618,7 @@ function exportOrders() {
     const data = filteredOrders.map(order => {
         const itemCount = order.items ? order.items.length : 0;
         const productNames = order.items ? order.items.map(item => 
-            (item.product && item.product.name) ? item.product.name : 'N/A'
+            (item.product && item.product.name) || item.product_name || 'N/A'
         ).join('; ') : 'N/A';
         
         const address = [
@@ -2317,30 +2324,45 @@ function exportSelectedOrders() {
     `;
     
     selectedOrders.forEach(order => {
-        const products = order.items ? order.items.map(item => 
-            `${item.product_name || 'N/A'} (SL: ${item.quantity || 0})`
-        ).join('; ') : 'N/A';
+        try {
+            const products = order.items ? order.items.map(item => {
+                const productName = (item.product && item.product.name) || item.product_name || 'N/A';
+                const quantity = item.quantity || 0;
+                return `${productName} (SL: ${quantity})`;
+            }).join('; ') : 'N/A';
         
-        const statusText = getStatusText(order.status);
-        const confirmationText = order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận';
-        const paymentMethod = order.payment_method === 'bank' ? 'Chuyển khoản' : 'Thu COD';
-        const createdDate = formatDate(order.order_date);
-        
-        excelContent += `
-            <tr>
-                <td>${order.id}</td>
-                <td>${order.customer_name || 'N/A'}</td>
-                <td>="${order.phone_number || 'N/A'}"</td>
-                <td>${order.customer_address || 'N/A'}</td>
-                <td>${products}</td>
-                <td>${formatPrice(order.total_amount || 0)}</td>
-                <td>${paymentMethod}</td>
-                <td>${statusText}</td>
-                <td>${confirmationText}</td>
-                <td>${createdDate}</td>
-                <td>${order.notes || 'N/A'}</td>
-            </tr>
-        `;
+            const statusText = getStatusText(order.status);
+            const confirmationText = order.is_confirmed ? 'Đã xác nhận' : 'Chưa xác nhận';
+            const paymentMethod = order.payment_method === 'bank' ? 'Chuyển khoản' : 'Thu COD';
+            const createdDate = formatDate(order.order_date);
+            
+            // Build address from individual fields like in exportOrders()
+            const address = [
+                order.street || '',
+                order.ward || '',
+                order.district || '',
+                order.province || ''
+            ].filter(Boolean).join(', ') || order.customer_address || 'N/A';
+            
+            excelContent += `
+                <tr>
+                    <td>${order.id}</td>
+                    <td>${order.customer_name || 'N/A'}</td>
+                    <td>="${order.phone_number || 'N/A'}"</td>
+                    <td>${address}</td>
+                    <td>${products}</td>
+                    <td>${formatPrice(order.total_amount || 0)}</td>
+                    <td>${paymentMethod}</td>
+                    <td>${statusText}</td>
+                    <td>${confirmationText}</td>
+                    <td>${createdDate}</td>
+                    <td>${order.notes || 'N/A'}</td>
+                </tr>
+            `;
+        } catch (error) {
+            console.error('Error processing order for export:', order.id, error);
+            // Skip this order if there's an error
+        }
     });
     
     excelContent += '</table>';
@@ -2384,6 +2406,32 @@ function exportSelectedOrders() {
     window.URL.revokeObjectURL(url);
     
     showNotification(`Đã xuất ${selectedOrders.length} đơn hàng đã chọn ra file Excel`, 'success');
+}
+
+// Load CTV name by code
+async function loadCTVName(orderId, ctvCode) {
+    try {
+        const response = await fetch(`/ctvs/by-code/?code=${encodeURIComponent(ctvCode)}`);
+        if (!response.ok) throw new Error('Failed to load CTV info');
+        
+        const ctv = await response.json();
+        
+        const ctvNameElement = document.getElementById(`ctvName-${orderId}`);
+        if (ctvNameElement && ctv) {
+            ctvNameElement.textContent = `- ${ctv.full_name || ctv.name || 'N/A'}`;
+            ctvNameElement.className = 'text-success fw-bold';
+        } else if (ctvNameElement) {
+            ctvNameElement.textContent = '- Không tìm thấy';
+            ctvNameElement.className = 'text-danger';
+        }
+    } catch (error) {
+        console.error('Error loading CTV name:', error);
+        const ctvNameElement = document.getElementById(`ctvName-${orderId}`);
+        if (ctvNameElement) {
+            ctvNameElement.textContent = '- Lỗi tải tên';
+            ctvNameElement.className = 'text-danger';
+        }
+    }
 }
 
 </script>

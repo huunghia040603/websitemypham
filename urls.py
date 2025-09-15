@@ -30,8 +30,10 @@ r.register(r'lucky-winners', views.LuckyWinnerViewSet, basename='lucky-winner')
 r.register(r'ctv-applications', views.CTVApplicationViewSet, basename='ctv-application')
 r.register(r'ctv-levels', views.CTVLevelViewSet, basename='ctv-level')
 r.register(r'ctvs', views.CTVViewSet, basename='ctv')
+r.register(r'ctv-withdrawals', views.CTVWithdrawalViewSet, basename='ctv-withdrawal')
 r.register(r'customer-leads', views.CustomerLeadViewSet, basename='customer-lead')
-
+r.register(r'users', views.UserViewSet, basename='user')
+r.register(r'marketing-resources', views.MarketingResourceViewSet, basename='marketing-resource')
 
 
 # Cấu hình urlpatterns cho ứng dụng
@@ -45,8 +47,8 @@ urlpatterns = [
     path('auth/google/', GoogleSocialAuthView.as_view(), name='google-auth'),
     path('auth/me/', CurrentUserView.as_view(), name='current-user'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
-    path('auth/forgot-password/', UserViewSet.as_view({'post': 'forgot_password'}), name='forgot-password'),
-
+    # path('auth/forgot-password/', UserViewSet.as_view({'post': 'forgot_password'}), name='forgot-password'),
+    path('api/user_info/', UserInfoAPIView.as_view(), name='user-info'),
     # Other URLs
     path('orders/by-code/<str:order_code>/', OrderByCodeView.as_view(), name='order-by-code'),
 
@@ -58,4 +60,10 @@ urlpatterns = [
     path('ctv/profile/', views.ctv_profile_page, name='ctv-profile-page'),
     path('ctv/place-order/', views.ctv_place_order_page, name='ctv-place-order-page'),
     path('ctv/resources/', views.ctv_resources_page, name='ctv-resources-page'),
+    
+    # Admin Pages
+    path('admin/resources/', views.admin_resources_page, name='admin-resources-page'),
+    
+    # Product Images API (không bị pagination)
+    path('product-images/', views.ProductImagesAPIView.as_view(), name='product-images'),
 ]

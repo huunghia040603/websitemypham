@@ -123,6 +123,8 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.AllowAny',
         # Mặc định yêu cầu xác thực
     ),
+    'DEFAULT_PAGINATION_CLASS': None,  # Tắt pagination mặc định
+    'PAGE_SIZE': None,  # Không giới hạn page size
 }
 
 WSGI_APPLICATION = 'BuddyProject.wsgi.application'

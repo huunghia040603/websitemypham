@@ -35,6 +35,17 @@ function getCtv(){
 }
 function fmt(n){return (Number(n)||0).toLocaleString('vi-VN')+" đ"}
 
+function getOrderStatusText(status) {
+    switch(status) {
+        case 'pending': return 'Chờ duyệt đơn';
+        case 'processing': return 'Đang xử lý';
+        case 'shipped': return 'Đã giao';
+        case 'delivered': return 'Đã nhận hàng';
+        case 'cancelled': return 'Đã hủy';
+        default: return status;
+    }
+}
+
 async function loadOrders(){
   const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
   // Lấy orders qua router /orders/ có filter đơn giản phía client
@@ -44,7 +55,8 @@ async function loadOrders(){
   const tbody = document.getElementById('oRows'); tbody.innerHTML='';
   for (const o of list){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${o.order_code||('#'+o.id)}</td><td>${new Date(o.order_date).toLocaleString('vi-VN')}</td><td>${o.status}</td><td>${fmt(o.total_amount)}</td>`;
+    const statusText = getOrderStatusText(o.status);
+    tr.innerHTML = `<td>${o.order_code||('#'+o.id)}</td><td>${new Date(o.order_date).toLocaleString('vi-VN')}</td><td>${statusText}</td><td>${fmt(o.total_amount * 1000)}</td>`;
     tbody.appendChild(tr);
   }
 }

@@ -22,6 +22,20 @@ async function fetchVoucherFromAPI(code){
     }
 }
 
+// Fetch CTV by code from backend API
+async function fetchCTVFromAPI(code){
+    try{
+        const res = await fetch('https://buddyskincare.pythonanywhere.com/ctvs/');
+        if(!res.ok) return null;
+        const list = await res.json();
+        const found = (list||[]).find(ctv => (ctv.code||'').toUpperCase() === String(code||'').toUpperCase());
+        return found || null;
+    }catch(e){
+        console.error('CTV API error:', e);
+        return null;
+    }
+}
+
 // Save voucher to localStorage
 function saveVoucher(voucher) {
     localStorage.setItem('appliedVoucher', JSON.stringify(voucher));
@@ -116,7 +130,166 @@ async function applyVoucher(code, isCheckout = false) {
     // Clear previous messages
     messageEl.innerHTML = '';
     
-    // Fetch voucher from API
+    // Check if it's a special CTV code first
+    const ctvCode = code.toUpperCase();
+    if (ctvCode === 'LOVEBUDDY') {
+        // Handle special LOVEBUDDY CTV code
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        let subtotal = 0;
+        cart.forEach(item => {
+            const price = parsePrice(item.price);
+            subtotal += price * item.quantity;
+        });
+        
+        // Generate random discount for LOVEBUDDY (5,000 - 15,000 VND)
+        const discountAmount = generateRandomDiscount();
+        
+        // Check if there's already a voucher applied
+        const existingVoucher = getAppliedVoucher();
+        if (existingVoucher) {
+            console.log('Replacing existing voucher:', existingVoucher.code, 'with new CTV code:', ctvCode);
+            clearVoucherDisplay(isCheckout);
+        }
+        
+        const applied = {
+            id: 'ctv-lovebuddy',
+            code: ctvCode,
+            discount: discountAmount,
+            type: 'amount',
+            minOrder: 0,
+            isCTV: true
+        };
+        
+        // Apply CTV code
+        saveVoucher(applied);
+        
+        // Update UI
+        nameEl.textContent = applied.code;
+        discountEl.textContent = `-${applied.discount.toLocaleString('vi-VN')}đ`;
+        appliedEl.classList.remove('d-none');
+        voucherLineEl.style.display = 'flex';
+        
+        messageEl.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>Mã CTV áp dụng thành công!</span>';
+        
+        // Update summary
+        if (isCheckout) {
+            updateCheckoutSummary();
+        } else {
+            updateCartSummary();
+            syncVoucherToCheckout();
+        }
+        
+        return true;
+    }
+    
+    // Check if it's a custom CTV code
+    const ctv = await fetchCTVFromAPI(code);
+    if (ctv) {
+        // Check if this CTV code also exists as a voucher
+        const voucher = await fetchVoucherFromAPI(code);
+        
+        if (voucher) {
+            // CTV code exists as voucher - apply discount
+            const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+            let subtotal = 0;
+            cart.forEach(item => {
+                const price = parsePrice(item.price);
+                subtotal += price * item.quantity;
+            });
+            
+            // Calculate discount based on voucher rules
+            let discountAmount = 0;
+            if ((voucher.discount_type || '').toLowerCase() === 'percentage') {
+                const percent = Math.max(0, parseFloat(voucher.discount_value || '0'));
+                discountAmount = Math.floor(subtotal * (percent / 100));
+                const cap = Math.max(0, parseFloat(voucher.max_order_amount || '0')) * 1000;
+                if (cap > 0) discountAmount = Math.min(discountAmount, cap);
+            } else {
+                // amount is stored in thousands
+                discountAmount = Math.max(0, parseFloat(voucher.discount_value || '0')) * 1000;
+            }
+            
+            // Check if there's already a voucher applied
+            const existingVoucher = getAppliedVoucher();
+            if (existingVoucher) {
+                console.log('Replacing existing voucher:', existingVoucher.code, 'with new CTV voucher:', ctvCode);
+                clearVoucherDisplay(isCheckout);
+            }
+            
+            const applied = {
+                id: voucher.id,
+                code: ctvCode,
+                discount: discountAmount,
+                type: (voucher.discount_type||'amount').toLowerCase(),
+                minOrder: Math.max(0, parseFloat(voucher.min_order_amount || '0')) * 1000,
+                isCTV: true,
+                ctvName: ctv.full_name
+            };
+            
+            // Apply CTV voucher
+            saveVoucher(applied);
+            
+            // Update UI
+            nameEl.textContent = applied.code;
+            discountEl.textContent = `-${applied.discount.toLocaleString('vi-VN')}đ`;
+            appliedEl.classList.remove('d-none');
+            voucherLineEl.style.display = 'flex';
+            
+            messageEl.innerHTML = `<span class="text-success"><i class="fas fa-check-circle me-1"></i>Mã CTV "${ctv.full_name}" áp dụng thành công!</span>`;
+            
+            // Update summary
+            if (isCheckout) {
+                updateCheckoutSummary();
+            } else {
+                updateCartSummary();
+                syncVoucherToCheckout();
+            }
+            
+            return true;
+        } else {
+            // CTV code exists but no voucher - just record the CTV (no discount)
+            // Check if there's already a voucher applied
+            const existingVoucher = getAppliedVoucher();
+            if (existingVoucher) {
+                console.log('Replacing existing voucher:', existingVoucher.code, 'with new CTV code:', ctvCode);
+                clearVoucherDisplay(isCheckout);
+            }
+            
+            const applied = {
+                id: `ctv-${ctv.id}`,
+                code: ctvCode,
+                discount: 0, // No discount
+                type: 'amount',
+                minOrder: 0,
+                isCTV: true,
+                ctvName: ctv.full_name,
+                noDiscount: true
+            };
+            
+            // Apply CTV code (no discount)
+            saveVoucher(applied);
+            
+            // Update UI - show CTV info but no discount
+            nameEl.textContent = applied.code;
+            discountEl.textContent = '0đ';
+            appliedEl.classList.remove('d-none');
+            voucherLineEl.style.display = 'flex';
+            
+            messageEl.innerHTML = `<span class="text-info"><i class="fas fa-info-circle me-1"></i>Đang mua hàng của CTV "${ctv.full_name}"</span>`;
+            
+            // Update summary
+            if (isCheckout) {
+                updateCheckoutSummary();
+            } else {
+                updateCartSummary();
+                syncVoucherToCheckout();
+            }
+            
+            return true;
+        }
+    }
+    
+    // Fetch voucher from API for regular vouchers
     const voucher = await fetchVoucherFromAPI(code);
     if (!voucher) {
         messageEl.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>Mã giảm giá không hợp lệ</span>';
@@ -970,6 +1143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initLazyLoading();
     initSmoothScrolling();
      // Khởi tạo Flash Sale
+    initAoThunProducts(); // Khởi tạo sản phẩm áo thun
     initNewProducts(); // Khởi tạo sản phẩm mới
     initFeaturedProducts(); // Khởi tạo sản phẩm nổi bật
     initCart(); // Khởi tạo giỏ hàng
@@ -1141,6 +1315,129 @@ function initFlashSaleProducts() {
     const flashSaleButton = ``;
 
     fetchAndRenderProducts(flashSaleApiUrl, containerSelector, createFlashSaleProductCard, flashSaleButton);
+}
+
+// Hàm khởi tạo cho sản phẩm áo thun
+function initAoThunProducts() {
+    // Tạm thời sử dụng API sản phẩm mới và filter client-side
+    // Sau này có thể tạo danh mục "Áo thun" riêng
+    const aoThunApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?status=new';
+    const containerSelector = '#ao-thun-products';
+    
+    // Gọi API và filter client-side
+    fetchAndRenderAoThunProducts(aoThunApiUrl, containerSelector);
+}
+
+// Hàm riêng để load và filter sản phẩm áo thun
+async function fetchAndRenderAoThunProducts(apiUrl, containerSelector) {
+    const container = document.querySelector(containerSelector);
+    if (!container) {
+        console.error(`Không tìm thấy container với selector: ${containerSelector}`);
+        return;
+    }
+
+    // Xóa nội dung cũ
+    container.innerHTML = '';
+
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error('Lỗi khi lấy dữ liệu từ API');
+        }
+        const allProducts = await response.json();
+        
+        // Filter sản phẩm có tên chứa "áo thun" hoặc "thun"
+        const aoThunProducts = allProducts.filter(product => {
+            const name = product.name ? product.name.toLowerCase() : '';
+            const category = product.category_name ? product.category_name.toLowerCase() : '';
+            return name.includes('áo thun') || name.includes('thun') || 
+                   category.includes('áo thun') || category.includes('thun');
+        });
+        
+        if (aoThunProducts.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center py-4">
+                    <i class="fas fa-tshirt fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">Chưa có sản phẩm áo thun nào</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Sử dụng hàm fetchAndRenderProducts với danh sách đã filter
+        await renderFilteredProducts(aoThunProducts, containerSelector);
+        
+    } catch (error) {
+        console.error('Error loading áo thun products:', error);
+        container.innerHTML = `
+            <div class="col-12 text-center py-4">
+                <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                <p class="text-muted">Không thể tải sản phẩm áo thun. Vui lòng thử lại sau.</p>
+            </div>
+        `;
+    }
+}
+
+// Hàm render sản phẩm đã được filter
+async function renderFilteredProducts(products, containerSelector) {
+    const container = document.querySelector(containerSelector);
+    
+    // Tạo wrapper cho carousel
+    const carouselWrapper = document.createElement('div');
+    carouselWrapper.className = 'position-relative';
+    carouselWrapper.style.overflow = 'hidden';
+    carouselWrapper.style.padding = '10px 40px';
+    
+    // Tạo container cho sản phẩm
+    const productsContainer = document.createElement('div');
+    productsContainer.className = 'homepage-products';
+    productsContainer.style.display = 'flex';
+    productsContainer.style.flexWrap = 'nowrap';
+    productsContainer.style.gap = '16px';
+    productsContainer.style.transition = 'transform 0.4s ease';
+    productsContainer.style.willChange = 'transform';
+    productsContainer.id = `${containerSelector.replace('#', '')}-products`;
+    productsContainer.dataset.currentIndex = '0';
+    productsContainer.dataset.totalProducts = String(products.length);
+    productsContainer.dataset.productsPerView = '5';
+
+    const productsPerView = 5;
+    
+    // Tạo tất cả sản phẩm
+    products.forEach(product => {
+        const item = document.createElement('div');
+        item.className = 'slider-item';
+        item.style.flex = '0 0 auto';
+        item.style.minWidth = '0';
+        item.innerHTML = createProductCard(product);
+        productsContainer.appendChild(item);
+    });
+
+    carouselWrapper.appendChild(productsContainer);
+    container.appendChild(carouselWrapper);
+
+    // Thêm nút điều hướng nếu có nhiều hơn productsPerView sản phẩm
+    if (products.length > productsPerView) {
+        // Nút trái
+        const leftBtn = document.createElement('button');
+        leftBtn.className = 'btn btn-light position-absolute carousel-nav-btn carousel-left-btn';
+        leftBtn.style.cssText = 'z-index: 10; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); top: calc(40% - 10px); left: 20px; transform: translateY(-50%); background-color: #fff;';
+        leftBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        leftBtn.onclick = () => navigateProducts(containerSelector, 'left');
+        
+        // Nút phải
+        const rightBtn = document.createElement('button');
+        rightBtn.className = 'btn btn-light position-absolute carousel-nav-btn carousel-right-btn';
+        rightBtn.style.cssText = 'z-index: 10; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); top: calc(40% - 10px); right: 20px; transform: translateY(-50%); background-color: #fff;';
+        rightBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        rightBtn.onclick = () => navigateProducts(containerSelector, 'right');
+        
+        carouselWrapper.appendChild(leftBtn);
+        carouselWrapper.appendChild(rightBtn);
+    }
+
+    // Layout slider sau khi render
+    setTimeout(() => layoutSlider(containerSelector), 100);
 }
 
 // Hàm khởi tạo cho sản phẩm mới
@@ -1462,7 +1759,7 @@ function createFlashSaleProductCard(product) {
                 </div>
             </div>
             <div class="card-body d-flex flex-column">
-                <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
+                <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
                     <a href="/product/${product.id}" class="text-decoration-none text-dark">${productName}</a>
                 </h6>
                 <p class="text-muted small mb-1" style="font-size: 12px;">${brandName} <span class="text-success ms-1"><i class="fas fa-badge-check"></i> Chính hãng</span></p>
@@ -3305,7 +3602,7 @@ async function fetchAndRenderSuggestedProducts(apiUrl, containerSelector) {
                                 </div>
                             </div>
                             <div class="card-body p-1 position-relative">
-                                <h6 class="card-title small fw-bold mb-1" style="font-size: 9px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                <h6 class="card-title small fw-bold mb-1" style="font-size: 9px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
                                     <span class="suggested-product-name text-decoration-none text-dark" data-product-id="${product.id}" style="cursor: pointer;">${product.name}</span>
                                 </h6>
                                 <div class="d-flex align-items-center mb-1">
@@ -3501,7 +3798,7 @@ function initProductsPage() {
             }
 
             // Helpers
-                const priceVnd = p => (p.discounted_price || 0);
+                const priceVnd = p => (p.discounted_price || 0) * 1000;
             const rate = p => parseFloat(p.discount_rate || 0) || 0;
 
             // Price ranges
@@ -3603,10 +3900,16 @@ function initProductsPage() {
 // Render pagination
 function renderPagination(currentPage, totalPages, totalProducts) {
     const paginationContainer = document.getElementById('products-pagination');
-    if (!paginationContainer) return;
+    if (!paginationContainer) {
+        console.log('❌ Pagination container not found');
+        return;
+    }
+    
+    console.log(`🔍 renderPagination called: page=${currentPage}, totalPages=${totalPages}, products=${totalProducts}`);
     
     if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
+        console.log('❌ Only 1 page, hiding pagination');
         return;
     }
     
@@ -3614,12 +3917,12 @@ function renderPagination(currentPage, totalPages, totalProducts) {
     
     // Previous button
     if (currentPage > 1) {
-        paginationHTML += `<li class="page-item">
-            <a class="page-link" href="#" data-page="${currentPage - 1}">Trước</a>
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Trước</a>
         </li>`;
     } else {
-        paginationHTML += `<li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Trước</a>
+        paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" tabindex="-1" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Trước</a>
         </li>`;
     }
     
@@ -3628,39 +3931,41 @@ function renderPagination(currentPage, totalPages, totalProducts) {
     const endPage = Math.min(totalPages, currentPage + 2);
     
     if (startPage > 1) {
-        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" data-page="1" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">1</a></li>`;
         if (startPage > 2) {
-            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;"><span class="page-link" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">...</span></li>`;
         }
     }
     
     for (let i = startPage; i <= endPage; i++) {
         if (i === currentPage) {
-            paginationHTML += `<li class="page-item active"><a class="page-link" href="#">${i}</a></li>`;
+            paginationHTML += `<li class="page-item active" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important; background: #667eea !important; color: white !important;">${i}</a></li>`;
         } else {
-            paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+            paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" data-page="${i}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">${i}</a></li>`;
         }
     }
     
     if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
-            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;"><span class="page-link" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">...</span></li>`;
         }
-        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;"><a class="page-link" href="#" data-page="${totalPages}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">${totalPages}</a></li>`;
     }
     
     // Next button
     if (currentPage < totalPages) {
-        paginationHTML += `<li class="page-item">
-            <a class="page-link" href="#" data-page="${currentPage + 1}">Sau</a>
+        paginationHTML += `<li class="page-item" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Sau</a>
         </li>`;
     } else {
-        paginationHTML += `<li class="page-item disabled">
-            <a class="page-link" href="#" tabindex="-1">Sau</a>
+        paginationHTML += `<li class="page-item disabled" style="display: inline-block !important; margin: 0 !important; float: none !important;">
+            <a class="page-link" href="#" tabindex="-1" style="display: inline-block !important; padding: 0.5rem 0.75rem !important; margin: 0 !important; float: none !important;">Sau</a>
         </li>`;
     }
     
     paginationContainer.innerHTML = paginationHTML;
+    console.log('✅ Pagination HTML created:', paginationHTML);
+    console.log('✅ Pagination container display:', paginationContainer.style.display);
     
     // Add click event listeners
     paginationContainer.addEventListener('click', function(e) {
@@ -3680,7 +3985,7 @@ function attachPerPageFilter(products, renderCallback) {
     
     // Set current value
     const urlParams = new URLSearchParams(window.location.search);
-    const currentPerPage = parseInt(urlParams.get('per_page')) || 12;
+    const currentPerPage = parseInt(urlParams.get('per_page')) || 20;
     
     if (perPageSelect) {
         perPageSelect.value = currentPerPage;
@@ -3946,16 +4251,54 @@ defineProductDetailInit = (function(){
         const thumbnailContainer = document.getElementById('thumbnailContainer');
         if (thumbnailContainer) {
             thumbnailContainer.innerHTML = '';
-            // For now, just show the main image as thumbnail since we don't have album
+            
+            // Lấy tất cả ảnh của sản phẩm
+            const allImages = p.all_images || [];
+            console.log('🖼️ All images:', allImages);
+            
+            if (allImages.length > 0) {
+                // Hiển thị tất cả ảnh
+                allImages.forEach((imgUrl, index) => {
+                    if (imgUrl && imgUrl.trim()) {
+                        const el = document.createElement('img');
+                        el.src = imgUrl;
+                        el.alt = `Thumbnail ${index + 1}`;
+                        el.className = 'img-thumbnail cursor-pointer';
+                        el.style.width = '80px';
+                        el.style.height = '80px';
+                        el.style.objectFit = 'cover';
+                        el.style.border = index === 0 ? '3px solid #007bff' : '1px solid #dee2e6';
+                        el.addEventListener('click', () => {
+                            changeMainImage(imgUrl);
+                            // Update border for active thumbnail
+                            thumbnailContainer.querySelectorAll('img').forEach((thumb, i) => {
+                                thumb.style.border = i === index ? '3px solid #007bff' : '1px solid #dee2e6';
+                            });
+                        });
+                        thumbnailContainer.appendChild(el);
+                    }
+                });
+                
+                // Set main image to first image
+                if (allImages[0]) {
+                    const mainImage = document.getElementById('mainImage');
+                    if (mainImage) {
+                        mainImage.src = allImages[0];
+                    }
+                }
+            } else {
+                // Fallback: chỉ hiển thị ảnh chính
                 const el = document.createElement('img');
-            el.src = imageUrl;
+                el.src = imageUrl;
                 el.alt = 'Thumbnail';
                 el.className = 'img-thumbnail cursor-pointer';
                 el.style.width = '80px';
                 el.style.height = '80px';
                 el.style.objectFit = 'cover';
-            el.addEventListener('click', () => changeMainImage(imageUrl));
+                el.style.border = '3px solid #007bff';
+                el.addEventListener('click', () => changeMainImage(imageUrl));
                 thumbnailContainer.appendChild(el);
+            }
         }
 
         const nameEl = document.getElementById('detailName'); 

@@ -11,7 +11,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.generics import GenericAPIView
 from rest_framework import permissions
 from rest_framework.decorators import action
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import random
 import string
 from django.template.loader import render_to_string
@@ -20,7 +20,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render
-
+from rest_framework.authentication import TokenAuthentication
 User = get_user_model()
 
 
@@ -31,6 +31,20 @@ class CurrentUserView(APIView):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+
+
+class UserInfoAPIView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # 'request.user' là đối tượng người dùng đã được xác thực
+        user = request.user
+        return Response({
+            'user_id': user.id,
+            'username': user.username,
+            # Thêm các thông tin cần thiết khác
+        })
 
 # --- User ViewSets ---
 class UserViewSet(viewsets.GenericViewSet):
@@ -108,6 +122,20 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status']
+
+    def get_queryset(self):
+        """
+        Tự động cập nhật trạng thái của tag trước khi trả về queryset.
+        """
+        now = timezone.now()
+        for tag in self.queryset:
+            if tag.end_date < now and tag.status != 'expired':
+                tag.status = 'expired'
+                tag.save(update_fields=['status'])
+
+        return self.queryset
 
 
 class GiftViewSet(viewsets.ModelViewSet):
@@ -1090,22 +1118,9 @@ class LuckyEventViewSet(viewsets.ModelViewSet):
         event = self.get_object()
         # lấy lucky_number từ request nếu có (fallback thủ công)
         manual = (request.data or {}).get('lucky_number')
-
-        if manual is None:
-            # Clear the lucky_number and all winners
-            event.lucky_number = None
-            event.save(update_fields=['lucky_number'])
-            LuckyWinner.objects.filter(event=event).delete()
-            return Response({'detail': 'Đã xóa kết quả số may mắn'}, status=200)
-        elif manual and isinstance(manual, str) and len(manual) == 2 and manual.isdigit():
+        if manual and isinstance(manual, str) and len(manual) == 2 and manual.isdigit():
             event.lucky_number = manual
             event.save(update_fields=['lucky_number'])
-        elif manual == '':
-            # Handle empty string - also clear the result
-            event.lucky_number = None
-            event.save(update_fields=['lucky_number'])
-            LuckyWinner.objects.filter(event=event).delete()
-            return Response({'detail': 'Đã xóa kết quả số may mắn'}, status=200)
 
         if not event.lucky_number:
             return Response({'detail': 'Chưa có lucky_number'}, status=400)
@@ -1142,20 +1157,38 @@ class LuckyParticipantViewSet(viewsets.ModelViewSet):
 
 class BlogAPIView(viewsets.ModelViewSet):
     """
-    API View để lấy chi tiết, cập nhật, hoặc xóa một bài blog và tăng lượt xem khi được xem.
+    API View để lấy danh sách blog, chi tiết, cập nhật, hoặc xóa một bài blog.
+    Có thể lọc danh sách blog theo tag.
     """
-    queryset = Blog.objects.filter(is_active=True)
     serializer_class = BlogSerializer
     pagination_class = NewsPagination
     lookup_field = 'pk'  # Sử dụng primary key để tìm kiếm blog
 
+    def get_queryset(self):
+        """
+        Tùy chỉnh queryset để có thể lọc blog theo tag.
+        Nếu có tham số 'tag' trong request, sẽ lọc các blog có tag tương ứng.
+        """
+        queryset = Blog.objects.filter(is_active=True)
+        tag = self.request.query_params.get('tag', None)
+        if tag is not None:
+            # Lọc các bài blog có tag trùng khớp
+            queryset = queryset.filter(tag=tag.upper())
+        return queryset
+
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        # Tăng lượt xem của bài blog lên 1 mỗi khi được truy cập
-        instance.views += 1
-        instance.save()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        """
+        Lấy chi tiết một bài blog và tăng lượt xem khi được xem.
+        """
+        try:
+            instance = self.get_object()
+            # Tăng lượt xem của bài blog lên 1 mỗi khi được truy cập
+            instance.views += 1
+            instance.save()
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except Blog.DoesNotExist:
+            return Response({"detail": "Bài viết không tồn tại."}, status=status.HTTP_404_NOT_FOUND)
 
     def update(self, request, *args, **kwargs):
         """
@@ -1168,11 +1201,9 @@ class BlogAPIView(viewsets.ModelViewSet):
         self.perform_update(serializer)
 
         if getattr(instance, '_prefetched_objects_cache', None):
-            # Nếu 'prefetch_related' đã được sử dụng,
-            # các đối tượng có thể bị lỗi, cần làm mới lại
             instance = self.get_object()
-            serializer = self.get_serializer(instance)
 
+        serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
@@ -1186,10 +1217,12 @@ class BlogAPIView(viewsets.ModelViewSet):
         """
         Xóa một bài Blog
         """
-        instance = self.get_object()
-        instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
+        try:
+            instance = self.get_object()
+            instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Blog.DoesNotExist:
+            return Response({"detail": "Bài viết không tồn tại."}, status=status.HTTP_404_NOT_FOUND)
 
 class LuckyWinnerViewSet(viewsets.ReadOnlyModelViewSet):
     """
@@ -1292,8 +1325,20 @@ class CTVApplicationViewSet(viewsets.ModelViewSet):
         if app.status == 'approved':
             return Response({'detail': 'Đơn đã được duyệt trước đó'}, status=400)
 
+        # Lấy password từ request
+        password_text = request.data.get('password_text', '')
+        if not password_text:
+            return Response({'detail': 'Vui lòng cung cấp mật khẩu cho CTV'}, status=400)
+
+        # Kiểm tra SĐT đã tồn tại chưa
+        if CTV.objects.filter(phone=app.phone).exists():
+            return Response({'detail': f'Số điện thoại {app.phone} đã được sử dụng'}, status=400)
+
         # Chọn mã: ưu tiên desired_code, fallback theo phone
         desired = (getattr(app, 'desired_code', '') or '').strip()
+        if desired and CTV.objects.filter(code__iexact=desired).exists():
+            return Response({'detail': f'Mã CTV "{desired}" đã được sử dụng'}, status=400)
+
         code = desired or f"CTV{app.phone[-4:] if app.phone else ''}"
         base = code or 'CTV'
         candidate = base
@@ -1307,6 +1352,7 @@ class CTVApplicationViewSet(viewsets.ModelViewSet):
 
         ctv = CTV.objects.create(
             code=candidate,
+            desired_code=desired,  # Lưu mã mong muốn
             full_name=app.full_name,
             phone=app.phone,
             email=app.email,
@@ -1316,25 +1362,35 @@ class CTVApplicationViewSet(viewsets.ModelViewSet):
             bank_holder=app.bank_holder,
             cccd_front_url=app.cccd_front_url,
             cccd_back_url=app.cccd_back_url,
+            password_text=password_text,  # Lưu mật khẩu
             level=level,
             is_active=True,
         )
         CTVWallet.objects.get_or_create(ctv=ctv)
 
         app.status = 'approved'
-        app.save(update_fields=['status'])
+        app.agreed = True
+        app.save(update_fields=['status', 'agreed'])
 
-        return Response({'detail': 'Đã duyệt đơn', 'ctv': CTVSerializer(ctv).data})
+        return Response({'detail': 'Đã duyệt đơn và tạo tài khoản CTV', 'ctv': CTVSerializer(ctv).data})
 
 
-class CTVLevelViewSet(viewsets.ReadOnlyModelViewSet):
+class CTVLevelViewSet(viewsets.ModelViewSet):
     queryset = CTVLevel.objects.all()
     serializer_class = CTVLevelSerializer
     permission_classes = [AllowAny]
 
+    def update(self, request, *args, **kwargs):
+        """Override update method to ensure it works properly"""
+        return super().update(request, *args, **kwargs)
 
-class CTVViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = CTV.objects.all().select_related('level')
+    def partial_update(self, request, *args, **kwargs):
+        """Override partial_update method to ensure it works properly"""
+        return super().partial_update(request, *args, **kwargs)
+
+
+class CTVViewSet(viewsets.ModelViewSet):
+    queryset = CTV.objects.all().select_related('level').prefetch_related('wallet')
     serializer_class = CTVSerializer
     permission_classes = [AllowAny]
 
@@ -1443,31 +1499,58 @@ class CTVViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['get'], url_path='commissions')
     def commissions(self, request, pk=None):
         """Danh sách đơn có mã CTV và hoa hồng ước tính theo level hiện tại.
-        Hoa hồng = max(0, (Giá niêm yết - price_at_purchase) * percent). Nếu thiếu price_at_purchase thì dùng discounted_price.
+        Lợi nhuận = Tổng tiền - Phí ship - Giảm giá - Giá nhập
+        Hoa hồng = Lợi nhuận * phần trăm hoa hồng
         """
         ctv = self.get_object()
         percent = float(ctv.level.commission_percent if ctv.level else 10.0) / 100.0
         orders = Order.objects.filter(collaborator_code=ctv.code, is_confirmed=True).exclude(status='cancelled').prefetch_related('items__product')
         items = []
         total_revenue_sum = 0.0
+
         for o in orders:
+            # Tính tổng giá nhập của đơn hàng
+            total_import_cost = 0.0
+            order_items_data = []
+
             for it in o.items.all():
-                listed = float(getattr(it.product, 'original_price', 0) or 0)
-                sold = float(it.price_at_purchase or getattr(it.product, 'discounted_price', 0) or 0)
-                if listed < 1000:
-                    listed *= 1000
-                if sold < 1000:
-                    sold *= 1000
-                profit = max(0.0, (listed - sold) * float(it.quantity or 0))
-                commission = profit * percent
-                total_revenue_sum += sold * float(it.quantity or 0)
-                items.append({
-                    'order_code': getattr(o, 'order_code', f"#{o.id}"),
+                # Giá nhập (đã tính theo đơn vị nghìn đồng)
+                import_price = float(getattr(it.product, 'import_price', 0) or 0)
+                quantity = float(it.quantity or 0)
+                item_import_cost = import_price * quantity
+                total_import_cost += item_import_cost
+
+                order_items_data.append({
                     'product_name': getattr(it.product, 'name', f"#{it.product_id}"),
-                    'quantity': it.quantity,
-                    'profit': round(profit, 2),
-                    'commission': round(commission, 2),
+                    'quantity': quantity,
+                    'import_price': import_price,
+                    'item_import_cost': item_import_cost
                 })
+
+            # Tính lợi nhuận cho toàn bộ đơn hàng
+            # Tổng tiền - Phí ship - Giảm giá - Giá nhập
+            order_total = float(o.total_amount or 0)
+            shipping_fee = float(o.shipping_fee or 0)
+            discount_applied = float(o.discount_applied or 0)
+
+            # Tất cả giá trị đều đã ở đơn vị nghìn đồng
+            order_profit = order_total - shipping_fee - discount_applied - total_import_cost
+
+            # Tính hoa hồng cho đơn hàng
+            order_commission = max(0.0, order_profit * percent)
+
+            # Tính doanh thu bán được
+            total_revenue_sum += order_total
+
+            # Thêm vào danh sách items
+            items.append({
+                'order_code': getattr(o, 'order_code', f"#{o.id}"),
+                'product_name': f"{len(order_items_data)} sản phẩm",  # Tổng số sản phẩm trong đơn
+                'quantity': 1,  # 1 đơn hàng
+                'profit': round(order_profit, 2),
+                'commission': round(order_commission, 2),
+            })
+
         # cập nhật tổng doanh thu bán được cho CTV
         try:
             ctv.total_revenue = float(ctv.total_revenue or 0)  # ensure exists
@@ -1476,6 +1559,57 @@ class CTVViewSet(viewsets.ReadOnlyModelViewSet):
         except Exception:
             pass
         return Response(items)
+
+
+class CTVWithdrawalViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = CTVWithdrawal.objects.all().select_related('ctv')
+    serializer_class = CTVWithdrawalSerializer
+    permission_classes = [AllowAny]
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve(self, request, pk=None):
+        """Duyệt yêu cầu rút tiền"""
+        withdrawal = self.get_object()
+        if withdrawal.status != 'pending':
+            return Response({'detail': 'Yêu cầu đã được xử lý'}, status=400)
+
+        note = request.data.get('note', '')
+
+        # Cập nhật trạng thái
+        withdrawal.status = 'approved'
+        withdrawal.processed_at = timezone.now()
+        withdrawal.note = note
+        withdrawal.save()
+
+        # Cập nhật ví CTV: chuyển từ pending sang withdrawn
+        wallet = withdrawal.ctv.wallet
+        wallet.pending = float(wallet.pending) - float(withdrawal.amount)
+        wallet.save()
+
+        return Response({'detail': 'Đã duyệt yêu cầu rút tiền'})
+
+    @action(detail=True, methods=['post'], url_path='reject')
+    def reject(self, request, pk=None):
+        """Từ chối yêu cầu rút tiền"""
+        withdrawal = self.get_object()
+        if withdrawal.status != 'pending':
+            return Response({'detail': 'Yêu cầu đã được xử lý'}, status=400)
+
+        note = request.data.get('note', '')
+
+        # Cập nhật trạng thái
+        withdrawal.status = 'rejected'
+        withdrawal.processed_at = timezone.now()
+        withdrawal.note = note
+        withdrawal.save()
+
+        # Hoàn lại tiền vào ví CTV: chuyển từ pending về balance
+        wallet = withdrawal.ctv.wallet
+        wallet.pending = float(wallet.pending) - float(withdrawal.amount)
+        wallet.balance = float(wallet.balance) + float(withdrawal.amount)
+        wallet.save()
+
+        return Response({'detail': 'Đã từ chối yêu cầu rút tiền'})
 
 
 # --- CTV Pages (Templates) ---
@@ -1505,4 +1639,207 @@ def ctv_place_order_page(request):
 
 def ctv_resources_page(request):
     return render(request, 'ctv_resources.html')
+
+
+def admin_resources_page(request):
+    return render(request, 'admin_resources.html')
+
+
+class MarketingResourceViewSet(viewsets.ModelViewSet):
+    queryset = MarketingResource.objects.all().order_by('-created_at')
+    serializer_class = MarketingResourceSerializer
+    permission_classes = [AllowAny]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['resource_type', 'is_active']
+    search_fields = ['name', 'description']
+    ordering_fields = ['name', 'created_at', 'download_count']
+    ordering = ['-created_at']
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        """Override để admin có thể xem tất cả, CTV chỉ xem active"""
+        if self.request.path.startswith('/admin/'):
+            return MarketingResource.objects.all().order_by('-created_at')
+        return MarketingResource.objects.filter(is_active=True).order_by('-created_at')
+
+    def create(self, request, *args, **kwargs):
+        """Override create để xử lý upload file lên Cloudinary hoặc tạo record với URL có sẵn"""
+        try:
+            file = request.FILES.get('file')
+            
+            if file:
+                # Upload file lên Cloudinary
+                import cloudinary
+                import cloudinary.uploader
+                from datetime import datetime
+                
+                # Upload to Cloudinary with image optimization for marketing resources
+                upload_result = cloudinary.uploader.upload(
+                    file,
+                    folder="marketing_resources",
+                    public_id=f"resource_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.name.split('.')[0]}",
+                    resource_type="image",
+                    # Image optimization settings
+                    quality="auto:good",  # Chất lượng tốt cho marketing materials
+                    fetch_format="auto",  # Tự động chọn format tối ưu
+                    width=2000,  # Giới hạn chiều rộng tối đa cho marketing
+                    height=2000,  # Giới hạn chiều cao tối đa cho marketing
+                    crop="limit",  # Giữ nguyên tỷ lệ
+                    flags="progressive",  # Tạo ảnh progressive
+                    transformation=[
+                        {"width": 2000, "height": 2000, "crop": "limit"},
+                        {"quality": "auto:good"},
+                        {"fetch_format": "auto"}
+                    ]
+                )
+
+                # Tạo MarketingResource với URL từ Cloudinary
+                resource_data = {
+                    'name': request.data.get('name', file.name),
+                    'description': request.data.get('description', ''),
+                    'resource_type': request.data.get('resource_type', 'new_product'),
+                    'file_url': upload_result['secure_url'],
+                    'thumbnail_url': upload_result['secure_url'],
+                    'is_active': str(request.data.get('is_active', 'true')).lower() == 'true',
+                    'file_size': file.size
+                }
+            else:
+                # Tạo record với dữ liệu có sẵn (từ frontend đã upload lên Cloudinary)
+                resource_data = {
+                    'name': request.data.get('name', ''),
+                    'description': request.data.get('description', ''),
+                    'resource_type': request.data.get('resource_type', 'new_product'),
+                    'file_url': request.data.get('file_url', ''),
+                    'thumbnail_url': request.data.get('thumbnail_url', ''),
+                    'is_active': str(request.data.get('is_active', 'true')).lower() == 'true',
+                    'file_size': request.data.get('file_size', 0)
+                }
+
+            serializer = self.get_serializer(data=resource_data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=201, headers=headers)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+    def destroy(self, request, *args, **kwargs):
+        """Override destroy để xóa file trên Cloudinary khi xóa record"""
+        instance = self.get_object()
+        
+        # Xóa file trên Cloudinary nếu tồn tại
+        if instance.file_url and 'cloudinary.com' in instance.file_url:
+            try:
+                import cloudinary
+                import cloudinary.uploader
+                
+                # Extract public_id from Cloudinary URL
+                # URL format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.jpg
+                url_parts = instance.file_url.split('/')
+                if len(url_parts) >= 8:  # Ensure we have enough parts
+                    # Get the part after 'upload/v1234567890/'
+                    upload_index = url_parts.index('upload')
+                    if upload_index + 2 < len(url_parts):
+                        public_id = '/'.join(url_parts[upload_index + 2:])  # Get folder/filename
+                        public_id = public_id.split('.')[0]  # Remove extension
+                        
+                        # Delete from Cloudinary
+                        result = cloudinary.uploader.destroy(public_id)
+                        if result.get('result') == 'ok':
+                            print(f"✅ Đã xóa file trên Cloudinary: {public_id}")
+                        else:
+                            print(f"⚠️ Không thể xóa file trên Cloudinary: {public_id}")
+                        
+            except Exception as e:
+                print(f"❌ Lỗi khi xóa file trên Cloudinary: {e}")
+        
+        # Xóa record trong database
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'], url_path='download')
+    def download(self, request, pk=None):
+        """Tăng số lượt tải xuống khi CTV tải file"""
+        resource = self.get_object()
+        resource.download_count += 1
+        resource.save(update_fields=['download_count'])
+
+        return Response({
+            'message': 'Download count updated',
+            'download_count': resource.download_count
+        })
+
+    @action(detail=False, methods=['get'], url_path='by-type')
+    def by_type(self, request):
+        """Lấy tài nguyên theo loại"""
+        resource_type = request.query_params.get('type')
+        if resource_type:
+            resources = self.queryset.filter(resource_type=resource_type)
+            serializer = self.get_serializer(resources, many=True)
+            return Response(serializer.data)
+        return Response([])
+
+    @action(detail=False, methods=['get'], url_path='products')
+    def get_product_images(self, request):
+        """Lấy ảnh sản phẩm từ products"""
+        from .models import Product
+        products = Product.objects.filter(status='new').select_related('brand', 'category')
+        product_data = []
+
+        for product in products:
+            if product.image:
+                product_data.append({
+                    'id': f"product_{product.id}",
+                    'name': product.name,
+                    'description': f"Sản phẩm {product.brand.name if product.brand else 'Không xác định'}",
+                    'resource_type': 'product',
+                    'file_url': product.image,
+                    'thumbnail_url': product.image,
+                    'product_id': product.id,
+                    'product_name': product.name,
+                    'is_image': True,
+                    'file_extension': product.image.split('.')[-1].lower() if '.' in product.image else 'jpg'
+                })
+
+        # Tắt pagination bằng cách override get_paginated_response
+        self.pagination_class = None
+        return Response(product_data)
+
+
+class ProductImagesAPIView(APIView):
+    """API View riêng để lấy ảnh sản phẩm không bị pagination"""
+    permission_classes = [AllowAny]
+    
+    def get(self, request):
+        """Lấy tất cả ảnh sản phẩm"""
+        from .models import Product
+        products = Product.objects.all().select_related('brand', 'category')
+        print(f"🔍 DEBUG: Total products: {products.count()}")
+        new_products = products.filter(status='new')
+        print(f"🔍 DEBUG: Products with status='new': {new_products.count()}")
+        
+        product_data = []
+        products_with_image = 0
+
+        for product in products:
+            if product.image and product.status == 'new':
+                products_with_image += 1
+                product_data.append({
+                    'id': f"product_{product.id}",
+                    'name': product.name,
+                    'description': f"Sản phẩm {product.brand.name if product.brand else 'Không xác định'}",
+                    'resource_type': 'product',
+                    'file_url': product.image,
+                    'thumbnail_url': product.image,
+                    'product_id': product.id,
+                    'product_name': product.name,
+                    'is_image': True,
+                    'file_extension': product.image.split('.')[-1].lower() if '.' in product.image else 'jpg'
+                })
+
+        print(f"🔍 DEBUG: Products with image: {products_with_image}")
+        print(f"🔍 DEBUG: Returning {len(product_data)} products")
+        return Response(product_data)
+
 

@@ -32,15 +32,15 @@ function saveLoginState(data) {
 
         const userProfile = {
             access_token: data.access_token,
-            id: user.id,
-            phone_number: user.phone_number,
-            name: user.name,
-            address: user.address,
-            dob: user.dob,
-            email: user.email,
-            avatar: user.avatar
+            id: data.user.id,
+            phone_number: data.phone_number,
+            name: data.user.name,
+            address: data.address,
+            dob: data.dob,
+            email: data.email,
+            avatar: data.user.avatar || data.avatar
+            
         };
-        
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('refreshToken', data.refresh_token);

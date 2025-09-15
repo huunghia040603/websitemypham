@@ -6,6 +6,7 @@ from .models import *
 from django import forms
 from django.utils import timezone
 from django.contrib import messages
+from django.db.models import Q
 
 
 # Tạo một trang admin tùy chỉnh
@@ -15,6 +16,57 @@ class MyAdminSite(admin.AdminSite):
     index_title = "Chào mừng đến với trang quản trị"
 
 admin_site = MyAdminSite(name='myadmin')
+
+# Custom filter for image count
+class ImageCountFilter(admin.SimpleListFilter):
+    title = 'Số lượng ảnh'
+    parameter_name = 'image_count'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('0', '❌ Không có ảnh'),
+            ('1', '🖼️ 1 ảnh'),
+            ('2', '🖼️ 2 ảnh'),
+            ('3', '🖼️ 3 ảnh'),
+            ('4', '🖼️ 4 ảnh'),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == '0':
+            return queryset.filter(
+                Q(image__isnull=True) | Q(image=''),
+                Q(image_2__isnull=True) | Q(image_2=''),
+                Q(image_3__isnull=True) | Q(image_3=''),
+                Q(image_4__isnull=True) | Q(image_4='')
+            )
+        elif self.value() == '1':
+            return queryset.filter(
+                ~Q(image__isnull=True) & ~Q(image=''),
+                Q(image_2__isnull=True) | Q(image_2=''),
+                Q(image_3__isnull=True) | Q(image_3=''),
+                Q(image_4__isnull=True) | Q(image_4='')
+            )
+        elif self.value() == '2':
+            return queryset.filter(
+                ~Q(image__isnull=True) & ~Q(image=''),
+                ~Q(image_2__isnull=True) & ~Q(image_2=''),
+                Q(image_3__isnull=True) | Q(image_3=''),
+                Q(image_4__isnull=True) | Q(image_4='')
+            )
+        elif self.value() == '3':
+            return queryset.filter(
+                ~Q(image__isnull=True) & ~Q(image=''),
+                ~Q(image_2__isnull=True) & ~Q(image_2=''),
+                ~Q(image_3__isnull=True) & ~Q(image_3=''),
+                Q(image_4__isnull=True) | Q(image_4='')
+            )
+        elif self.value() == '4':
+            return queryset.filter(
+                ~Q(image__isnull=True) & ~Q(image=''),
+                ~Q(image_2__isnull=True) & ~Q(image_2=''),
+                ~Q(image_3__isnull=True) & ~Q(image_3=''),
+                ~Q(image_4__isnull=True) & ~Q(image_4='')
+            )
 
 # --- User Admin ---
 class CustomUserAdmin(BaseUserAdmin):
@@ -94,8 +146,8 @@ class GiftAdmin(admin.ModelAdmin):
 # Sửa lại class ProductAdmin
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'name', 'brand', 'rating', 'display_tags', 'category',
-        'stock_quantity', 'import_price', 'original_price', 'discounted_price',
+        'id', 'display_image_preview', 'name', 'brand', 'rating', 'display_tags', 'category',
+        'display_image_count', 'stock_quantity', 'import_price', 'original_price', 'discounted_price',
         'discount_rate', 'status'
     )
 
@@ -105,7 +157,7 @@ class ProductAdmin(admin.ModelAdmin):
         'original_price', 'discounted_price', 'status'
     )
 
-    list_filter = ('brand', 'category', 'tags', 'status')
+    list_filter = ('brand', 'category', 'tags', 'status', ImageCountFilter)
     search_fields = ('name', 'brand__name', 'status')
 
     # Sử dụng filter_horizontal để chọn tags và gifts
@@ -116,8 +168,9 @@ class ProductAdmin(admin.ModelAdmin):
     }
 
     fieldsets = (
-        (None, {'fields': ('name', 'image', 'brand', 'category')}),
-        ('Mô tả', {'fields': ('description',)}),
+        (None, {'fields': ('name', 'brand', 'category')}),
+        ('Ảnh sản phẩm', {'fields': ('image', 'image_2', 'image_3', 'image_4')}),
+        ('Mô tả', {'fields': ('description', 'ingredients')}),
         ('Thông tin giá và kho', {'fields': ('import_price', 'original_price', 'discounted_price', 'stock_quantity', 'sold_quantity')}),
         # Bỏ tags và gifts khỏi fieldsets để chúng được hiển thị bởi filter_horizontal
         ('Thuộc tính khác', {'fields': ('rating', 'status')}),
@@ -130,6 +183,26 @@ class ProductAdmin(admin.ModelAdmin):
         return ", ".join([tag.name for tag in obj.tags.all()])
 
     display_tags.short_description = "Tags"
+    
+    def display_image_count(self, obj):
+        count = obj.get_image_count()
+        if count == 0:
+            return "❌ Không có ảnh"
+        elif count == 1:
+            return "🖼️ 1 ảnh"
+        else:
+            return f"🖼️ {count} ảnh"
+
+    display_image_count.short_description = "Số ảnh"
+    
+    def display_image_preview(self, obj):
+        """Hiển thị preview ảnh chính"""
+        if obj.image:
+            return f'<img src="{obj.image}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />'
+        return "❌ Không có ảnh"
+    
+    display_image_preview.short_description = "Ảnh chính"
+    display_image_preview.allow_tags = True
 
 
 # --- Order-related Admin ---
@@ -147,10 +220,12 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
-    list_display = ('id','order_code', 'customer_name', 'phone_number', 'order_date', 'total_amount', 'shipping_fee', 'collaborator_code', 'voucher')
+    list_display = ('id','order_code', 'customer_name', 'phone_number', 'order_date', 'total_amount', 'shipping_fee', 'collaborator_code', 'voucher', 'status', 'is_confirmed')
     list_filter = ('order_date', 'status', 'payment_method', 'is_confirmed')
     search_fields = ('customer_name', 'phone_number', 'collaborator_code', 'order_code')
     readonly_fields = ('total_amount', 'discount_applied', 'shipping_fee', 'order_date')
+    list_editable = ('status', 'is_confirmed')
+    actions = ['confirm_orders', 'ship_orders', 'cancel_orders']
     fieldsets = (
         (None, {'fields': ('order_code', 'customer', 'status', 'is_confirmed')}),
         ('Thông tin khách hàng', {'fields': ('customer_name', 'phone_number', 'zalo_phone_number', 'email')}),
@@ -158,6 +233,40 @@ class OrderAdmin(admin.ModelAdmin):
         ('Thanh toán và Khuyến mãi', {'fields': ('payment_method', 'bank_transfer_image', 'notes', 'voucher', 'collaborator_code')}),
         ('Chi tiết đơn hàng', {'fields': ('total_amount', 'shipping_fee', 'discount_applied')}),
     )
+
+    def confirm_orders(self, request, queryset):
+        """Xác nhận các đơn hàng được chọn"""
+        updated = 0
+        for order in queryset.filter(status='pending'):
+            order.status = 'processing'
+            order.is_confirmed = True
+            order.save()
+            updated += 1
+
+        self.message_user(request, f'Đã xác nhận {updated} đơn hàng.')
+    confirm_orders.short_description = "Xác nhận các đơn hàng được chọn"
+
+    def ship_orders(self, request, queryset):
+        """Đánh dấu các đơn hàng đã giao"""
+        updated = 0
+        for order in queryset.filter(status='processing'):
+            order.status = 'shipped'
+            order.save()
+            updated += 1
+
+        self.message_user(request, f'Đã đánh dấu {updated} đơn hàng đã giao.')
+    ship_orders.short_description = "Đánh dấu các đơn hàng đã giao"
+
+    def cancel_orders(self, request, queryset):
+        """Hủy các đơn hàng được chọn"""
+        updated = 0
+        for order in queryset.exclude(status='cancelled'):
+            order.status = 'cancelled'
+            order.save()
+            updated += 1
+
+        self.message_user(request, f'Đã hủy {updated} đơn hàng.')
+    cancel_orders.short_description = "Hủy các đơn hàng được chọn"
 
     def customer_name(self, obj):
         return obj.customer_name
@@ -282,6 +391,63 @@ class CTVApplicationAdmin(admin.ModelAdmin):
     list_filter = ('status', 'created_at')
     search_fields = ('full_name', 'phone', 'email', 'desired_code')
     readonly_fields = ('created_at',)
+    list_editable = ('status',)
+    actions = ['approve_applications', 'reject_applications']
+
+    def approve_applications(self, request, queryset):
+        """Duyệt các đơn đăng ký CTV được chọn"""
+        approved = 0
+        for app in queryset.filter(status='pending'):
+            # Kiểm tra xem đã có CTV với SĐT này chưa
+            if CTV.objects.filter(phone=app.phone).exists():
+                self.message_user(request, f'CTV với SĐT {app.phone} đã tồn tại!', level=messages.WARNING)
+                continue
+
+            # Tạo CTV mới
+            level = CTVLevel.objects.order_by('id').first()
+            code = app.desired_code or f"CTV{app.phone[-4:] if app.phone else ''}"
+            base = code or 'CTV'
+            candidate = base
+            suffix = 1
+            while CTV.objects.filter(code__iexact=candidate).exists():
+                candidate = f"{base}{suffix}"
+                suffix += 1
+
+            ctv = CTV.objects.create(
+                code=candidate,
+                desired_code=app.desired_code,
+                full_name=app.full_name,
+                phone=app.phone,
+                email=app.email,
+                address=app.address,
+                bank_name=app.bank_name,
+                bank_number=app.bank_number,
+                bank_holder=app.bank_holder,
+                cccd_front_url=app.cccd_front_url,
+                cccd_back_url=app.cccd_back_url,
+                level=level,
+                is_active=True,
+            )
+            CTVWallet.objects.get_or_create(ctv=ctv)
+
+            app.status = 'approved'
+            app.agreed = True
+            app.save()
+            approved += 1
+
+        self.message_user(request, f'Đã duyệt {approved} đơn đăng ký CTV.')
+    approve_applications.short_description = "Duyệt các đơn đăng ký CTV được chọn"
+
+    def reject_applications(self, request, queryset):
+        """Từ chối các đơn đăng ký CTV được chọn"""
+        updated = 0
+        for app in queryset.filter(status='pending'):
+            app.status = 'rejected'
+            app.save()
+            updated += 1
+
+        self.message_user(request, f'Đã từ chối {updated} đơn đăng ký CTV.')
+    reject_applications.short_description = "Từ chối các đơn đăng ký CTV được chọn"
 
 
 class CTVAdminForm(forms.ModelForm):
@@ -320,7 +486,7 @@ class CTVAdmin(admin.ModelAdmin):
         pwd = obj.password_text
         # Lấy mật khẩu cũ để so sánh
         old_password_text = obj.password_text if change else ''
-        
+
         # Chỉ xử lý nếu có mật khẩu mới
         if pwd:
             try:
@@ -365,10 +531,49 @@ class CTVWalletAdmin(admin.ModelAdmin):
 
 
 class CTVWithdrawalAdmin(admin.ModelAdmin):
-    list_display = ('id', 'ctv', 'amount', 'status', 'requested_at', 'processed_at')
-    list_filter = ('status',)
+    list_display = ('id', 'ctv', 'amount', 'status', 'requested_at', 'processed_at', 'note')
+    list_filter = ('status', 'requested_at')
     search_fields = ('ctv__code', 'ctv__full_name', 'ctv__phone')
     readonly_fields = ('requested_at',)
+    list_editable = ('status', 'note')
+    actions = ['approve_withdrawals', 'reject_withdrawals']
+
+    def approve_withdrawals(self, request, queryset):
+        """Duyệt các yêu cầu rút tiền được chọn"""
+        from django.utils import timezone
+        updated = 0
+        for withdrawal in queryset.filter(status='pending'):
+            withdrawal.status = 'approved'
+            withdrawal.processed_at = timezone.now()
+            withdrawal.save()
+
+            # Cập nhật ví CTV: chuyển từ pending sang withdrawn
+            wallet = withdrawal.ctv.wallet
+            wallet.pending = float(wallet.pending) - float(withdrawal.amount)
+            wallet.save()
+            updated += 1
+
+        self.message_user(request, f'Đã duyệt {updated} yêu cầu rút tiền.')
+    approve_withdrawals.short_description = "Duyệt các yêu cầu rút tiền được chọn"
+
+    def reject_withdrawals(self, request, queryset):
+        """Từ chối các yêu cầu rút tiền được chọn"""
+        from django.utils import timezone
+        updated = 0
+        for withdrawal in queryset.filter(status='pending'):
+            withdrawal.status = 'rejected'
+            withdrawal.processed_at = timezone.now()
+            withdrawal.save()
+
+            # Hoàn lại tiền vào ví CTV: chuyển từ pending về balance
+            wallet = withdrawal.ctv.wallet
+            wallet.pending = float(wallet.pending) - float(withdrawal.amount)
+            wallet.balance = float(wallet.balance) + float(withdrawal.amount)
+            wallet.save()
+            updated += 1
+
+        self.message_user(request, f'Đã từ chối {updated} yêu cầu rút tiền.')
+    reject_withdrawals.short_description = "Từ chối các yêu cầu rút tiền được chọn"
 
 
 admin_site.register(CTVLevel, CTVLevelAdmin)
@@ -387,4 +592,49 @@ class CustomerLeadAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'updated_at')
 
 admin_site.register(CustomerLead, CustomerLeadAdmin)
+
+# Cart Admin
+class CartAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user')
+    search_fields = ('user__name', 'user__email', 'user__phone_number')
+
+class CartItemAdmin(admin.ModelAdmin):
+    list_display = ('id', 'cart', 'product', 'quantity')
+    search_fields = ('cart__user__name', 'product__name')
+
+class LuckyPrizeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'event', 'name', 'value', 'order')
+    search_fields = ('name', 'event__title')
+    list_filter = ('event',)
+    ordering = ('event', 'order', 'id')
+
+class MarketingResourceAdmin(admin.ModelAdmin):
+    list_display = ('name', 'resource_type', 'file_url', 'download_count', 'is_active', 'created_at')
+    list_filter = ('resource_type', 'is_active', 'created_at')
+    search_fields = ('name', 'description')
+    list_editable = ('is_active',)
+    readonly_fields = ('download_count', 'created_at', 'updated_at')
+    fieldsets = (
+        ('Thông tin cơ bản', {
+            'fields': ('name', 'description', 'resource_type', 'is_active')
+        }),
+        ('File', {
+            'fields': ('file_url', 'thumbnail_url', 'file_size')
+        }),
+        ('Liên kết', {
+            'fields': ('product',),
+            'classes': ('collapse',)
+        }),
+        ('Thống kê', {
+            'fields': ('download_count', 'created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+
+# Đăng ký các model còn thiếu
+admin_site.register(Cart, CartAdmin)
+admin_site.register(CartItem, CartItemAdmin)
+admin_site.register(LuckyPrize, LuckyPrizeAdmin)
+admin_site.register(MarketingResource, MarketingResourceAdmin)
 

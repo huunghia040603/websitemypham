@@ -8,6 +8,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from io import BytesIO
+import requests
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -181,6 +182,173 @@ def index():
                          testimonials=testimonials_data,
                          flash_sale_end=flash_sale_end)
 
+@app.route('/api/filters/data')
+def api_filters_data():
+    """API endpoint để lấy dữ liệu filters (danh mục, thương hiệu, tags) - cache để không load lại"""
+    try:
+        print(f"🔍 Loading REAL filters data from {API_BASE_URL}")
+        
+        # Get categories
+        try:
+            categories_response = requests.get(f"{API_BASE_URL}/category/", timeout=10)
+            print(f"🔍 Categories response status: {categories_response.status_code}")
+            categories = categories_response.json() if categories_response.status_code == 200 else []
+            print(f"🔍 Found {len(categories)} categories")
+        except Exception as e:
+            print(f"❌ Categories error: {e}")
+            categories = []
+        
+        # Get brands
+        try:
+            brands_response = requests.get(f"{API_BASE_URL}/brands/", timeout=10)
+            print(f"🔍 Brands response status: {brands_response.status_code}")
+            brands = brands_response.json() if brands_response.status_code == 200 else []
+            print(f"🔍 Found {len(brands)} brands")
+        except Exception as e:
+            print(f"❌ Brands error: {e}")
+            brands = []
+        
+        # Get products for tags (only get first page to avoid timeout)
+        try:
+            products_response = requests.get(f"{API_BASE_URL}/products/?page=1&per_page=50", timeout=10)
+            print(f"🔍 Products response status: {products_response.status_code}")
+            products = products_response.json().get('results', []) if products_response.status_code == 200 else []
+            print(f"🔍 Found {len(products)} products for tags")
+        except Exception as e:
+            print(f"❌ Products error: {e}")
+            products = []
+        
+        # Get tags from products
+        all_tags = set()
+        for product in products:
+            tags = product.get('tags', [])
+            if isinstance(tags, list):
+                for tag in tags:
+                    if isinstance(tag, str) and tag.strip():
+                        all_tags.add(tag.strip())
+                    elif isinstance(tag, dict) and tag.get('name'):
+                        all_tags.add(tag['name'].strip())
+        
+        tags_with_stock = sorted(list(all_tags))
+        print(f"🔍 Found {len(tags_with_stock)} tags")
+        
+        result = {
+            'categories': categories,
+            'brands': brands,
+            'tags': tags_with_stock
+        }
+        
+        print(f"✅ Returning REAL filters data: {len(result['categories'])} categories, {len(result['brands'])} brands, {len(result['tags'])} tags")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Error in api_filters_data: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Lỗi server'}), 500
+
+@app.route('/api/products/filtered')
+def api_products_filtered():
+    """API endpoint để lấy sản phẩm đã lọc mà không cần reload trang"""
+    try:
+        # Get filter parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 12, type=int)
+        search_query = request.args.get('search', '').strip()
+        category_name = request.args.get('category_name', '').strip()
+        brands_name = request.args.get('brands_name', '').strip()
+        tags = request.args.get('tags', '').strip()
+        condition = request.args.get('condition', '').strip()
+        price_range = request.args.get('price_range', '').strip()
+        discount_range = request.args.get('discount_range', '').strip()
+        sort_by = request.args.get('sort', 'newest')
+
+        print(f"🔍 Filtering products with: page={page}, per_page={per_page}, search='{search_query}', category='{category_name}', brand='{brands_name}', tags='{tags}', condition='{condition}', price='{price_range}', discount='{discount_range}', sort='{sort_by}'")
+
+        # Build API URL with filters
+        api_params = {
+            'page': page,
+            'per_page': per_page
+        }
+        
+        # Add ordering
+        if sort_by == 'newest':
+            api_params['ordering'] = '-id'
+        elif sort_by == 'price_asc':
+            api_params['ordering'] = 'discounted_price'
+        elif sort_by == 'price_desc':
+            api_params['ordering'] = '-discounted_price'
+        elif sort_by == 'sales':
+            api_params['ordering'] = '-sold_quantity'
+        elif sort_by == 'discount':
+            api_params['ordering'] = '-discount_rate'
+        
+        if search_query:
+            api_params['search'] = search_query
+        if category_name:
+            api_params['category_name'] = category_name
+        if brands_name:
+            api_params['brands_name'] = brands_name
+        if tags:
+            api_params['tags'] = tags
+        if condition and condition != 'all':
+            api_params['condition'] = condition
+
+        # Get products from Django API
+        api_url = f"{API_BASE_URL}/products/"
+        print(f"🔍 Fetching from: {api_url} with params: {api_params}")
+        response = requests.get(api_url, params=api_params, timeout=30)
+        
+        if response.status_code != 200:
+            print(f"❌ API Error: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Không thể lấy dữ liệu sản phẩm'}), 500
+            
+        data = response.json()
+        print(f"🔍 Got {len(data.get('results', []))} products from API")
+        
+        # Apply client-side filters for price and discount
+        filtered_products = data.get('results', [])
+        
+        # Price filter (VND)
+        if price_range:
+            print(f"🔍 DEBUG: Price range filter: {price_range}")
+            print(f"🔍 DEBUG: Total products before filter: {len(filtered_products)}")
+            def price_vnd(x):
+                return (x.get('discounted_price', 0) or 0) * 1000
+            if price_range == 'under_200k':
+                filtered_products = [p for p in filtered_products if price_vnd(p) < 200_000]
+                print(f"🔍 DEBUG: Products under 200k: {len(filtered_products)}")
+            elif price_range == '200_500':
+                filtered_products = [p for p in filtered_products if 200_000 <= price_vnd(p) < 500_000]
+            elif price_range == '500_1m':
+                filtered_products = [p for p in filtered_products if 500_000 <= price_vnd(p) < 1_000_000]
+            elif price_range == 'over_1m':
+                filtered_products = [p for p in filtered_products if price_vnd(p) >= 1_000_000]
+
+        # Discount filter
+        if discount_range:
+            def discount_rate(p):
+                return float(p.get('discount_rate', 0) or 0)
+            if discount_range == 'under_30':
+                filtered_products = [p for p in filtered_products if discount_rate(p) < 30]
+            elif discount_range == '50_70':
+                filtered_products = [p for p in filtered_products if 50 <= discount_rate(p) < 70]
+            elif discount_range == 'over_70':
+                filtered_products = [p for p in filtered_products if discount_rate(p) >= 70]
+
+        # Update data with filtered results
+        data['results'] = filtered_products
+        data['count'] = len(filtered_products)
+        
+        print(f"✅ Returning REAL products data: {len(filtered_products)} products")
+        return jsonify(data)
+        
+    except Exception as e:
+        print(f"❌ Error in api_products_filtered: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Lỗi server'}), 500
+
 @app.route('/products')
 def products():
     """Trang danh sách sản phẩm"""
@@ -195,9 +363,9 @@ def products():
     sort_by = request.args.get('sort', 'newest')
     condition = request.args.get('condition', 'all')
 
-    # Hỗ trợ tên tham số mới theo yêu cầu
-    category_name = request.args.get('category_name') or category
-    brands_name = request.args.get('brands_name') or brand
+    # Hỗ trợ tên tham số mới theo yêu cầu - hỗ trợ multiple values
+    category_names = request.args.getlist('category_name') or ([category] if category else [])
+    brands_names = request.args.getlist('brands_name') or ([brand] if brand else [])
     new_price_range = request.args.get('price_range') or price_range
     new_discount = request.args.get('discount_range') or discount
     tags_filter = request.args.get('tags')
@@ -205,12 +373,17 @@ def products():
     # Filter sản phẩm
     filtered_products = all_products.copy()
     
-    if category_name:
-        target = category_name.strip().lower()
-        filtered_products = [p for p in filtered_products if _extract_category_name(p).lower() == target]
+    # Filter by multiple categories
+    if category_names:
+        category_targets = [name.strip().lower() for name in category_names if name.strip()]
+        if category_targets:
+            filtered_products = [p for p in filtered_products if _extract_category_name(p).lower() in category_targets]
     
-    if brands_name:
-        filtered_products = [p for p in filtered_products if (p.get('brand_name') or (p.get('brand') or {}).get('name') or '').strip() == brands_name]
+    # Filter by multiple brands
+    if brands_names:
+        brand_targets = [name.strip() for name in brands_names if name.strip()]
+        if brand_targets:
+            filtered_products = [p for p in filtered_products if (p.get('brand_name') or (p.get('brand') or {}).get('name') or '').strip() in brand_targets]
     
     if condition != 'all':
         filtered_products = [p for p in filtered_products if p.get('status') == condition]
@@ -234,10 +407,13 @@ def products():
     
     # Khoảng giá mới (VND)
     if new_price_range:
+        print(f"🔍 DEBUG: Price range filter: {new_price_range}")
+        print(f"🔍 DEBUG: Total products before filter: {len(filtered_products)}")
         def price_vnd(x):
             return (x.get('discounted_price', 0) or 0) * 1000
         if new_price_range == 'under_200k':
             filtered_products = [p for p in filtered_products if price_vnd(p) < 200_000]
+            print(f"🔍 DEBUG: Products under 200k: {len(filtered_products)}")
         elif new_price_range == '200_500':
             filtered_products = [p for p in filtered_products if 200_000 <= price_vnd(p) < 500_000]
         elif new_price_range == '500_1m':
@@ -287,8 +463,163 @@ def products():
     else:  # newest
         filtered_products.sort(key=lambda x: x.get('id', 0), reverse=True)
     
+    # Pagination logic
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 20, type=int)
+    
+    # Calculate pagination
+    total_products = len(filtered_products)
+    total_pages = (total_products + per_page - 1) // per_page
+    
+    # Get products for current page
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_products = filtered_products[start_idx:end_idx]
+    
+    # Check if this is an AJAX request
+    is_ajax = request.args.get('ajax') == '1'
+    
+    if is_ajax:
+        # Return only the products grid HTML for AJAX requests
+        from flask import render_template_string
+        return render_template_string('''
+            <div id="products-page-grid" class="row g-4">
+                {% for product in products %}
+                <div class="col-6 col-md-4 col-lg-3">
+                    {% set image_url = product.image or '/static/image/default-product.jpg' %}
+                    {% set brand_name = product.brand_name or 'Không rõ' %}
+                    {% set status_text = (product.status or '').lower() %}
+                    {% set is_new_by_status = 'new' in status_text or 'chiet' in status_text %}
+                    {% set remaining_percent = None %}
+                    {% if not is_new_by_status %}
+                        {% set remaining_percent = None %}
+                    {% endif %}
+                    {% set used_label = None %}
+                    {% if not is_new_by_status %}
+                        {% if 'test' in status_text %}
+                            {% set used_label = 'Test 1-2 lần' %}
+                        {% elif remaining_percent %}
+                            {% set used_label = 'Còn ' + remaining_percent + '%' %}
+                        {% endif %}
+                    {% endif %}
+                    {% set new_label = None %}
+                    {% if is_new_by_status %}
+                        {% if 'chiet' in status_text %}
+                            {% set new_label = 'Chiết' %}
+                        {% elif status_text == 'new' %}
+                            {% set new_label = 'New đẹp' %}
+                        {% elif 'newmh' in status_text %}
+                            {% set new_label = 'New mất hộp' %}
+                        {% elif 'newm' in status_text %}
+                            {% set new_label = 'New móp hộp' %}
+                        {% elif 'newrt' in status_text %}
+                            {% set new_label = 'New rách tem' %}
+                        {% elif 'newmn' in status_text %}
+                            {% set new_label = 'New móp nhẹ' %}
+                        {% elif 'newx' in status_text %}
+                            {% set new_label = 'New xước nhẹ' %}
+                        {% elif 'newspx' in status_text %}
+                            {% set new_label = 'New xước' %}
+                        {% else %}
+                            {% set new_label = 'New' %}
+                        {% endif %}
+                    {% endif %}
+                    {% set info_label = new_label if is_new_by_status else used_label %}
+                    {% set original_price = product.original_price * 1000 if product.original_price else None %}
+                    {% set discounted_price = product.discounted_price * 1000 if product.discounted_price else 0 %}
+                    {% set rating = product.rating | float if product.rating else 0 %}
+                    {% set full_stars = rating | int %}
+                    {% set has_half_star = (rating % 1) >= 0.5 and (rating % 1) < 1 %}
+                    {% set discount_rate = (product.discount_rate | float | round | int) if product.discount_rate else 0 %}
+                    {% set stock_quantity = product.stock_quantity or 0 %}
+                    {% set is_out_of_stock = stock_quantity <= 0 %}
+                    
+                    <div class="product-card card h-100 border-0 shadow-sm">
+                        <div class="position-relative">
+                            <a href="/product/{{ product.id }}" class="text-decoration-none">
+                                <img src="{{ image_url }}" 
+                                     class="card-img-top" alt="{{ product.name }}"
+                                     style="height: 220px; object-fit: cover;{% if is_out_of_stock %} filter: grayscale(100%);{% endif %}"
+                                     onerror="this.src='/static/image/default-product.jpg'">
+                            </a>
+                            {% if is_out_of_stock %}
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                                 style="background-color: rgba(0,0,0,0.7); border-radius: 6px;">
+                                <div class="text-center text-white">
+                                    <i class="fas fa-times-circle fa-2x mb-1"></i>
+                                    <h6 class="fw-bold mb-0">HẾT HÀNG</h6>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <button class="fav-toggle position-absolute top-0 end-0 m-2" 
+                                    title="Thêm vào yêu thích" 
+                                    data-id="{{ product.id }}"
+                                    data-name="{{ product.name }}"
+                                    data-image="{{ image_url }}"
+                                    data-brand="{{ brand_name }}"
+                                    data-price="{{ discounted_price }}"
+                                    style="border:none;background:transparent;cursor:pointer;">
+                                <i class="far fa-heart" style="font-size: 18px; color:#fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);"></i>
+                            </button>
+                            <div class="position-absolute bottom-0 start-0 m-1">
+                                <img src="/static/image/logo.png" alt="Logo" class="product-logo" style="width: 28px; height: 28px; object-fit: contain; border-radius: 50%; background: white; padding: 2px; display: block; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);" onerror="this.style.display='none';">
+                            </div>
+                            <div class="product-badges-row position-absolute" style="top:8px;left:10px;display:flex;gap:6px;align-items:center;z-index:2;">
+                                {% if discount_rate > 0 %}
+                                <div class="badge bg-danger discount-badge-left" style="font-size: 11px; padding: 4px 8px;">-{{ discount_rate }}%</div>
+                                {% endif %}
+                                {% if info_label %}
+                                <div class="product-info-badge" style="font-size: 10px; padding: 1px 6px; background:#eaf4ff; border:1px solid #b8d4ff; color:#1e56a0; border-radius:6px;"><i class="fas fa-circle-info me-1"></i>{{ info_label }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; height: 16px;">
+                                <a href="/product/{{ product.id }}" class="text-decoration-none text-dark">{{ product.name }}</a>
+                            </h6>
+                            <p class="text-muted small mb-2" style="font-size: 10px;">{{ brand_name }}{% if info_label %} • {{ info_label }}{% endif %}</p>
+                            <div class="d-flex align-items-center mb-1">
+                                {% if original_price %}
+                                <span class="text-decoration-line-through text-muted me-1" style="font-size: 11px;">{{ "{:,.0f}".format(original_price) }}đ</span>
+                                {% endif %}
+                                <span class="text-danger fw-bold" style="font-size: 15px;">{{ "{:,.0f}".format(discounted_price) }}đ</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="stars text-warning me-2" style="font-size: 12px;">
+                                    {% for i in range(5) %}
+                                        {% if i < full_stars %}
+                                        <i class="fas fa-star"></i>
+                                        {% elif i == full_stars and has_half_star %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                        {% else %}
+                                        <i class="far fa-star"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted" style="font-size: 11px;">({{ rating }})</small>
+                                <span class="badge {% if is_out_of_stock %}bg-danger{% else %}bg-success{% endif %}" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">{% if is_out_of_stock %}Hết hàng{% else %}Còn {{ stock_quantity }}{% endif %}</span>
+                            </div>
+                            <button class="btn w-100 add-to-cart-btn {% if is_out_of_stock %}btn-secondary{% else %}btn-light text-dark border{% endif %}" 
+                                    data-product-id="{{ product.id }}" 
+                                    style="font-size: 13px; padding: 8px;" 
+                                    {% if is_out_of_stock %}disabled{% endif %}>
+                                {% if is_out_of_stock %}Hết hàng{% else %}Thêm vào giỏ{% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="products-showing">{{ products|length }}</div>
+            <div id="products-total">{{ total_products }}</div>
+        ''', products=paginated_products, total_products=total_products)
+    
     return render_template('products.html',
-                         products=filtered_products,
+                         products=paginated_products,
+                         total_products=total_products,
+                         total_pages=total_pages,
+                         current_page=page,
+                         per_page=per_page,
                          categories=categories_data,
                          brands=brands_data,
                          current_condition=condition)
@@ -1425,6 +1756,279 @@ def preview_new_order_notification():
                          pending_orders=pending_orders,
                          current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
 
+# Orders API Endpoints
+@app.route('/orders/', methods=['GET'])
+def api_orders():
+    """API lấy danh sách đơn hàng (public endpoint for CTV orders)"""
+    import requests
+    
+    try:
+        # Get query parameters
+        collaborator_code = request.args.get('collaborator_code__isnull', '')
+        ctv_code = request.args.get('collaborator_code', '')
+        start_date = request.args.get('order_date__gte', '')
+        end_date = request.args.get('order_date__lte', '')
+        
+        print(f"🔍 Fetching orders from: {API_BASE_URL}/orders/")
+        print(f"📋 Query params: collaborator_code__isnull={collaborator_code}, collaborator_code={ctv_code}")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        # Build query URL
+        query_params = []
+        if collaborator_code == 'false':
+            query_params.append('collaborator_code__isnull=false')
+        if ctv_code:
+            query_params.append(f'collaborator_code={ctv_code}')
+        if start_date:
+            query_params.append(f'order_date__gte={start_date}')
+        if end_date:
+            query_params.append(f'order_date__lte={end_date}')
+        
+        query_string = '&'.join(query_params)
+        url = f'{API_BASE_URL}/orders/?ordering=-order_date'
+        if query_string:
+            url += f'&{query_string}'
+            
+        print(f"📡 Full URL: {url}")
+        
+        response = requests.get(url, headers=headers, timeout=30)
+        print(f"📡 Orders API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            orders = response.json()
+            print(f"✅ Successfully fetched {len(orders)} orders")
+            return jsonify(orders)
+        else:
+            print(f"❌ Orders API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy danh sách đơn hàng. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Orders API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+# CTVs API Endpoints
+@app.route('/ctvs/', methods=['GET'])
+def api_ctvs():
+    """API lấy danh sách CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTVs from: {API_BASE_URL}/ctvs/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/', headers=headers, timeout=30)
+        print(f"📡 CTVs API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            ctvs = response.json()
+            print(f"✅ Successfully fetched {len(ctvs)} CTVs")
+            return jsonify(ctvs)
+        else:
+            print(f"❌ CTVs API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy danh sách CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTVs API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/by-code/', methods=['GET'])
+def api_ctvs_by_code():
+    """API lấy CTV theo mã"""
+    import requests
+    
+    try:
+        code = request.args.get('code', '').strip()
+        if not code:
+            return jsonify({'error': 'Thiếu mã CTV'}), 400
+        
+        print(f"🔍 Fetching CTV by code: {code} from: {API_BASE_URL}/ctvs/by-code/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/by-code/?code={code}', headers=headers, timeout=30)
+        print(f"📡 CTV by code API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            ctv = response.json()
+            print(f"✅ Successfully fetched CTV: {ctv.get('code', 'N/A')}")
+            return jsonify(ctv)
+        elif response.status_code == 404:
+            print(f"❌ CTV not found with code: {code}")
+            return jsonify({'error': 'Không tìm thấy CTV với mã này'}), 404
+        else:
+            print(f"❌ CTV by code API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy thông tin CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV by code API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/stats/', methods=['GET'])
+def api_ctv_stats(ctv_id):
+    """API lấy thống kê CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV stats for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/stats/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/stats/', headers=headers, timeout=30)
+        print(f"📡 CTV stats API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            stats = response.json()
+            print(f"✅ Successfully fetched CTV stats for ID: {ctv_id}")
+            return jsonify(stats)
+        elif response.status_code == 404:
+            print(f"❌ CTV stats not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy thống kê CTV'}), 404
+        else:
+            print(f"❌ CTV stats API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy thống kê CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV stats API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/commissions/', methods=['GET'])
+def api_ctv_commissions(ctv_id):
+    """API lấy danh sách hoa hồng CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV commissions for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/commissions/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/commissions/', headers=headers, timeout=30)
+        print(f"📡 CTV commissions API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            commissions = response.json()
+            print(f"✅ Successfully fetched CTV commissions for ID: {ctv_id}")
+            return jsonify(commissions)
+        elif response.status_code == 404:
+            print(f"❌ CTV commissions not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy hoa hồng CTV'}), 404
+        else:
+            print(f"❌ CTV commissions API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy hoa hồng CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV commissions API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/wallet/', methods=['GET'])
+def api_ctv_wallet(ctv_id):
+    """API lấy thông tin ví CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV wallet for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/wallet/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/wallet/', headers=headers, timeout=30)
+        print(f"📡 CTV wallet API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            wallet = response.json()
+            print(f"✅ Successfully fetched CTV wallet for ID: {ctv_id}")
+            return jsonify(wallet)
+        elif response.status_code == 404:
+            print(f"❌ CTV wallet not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy ví CTV'}), 404
+        else:
+            print(f"❌ CTV wallet API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy ví CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV wallet API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/withdrawals/', methods=['GET'])
+def api_ctv_withdrawals(ctv_id):
+    """API lấy lịch sử rút tiền CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Fetching CTV withdrawals for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/withdrawals/")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/withdrawals/', headers=headers, timeout=30)
+        print(f"📡 CTV withdrawals API response status: {response.status_code}")
+        
+        if response.status_code == 200:
+            withdrawals = response.json()
+            print(f"✅ Successfully fetched CTV withdrawals for ID: {ctv_id}")
+            return jsonify(withdrawals)
+        elif response.status_code == 404:
+            print(f"❌ CTV withdrawals not found for ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy lịch sử rút tiền CTV'}), 404
+        else:
+            print(f"❌ CTV withdrawals API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể lấy lịch sử rút tiền CTV. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV withdrawals API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/ctvs/<int:ctv_id>/withdraw/', methods=['POST'])
+def api_ctv_withdraw(ctv_id):
+    """API gửi yêu cầu rút tiền CTV"""
+    import requests
+    
+    try:
+        print(f"🔍 Sending CTV withdrawal request for ID: {ctv_id} to: {API_BASE_URL}/ctvs/{ctv_id}/withdraw/")
+        
+        # Lấy dữ liệu từ request body
+        data = request.get_json()
+        print(f"📋 Withdrawal data: {data}")
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        response = requests.post(f'{API_BASE_URL}/ctvs/{ctv_id}/withdraw/', json=data, headers=headers, timeout=30)
+        print(f"📡 CTV withdraw API response status: {response.status_code}")
+        
+        if response.status_code == 200 or response.status_code == 201:
+            result = response.json()
+            print(f"✅ Successfully sent CTV withdrawal request for ID: {ctv_id}")
+            return jsonify(result)
+        elif response.status_code == 400:
+            error_data = response.json()
+            print(f"❌ CTV withdraw validation error: {error_data}")
+            return jsonify({'error': error_data.get('detail', 'Dữ liệu không hợp lệ')}), 400
+        elif response.status_code == 404:
+            print(f"❌ CTV not found for withdrawal ID: {ctv_id}")
+            return jsonify({'error': 'Không tìm thấy CTV'}), 404
+        else:
+            print(f"❌ CTV withdraw API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể gửi yêu cầu rút tiền. API trả về: {response.status_code}'}), 500
+    except requests.exceptions.RequestException as e:
+        print(f"❌ CTV withdraw API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
 # Admin API Endpoints
 @app.route('/admin/api/orders', methods=['GET'])
 def admin_api_orders():
@@ -1687,7 +2291,7 @@ def admin_api_auto_complete_orders():
                             
                             update_response = requests.patch(
                                 f'{API_BASE_URL}/orders/{order["id"]}/',
-                                json=update_data,
+                                data=update_data,
                                 timeout=30
                             )
                             
@@ -1867,7 +2471,7 @@ def admin_api_update_product(product_id):
         print(f"🎯 Trying minimal update with: {minimal_data}")
         
         response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
-                                json=minimal_data, timeout=30)
+                                data=minimal_data, timeout=30)
         
         # If the minimal update works, try to update additional fields in separate requests
         if response.status_code == 200 and len(cleaned_data) > len(minimal_data):
@@ -1885,7 +2489,7 @@ def admin_api_update_product(product_id):
             if price_data:
                 print(f"💰 Trying price update with: {price_data}")
                 price_response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
-                                              json=price_data, timeout=30)
+                                              data=price_data, timeout=30)
                 if price_response.status_code != 200:
                     print(f"⚠️ Price update failed: {price_response.status_code}")
                 else:
@@ -1901,7 +2505,7 @@ def admin_api_update_product(product_id):
             if quantity_data:
                 print(f"📦 Trying quantity update with: {quantity_data}")
                 quantity_response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
-                                                  json=quantity_data, timeout=30)
+                                                  data=quantity_data, timeout=30)
                 if quantity_response.status_code != 200:
                     print(f"⚠️ Quantity update failed: {quantity_response.status_code}")
                 else:
@@ -2037,6 +2641,59 @@ def upload_bank_transfer():
             
     except Exception as e:
         print(f"❌ Error uploading bank transfer image: {e}")
+        return jsonify({'error': f'Lỗi upload ảnh: {str(e)}'}), 500
+
+@app.route('/api/upload-marketing-resource', methods=['POST'])
+def upload_marketing_resource():
+    """API upload ảnh tài nguyên marketing lên Cloudinary"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'Không có file được chọn'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'Không có file được chọn'}), 400
+        
+        if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
+            # Check file size (max 10MB)
+            file.seek(0, 2)  # Seek to end
+            file_size = file.tell()
+            file.seek(0)  # Reset to beginning
+            
+            if file_size > 10 * 1024 * 1024:  # 10MB limit
+                return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
+            
+            # Upload to Cloudinary with image optimization for marketing resources
+            upload_result = cloudinary.uploader.upload(
+                file,
+                folder="marketing_resources",
+                public_id=f"resource_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.filename.split('.')[0]}",
+                resource_type="image",
+                # Image optimization settings
+                quality="auto:good",  # Chất lượng tốt cho marketing materials
+                fetch_format="auto",  # Tự động chọn format tối ưu
+                width=2000,  # Giới hạn chiều rộng tối đa cho marketing
+                height=2000,  # Giới hạn chiều cao tối đa cho marketing
+                crop="limit",  # Giữ nguyên tỷ lệ
+                flags="progressive",  # Tạo ảnh progressive
+                transformation=[
+                    {"width": 2000, "height": 2000, "crop": "limit"},
+                    {"quality": "auto:good"},
+                    {"fetch_format": "auto"}
+                ]
+            )
+            
+            return jsonify({
+                'success': True,
+                'url': upload_result['secure_url'],
+                'public_id': upload_result['public_id'],
+                'file_size': file_size
+            })
+        else:
+            return jsonify({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}), 400
+            
+    except Exception as e:
+        print(f"❌ Error uploading marketing resource image: {e}")
         return jsonify({'error': f'Lỗi upload ảnh: {str(e)}'}), 500
 
 @app.route('/api/product-stock/<int:product_id>')
@@ -2318,6 +2975,102 @@ def ctv_auth_logout():
     session.pop('access_token', None)
     return redirect('/ctv/login')
 
+
+@app.route('/admin/messages')
+def admin_messages():
+    """Admin page for managing customer messages."""
+    return render_template('admin_messages.html')
+
+@app.route('/admin/ctv')
+def admin_ctv():
+    """Admin page for managing CTVs."""
+    return render_template('admin_ctv.html')
+
+@app.route('/admin/resources')
+def admin_resources():
+    """Admin page for managing marketing resources."""
+    return render_template('admin_resources.html')
+
+@app.route('/admin/api/ctvs/<int:ctv_id>/send-welcome-email', methods=['POST'])
+def send_ctv_welcome_email(ctv_id):
+    """Send welcome email to CTV with login credentials."""
+    try:
+        # Get CTV data from API
+        resp = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/', timeout=30)
+        if resp.status_code != 200:
+            return jsonify({'success': False, 'message': 'Không tìm thấy CTV'}), 404
+        
+        ctv_data = resp.json()
+        
+        # Get data from request
+        data = request.get_json(silent=True) or {}
+        ctv_name = data.get('ctv_name') or ctv_data.get('full_name', '')
+        ctv_email = data.get('ctv_email') or ctv_data.get('email', '')
+        ctv_phone = ctv_data.get('phone', '')
+        ctv_password = ctv_data.get('password_text', '')
+        
+        if not ctv_email or '@' not in ctv_email:
+            return jsonify({'success': False, 'message': 'Email CTV không hợp lệ'}), 400
+        
+        if not ctv_password:
+            return jsonify({'success': False, 'message': 'CTV chưa có mật khẩu. Vui lòng cập nhật mật khẩu trước khi gửi email.'}), 400
+        
+        # Create login URL
+        login_url = f"{request.url_root}ctv/login"
+        
+        # Render email template
+        html_content = render_template('emails/ctv_welcome_email.html', 
+                                     ctv_name=ctv_name,
+                                     ctv_phone=ctv_phone,
+                                     ctv_password=ctv_password,
+                                     login_url=login_url)
+        
+        # SMTP configuration
+        smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
+        smtp_port = int(os.getenv('SMTP_PORT', '587'))
+        smtp_user = os.getenv('SMTP_USER', 'buddyskincarevn@gmail.com')
+        smtp_pass = os.getenv('SMTP_PASS', 'pyvd idcm rsrf apjn')
+        sender = os.getenv('SMTP_SENDER', smtp_user)
+        
+        # Create email message
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = f'🎉 Chào mừng đến với BuddySkincare - Thông tin tài khoản CTV'
+        msg['From'] = sender
+        msg['To'] = ctv_email
+        
+        # Attach HTML content
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        
+        # Send email
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.sendmail(sender, [ctv_email], msg.as_string())
+        
+        return jsonify({
+            'success': True, 
+            'message': f'Đã gửi email chào mừng đến {ctv_email}',
+            'email_sent': True
+        }), 200
+        
+    except smtplib.SMTPAuthenticationError:
+        return jsonify({
+            'success': False, 
+            'message': 'Lỗi xác thực email. Vui lòng kiểm tra cấu hình SMTP.',
+            'email_sent': False
+        }), 500
+    except smtplib.SMTPException as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Lỗi khi gửi email: {str(e)}',
+            'email_sent': False
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'message': f'Lỗi hệ thống: {str(e)}',
+            'email_sent': False
+        }), 500
 
 @app.before_request
 def _guard_ctv_pages():

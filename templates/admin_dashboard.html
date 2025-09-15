@@ -53,8 +53,26 @@
     <div class="card stats-card stats-card-green">
       <div class="card-body text-center py-3">
         <i class="fas fa-users stats-icon"></i>
-        <div class="stats-number" id="collaboratorsCount">-</div>
-        <div class="stats-label">Thành viên cộng tác</div>
+        <div class="stats-number" id="totalCTVs">-</div>
+        <div class="stats-label">Cộng Tác Viên</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="card stats-card stats-card-info">
+      <div class="card-body text-center py-3">
+        <i class="fas fa-file-alt stats-icon"></i>
+        <div class="stats-number" id="totalCTVApplications">-</div>
+        <div class="stats-label">Đơn CTV Chờ Duyệt</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-2">
+    <div class="card stats-card stats-card-warning">
+      <div class="card-body text-center py-3">
+        <i class="fas fa-money-bill-wave stats-icon"></i>
+        <div class="stats-number" id="pendingWithdrawals">-</div>
+        <div class="stats-label">Chờ Duyệt Rút Tiền</div>
       </div>
     </div>
   </div>
@@ -203,10 +221,40 @@ async function loadDashboardStats() {
         const pendingCount = orders.filter(o => o.status === 'pending' || o.status === 'confirmed').length;
         document.getElementById('pendingOrders').textContent = pendingCount;
 
-        // Demo collaborators count (placeholder). Replace when API available.
-        const collaborators = Math.max(5, Math.round(products.length * 0.1));
-        const colEl = document.getElementById('collaboratorsCount');
-        if (colEl) colEl.textContent = collaborators;
+        // Load CTVs
+        try {
+            const ctvsResponse = await fetch('/ctvs/');
+            if (ctvsResponse.ok) {
+                const ctvs = await ctvsResponse.json();
+                document.getElementById('totalCTVs').textContent = ctvs.length;
+            }
+        } catch (error) {
+            console.error('Error loading CTVs:', error);
+        }
+        
+        // Load CTV Applications (chỉ đếm những đơn chờ duyệt)
+        try {
+            const applicationsResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctv-applications/');
+            if (applicationsResponse.ok) {
+                const applications = await applicationsResponse.json();
+                const pendingApplications = applications.filter(app => app.status === 'pending').length;
+                document.getElementById('totalCTVApplications').textContent = pendingApplications;
+            }
+        } catch (error) {
+            console.error('Error loading CTV applications:', error);
+        }
+        
+        // Load Withdrawals
+        try {
+            const withdrawalsResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctv-withdrawals/');
+            if (withdrawalsResponse.ok) {
+                const withdrawals = await withdrawalsResponse.json();
+                const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').length;
+                document.getElementById('pendingWithdrawals').textContent = pendingWithdrawals;
+            }
+        } catch (error) {
+            console.error('Error loading withdrawals:', error);
+        }
         
         // Load customers
         const customers = await AdminAPI.getCustomers();
