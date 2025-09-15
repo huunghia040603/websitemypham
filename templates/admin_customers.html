@@ -24,7 +24,6 @@
     </div>
 </div>
 
-<!-- Filter and Search -->
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
@@ -65,7 +64,6 @@
     </div>
 </div>
 
-<!-- Customers Table -->
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -89,7 +87,6 @@
     </div>
 </div>
 
-<!-- Edit Customer Modal -->
 <div class="modal fade" id="editCustomerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -277,7 +274,7 @@ function renderCustomers() {
     filteredCustomers.forEach(customer => {
         const statusClass = getStatusClass(customer.status || 'active');
         const statusText = getStatusText(customer.status || 'active');
-        const registrationDate = customer.created_at ? AdminAPI.formatDate(customer.created_at) : 'N/A';
+        const registrationDate = customer.date_joined ? AdminAPI.formatDate(customer.date_joined) : 'N/A';
         const customerLevel = customer.level ? `Level ${customer.level}` : 'N/A';
         const customerPoints = customer.points || 0;
         
@@ -381,8 +378,8 @@ function filterCustomers() {
         
         // Date filter
         let matchesDate = true;
-        if (dateFilter && customer.created_at) {
-            const customerDate = new Date(customer.created_at);
+        if (dateFilter && customer.date_joined) {
+            const customerDate = new Date(customer.date_joined);
             const now = new Date();
             
             switch (dateFilter) {
@@ -477,7 +474,7 @@ function viewCustomerDetails(customerId) {
     details += `Level: ${customer.level || 'N/A'}\n`;
     details += `Điểm: ${customer.points || 0}\n`;
     details += `Trạng thái: ${getStatusText(customer.status)}\n`;
-    details += `Ngày đăng ký: ${customer.created_at ? AdminAPI.formatDate(customer.created_at) : 'N/A'}`;
+    details += `Ngày đăng ký: ${customer.date_joined ? AdminAPI.formatDate(customer.date_joined) : 'N/A'}`; // Sửa 'created_at' thành 'date_joined'
     
     alert(details);
 }
@@ -515,7 +512,3 @@ function copyAllEmails(){
 }
 </script>
 {% endblock %}
- 
-
-
-

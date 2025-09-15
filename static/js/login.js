@@ -148,54 +148,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
 async function handleCredentialResponse(response) {
-    const googleToken = response.credential;
-    console.log("ID Token của Google:", googleToken);
+    const googleToken = response.credential;
+    console.log("ID Token của Google:", googleToken);
 
-    const apiUrl = 'https://buddyskincare.pythonanywhere.com/api/auth/google/';
-    const data = {
-        auth_token: googleToken
-    };
+    const apiUrl = 'https://buddyskincare.pythonanywhere.com/api/auth/google/';
+    const data = {
+        auth_token: googleToken
+    };
 
-    try {
-        const fetchResponse = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
+    try {
+        const fetchResponse = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
 
-        if (fetchResponse.ok) {
-            const result = await fetchResponse.json();
-            console.log('Đăng nhập bằng Google thành công:', result);
+        if (fetchResponse.ok) {
+            const result = await fetchResponse.json();
+            console.log('Đăng nhập bằng Google thành công:', result);
 
-            // Sửa đổi ở đây để lấy đúng dữ liệu từ `result`
-            const userProfileData = {
-                access_token: result.access_token,
-                refresh_token: result.refresh_token,
-                // Lấy thông tin từ object "user_info" hoặc "user"
-                // Dựa trên dữ liệu bạn cung cấp, cả hai object này đều có cùng thông tin
-                phone_number: result.user.phone_number,
-                name: result.user.name,
-                address: result.user.address,
-                dob: result.user.dob,
-                email: result.user.email
-            };
+            // Sửa đổi ở đây để lấy đúng dữ liệu từ `result`
+            const userProfileData = {
+                access_token: result.access_token,
+                refresh_token: result.refresh_token,
+                id: result.user.id, // Thêm thuộc tính id
+                phone_number: result.user.phone_number,
+                name: result.user.name,
+                address: result.user.address,
+                dob: result.user.dob,
+                email: result.user.email,
+                avatar: result.user.avatar || result.user_info.picture // Thêm thuộc tính avatar
+            };
 
-            saveLoginState(userProfileData);
-            alert('Đăng nhập bằng Google thành công!');
-            window.location.href = '/';
-        } else {
-            const error = await fetchResponse.json();
-            console.error('Đăng nhập bằng Google thất bại:', error);
-            alert(`Đăng nhập bằng Google thất bại: ${error.detail || 'Có lỗi xảy ra.'}`);
-        }
-    } catch (error) {
-        console.error('Lỗi khi gửi yêu cầu đăng nhập Google:', error);
-        alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
-    }
+            saveLoginState(userProfileData);
+            alert('Đăng nhập bằng Google thành công!');
+            window.location.href = '/';
+        } else {
+            const error = await fetchResponse.json();
+            console.error('Đăng nhập bằng Google thất bại:', error);
+            alert(`Đăng nhập bằng Google thất bại: ${error.detail || 'Có lỗi xảy ra.'}`);
+        }
+    } catch (error) {
+        console.error('Lỗi khi gửi yêu cầu đăng nhập Google:', error);
+        alert('Có lỗi khi kết nối đến máy chủ. Vui lòng thử lại sau.');
+    }
 }
+
+
 // Render Google button with cleaner style once script is available
 window.addEventListener('load', () => {
     if (window.google && document.getElementById('googleCustomContainer')) {
