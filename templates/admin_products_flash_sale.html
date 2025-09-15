@@ -29,7 +29,7 @@
             </div>
             <div class="card-body">
                 <div id="tags-list" class="list-group">
-                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -84,7 +84,7 @@
 </div>
 
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="addProductModalLabel">Thêm sản phẩm vào Flash Sale</h5>
@@ -95,7 +95,7 @@
                     <div class="mb-3">
                         <label for="flashSaleTagId" class="form-label">Chọn Tag</label>
                         <select class="form-select" id="flashSaleTagId" required>
-                            </select>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="productSearch" class="form-label">Tìm kiếm sản phẩm</label>
@@ -104,7 +104,7 @@
                     <div class="mb-3 product-list-container">
                         <label class="form-label">Chọn sản phẩm</label>
                         <div id="productCheckboxes" class="form-check-list">
-                            </div>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">Thêm sản phẩm</button>
                 </form>
@@ -123,7 +123,8 @@
         const productSearchInput = document.getElementById('productSearch');
         const addProductForm = document.getElementById('addProductForm');
         const addTagForm = document.getElementById('addTagForm');
-        let allProducts = []; // Biến để lưu trữ toàn bộ danh sách sản phẩm
+        let allProducts = [];
+        let taggedProductIds = new Set();
 
         function translateStatus(status) {
             switch (status) {
@@ -139,6 +140,7 @@
         }
 
         function fetchAndRenderTags() {
+            console.log('Đang tải danh sách tags...');
             fetch('https://buddyskincare.pythonanywhere.com/tags/')
                 .then(response => {
                     if (!response.ok) {
@@ -147,6 +149,7 @@
                     return response.json();
                 })
                 .then(data => {
+                    console.log('Tags đã được tải:', data);
                     tagsListContainer.innerHTML = '';
                     if (data.length === 0) {
                         tagsListContainer.innerHTML = '<p class="text-muted">Không có tag nào.</p>';
@@ -157,8 +160,8 @@
                         tagItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
                         
                         const statusClass = tag.status === 'active' ? 'bg-success' :
-                                            tag.status === 'upcoming' ? 'bg-warning' :
-                                            'bg-danger';
+                                             tag.status === 'upcoming' ? 'bg-warning' :
+                                             'bg-danger';
                         const translatedStatus = translateStatus(tag.status);
 
                         tagItem.innerHTML = `
@@ -174,24 +177,24 @@
                     });
                 })
                 .catch(error => {
-                    console.error('Error fetching tags:', error);
+                    console.error('Lỗi khi tải tags:', error);
                     tagsListContainer.innerHTML = '<p class="text-danger">Không thể tải danh sách tag. Vui lòng thử lại.</p>';
                 });
         }
 
-        // Hàm render danh sách sản phẩm dạng checkbox
-        function renderProductCheckboxes(products) {
-            productCheckboxesContainer.innerHTML = ''; // Xóa nội dung cũ
+        function renderProductCheckboxes(products, taggedIds = new Set()) {
+            productCheckboxesContainer.innerHTML = '';
             if (products.length === 0) {
                 productCheckboxesContainer.innerHTML = '<p class="text-muted">Không tìm thấy sản phẩm nào.</p>';
                 return;
             }
 
             products.forEach(product => {
+                const isTagged = taggedIds.has(product.id);
                 const formCheckDiv = document.createElement('div');
                 formCheckDiv.classList.add('form-check');
                 formCheckDiv.innerHTML = `
-                    <input class="form-check-input" type="checkbox" value="${product.id}" id="product-${product.id}">
+                    <input class="form-check-input" type="checkbox" value="${product.id}" id="product-${product.id}" ${isTagged ? 'checked' : ''}>
                     <label class="form-check-label" for="product-${product.id}">
                         ${product.name}
                     </label>
@@ -200,39 +203,72 @@
             });
         }
 
-        // Hàm fetch và populate các select/checkbox
-        function fetchAndPopulateData() {
-            // Fetch danh sách tất cả tags
-            fetch('https://buddyskincare.pythonanywhere.com/tags/')
-                .then(response => response.json())
-                .then(tags => {
-                    flashSaleTagIdSelect.innerHTML = tags.map(tag => `<option value="${tag.id}">${tag.name} (${tag.code})</option>`).join('');
-                })
-                .catch(error => console.error('Error fetching tags for modal:', error));
-
-            // Fetch danh sách tất cả sản phẩm và lưu vào biến
-            fetch('https://buddyskincare.pythonanywhere.com/products/')
+        function fetchAllProducts() {
+            return fetch('https://buddyskincare.pythonanywhere.com/products/')
                 .then(response => response.json())
                 .then(products => {
                     allProducts = products;
-                    renderProductCheckboxes(allProducts);
                 })
-                .catch(error => console.error('Error fetching products:', error));
+                .catch(error => console.error('Lỗi khi tải tất cả sản phẩm:', error));
         }
 
-        // Lọc sản phẩm khi nhập vào ô tìm kiếm
+        function fetchProductsByTag(tag) {
+            return fetch(`https://buddyskincare.pythonanywhere.com/products/?tags=${tag}`)
+                .then(response => response.json())
+                .then(products => {
+                    return products.map(p => p.id);
+                })
+                .catch(error => {
+                    console.error(`Lỗi khi tải sản phẩm cho tag "${tag}":`, error);
+                    return [];
+                });
+        }
+
+        function fetchAndPopulateData() {
+            console.log('Đang tải dữ liệu cho các modal...');
+            
+            // Tải danh sách tags
+            fetch('https://buddyskincare.pythonanywhere.com/tags/')
+                .then(response => response.json())
+                .then(tags => {
+                    console.log('Tags đã được tải cho modal:', tags);
+                    flashSaleTagIdSelect.innerHTML = tags.map(tag => `<option value="${tag.id}">${tag.name} (${tag.code})</option>`).join('');
+                })
+                .catch(error => console.error('Lỗi khi tải tags cho modal:', error));
+
+            // Tải tất cả sản phẩm
+            fetchAllProducts()
+                .then(() => {
+                    // Sau khi tải xong tất cả sản phẩm, tải các sản phẩm có tag "FlashSale"
+                    return fetchProductsByTag('FlashSale');
+                })
+                .then(taggedIdsArray => {
+                    taggedProductIds = new Set(taggedIdsArray);
+                    // Hiển thị danh sách sản phẩm với các checkbox đã được tick sẵn
+                    renderProductCheckboxes(allProducts, taggedProductIds);
+                });
+        }
+
+        flashSaleTagIdSelect.addEventListener('change', async function() {
+            const selectedTagId = this.value;
+            // Fetch products for the newly selected tag
+            const tagName = this.options[this.selectedIndex].text.split('(')[1].slice(0, -1);
+            const productIdsForNewTag = await fetchProductsByTag(tagName);
+            
+            // Re-render checkboxes with updated checked state
+            renderProductCheckboxes(allProducts, new Set(productIdsForNewTag));
+        });
+
         productSearchInput.addEventListener('input', function() {
             const searchTerm = this.value.toLowerCase();
             const filteredProducts = allProducts.filter(product => 
                 product.name.toLowerCase().includes(searchTerm)
             );
-            renderProductCheckboxes(filteredProducts);
+            renderProductCheckboxes(filteredProducts, taggedProductIds);
         });
 
-        // Xử lý form thêm tag mới
         addTagForm.addEventListener('submit', function(event) {
             event.preventDefault();
-
             const tagName = document.getElementById('tagName').value;
             const tagCode = document.getElementById('tagCode').value;
             const tagDescription = document.getElementById('tagDescription').value;
@@ -253,9 +289,7 @@
 
             fetch('https://buddyskincare.pythonanywhere.com/tags/', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newTag)
             })
             .then(response => {
@@ -272,15 +306,13 @@
                 fetchAndPopulateData();
             })
             .catch(error => {
-                console.error('Error creating new tag:', error);
+                console.error('Lỗi khi tạo tag:', error);
                 alert('Tạo tag thất bại. Lỗi: ' + error.message);
             });
         });
 
-        // Xử lý form thêm sản phẩm vào tag
         addProductForm.addEventListener('submit', function(event) {
             event.preventDefault();
-
             const selectedTagId = flashSaleTagIdSelect.value;
             const selectedProductIds = Array.from(productCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
 
@@ -289,15 +321,12 @@
                 return;
             }
 
-            // Gửi yêu cầu PATCH để thêm tag vào sản phẩm
-            // Lưu ý: Endpoint này cần được bạn tự xây dựng trong Django
-            // Ví dụ: PATCH /api/products/add_tag/1/
+            const requestBody = { tag_id: selectedTagId, product_ids: selectedProductIds };
+
             fetch(`https://buddyskincare.pythonanywhere.com/products/add_tag/`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ tag_id: selectedTagId, product_ids: selectedProductIds })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
             })
             .then(response => {
                 if (!response.ok) {
@@ -309,17 +338,22 @@
                 alert('Sản phẩm đã được thêm vào Flash Sale thành công!');
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addProductModal'));
                 modal.hide();
+                fetchAndPopulateData();
             })
             .catch(error => {
-                console.error('Error adding products to tag:', error);
+                console.error('Lỗi khi thêm sản phẩm vào tag:', error);
                 alert('Thêm sản phẩm thất bại. Lỗi: ' + error.message);
             });
         });
 
-        // Gọi hàm để tải và hiển thị dữ liệu lần đầu
+        const addProductModal = document.getElementById('addProductModal');
+        addProductModal.addEventListener('shown.bs.modal', function() {
+            // Tải lại dữ liệu mỗi khi modal mở
+            fetchAndPopulateData();
+        });
+
         fetchAndRenderTags();
         fetchAndPopulateData();
-
     });
 </script>
 {% endblock %}

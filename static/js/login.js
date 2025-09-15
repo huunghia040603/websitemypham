@@ -201,7 +201,7 @@ window.addEventListener('load', () => {
     if (window.google && document.getElementById('googleCustomContainer')) {
         try {
             google.accounts.id.initialize({
-                client_id: '821773612134-su4afp8ac99s2l6cpvsmf0ti7p2d61aq.apps.googleusercontent.com',
+                client_id: '821773612134-1u5206jkloc187irc108rqfcrcvb4420.apps.googleusercontent.com',
                 callback: handleCredentialResponse
             });
             google.accounts.id.renderButton(

@@ -66,12 +66,12 @@ function clearVoucherDisplay(isCheckout = false) {
     // Clear message
     if (messageEl) messageEl.innerHTML = '';
     
-    console.log('Voucher display cleared for:', prefix, 'discount reset to 0đ');
+    
 }
 
 // Remove voucher
 function removeVoucher(isCheckout = false) {
-    console.log('=== REMOVING VOUCHER ===');
+    
     
     // Clear voucher from localStorage
     clearVoucher();
@@ -339,7 +339,7 @@ function parsePrice(priceString) {
 
 // Initialize cart when page loads
 function initCart() {
-    console.log('=== INITIALIZING CART ===');
+    
     
     // Detect current page
     const cartPaymentInputs = document.querySelectorAll('input[name="paymentMethod"]');
@@ -348,12 +348,7 @@ function initCart() {
     const isCartPage = cartPaymentInputs.length > 0;
     const isCheckoutPage = checkoutPaymentInputs.length > 0;
     
-    console.log('Page detection:');
-    console.log('- Is Cart Page:', isCartPage);
-    console.log('- Is Checkout Page:', isCheckoutPage);
-    console.log('Found elements:');
-    console.log('- Cart payment inputs:', cartPaymentInputs.length);
-    console.log('- Checkout payment inputs:', checkoutPaymentInputs.length);
+    
     
     if (cartPaymentInputs.length > 0) {
         console.log('Cart payment input values:', Array.from(cartPaymentInputs).map(input => input.value));
@@ -613,26 +608,25 @@ function initCartPaymentEvents() {
 
 // Sync payment method between cart and checkout
 function syncPaymentMethod() {
-    console.log('=== SYNCING PAYMENT METHOD ===');
+    
     
     // Auto-sync from cart to checkout
     const savedPaymentMethod = getPaymentMethod();
-    console.log('Saved payment method:', savedPaymentMethod);
+    
     
     // Debug: Check all available radio buttons
     const allCartRadios = document.querySelectorAll('input[name="paymentMethod"]');
     const allCheckoutRadios = document.querySelectorAll('input[name="pay"]');
-    console.log('Found cart radios:', allCartRadios.length);
-    console.log('Found checkout radios:', allCheckoutRadios.length);
+    
     
     // Update cart payment method
     const cartPaymentRadio = document.querySelector(`input[name="paymentMethod"][value="${savedPaymentMethod}"]`);
     if (cartPaymentRadio) {
-        console.log('Updating cart payment method to:', savedPaymentMethod);
+        
         cartPaymentRadio.checked = true;
         handleCartPaymentChange();
     } else {
-        console.log('Cart payment radio not found for:', savedPaymentMethod);
+        
         console.log('Available cart values:', Array.from(allCartRadios).map(r => r.value));
     }
     
@@ -1019,7 +1013,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Force sync payment method after page is fully loaded
     window.addEventListener('load', function() {
-        console.log('=== PAGE FULLY LOADED ===');
+        
         setTimeout(() => {
             console.log('Force syncing payment method after page load...');
             syncPaymentMethod();
@@ -1137,13 +1131,16 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
 
 // Hàm khởi tạo cho Flash Sale
 function initFlashSaleProducts() {
-    const flashSaleApiUrl = `https://buddyskincare.pythonanywhere.com/products/?tags=${activeFlashSaleCode}`;
-    console.log("activeFlashSaleCode", activeFlashSaleCode);
-    const containerSelector = '#flash-sale-products';
-    const flashSaleButton = `
-        
-    `;
-    fetchAndRenderProducts(flashSaleApiUrl, containerSelector, createFlashSaleProductCard, flashSaleButton);
+
+    const flashSaleApiUrl = `https://buddyskincare.pythonanywhere.com/products/?tags=${activeFlashSaleCode}`;
+
+    console.log("activeFlashSaleCode", activeFlashSaleCode);
+
+    const containerSelector = '#flash-sale-products';
+
+    const flashSaleButton = ``;
+
+    fetchAndRenderProducts(flashSaleApiUrl, containerSelector, createFlashSaleProductCard, flashSaleButton);
 }
 
 // Hàm khởi tạo cho sản phẩm mới
@@ -1508,6 +1505,9 @@ function createFlashSaleProductCard(product) {
 
 // --- End of Dynamic Products Section ---
 let activeFlashSaleCode = null;
+const flashSaleLink = document.getElementById('flashSaleLink');
+
+
 // Countdown Timer for Flash Sale
 
 function initCountdownTimer() {
@@ -1532,6 +1532,12 @@ function initCountdownTimer() {
 
             // Lưu mã code của flash sale vào biến toàn cục
             activeFlashSaleCode = data[0].code;
+            if (flashSaleLink && activeFlashSaleCode) {
+                const baseUrl = "/products";
+                const newUrl = `${baseUrl}?tags=${encodeURIComponent(activeFlashSaleCode)}`;
+                flashSaleLink.href = newUrl;
+            }
+            
 
             // Gọi hàm render sản phẩm flash sale tại đây
             initFlashSaleProducts(); 
@@ -1569,6 +1575,7 @@ function initCountdownTimer() {
 
             updateCountdown();
             setInterval(updateCountdown, 1000);
+            
         })
         .catch(error => {
             console.error('Error fetching flash sale data:', error);
@@ -3143,19 +3150,18 @@ function savePaymentMethod(method) {
 // Get payment method from localStorage
 function getPaymentMethod() {
     const method = localStorage.getItem('selectedPaymentMethod') || 'cod';
-    console.log('Getting payment method from localStorage:', method);
+   
     return method;
 }
 
 // Handle cart payment method change
 function handleCartPaymentChange() {
-    console.log('=== CART PAYMENT METHOD CHANGED ===');
+   
     
     const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
     const bankTransferInfo = document.getElementById('bankTransferInfo');
     
-    console.log('Selected payment method:', selectedPayment?.value);
-    console.log('Bank transfer info element found:', !!bankTransferInfo);
+    
     
     if (selectedPayment && selectedPayment.value === 'bankTransfer') {
         console.log('Showing bank transfer info');
@@ -3217,10 +3223,6 @@ window.manualSelectPayment = function(method = 'bankTransfer') {
     }
 };
 
-console.log('Manual functions available:');
-console.log('- manualSyncPayment() - Force sync payment method');
-console.log('- manualSyncVoucher() - Force sync voucher');
-console.log('- manualSelectPayment("bankTransfer") - Manually select bank transfer');
 
 // Hàm khởi tạo cho sản phẩm gợi ý trong checkout
 function initCheckoutSuggestedProducts() {

@@ -710,6 +710,7 @@ def admin_orders():
     """Admin - Quản lý đơn hàng"""
     return render_template('admin_orders.html')
 
+
 @app.route('/admin/analytics')
 def admin_analytics():
     """Admin - Thống kê doanh thu"""

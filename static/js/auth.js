@@ -1,23 +1,52 @@
 // Hàm lưu trữ thông tin đăng nhập sau khi đăng nhập thành công
+// function saveLoginState(data) {
+//     try {
+//         // Lưu trữ toàn bộ dữ liệu người dùng (trừ mật khẩu và refresh token)
+//         const userProfile = {
+//             access_token: data.access_token,
+//             id: data.user.id,
+//             phone_number: data.phone_number,
+//             name: data.user.name,
+//             address: data.address,
+//             dob: data.dob,
+//             email: data.email,
+//             avatar: data.avatar
+            
+//         };
+//         localStorage.setItem('userProfile', JSON.stringify(userProfile));
+//         localStorage.setItem('isLoggedIn', 'true');
+//         // Lưu refresh token riêng để bảo mật và sử dụng khi cần refresh token
+//         localStorage.setItem('refreshToken', data.refresh_token);
+//         console.log("name",userProfile.name)
+//         console.log("avatar",userProfile.avatar)
+//         console.log('Thông tin người dùng và trạng thái đăng nhập đã được lưu.');
+//     } catch (error) {
+//         console.error('Lỗi khi lưu trữ thông tin đăng nhập:', error);
+//     }
+// }
+
+// Hàm lưu trữ thông tin đăng nhập sau khi đăng nhập thành công
 function saveLoginState(data) {
     try {
-        // Lưu trữ toàn bộ dữ liệu người dùng (trừ mật khẩu và refresh token)
+        const user = data.user || data; // Lấy đối tượng user, hoặc toàn bộ data nếu không có trường user
+
         const userProfile = {
             access_token: data.access_token,
-            id: data.user.id,
-            phone_number: data.phone_number,
-            name: data.user.name,
-            address: data.address,
-            dob: data.dob,
-            email: data.email,
-            avatar: data.avatar
-            
+            id: user.id,
+            phone_number: user.phone_number,
+            name: user.name,
+            address: user.address,
+            dob: user.dob,
+            email: user.email,
+            avatar: user.avatar
         };
+        
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
         localStorage.setItem('isLoggedIn', 'true');
-        // Lưu refresh token riêng để bảo mật và sử dụng khi cần refresh token
         localStorage.setItem('refreshToken', data.refresh_token);
-        console.log("name",userProfile.name)
+        
+        console.log("name", userProfile.name);
+        console.log("avatar", userProfile.avatar);
         console.log('Thông tin người dùng và trạng thái đăng nhập đã được lưu.');
     } catch (error) {
         console.error('Lỗi khi lưu trữ thông tin đăng nhập:', error);
