@@ -2061,16 +2061,23 @@ async function updateLevel() {
         return;
     }
     
+    // Validate commission percentage
+    const commissionNum = parseFloat(commission);
+    if (isNaN(commissionNum) || commissionNum < 0 || commissionNum > 100) {
+        showAlert('Phần trăm hoa hồng phải từ 0 đến 100', 'warning');
+        return;
+    }
+    
     try {
         const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctv-levels/${id}/`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 name: name,
-                commission_percent: parseFloat(commission),
-                description: description
+                commission_percent: commissionNum.toFixed(2),
+                description: description || ''
             })
         });
         
@@ -2079,8 +2086,24 @@ async function updateLevel() {
             bootstrap.Modal.getInstance(document.getElementById('editLevelModal')).hide();
             loadLevels();
         } else {
-            const error = await response.json();
-            showAlert(`Lỗi: ${error.detail || 'Không thể cập nhật cấp độ'}`, 'danger');
+            const errorData = await response.text();
+            console.error('Update error response:', errorData);
+            let errorMessage = 'Không thể cập nhật cấp độ';
+            
+            try {
+                const errorJson = JSON.parse(errorData);
+                if (errorJson.detail) {
+                    errorMessage = errorJson.detail;
+                } else if (errorJson.commission_percent) {
+                    errorMessage = `Lỗi phần trăm hoa hồng: ${errorJson.commission_percent[0]}`;
+                } else if (errorJson.name) {
+                    errorMessage = `Lỗi tên: ${errorJson.name[0]}`;
+                }
+            } catch (e) {
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            
+            showAlert(`Lỗi: ${errorMessage}`, 'danger');
         }
     } catch (error) {
         console.error('Error updating level:', error);
@@ -2256,7 +2279,7 @@ async function updateCTV() {
             email: email,
             address: address,
             code: code,
-            level: parseInt(levelId),
+            level_id: parseInt(levelId),
             is_active: isActive,
             bank_name: bankName,
             bank_number: bankNumber,
@@ -2271,7 +2294,7 @@ async function updateCTV() {
         }
         
         const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/${id}/`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -2283,8 +2306,28 @@ async function updateCTV() {
             bootstrap.Modal.getInstance(document.getElementById('editCTVModal')).hide();
             loadCTVs();
         } else {
-            const error = await response.json();
-            showAlert(`Lỗi: ${error.detail || 'Không thể cập nhật thông tin CTV'}`, 'danger');
+            const errorData = await response.text();
+            console.error('Update CTV error response:', errorData);
+            let errorMessage = 'Không thể cập nhật thông tin CTV';
+            
+            try {
+                const errorJson = JSON.parse(errorData);
+                if (errorJson.detail) {
+                    errorMessage = errorJson.detail;
+                } else if (errorJson.level_id) {
+                    errorMessage = `Lỗi cấp độ: ${errorJson.level_id[0]}`;
+                } else if (errorJson.code) {
+                    errorMessage = `Lỗi mã CTV: ${errorJson.code[0]}`;
+                } else if (errorJson.email) {
+                    errorMessage = `Lỗi email: ${errorJson.email[0]}`;
+                } else if (errorJson.phone) {
+                    errorMessage = `Lỗi số điện thoại: ${errorJson.phone[0]}`;
+                }
+            } catch (e) {
+                errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            
+            showAlert(`Lỗi: ${errorMessage}`, 'danger');
         }
     } catch (error) {
         console.error('Error updating CTV:', error);

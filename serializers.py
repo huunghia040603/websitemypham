@@ -1054,6 +1054,12 @@ class CTVWalletSerializer(serializers.ModelSerializer):
 
 class CTVSerializer(serializers.ModelSerializer):
     level = CTVLevelSerializer(read_only=True)
+    level_id = serializers.PrimaryKeyRelatedField(
+        queryset=CTVLevel.objects.all(),
+        source='level',
+        write_only=True,
+        required=False
+    )
     wallet = CTVWalletSerializer(read_only=True)
 
     class Meta:
@@ -1061,7 +1067,7 @@ class CTVSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'code', 'desired_code', 'full_name', 'phone', 'email', 'address',
             'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url',
-            'password_text', 'total_revenue', 'level', 'wallet', 'is_active', 'joined_at'
+            'password_text', 'total_revenue', 'level', 'level_id', 'wallet', 'is_active', 'joined_at'
         ]
 
 

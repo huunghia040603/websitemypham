@@ -289,7 +289,7 @@ function renderCustomers() {
                         <strong>${customer.name || 'N/A'}</strong>
                         ${customer.level ? `<br><small class="text-muted">${customerLevel}</small>` : ''}
                         ${customer.points ? `<br><small class="text-muted">${customerPoints} điểm</small>` : ''}
-                        ${customer.dob ? `<br><small class="text-muted">Sinh: ${AdminAPI.formatDate(customer.dob)}</small>` : ''}
+                        ${customer.dob ? `<br><small class="text-muted">Ngày sinh: ${AdminAPI.formatDate(customer.dob)}</small>` : ''}
                     </div>
                 </td>
                 <td>
@@ -300,7 +300,7 @@ function renderCustomers() {
                     </div>
                 </td>
                 <td><span class="badge ${statusClass}">${statusText}</span></td>
-                <td>${registrationDate}</td>
+                <td>${customer.date_joined? AdminAPI.formatDate(customer.date_joined) : '12/09/2025'}</td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary me-1" onclick="editCustomer(${customer.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
                         <i class="fas fa-edit"></i>
