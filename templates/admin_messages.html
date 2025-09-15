@@ -69,6 +69,13 @@
     justify-content: center;
     font-weight: bold;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.conversation-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .conversation-info {
@@ -156,6 +163,13 @@
     justify-content: center;
     font-weight: bold;
     font-size: 18px;
+    overflow: hidden;
+}
+
+.chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .chat-user-info h4 {
@@ -207,6 +221,13 @@
     font-size: 12px;
     color: white;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.message-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .message.user .message-avatar {
@@ -494,7 +515,6 @@
     </div>
 </div>
 
-<!-- Stats Cards -->
 <div class="stats-grid">
     <div class="stat-item">
         <div class="stat-icon">
@@ -547,16 +567,15 @@
         
         <div id="chatInterface">
             <div class="chat-header">
-                <div class="chat-avatar" id="chatAvatar">K</div>
+                <div class="chat-avatar" id="chatAvatar"></div>
                 <div class="chat-user-info">
-                    <h4 id="chatUserName">Khách hàng</h4>
+                    <h4 id="chatUserName"></h4>
                     <p id="chatUserInfo">Thông tin khách hàng</p>
                 </div>
             </div>
             
             <div class="chat-messages" id="chatMessages">
-                <!-- Messages will be loaded here -->
-            </div>
+                </div>
             
             <div class="chat-input">
                 <div class="input-group">
@@ -718,8 +737,9 @@ function startConversationsListener() {
             conversations.push({
                 id: chatId,
                 userId: userId,
-                customerName: `Người dùng ${userId}`,
-                customerPhone: userId,
+                // Lấy tên và avatar từ latestMessage
+                customerName: chatData.latestMessage?.senderName || `Người dùng ${userId}`,
+                customerAvatar: chatData.latestMessage?.senderAvatar,
                 latestMessage: chatData.latestMessage,
                 lastMessage: chatData.latestMessage ? chatData.latestMessage.text : 'Chưa có tin nhắn',
                 lastMessageTime: chatData.latestMessage ? chatData.latestMessage.timestamp.toDate().toISOString() : new Date().toISOString(),
@@ -756,13 +776,25 @@ function renderConversations() {
         return;
     }
     
+    // Sort conversations by last message time
+    conversations.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+    
     const conversationsHTML = conversations.map(conv => {
         const timeAgo = getTimeAgo(new Date(conv.lastMessageTime));
         const preview = conv.lastMessage || 'Tin nhắn trống';
-        
+
+        // Tạo HTML cho avatar
+        let avatarContent = `<img src="${conv.customerAvatar}" alt="Avatar">`;
+        if (conv.customerAvatar) {
+            avatarContent = `<img src="${conv.customerAvatar}" alt="Avatar">`;
+        } else {
+            // Nếu không có ảnh, dùng chữ cái đầu
+            console.log("customerAvatar",conv.customerAvatar)
+        }
+
         return `
             <div class="conversation-item" data-conversation-id="${conv.id}" onclick="selectConversation('${conv.id}')">
-                <div class="conversation-avatar">${conv.customerName.charAt(0).toUpperCase()}</div>
+                <div class="conversation-avatar">${avatarContent}</div>
                 <div class="conversation-info">
                     <h4 class="conversation-name">${conv.customerName}</h4>
                     <p class="conversation-preview">${conv.isFromCustomer ? '' : 'Bạn: '}${preview}</p>
@@ -791,10 +823,18 @@ function selectConversation(conversationId) {
     document.getElementById('emptyChatState').style.display = 'none';
     document.getElementById('chatInterface').classList.add('show');
     
-    // Update chat header
-    document.getElementById('chatAvatar').textContent = currentConversation.customerName.charAt(0).toUpperCase();
-    document.getElementById('chatUserName').textContent = currentConversation.customerName;
-    document.getElementById('chatUserInfo').textContent = `SĐT: ${currentConversation.customerPhone}`;
+    // Update chat header with user name and avatar
+    const chatAvatarEl = document.getElementById('chatAvatar');
+    const chatUserNameEl = document.getElementById('chatUserName');
+
+    // Cập nhật Avatar và Tên
+    if (currentConversation.customerAvatar) {
+        chatAvatarEl.innerHTML = `<img src="${currentConversation.customerAvatar}" alt="Avatar">`;
+    } else {
+        chatAvatarEl.innerHTML = currentConversation.customerName.charAt(0).toUpperCase();
+    }
+    chatUserNameEl.textContent = currentConversation.customerName;
+    document.getElementById('chatUserInfo').textContent = `SĐT: ${currentConversation.userId}`;
     
     // Start messages listener
     startMessagesListener(conversationId);
@@ -861,6 +901,10 @@ function startMessagesListener(conversationId) {
 function renderMessages(messages) {
     const chatMessages = document.getElementById('chatMessages');
     
+    // Lấy thông tin khách hàng từ cuộc trò chuyện hiện tại
+    const customerName = currentConversation ? currentConversation.customerName : 'Khách hàng';
+    const customerAvatar = currentConversation ? currentConversation.customerAvatar : null;
+
     if (messages.length === 0) {
         chatMessages.innerHTML = '<div class="no-messages">Chưa có tin nhắn nào</div>';
         return;
@@ -873,11 +917,31 @@ function renderMessages(messages) {
         });
         
         const messageClass = message.isFromCustomer ? 'user' : 'agent';
-        const avatar = message.isFromCustomer ? 'K' : 'A';
         
+        // Xác định tên và avatar sẽ hiển thị
+        let senderName, senderAvatar;
+        let avatarHtml = '';
+
+        if (message.isFromCustomer) {
+            // Ưu tiên dùng dữ liệu từ tin nhắn, nếu không có thì dùng từ cuộc trò chuyện
+            senderName = message.senderName || customerName;
+            senderAvatar = message.senderAvatar || customerAvatar;
+
+            if (senderAvatar) {
+                avatarHtml = `<img src="${senderAvatar}" alt="${senderName}">`;
+            } else {
+                avatarHtml = senderName.charAt(0).toUpperCase();
+            }
+        } else {
+            // Đối với tin nhắn của Admin, luôn dùng tên và avatar cố định
+            senderName = 'Admin';
+            senderAvatar = '/static/image/logo.png';
+            avatarHtml = `<img src="${senderAvatar}" alt="${senderName}">`;
+        }
+
         return `
             <div class="message ${messageClass}">
-                <div class="message-avatar">${avatar}</div>
+                <div class="message-avatar">${avatarHtml}</div>
                 <div class="message-content">
                     <div class="message-bubble">${message.text}</div>
                     <div class="message-time">${time}</div>
@@ -907,6 +971,8 @@ async function sendMessage() {
             .add({
                 text: messageText,
                 senderId: 'admin_001',
+                senderName: 'Admin', // Tên mặc định của Admin
+                senderAvatar: '/static/image/logo.png', // Avatar mặc định của Admin
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         
@@ -916,8 +982,12 @@ async function sendMessage() {
                 latestMessage: {
                     text: messageText,
                     senderId: 'admin_001',
+                    senderName: 'Admin',
+                    senderAvatar: '/static/image/logo.png',
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                }
+                },
+                // Mark as read after admin sends a message
+                isReadByAdmin: true
             });
         
         console.log('Message sent successfully to Firebase');
