@@ -3,7 +3,6 @@
 {% block title %}Quản Lý Tin Nhắn - Admin{% endblock %}
 
 {% block extra_css %}
-<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -405,7 +404,6 @@
     </div>
     
     <div class="messages-layout">
-        <!-- Conversations Panel -->
         <div class="conversations-panel">
             <div class="conversations-header">
                 <h3 class="conversations-title">Cuộc trò chuyện</h3>
@@ -417,7 +415,6 @@
             </div>
         </div>
         
-        <!-- Chat Panel -->
         <div class="chat-panel">
             <div id="emptyChatState" class="empty-state">
                 <i class="fas fa-comments"></i>
@@ -435,8 +432,7 @@
                 </div>
                 
                 <div class="chat-messages" id="chatMessages">
-                    <!-- Messages will be loaded here -->
-                </div>
+                    </div>
                 
                 <div class="chat-input-area">
                     <textarea 
@@ -458,71 +454,76 @@
 // Global variables
 let currentConversation = null;
 let conversations = [];
-let firebase = null;
 let db = null;
+let messagesListener = null;
 
 // Initialize Firebase
 function initializeFirebase() {
-    const firebaseConfig = {
-        apiKey: "AIzaSyBl_8N53eSIGEbBN2TBSGW36vabMdq2lbI",
-        authDomain: "buddyskincare-ec603.firebaseapp.com",
-        projectId: "buddyskincare-ec603",
-        storageBucket: "buddyskincare-ec603.firebasestorage.app",
-        messagingSenderId: "151445800213",
-        appId: "1:151445800213:web:62dafa29093235e913151c",
-        measurementId: "G-5PLJ2MQ9PW"
-    };
-    
-    // Initialize Firebase with compat version
-    firebase.initializeApp(firebaseConfig);
-    db = firebase.firestore();
-    console.log("Firebase initialized for admin messages");
+    if (typeof firebase !== 'undefined') {
+        const firebaseConfig = {
+            apiKey: "AIzaSyBl_8N53eSIGEbBN2TBSGW36vabMdq2lbI",
+            authDomain: "buddyskincare-ec603.firebaseapp.com",
+            projectId: "buddyskincare-ec603",
+            storageBucket: "buddyskincare-ec603.firebasestorage.app",
+            messagingSenderId: "151445800213",
+            appId: "1:151445800213:web:62dafa29093235e913151c",
+            measurementId: "G-5PLJ2MQ9PW"
+        };
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("Firebase initialized successfully.");
+            startConversationsListener();
+        } catch (error) {
+            console.error("Firebase initialization error:", error);
+        }
+    } else {
+        console.error('Firebase SDK is not loaded correctly. Please check your script tags.');
+    }
 }
 
-// Load conversations
-async function loadConversations() {
-    try {
-        const conversationsList = document.getElementById('conversationsList');
-        conversationsList.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-        
-        // Get all chat documents
-        const chatsSnapshot = await db.collection('chats').get();
+// Start real-time listener for conversations
+function startConversationsListener() {
+    const conversationsList = document.getElementById('conversationsList');
+    conversationsList.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+    
+    // Listen for changes in the 'chats' collection
+    db.collection('chats').orderBy('latestMessage.timestamp', 'desc').onSnapshot(snapshot => {
         conversations = [];
-        
-        for (const chatDoc of chatsSnapshot.docs) {
-            const chatId = chatDoc.id;
-            const chatData = chatDoc.data();
-            
-            // Get the latest message
-            const messagesSnapshot = await db.collection('chats').doc(chatId)
-                .collection('messages')
-                .orderBy('timestamp', 'desc')
-                .limit(1)
-                .get();
-            
-            if (!messagesSnapshot.empty) {
-                const latestMessage = messagesSnapshot.docs[0].data();
-                const userId = chatId.split('_').find(id => id !== 'admin_001');
-                
-                conversations.push({
-                    id: chatId,
-                    userId: userId,
-                    latestMessage: latestMessage,
-                    timestamp: latestMessage.timestamp
-                });
-            }
+        if (snapshot.empty) {
+            conversationsList.innerHTML = '<div class="empty-state"><p>Chưa có cuộc trò chuyện nào</p></div>';
+            return;
         }
-        
-        // Sort by timestamp (newest first)
-        conversations.sort((a, b) => b.timestamp.seconds - a.timestamp.seconds);
+
+        snapshot.docs.forEach(doc => {
+            const chatData = doc.data();
+            const chatId = doc.id;
+            const userId = chatId.split('_').find(id => id !== 'admin_001');
+
+            const unread = chatData.latestMessage.senderId !== 'admin_001';
+
+            conversations.push({
+                id: chatId,
+                userId: userId,
+                latestMessage: chatData.latestMessage,
+                unread: unread
+            });
+        });
         
         renderConversations();
         
-    } catch (error) {
-        console.error('Error loading conversations:', error);
-        document.getElementById('conversationsList').innerHTML = 
-            '<div class="empty-state"><p>Lỗi khi tải cuộc trò chuyện</p></div>';
-    }
+        // Re-select the current conversation if it exists
+        if (currentConversation) {
+            const activeItem = document.querySelector(`[data-conversation-id="${currentConversation.id}"]`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
+        }
+    }, error => {
+        console.error('Error listening to conversations:', error);
+        conversationsList.innerHTML = '<div class="empty-state"><p>Lỗi khi tải cuộc trò chuyện. Vui lòng kiểm tra lại cấu trúc dữ liệu hoặc quy tắc bảo mật của Firebase.</p></div>';
+    });
 }
 
 // Render conversations list
@@ -535,19 +536,18 @@ function renderConversations() {
     }
     
     const conversationsHTML = conversations.map(conv => {
-        const timeAgo = getTimeAgo(conv.timestamp.seconds);
+        const timeAgo = getTimeAgo(conv.latestMessage.timestamp.seconds);
         const preview = conv.latestMessage.text || 'Tin nhắn trống';
-        const isFromUser = conv.latestMessage.senderId !== 'admin_001';
         
         return `
             <div class="conversation-item" data-conversation-id="${conv.id}" data-user-id="${conv.userId}">
                 <div class="conversation-avatar">${conv.userId.charAt(0).toUpperCase()}</div>
                 <div class="conversation-info">
                     <h4 class="conversation-name">Người dùng ${conv.userId}</h4>
-                    <p class="conversation-preview">${isFromUser ? '' : 'Bạn: '}${preview}</p>
+                    <p class="conversation-preview">${conv.latestMessage.senderId === 'admin_001' ? 'Bạn: ' : ''}${preview}</p>
                     <p class="conversation-time">${timeAgo}</p>
                 </div>
-                ${isFromUser ? '<div class="unread-badge">1</div>' : ''}
+                ${conv.unread ? '<div class="unread-badge">1</div>' : ''}
             </div>
         `;
     }).join('');
@@ -566,6 +566,10 @@ function renderConversations() {
 
 // Select conversation
 function selectConversation(conversationId, userId) {
+    if (messagesListener) {
+        messagesListener(); // Unsubscribe from the previous listener
+    }
+    
     currentConversation = { id: conversationId, userId: userId };
     
     // Update UI
@@ -573,6 +577,12 @@ function selectConversation(conversationId, userId) {
         item.classList.remove('active');
     });
     document.querySelector(`[data-conversation-id="${conversationId}"]`).classList.add('active');
+    
+    // Remove unread badge
+    const unreadBadge = document.querySelector(`[data-conversation-id="${conversationId}"] .unread-badge`);
+    if (unreadBadge) {
+        unreadBadge.remove();
+    }
     
     // Show chat interface
     document.getElementById('emptyChatState').style.display = 'none';
@@ -583,36 +593,32 @@ function selectConversation(conversationId, userId) {
     document.getElementById('chatUserName').textContent = `Người dùng ${userId}`;
     document.getElementById('chatUserInfo').textContent = `ID: ${userId}`;
     
-    // Load messages
-    loadMessages(conversationId);
+    // Start messages listener
+    startMessagesListener(conversationId);
     
     // Enable send button
     document.getElementById('sendButton').disabled = false;
 }
 
-// Load messages for a conversation
-async function loadMessages(conversationId) {
-    try {
-        const chatMessages = document.getElementById('chatMessages');
-        chatMessages.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
-        
-        const messagesSnapshot = await db.collection('chats').doc(conversationId)
-            .collection('messages')
-            .orderBy('timestamp', 'asc')
-            .get();
-        
-        const messages = messagesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        
-        renderMessages(messages);
-        
-    } catch (error) {
-        console.error('Error loading messages:', error);
-        document.getElementById('chatMessages').innerHTML = 
-            '<div class="empty-state"><p>Lỗi khi tải tin nhắn</p></div>';
-    }
+// Start real-time listener for messages
+function startMessagesListener(conversationId) {
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = '<div class="loading-spinner"><div class="spinner"></div></div>';
+    
+    messagesListener = db.collection('chats').doc(conversationId)
+        .collection('messages')
+        .orderBy('timestamp', 'asc')
+        .onSnapshot(snapshot => {
+            const messages = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            renderMessages(messages);
+        }, error => {
+            console.error('Error listening to messages:', error);
+            chatMessages.innerHTML = '<div class="empty-state"><p>Lỗi khi tải tin nhắn. Vui lòng kiểm tra lại cấu trúc dữ liệu hoặc quy tắc bảo mật của Firebase.</p></div>';
+        });
 }
 
 // Render messages
@@ -667,14 +673,13 @@ async function sendMessage() {
             .collection('messages')
             .add(messageData);
         
+        // Update the latest message field on the parent chat document
+        await db.collection('chats').doc(currentConversation.id).update({
+            latestMessage: messageData
+        });
+        
         messageInput.value = '';
-        messageInput.style.height = 'auto';
-        
-        // Reload messages
-        loadMessages(currentConversation.id);
-        
-        // Update conversations list
-        loadConversations();
+        autoResize(messageInput);
         
     } catch (error) {
         console.error('Error sending message:', error);
@@ -707,13 +712,7 @@ function autoResize(textarea) {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Firebase
-    if (typeof firebase !== 'undefined') {
-        initializeFirebase();
-        loadConversations();
-    } else {
-        console.error('Firebase not loaded');
-    }
+    initializeFirebase();
     
     // Message input events
     const messageInput = document.getElementById('messageInput');
@@ -732,11 +731,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     sendButton.addEventListener('click', sendMessage);
-    
-    // Refresh conversations every 30 seconds
-    setInterval(loadConversations, 30000);
 });
 </script>
 {% endblock %}
- 
- 
