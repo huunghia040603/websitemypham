@@ -13,14 +13,45 @@
     let currentToken = null;
     let isEmojiPanelOpen = false;
     let isSending = false; // Flag to prevent duplicate sends
+    let isClearing = false; // Flag to prevent event listener interference
     let sentMessages = new Set(); // Track sent messages to prevent duplicates
+    let displayedMessages = new Set(); // Track displayed messages to prevent duplicates
+    
+    // Cleanup old sent messages to prevent memory leak
+    function cleanupSentMessages() {
+        if (sentMessages.size > 50) {
+            const messagesArray = Array.from(sentMessages);
+            sentMessages.clear();
+            // Keep only the last 25 messages
+            messagesArray.slice(-25).forEach(msg => sentMessages.add(msg));
+        }
+        
+        if (displayedMessages.size > 100) {
+            const messagesArray = Array.from(displayedMessages);
+            displayedMessages.clear();
+            // Keep only the last 50 messages
+            messagesArray.slice(-50).forEach(msg => displayedMessages.add(msg));
+        }
+    }
 
     // Hàm để tạo và thêm một tin nhắn vào giao diện người dùng
-    function appendMessage(senderId, text, timestamp, senderName, senderAvatar) {
+    function appendMessage(senderId, text, timestamp) {
         const isUserMessage = (senderId === currentUserId);
+        
+        // Check if this message was already displayed
+        if (messageId && displayedMessages.has(messageId)) {
+            console.log('Skipping duplicate message in appendMessage:', messageId);
+            return;
+        }
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUserMessage ? 'user' : 'agent'}`;
+        
+        // Add messageId as data attribute for tracking
+        if (messageId) {
+            messageDiv.setAttribute('data-message-id', messageId);
+            displayedMessages.add(messageId); // Track as displayed
+        }
 
         const displayTime = timestamp ? new Date(timestamp.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Vừa xong';
 
@@ -72,6 +103,55 @@
         input.style.height = 'auto';
         input.style.height = Math.min(input.scrollHeight, 100) + 'px';
     }
+    
+    // Force clear input function
+    function forceClearInput() {
+        isClearing = true; // Set flag to prevent event listener interference
+        
+        const tempValue = input.value;
+        
+        // Method 1: Direct value clear
+        input.value = '';
+        
+        // Method 2: Clear all possible properties
+        input.innerHTML = '';
+        input.textContent = '';
+        input.innerText = '';
+        
+        // Method 3: Force clear using setAttribute
+        input.setAttribute('value', '');
+        
+        // Method 4: Reset height to default
+        input.style.height = '30px';
+        
+        // Method 5: Force focus and select all then clear
+        input.focus();
+        input.select();
+        
+        // Method 6: Use document.execCommand for textarea
+        if (input.tagName.toLowerCase() === 'textarea') {
+            try {
+                document.execCommand('selectAll', false, null);
+                document.execCommand('delete', false, null);
+            } catch (e) {
+                // Fallback if execCommand fails
+            }
+        }
+        
+        console.log('Input cleared. Previous value:', tempValue, 'New value:', input.value);
+        
+        // Verify it's actually cleared
+        if (input.value !== '') {
+            console.warn('Input still has value after clear:', input.value);
+            // Force clear one more time
+            input.value = '';
+        }
+        
+        // Reset flag after a short delay
+        setTimeout(() => {
+            isClearing = false;
+        }, 50);
+    }
 
     // Toggle emoji panel
     function toggleEmojiPanel() {
@@ -98,11 +178,11 @@
         isSending = true; // Set flag to prevent duplicate sends
 
         // Create unique message ID to track duplicates
-        const messageId = `${currentUserId}_${text}_${Date.now()}`;
+        const messageId = `${currentUserId}_${text}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         sentMessages.add(messageId);
 
         // Hiển thị tin nhắn ngay lập tức cho user
-        appendMessage(currentUserId, text, null, currentUserName, currentUserAvatar); // Truyền tên và avatar
+        appendMessage(currentUserId, text, null);
 
         const messageData = {
             text: text,
@@ -127,23 +207,33 @@
         .then(data => {
             if (data.error) {
                 console.error('Error from Flask:', data.error);
+                // Restore input if error
+                input.value = text;
+                autoResize();
             } else {
                 console.log('Message sent successfully.');
             }
         })
         .catch(error => {
             console.error('Error sending message:', error);
+            // Restore input if error
+            input.value = text;
+            autoResize();
         })
         .finally(() => {
             isSending = false; // Reset flag after request completes
-            input.value = '';
-            autoResize();
+            cleanupSentMessages(); // Cleanup old sent messages
         });
     }
 
     // Event listeners - only add if not already added
     if (!input.hasAttribute('data-events-added')) {
-        input.addEventListener('input', autoResize);
+        input.addEventListener('input', function(e) {
+            // Only auto-resize if input has content and we're not clearing or sending
+            if (e.target.value.length > 0 && !isSending && !isClearing) {
+                autoResize();
+            }
+        });
         input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -216,18 +306,25 @@
             snapshot.docChanges().forEach(change => {
                 if (change.type === 'added') {
                     const message = change.doc.data();
-                    console.log(`New message from Firebase. Sender: ${message.senderId}, Content: ${message.text}`);
+                    console.log(`New message from Firebase. Sender: ${message.senderId}, Content: ${message.text}, MessageId: ${message.messageId}`);
                     
-                    // Check if this is a message we just sent (to avoid duplicates)
+                    // Use the messageId from Firebase, or create a fallback
                     const messageId = message.messageId || `${message.senderId}_${message.text}_${message.timestamp?.seconds || Date.now()}`;
                     
-                    if (message.senderId === currentUserId && sentMessages.has(messageId)) {
-                        console.log('Skipping duplicate message from Firebase');
-                        return; // Skip this message as we already displayed it
+                    // Check if we already displayed this message
+                    if (displayedMessages.has(messageId)) {
+                        console.log('Skipping duplicate message - already in displayedMessages:', messageId);
+                        return;
                     }
                     
-                    // Thêm tham số tên và avatar khi hiển thị tin nhắn từ Firebase
-                    appendMessage(message.senderId, message.text, message.timestamp, message.senderName, message.senderAvatar);
+                    // Check if we already have this message displayed in DOM
+                    const existingMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+                    if (existingMessage) {
+                        console.log('Skipping duplicate message - already in DOM:', messageId);
+                        return;
+                    }
+                    
+                    appendMessage(message.senderId, message.text, message.timestamp);
                 }
             });
         });

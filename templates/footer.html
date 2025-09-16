@@ -18,6 +18,11 @@
         </a>
     </div>
     <div class="floating-action-item">
+        <button id="chatFab" class="floating-btn chat-btn" title="Chat trực tiếp" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="fas fa-comments"></i>
+        </button>
+    </div>
+    <div class="floating-action-item">
         <a href="#" class="floating-btn scroll-top-btn" title="Lên đầu trang" onclick="scrollToTop()">
             <i class="fas fa-arrow-up"></i>
         </a>
@@ -37,6 +42,169 @@
       <div class="modal-footer">
         <button id="favClearBtn" type="button" class="btn btn-outline-secondary"><i class="fas fa-trash me-1"></i>Xóa hết</button>
         <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chat Modal -->
+<div class="modal fade" id="chatModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content" style="height: 500px; display: flex; flex-direction: column;">
+      <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+        <div class="d-flex align-items-center">
+          <img src="{{ url_for('static', filename='image/logo.png') }}" alt="BuddySkincare" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;">
+          <div>
+            <h5 class="modal-title mb-0">Hỗ trợ BuddySkincare</h5>
+            <small>Trực tuyến</small>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body flex-grow-1 p-0" style="display: flex; flex-direction: column;">
+        <div id="chatModalContent" style="display: none; flex: 1; display: flex; flex-direction: column;">
+          <div id="chatModalBody" class="chat-messages" style="flex: 1; padding: 15px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; gap: 10px; max-height: 400px; min-height: 300px;">
+            <!-- Messages will be loaded here -->
+          </div>
+          
+          <style>
+          /* Chat Modal Styles - Đồng bộ với live-chat.js */
+          #chatModalBody .message {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            max-width: 85%;
+          }
+          
+          #chatModalBody .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+          }
+          
+          #chatModalBody .message.agent {
+            align-self: flex-start;
+          }
+          
+          #chatModalBody .message-avatar {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+          }
+          
+          #chatModalBody .message.user .message-avatar {
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e2e8f0;
+          }
+          
+          #chatModalBody .message.agent .message-avatar {
+            background: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #e2e8f0;
+          }
+          
+          #chatModalBody .message-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+          }
+          
+          #chatModalBody .message-bubble {
+            padding: 6px 10px;
+            border-radius: 10px;
+            font-size: 14px;
+            line-height: 1.3;
+            word-wrap: break-word;
+            position: relative;
+          }
+          
+          #chatModalBody .message.user .message-bubble {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+          }
+          
+          #chatModalBody .message.agent .message-bubble {
+            background: white;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          }
+          
+          #chatModalBody .message-time {
+            font-size: 9px;
+            color: #9ca3af;
+            padding: 0 4px;
+            text-align: right;
+            margin-top: 1px;
+          }
+          
+          #chatModalBody .message.user .message-time {
+            text-align: right;
+          }
+          
+          #chatModalBody .message.agent .message-time {
+            text-align: left;
+          }
+          
+          #chatModalBody .emoji-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+          }
+          
+          #chatModalBody .emoji-btn:hover {
+            background: #f1f5f9;
+          }
+          </style>
+          
+          <div class="chat-input-area" style="border-radius: 20px;padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+            <div class="input-wrapper" style="flex: 1; position: relative;">
+              <textarea id="chatModalInput" class="chat-input" placeholder="Nhập tin nhắn..." rows="1" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 8px 12px; font-size: 14px; transition: all 0.2s ease; resize: none; min-height: 35px; max-height: 80px;"></textarea>
+              <div id="chatModalEmojiPanel" class="emoji-panel" style="position: absolute; bottom: 50px; left: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px; display: none; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); z-index: 1000;">
+                <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;">
+                  <div class="emoji-btn">😀</div>
+                  <div class="emoji-btn">😁</div>
+                  <div class="emoji-btn">😂</div>
+                  <div class="emoji-btn">😊</div>
+                  <div class="emoji-btn">😍</div>
+                  <div class="emoji-btn">😎</div>
+                  <div class="emoji-btn">👍</div>
+                  <div class="emoji-btn">🙏</div>
+                  <div class="emoji-btn">🎉</div>
+                  <div class="emoji-btn">💖</div>
+                  <div class="emoji-btn">🔥</div>
+                  <div class="emoji-btn">✨</div>
+                  <div class="emoji-btn">🛍️</div>
+                  <div class="emoji-btn">🚚</div>
+                  <div class="emoji-btn">💳</div>
+                  <div class="emoji-btn">🧴</div>
+                </div>
+              </div>
+            </div>
+            <button id="chatModalEmojiBtn" type="button" class="send-button" title="Emoji" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; font-size: 14px;">😊</button>
+            <button id="chatModalSendBtn" type="button" class="send-button" title="Gửi" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; font-size: 14px;">➤</button>
+          </div>
+        </div>
+
+        <div id="chatModalLoginPrompt" class="login-prompt" style="text-align: center; padding: 40px 20px; color: #64748b; font-size: 14px; flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+          <i class="fas fa-comments fa-3x mb-3" style="color: #667eea;"></i>
+          <p>Bạn cần <a href="{{ url_for('index') }}" style="color: #667eea; text-decoration: none; font-weight: 600;">đăng nhập</a> để sử dụng tính năng tư vấn trực tiếp.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -139,7 +307,383 @@
                     </small>
                 </div>
             </div>
-        </div>tin 
+        </div>
     </div>
 </footer>
+
+<!-- Chat Modal JavaScript -->
+<script>
+// Chat Modal functionality - Đồng bộ với live-chat.js
+(function() {
+    const chatFab = document.getElementById('chatFab');
+    const chatModal = document.getElementById('chatModal');
+    const chatModalContent = document.getElementById('chatModalContent');
+    const chatModalLoginPrompt = document.getElementById('chatModalLoginPrompt');
+    const chatModalBody = document.getElementById('chatModalBody');
+    const chatModalInput = document.getElementById('chatModalInput');
+    const chatModalSendBtn = document.getElementById('chatModalSendBtn');
+    const chatModalEmojiBtn = document.getElementById('chatModalEmojiBtn');
+    const chatModalEmojiPanel = document.getElementById('chatModalEmojiPanel');
     
+    let currentUserId = null;
+    let currentToken = null;
+    let isEmojiPanelOpen = false;
+    let isSending = false; // Flag to prevent duplicate sends
+    let isClearing = false; // Flag to prevent event listener interference
+    let sentMessages = new Set(); // Track sent messages to prevent duplicates
+    let displayedMessages = new Set(); // Track displayed messages to prevent duplicates
+    
+    // Cleanup old sent messages to prevent memory leak - Giống live-chat.js
+    function cleanupSentMessages() {
+        if (sentMessages.size > 50) {
+            const messagesArray = Array.from(sentMessages);
+            sentMessages.clear();
+            // Keep only the last 25 messages
+            messagesArray.slice(-25).forEach(msg => sentMessages.add(msg));
+        }
+        
+        if (displayedMessages.size > 100) {
+            const messagesArray = Array.from(displayedMessages);
+            displayedMessages.clear();
+            // Keep only the last 50 messages
+            messagesArray.slice(-50).forEach(msg => displayedMessages.add(msg));
+        }
+    }
+    
+    // Check if user is logged in
+    function checkLoginStatus() {
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            const userProfile = getUserProfile();
+            currentUserId = userProfile.id ? String(userProfile.id) : null;
+            currentToken = userProfile.access_token ? String(userProfile.access_token) : null;
+            return true;
+        }
+        return false;
+    }
+    
+    // Initialize chat modal
+    function initializeChatModal() {
+        if (checkLoginStatus()) {
+            chatModalContent.style.display = 'flex';
+            chatModalLoginPrompt.style.display = 'none';
+            initializeFirebase();
+            loadWelcomeMessages();
+        } else {
+            chatModalContent.style.display = 'none';
+            chatModalLoginPrompt.style.display = 'flex';
+        }
+    }
+    
+    // Load welcome messages
+    function loadWelcomeMessages() {
+        const adminId = "admin_001";
+        appendMessage(adminId, 'Chào bạn! Mình có thể hỗ trợ gì cho bạn hôm nay? 😊', null);
+        appendMessage(adminId, 'Chúng tôi có nhiều sản phẩm mỹ phẩm thanh lý với giá tốt. Bạn quan tâm đến sản phẩm nào?', null);
+    }
+    
+    // Initialize Firebase
+    function initializeFirebase() {
+        if (typeof firebase !== 'undefined') {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBl_8N53eSIGEbBN2TBSGW36vabMdq2lbI",
+                authDomain: "buddyskincare-ec603.firebaseapp.com",
+                projectId: "buddyskincare-ec603",
+                storageBucket: "buddyskincare-ec603.firebasestorage.app",
+                messagingSenderId: "151445800213",
+                appId: "1:151445800213:web:62dafa29093235e913151c",
+                measurementId: "G-5PLJ2MQ9PW"
+            };
+            
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.firestore();
+            
+            const adminId = "admin_001";
+            const chatId = [currentUserId, adminId].sort().join('_');
+            const messagesRef = db.collection('chats').doc(chatId).collection('messages');
+            
+            messagesRef.orderBy('timestamp').onSnapshot(snapshot => {
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'added') {
+                        const message = change.doc.data();
+                        console.log(`New message from Firebase. Sender: ${message.senderId}, Content: ${message.text}, MessageId: ${message.messageId}`);
+                        
+                        // Use the messageId from Firebase, or create a fallback
+                        const messageId = message.messageId || `${message.senderId}_${message.text}_${message.timestamp?.seconds || Date.now()}`;
+                        
+                        // Check if we already displayed this message
+                        if (displayedMessages.has(messageId)) {
+                            console.log('Skipping duplicate message - already in displayedMessages:', messageId);
+                            return;
+                        }
+                        
+                        // Check if we already have this message displayed in DOM
+                        const existingMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+                        if (existingMessage) {
+                            console.log('Skipping duplicate message - already in DOM:', messageId);
+                            return;
+                        }
+                        
+                        appendMessage(message.senderId, message.text, message.timestamp, messageId);
+                    }
+                });
+            });
+        }
+    }
+    
+    // Hàm để tạo và thêm một tin nhắn vào giao diện người dùng - Giống live-chat.js
+    function appendMessage(senderId, text, timestamp, messageId = null) {
+        const isUserMessage = (senderId === currentUserId);
+        
+        // Check if this message was already displayed
+        if (messageId && displayedMessages.has(messageId)) {
+            console.log('Skipping duplicate message in appendMessage:', messageId);
+            return;
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUserMessage ? 'user' : 'agent'}`;
+        
+        // Add messageId as data attribute for tracking
+        if (messageId) {
+            messageDiv.setAttribute('data-message-id', messageId);
+            displayedMessages.add(messageId); // Track as displayed
+        }
+
+        const displayTime = timestamp ? new Date(timestamp.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Vừa xong';
+
+        // Escape HTML để tránh lỗi hiển thị
+        const escapedText = text.replace(/&/g, '&amp;')
+                               .replace(/</g, '&lt;')
+                               .replace(/>/g, '&gt;')
+                               .replace(/"/g, '&quot;')
+                               .replace(/'/g, '&#39;');
+
+        let messageHTML = '';
+        if (isUserMessage) {
+            // Get user avatar from API login response
+            const userProfile = getUserProfile();
+            const userAvatar = userProfile?.avatar || '/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg';
+            messageHTML = `
+                <div class="message-avatar">
+                    <img src="${userAvatar}" alt="User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg'">
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble">${escapedText}</div>
+                    <div class="message-time">${displayTime}</div>
+                </div>`;
+        } else {
+            // Use logo.png for agent
+            messageHTML = `
+                <div class="message-avatar">
+                    <img src="/static/image/logo.png" alt="BuddySkincare" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/logo.png'">
+                </div>
+                <div class="message-content">
+                    <div class="message-bubble">${escapedText}</div>
+                    <div class="message-time">${displayTime}</div>
+                </div>`;
+        }
+
+        messageDiv.innerHTML = messageHTML;
+        chatModalBody.appendChild(messageDiv);
+        
+        // Auto scroll to bottom with smooth animation
+        setTimeout(() => {
+            chatModalBody.scrollTo({
+                top: chatModalBody.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, 100);
+    }
+    
+    // Force clear input function - Giống live-chat.js
+    function forceClearInput() {
+        isClearing = true; // Set flag to prevent event listener interference
+        
+        const tempValue = chatModalInput.value;
+        
+        // Method 1: Direct value clear
+        chatModalInput.value = '';
+        
+        // Method 2: Clear all possible properties
+        chatModalInput.innerHTML = '';
+        chatModalInput.textContent = '';
+        chatModalInput.innerText = '';
+        
+        // Method 3: Force clear using setAttribute
+        chatModalInput.setAttribute('value', '');
+        
+        // Method 4: Reset height to default
+        chatModalInput.style.height = '35px';
+        
+        // Method 5: Force focus and select all then clear
+        chatModalInput.focus();
+        chatModalInput.select();
+        
+        // Method 6: Use document.execCommand for textarea
+        if (chatModalInput.tagName.toLowerCase() === 'textarea') {
+            try {
+                document.execCommand('selectAll', false, null);
+                document.execCommand('delete', false, null);
+            } catch (e) {
+                // Fallback if execCommand fails
+            }
+        }
+        
+        console.log('Input cleared. Previous value:', tempValue, 'New value:', chatModalInput.value);
+        
+        // Verify it's actually cleared
+        if (chatModalInput.value !== '') {
+            console.warn('Input still has value after clear:', chatModalInput.value);
+            // Force clear one more time
+            chatModalInput.value = '';
+        }
+        
+        // Reset flag after a short delay
+        setTimeout(() => {
+            isClearing = false;
+        }, 50);
+    }
+    
+    // Send message - Giống live-chat.js
+    function sendMessage() {
+        const text = (chatModalInput.value || '').trim();
+        if (!text || isSending) return; // Prevent duplicate sends
+
+        isSending = true; // Set flag to prevent duplicate sends
+
+        // Create unique message ID to track duplicates
+        const messageId = `${currentUserId}_${text}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sentMessages.add(messageId);
+
+        // Clear input immediately for better UX
+        forceClearInput();
+        
+        // Force clear multiple times to ensure it's cleared
+        setTimeout(() => {
+            forceClearInput();
+        }, 10);
+        
+        setTimeout(() => {
+            forceClearInput();
+        }, 50);
+        
+        setTimeout(() => {
+            forceClearInput();
+        }, 100);
+
+        const messageData = {
+            text: text,
+            senderId: currentUserId,
+            receiverId: "admin_001",
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            authToken: currentToken,
+            messageId: messageId // Add unique ID to track
+        };
+
+        console.log("Sending message:", messageData);
+
+        fetch('https://buddyhotro.pythonanywhere.com/api/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(messageData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.error('Error from Flask:', data.error);
+                // Restore input if error
+                chatModalInput.value = text;
+                autoResize();
+            } else {
+                console.log('Message sent successfully.');
+            }
+        })
+        .catch(error => {
+            console.error('Error sending message:', error);
+            // Restore input if error
+            chatModalInput.value = text;
+            autoResize();
+        })
+        .finally(() => {
+            isSending = false; // Reset flag after request completes
+            cleanupSentMessages(); // Cleanup old sent messages
+        });
+    }
+    
+    // Auto resize textarea
+    function autoResize() {
+        chatModalInput.style.height = 'auto';
+        chatModalInput.style.height = Math.min(chatModalInput.scrollHeight, 80) + 'px';
+    }
+    
+    // Toggle emoji panel
+    function toggleEmojiPanel() {
+        isEmojiPanelOpen = !isEmojiPanelOpen;
+        chatModalEmojiPanel.style.display = isEmojiPanelOpen ? 'block' : 'none';
+    }
+    
+    // Add emoji to input
+    function addEmoji(emoji) {
+        const cursorPos = chatModalInput.selectionStart;
+        const textBefore = chatModalInput.value.substring(0, cursorPos);
+        const textAfter = chatModalInput.value.substring(chatModalInput.selectionEnd);
+        chatModalInput.value = textBefore + emoji + textAfter;
+        chatModalInput.selectionStart = chatModalInput.selectionEnd = cursorPos + emoji.length;
+        chatModalInput.focus();
+        autoResize();
+    }
+    
+    // Event listeners
+    if (chatFab) {
+        chatFab.addEventListener('click', function() {
+            initializeChatModal();
+            const modal = new bootstrap.Modal(chatModal);
+            modal.show();
+        });
+    }
+    
+    if (chatModalSendBtn) {
+        chatModalSendBtn.addEventListener('click', sendMessage);
+    }
+    
+    if (chatModalEmojiBtn) {
+        chatModalEmojiBtn.addEventListener('click', toggleEmojiPanel);
+    }
+    
+    if (chatModalInput) {
+        chatModalInput.addEventListener('input', function(e) {
+            if (e.target.value.length > 0 && !isSending && !isClearing) {
+                autoResize();
+            }
+        });
+        
+        chatModalInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
+    
+    // Emoji panel event listeners
+    if (chatModalEmojiPanel) {
+        chatModalEmojiPanel.addEventListener('click', function(e) {
+            if (e.target.classList.contains('emoji-btn')) {
+                addEmoji(e.target.textContent);
+                toggleEmojiPanel();
+            }
+        });
+    }
+    
+    // Close emoji panel when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!chatModalEmojiPanel.contains(e.target) && !chatModalEmojiBtn.contains(e.target)) {
+            if (isEmojiPanelOpen) {
+                toggleEmojiPanel();
+            }
+        }
+    });
+})();
+</script>
