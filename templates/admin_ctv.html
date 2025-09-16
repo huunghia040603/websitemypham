@@ -98,8 +98,184 @@
     }
 
     .stat-label {
-        color: #6c757d;
         font-size: 0.9rem;
+        color: #666;
+    }
+    
+    /* Mobile responsive styles for CTV */
+    @media (max-width: 768px) {
+        .ctv-container {
+            padding: 10px;
+        }
+        
+        .ctv-tabs {
+            flex-direction: column;
+            border-bottom: none;
+        }
+        
+        .ctv-tab {
+            width: 100%;
+            text-align: left;
+            border-bottom: 1px solid #e9ecef;
+            border-radius: 0;
+        }
+        
+        .ctv-tab.active {
+            background: #007bff;
+            color: white;
+            border-bottom-color: #007bff;
+        }
+        
+        .stats-cards {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .stat-card {
+            padding: 15px;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+        }
+        
+        .card {
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.8rem;
+        }
+        
+        .table th, .table td {
+            padding: 0.5rem 0.25rem;
+        }
+        
+        .btn {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.7rem;
+        }
+        
+        .form-control, .form-select {
+            font-size: 0.9rem;
+        }
+        
+        .modal-lg {
+            max-width: 95%;
+        }
+        
+        .modal-xl {
+            max-width: 98%;
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+        
+        .d-flex.gap-2 .btn {
+            width: 100%;
+            margin-bottom: 0.25rem;
+        }
+        
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .d-flex.justify-content-between .btn-group {
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.25rem;
+        }
+        
+        .col-md-3, .col-md-6, .col-md-9 {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .ctv-container {
+            padding: 5px;
+        }
+        
+        .stat-card {
+            padding: 10px;
+        }
+        
+        .stat-number {
+            font-size: 1.2rem;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+        }
+        
+        .table th, .table td {
+            padding: 0.25rem 0.1rem;
+            font-size: 0.7rem;
+        }
+        
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+        
+        .btn-sm {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.65rem;
+        }
+        
+        .form-control, .form-select {
+            font-size: 0.8rem;
+        }
+        
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+        
+        .form-label {
+            font-size: 0.8rem;
+        }
+        
+        .badge {
+            font-size: 0.7rem;
+        }
+        
+        .card h5, .card h6 {
+            font-size: 0.9rem;
+        }
+        
+        .card h4 {
+            font-size: 1.1rem;
+        }
+        
+        .d-flex.gap-2 .btn {
+            font-size: 0.8rem;
+            padding: 0.5rem;
+        }
     }
 
     .table-container {

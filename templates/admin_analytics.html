@@ -2,6 +2,173 @@
 
 {% block title %}Thống kê doanh thu{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Mobile responsive styles for analytics */
+    @media (max-width: 768px) {
+        .container {
+            padding: 0.5rem;
+        }
+        
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .btn-group {
+            width: 100%;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-group .btn {
+            flex: 1;
+            min-width: calc(50% - 0.25rem);
+            font-size: 0.8rem;
+            padding: 0.5rem 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .card {
+            margin-bottom: 1rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .card-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        .row.g-3 {
+            margin: 0 -0.5rem;
+        }
+        
+        .row.g-3 > * {
+            padding: 0 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .col-lg-3, .col-lg-4, .col-lg-6, .col-lg-12 {
+            margin-bottom: 1rem;
+        }
+        
+        .form-control, .form-select {
+            font-size: 0.9rem;
+        }
+        
+        .form-label {
+            font-size: 0.9rem;
+        }
+        
+        .btn {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        
+        .card h5, .card h6 {
+            font-size: 1rem;
+        }
+        
+        .card h3 {
+            font-size: 1.5rem;
+        }
+        
+        .card h4 {
+            font-size: 1.2rem;
+        }
+        
+        .small {
+            font-size: 0.8rem;
+        }
+        
+        .ol, .ul {
+            padding-left: 1rem;
+        }
+        
+        .ol li, .ul li {
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        canvas {
+            max-height: 250px !important;
+        }
+        
+        #customDateRange .row {
+            margin: 0;
+        }
+        
+        #customDateRange .col-md-3 {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .container {
+            padding: 0.25rem;
+        }
+        
+        .btn-group .btn {
+            min-width: 100%;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.5rem;
+        }
+        
+        .card-body {
+            padding: 0.75rem;
+        }
+        
+        .card-header {
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .form-control, .form-select {
+            font-size: 0.8rem;
+        }
+        
+        .btn {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+        
+        .card h5, .card h6 {
+            font-size: 0.9rem;
+        }
+        
+        .card h3 {
+            font-size: 1.3rem;
+        }
+        
+        .card h4 {
+            font-size: 1.1rem;
+        }
+        
+        .small {
+            font-size: 0.75rem;
+        }
+        
+        .ol li, .ul li {
+            font-size: 0.75rem;
+        }
+        
+        canvas {
+            max-height: 200px !important;
+        }
+        
+        .d-flex.gap-2 {
+            flex-direction: column;
+            gap: 0.5rem !important;
+        }
+        
+        .d-flex.gap-2 .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
