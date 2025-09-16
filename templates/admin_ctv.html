@@ -2272,6 +2272,13 @@ async function updateCTV() {
         return;
     }
     
+    // Validate level ID
+    const levelIdNum = parseInt(levelId);
+    if (isNaN(levelIdNum) || levelIdNum <= 0) {
+        showAlert('Vui lòng chọn cấp độ hợp lệ', 'warning');
+        return;
+    }
+    
     try {
         const updateData = {
             full_name: fullName,
@@ -2279,7 +2286,7 @@ async function updateCTV() {
             email: email,
             address: address,
             code: code,
-            level_id: parseInt(levelId),
+            level_id: levelIdNum, // Sử dụng level_id như serializer mong đợi
             is_active: isActive,
             bank_name: bankName,
             bank_number: bankNumber,
@@ -2293,6 +2300,9 @@ async function updateCTV() {
             updateData.password_text = password;
         }
         
+        console.log('🔧 Updating CTV with data:', updateData);
+        console.log('🔧 Level ID being sent:', levelId, 'as integer:', levelIdNum);
+        
         const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/${id}/`, {
             method: 'PATCH',
             headers: {
@@ -2304,7 +2314,15 @@ async function updateCTV() {
         if (response.ok) {
             showAlert('Đã cập nhật thông tin CTV thành công!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('editCTVModal')).hide();
-            loadCTVs();
+            
+            // Refresh CTVs list to show updated level
+            await loadCTVs();
+            
+            // Also refresh levels if we're on the levels tab
+            const activeTab = document.querySelector('.ctv-tab.active');
+            if (activeTab && activeTab.dataset.tab === 'levels') {
+                await loadLevels();
+            }
         } else {
             const errorData = await response.text();
             console.error('Update CTV error response:', errorData);

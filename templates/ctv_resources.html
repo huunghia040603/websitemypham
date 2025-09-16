@@ -206,6 +206,7 @@ async function loadProductImages() {
                         thumbnail_url: imageUrl,
                         product_id: product.id,
                         product_name: product.name,
+                        stock_quantity: product.stock_quantity || 0,
                         is_image: true,
                         file_extension: imageUrl.split('.').pop().toLowerCase() || 'jpg',
                         image_index: index + 1,
@@ -243,11 +244,19 @@ function displayResources(resources, containerId) {
                      data-resource-id="${resource.id}"
                      data-resource-type="${resource.resource_type}">
                     ${isImage ? `
-                        <div class="text-center">
+                        <div class="text-center position-relative">
                             <img src="${resource.thumbnail_url || resource.file_url}" 
                                  class="img-fluid rounded shadow-sm" 
                                  style="width: 100%; max-height: 300px; object-fit: contain;"
                                  alt="${resource.name}">
+                            ${resource.resource_type === 'product' && resource.stock_quantity !== undefined ? `
+                                <div class="position-absolute top-0 end-0 m-1">
+                                    <span class="badge ${resource.stock_quantity > 0 ? 'bg-success' : 'bg-danger'}" 
+                                          style="font-size: 10px; padding: 2px 6px;">
+                                        <i class="fas fa-boxes me-1"></i>${resource.stock_quantity}
+                                    </span>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : `
                         <div class="text-center bg-light rounded shadow-sm d-flex align-items-center justify-content-center" 

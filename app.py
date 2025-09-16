@@ -2326,7 +2326,7 @@ def admin_api_products():
     import requests
     
     try:
-        response = requests.get(f'{API_BASE_URL}/products/', timeout=30)
+        response = requests.get(f'{API_BASE_URL}/admin-products/', timeout=30)
         if response.status_code == 200:
             products = response.json()
             return jsonify(products)
@@ -2342,7 +2342,7 @@ def admin_api_add_product():
     
     try:
         data = request.get_json()
-        response = requests.post(f'{API_BASE_URL}/products/', json=data, timeout=30)
+        response = requests.post(f'{API_BASE_URL}/admin-products/', json=data, timeout=30)
         if response.status_code == 201:
             return jsonify(response.json())
         else:
@@ -2433,7 +2433,7 @@ def admin_api_update_product(product_id):
         # Only send fields that the Django API can handle for updates
         allowed_fields = {
             'name', 'brand_name', 'original_price', 'discounted_price', 'import_price',
-            'stock_quantity', 'sold_quantity', 'status', 'description'
+            'stock_quantity', 'sold_quantity', 'status', 'description', 'is_visible'
         }
         
         cleaned_data = {}
@@ -2452,6 +2452,9 @@ def admin_api_update_product(product_id):
                     except (ValueError, TypeError):
                         print(f"⚠️ Could not convert {key}={value} to int, skipping")
                         continue
+                elif key == 'is_visible':
+                    # Handle boolean field
+                    cleaned_data[key] = bool(value)
                 else:
                     cleaned_data[key] = str(value)
         
@@ -2467,10 +2470,12 @@ def admin_api_update_product(product_id):
             minimal_data['status'] = cleaned_data['status']
         if 'description' in cleaned_data:
             minimal_data['description'] = cleaned_data['description']
+        if 'is_visible' in cleaned_data:
+            minimal_data['is_visible'] = cleaned_data['is_visible']
         
         print(f"🎯 Trying minimal update with: {minimal_data}")
         
-        response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
+        response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/', 
                                 data=minimal_data, timeout=30)
         
         # If the minimal update works, try to update additional fields in separate requests
@@ -2488,7 +2493,7 @@ def admin_api_update_product(product_id):
             
             if price_data:
                 print(f"💰 Trying price update with: {price_data}")
-                price_response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
+                price_response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/', 
                                               data=price_data, timeout=30)
                 if price_response.status_code != 200:
                     print(f"⚠️ Price update failed: {price_response.status_code}")
@@ -2504,7 +2509,7 @@ def admin_api_update_product(product_id):
             
             if quantity_data:
                 print(f"📦 Trying quantity update with: {quantity_data}")
-                quantity_response = requests.patch(f'{API_BASE_URL}/products/{product_id}/', 
+                quantity_response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/', 
                                                   data=quantity_data, timeout=30)
                 if quantity_response.status_code != 200:
                     print(f"⚠️ Quantity update failed: {quantity_response.status_code}")
@@ -2512,7 +2517,7 @@ def admin_api_update_product(product_id):
                     print(f"✅ Quantity update successful")
             
             # Get the final updated product data
-            final_response = requests.get(f'{API_BASE_URL}/products/{product_id}/', timeout=30)
+            final_response = requests.get(f'{API_BASE_URL}/admin-products/{product_id}/', timeout=30)
             if final_response.status_code == 200:
                 response = final_response
         
@@ -2702,7 +2707,7 @@ def api_product_stock(product_id):
     import requests
     
     try:
-        response = requests.get(f'{API_BASE_URL}/products/{product_id}/', timeout=30)
+        response = requests.get(f'{API_BASE_URL}/admin-products/{product_id}/', timeout=30)
         if response.status_code == 200:
             product = response.json()
             return jsonify({

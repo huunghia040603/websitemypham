@@ -15,6 +15,7 @@ r.register(r'category', views.CategoryViewSet)
 r.register(r'tags', views.TagViewSet)
 r.register(r'gifts', views.GiftViewSet)
 r.register(r'products', views.ProductViewSet)
+r.register(r'admin-products', views.AdminProductViewSet, basename='admin-product')
 r.register(r'vouchers', views.VoucherViewSet)
 r.register(r'orders', views.OrderViewSet)
 r.register(r'order-items', views.OrderItemViewSet)
@@ -43,7 +44,7 @@ urlpatterns = [
 
     # Authentication and User URLs
     path('auth/register/', RegistrationView.as_view(), name='register'),
-    path('auth/login/', PhoneNumberLoginView.as_view(), name='login'),
+    # path('auth/login/', PhoneNumberLoginView.as_view(), name='login'),
     path('auth/google/', GoogleSocialAuthView.as_view(), name='google-auth'),
     path('auth/me/', CurrentUserView.as_view(), name='current-user'),
     path('profile/', UserProfileView.as_view(), name='user-profile'),
@@ -51,7 +52,7 @@ urlpatterns = [
     path('api/user_info/', UserInfoAPIView.as_view(), name='user-info'),
     # Other URLs
     path('orders/by-code/<str:order_code>/', OrderByCodeView.as_view(), name='order-by-code'),
-
+    path('login/', LoginView.as_view(), name='login'),
     # CTV Pages
     path('ctv/login/', views.ctv_login_page, name='ctv-login-page'),
     path('ctv/dashboard/', views.ctv_dashboard_page, name='ctv-dashboard-page'),
@@ -60,10 +61,10 @@ urlpatterns = [
     path('ctv/profile/', views.ctv_profile_page, name='ctv-profile-page'),
     path('ctv/place-order/', views.ctv_place_order_page, name='ctv-place-order-page'),
     path('ctv/resources/', views.ctv_resources_page, name='ctv-resources-page'),
-    
+
     # Admin Pages
     path('admin/resources/', views.admin_resources_page, name='admin-resources-page'),
-    
+
     # Product Images API (không bị pagination)
     path('product-images/', views.ProductImagesAPIView.as_view(), name='product-images'),
 ]

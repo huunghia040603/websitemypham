@@ -78,10 +78,18 @@ MIDDLEWARE = [
 ]
 
 
+# AUTHENTICATION_BACKENDS = [
+#     'BuddyApp.backends.PhoneNumberAuthenticationBackend',
+#     'django.contrib.auth.backends.ModelBackend',
+#     'social_core.backends.google.GoogleOAuth2',
+
+# ]
+
+
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',
+    'BuddyApp.backends.IdentifierAuthBackend',
     'social_core.backends.google.GoogleOAuth2',
-    'BuddyApp.backends.PhoneNumberAuthenticationBackend',
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 ROOT_URLCONF = 'BuddyProject.urls'
@@ -122,8 +130,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
         # Mặc định yêu cầu xác thực
+
     ),
-    'DEFAULT_PAGINATION_CLASS': None,  # Tắt pagination mặc định
+     'DEFAULT_PAGINATION_CLASS': None,  # Tắt pagination mặc định
     'PAGE_SIZE': None,  # Không giới hạn page size
 }
 
@@ -200,8 +209,8 @@ ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_REQUIRED = False
 
 
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '821773612134-su4afp8ac99s2l6cpvsmf0ti7p2d61aq.apps.googleusercontent.com'
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = '821773612134-1u5206jkloc187irc108rqfcrcvb4420.apps.googleusercontent.com'
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = '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'
 
 SOCIAL_AUTH_REDIRECT_IS_HTTPS = True
 LOGIN_URL = 'login'
@@ -253,7 +262,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'buddyskincarevn@gmail.com'  # Thay bằng email của bạn
-EMAIL_HOST_PASSWORD = 'pyvd idcm rsrf apjn'  # Thay bằng mật khẩu ứng dụng
+EMAIL_HOST_PASSWORD = 'fkoz aohr yeub fncz'  # Thay bằng mật khẩu ứng dụng
 DEFAULT_FROM_EMAIL = 'buddyskincarevn@gmail.com'
 
 

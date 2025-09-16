@@ -322,6 +322,18 @@
                             </div>
                         </div>
                         
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="productIsVisible" checked>
+                                    <label class="form-check-label" for="productIsVisible">
+                                        <i class="fas fa-eye text-success me-1"></i>Hiển thị trên giao diện bán hàng
+                                    </label>
+                                    <div class="form-text">Bỏ tick để ẩn sản phẩm khỏi giao diện bán hàng</div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
                             <label for="productDescription" class="form-label">Mô tả sản phẩm</label>
                             <textarea class="form-control" id="productDescription" rows="3"></textarea>
@@ -413,6 +425,18 @@
                                     <option value="newspx">Sản phẩm mới, mất hộp, bị xước</option>
                                     <option value="chiet">Sản phẩm chiết</option>
                                 </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="editProductIsVisible">
+                                    <label class="form-check-label" for="editProductIsVisible">
+                                        <i class="fas fa-eye text-success me-1"></i>Hiển thị trên giao diện bán hàng
+                                    </label>
+                                    <div class="form-text">Bỏ tick để ẩn sản phẩm khỏi giao diện bán hàng</div>
+                                </div>
                             </div>
                         </div>
                         
@@ -696,7 +720,7 @@
             }
             
             let html = '<div class="table-responsive"><table class="table table-admin">';
-            html += '<thead><tr><th>Hình Ảnh</th><th>Tên Sản Phẩm</th><th>Giá bán</th><th>Tồn Kho</th><th>Trạng Thái</th><th>Thao Tác</th></tr></thead><tbody>';
+            html += '<thead><tr><th>Hình Ảnh</th><th>Tên Sản Phẩm</th><th>Giá bán</th><th>Tồn Kho</th><th>Trạng Thái</th><th>Hiển Thị</th><th>Thao Tác</th></tr></thead><tbody>';
             
             filteredProducts.forEach(product => {
                 const imageUrl = product.image || '/static/image/default-product.jpg';
@@ -718,6 +742,10 @@
                     statusText = m ? `Còn ${m[1]}%` : (product.status || '');
                 }
                 
+                const isVisible = product.is_visible !== false; // Default to true if not set
+                const visibilityIcon = isVisible ? 'fa-eye text-success' : 'fa-eye-slash text-danger';
+                const visibilityText = isVisible ? 'Hiển thị' : 'Ẩn';
+                
                 html += `
                     <tr>
                         <td>
@@ -736,6 +764,11 @@
                             </span>
                         </td>
                         <td><span class="badge ${statusClass}" style="background:#eaf4ff;color:#1e56a0;border:1px solid #b8d4ff;font-weight:500;"> <i class="fas fa-circle-info me-1"></i>${statusText}</span></td>
+                        <td>
+                            <span class="badge ${isVisible ? 'bg-success' : 'bg-secondary'}" style="font-size: 0.75rem;">
+                                <i class="fas ${visibilityIcon} me-1"></i>${visibilityText}
+                            </span>
+                        </td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary me-1" onclick="editProduct(${product.id})" data-bs-toggle="tooltip" title="Chỉnh sửa">
                                 <i class="fas fa-edit"></i>
@@ -809,6 +842,7 @@
             document.getElementById('editProductRating').value = product.rating || 0;
             document.getElementById('editProductDescription').value = product.description || '';
             document.getElementById('editProductImage').value = product.image || '';
+            document.getElementById('editProductIsVisible').checked = product.is_visible !== false; // Default to true if not set
             
             // Show modal
             new bootstrap.Modal(document.getElementById('editProductModal')).show();
@@ -827,7 +861,8 @@
                 sold_quantity: parseInt(document.getElementById('editProductSold').value) || 0,
                 rating: document.getElementById('editProductRating').value,
                 description: document.getElementById('editProductDescription').value,
-                image: document.getElementById('editProductImage').value
+                image: document.getElementById('editProductImage').value,
+                is_visible: document.getElementById('editProductIsVisible').checked
             };
             
             try {
@@ -853,7 +888,8 @@
                 sold_quantity: parseInt(document.getElementById('productSold').value) || 0,
                 rating: document.getElementById('productRating').value,
                 description: document.getElementById('productDescription').value,
-                image: document.getElementById('productImage').value
+                image: document.getElementById('productImage').value,
+                is_visible: document.getElementById('productIsVisible').checked
             };
             
             try {

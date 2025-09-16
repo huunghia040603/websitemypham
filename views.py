@@ -10,9 +10,10 @@ from .filters import *
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.generics import GenericAPIView
 from rest_framework import permissions
-from rest_framework.decorators import action
+from rest_framework.decorators import action,api_view,permission_classes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 import random
+import logging
 import string
 from django.template.loader import render_to_string
 from django.core.mail import EmailMessage, get_connection
@@ -46,6 +47,8 @@ class UserInfoAPIView(APIView):
             # Thêm các thông tin cần thiết khác
         })
 
+logger = logging.getLogger(__name__)
+
 # --- User ViewSets ---
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -60,6 +63,7 @@ class UserViewSet(viewsets.GenericViewSet):
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
+            logger.info(f"Yêu cầu đặt lại mật khẩu cho email không tồn tại: {email}")
             return Response(
                 {"detail": "Nếu email của bạn tồn tại trong hệ thống, chúng tôi đã gửi một mã đặt lại mật khẩu."},
                 status=status.HTTP_200_OK
@@ -73,12 +77,13 @@ class UserViewSet(viewsets.GenericViewSet):
         context = {
             'new_password': new_password,
         }
-        html_content = render_to_string('emails/forgot_password_email.html', context)
-        subject = 'Mã Đặt Lại Mật Khẩu Của Bạn'
-        from_email = settings.DEFAULT_FROM_EMAIL
-        recipient_list = [email]
 
         try:
+            html_content = render_to_string('emails/forgot_password_email.html', context)
+            subject = 'Mã Đặt Lại Mật Khẩu Của Bạn'
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
+
             with get_connection() as connection:
                 msg = EmailMessage(
                     subject,
@@ -89,9 +94,16 @@ class UserViewSet(viewsets.GenericViewSet):
                 )
                 msg.content_subtype = "html"
                 msg.send()
+
+            logger.info(f"Email đặt lại mật khẩu đã được gửi thành công đến {email}")
+
         except Exception as e:
-            print(f"Lỗi khi gửi email: {e}")
-            pass
+            # Ghi lại toàn bộ lỗi, bao gồm cả traceback
+            logger.exception(f"Lỗi khi gửi email đặt lại mật khẩu đến {email}: {e}")
+            return Response(
+                {"detail": "Đã có lỗi xảy ra khi gửi email, vui lòng thử lại sau."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return Response(
             {"detail": "Một mã đặt lại mật khẩu đã được gửi đến email của bạn."},
@@ -138,23 +150,76 @@ class TagViewSet(viewsets.ModelViewSet):
         return self.queryset
 
 
+
+
 class GiftViewSet(viewsets.ModelViewSet):
     queryset = Gift.objects.all()
     serializer_class = GiftSerializer
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.select_related('brand', 'category').prefetch_related('tags', 'gifts')
+    queryset = Product.objects.filter(is_visible=True).select_related('brand', 'category').prefetch_related('tags', 'gifts')
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProductFilter
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     # Thêm các trường tìm kiếm theo tên của brand, category và tags
     search_fields = ['name', 'brand__name', 'category__name', 'tags__name']
 
     # Thêm các trường sắp xếp
     ordering_fields = ['name', 'id', 'original_price', 'sold_quantity']
+
+
+class AdminProductViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet cho admin - có thể xem và quản lý tất cả sản phẩm (bao gồm cả ẩn)
+    """
+    queryset = Product.objects.select_related('brand', 'category').prefetch_related('tags', 'gifts')
+    serializer_class = ProductSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = ProductFilter
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    # Thêm các trường tìm kiếm theo tên của brand, category và tags
+    search_fields = ['name', 'brand__name', 'category__name', 'tags__name']
+
+    # Thêm các trường sắp xếp
+    ordering_fields = ['name', 'id', 'original_price', 'sold_quantity', 'is_visible']
+
+    @action(detail=False, methods=['patch'])
+    def add_tag(self, request):
+        tag_id = request.data.get('tag_id')
+        product_ids = request.data.get('product_ids')
+
+        if not tag_id or not product_ids:
+            return Response(
+                {"detail": "Vui lòng cung cấp 'tag_id' và 'product_ids'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            tag = Tag.objects.get(pk=tag_id)
+        except Tag.DoesNotExist:
+            return Response(
+                {"detail": "Tag không tồn tại."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        products = self.get_queryset().filter(pk__in=product_ids)
+        if not products.exists():
+            return Response(
+                {"detail": "Không tìm thấy sản phẩm nào để cập nhật."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        for product in products:
+            product.tags.add(tag)
+
+        return Response(
+            {"detail": f"Đã thêm tag '{tag.name}' vào {len(products)} sản phẩm thành công."},
+            status=status.HTTP_200_OK
+        )
 
     @action(detail=False, methods=['post'], url_path='import-xlsx')
     def import_xlsx(self, request):
@@ -417,7 +482,7 @@ class LatestProductsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     API endpoint to list the 10 latest products.
     """
-    queryset = Product.objects.select_related('brand', 'category').prefetch_related('tags', 'gifts').order_by('-id')[:10]
+    queryset = Product.objects.filter(is_visible=True).select_related('brand', 'category').prefetch_related('tags', 'gifts').order_by('-id')[:10]
     serializer_class = ProductSerializer
 
 
@@ -958,17 +1023,29 @@ class GoogleSocialAuthView(GenericAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-class PhoneNumberLoginView(APIView):
-    """
-    API View to handle login requests with phone number and password.
-    Returns user info and JWT tokens upon successful login.
-    """
+# class PhoneNumberLoginView(APIView):
+#     """
+#     API View to handle login requests with phone number and password.
+#     Returns user info and JWT tokens upon successful login.
+#     """
+#     permission_classes = [AllowAny]
+
+#     def post(self, request, *args, **kwargs):
+#         serializer = PhoneNumberLoginSerializer(data=request.data, context={'request': request})
+#         if serializer.is_valid():
+#             # Thay đổi dòng này từ serializer.validated_data sang serializer.instance
+#             return Response(serializer.to_representation(serializer.instance), status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        serializer = PhoneNumberLoginSerializer(data=request.data, context={'request': request})
+        serializer = LoginSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            return Response(serializer.to_representation(serializer.validated_data), status=status.HTTP_200_OK)
+            # Sửa lỗi ở đây
+            return Response(serializer.to_representation(serializer.instance), status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1666,13 +1743,13 @@ class MarketingResourceViewSet(viewsets.ModelViewSet):
         """Override create để xử lý upload file lên Cloudinary hoặc tạo record với URL có sẵn"""
         try:
             file = request.FILES.get('file')
-            
+
             if file:
                 # Upload file lên Cloudinary
                 import cloudinary
                 import cloudinary.uploader
                 from datetime import datetime
-                
+
                 # Upload to Cloudinary with image optimization for marketing resources
                 upload_result = cloudinary.uploader.upload(
                     file,
@@ -1728,13 +1805,13 @@ class MarketingResourceViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """Override destroy để xóa file trên Cloudinary khi xóa record"""
         instance = self.get_object()
-        
+
         # Xóa file trên Cloudinary nếu tồn tại
         if instance.file_url and 'cloudinary.com' in instance.file_url:
             try:
                 import cloudinary
                 import cloudinary.uploader
-                
+
                 # Extract public_id from Cloudinary URL
                 # URL format: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/folder/filename.jpg
                 url_parts = instance.file_url.split('/')
@@ -1744,17 +1821,17 @@ class MarketingResourceViewSet(viewsets.ModelViewSet):
                     if upload_index + 2 < len(url_parts):
                         public_id = '/'.join(url_parts[upload_index + 2:])  # Get folder/filename
                         public_id = public_id.split('.')[0]  # Remove extension
-                        
+
                         # Delete from Cloudinary
                         result = cloudinary.uploader.destroy(public_id)
                         if result.get('result') == 'ok':
                             print(f"✅ Đã xóa file trên Cloudinary: {public_id}")
                         else:
                             print(f"⚠️ Không thể xóa file trên Cloudinary: {public_id}")
-                        
+
             except Exception as e:
                 print(f"❌ Lỗi khi xóa file trên Cloudinary: {e}")
-        
+
         # Xóa record trong database
         return super().destroy(request, *args, **kwargs)
 
@@ -1784,7 +1861,7 @@ class MarketingResourceViewSet(viewsets.ModelViewSet):
     def get_product_images(self, request):
         """Lấy ảnh sản phẩm từ products"""
         from .models import Product
-        products = Product.objects.filter(status='new').select_related('brand', 'category')
+        products = Product.objects.filter(status='new', is_visible=True).select_related('brand', 'category')
         product_data = []
 
         for product in products:
@@ -1810,15 +1887,15 @@ class MarketingResourceViewSet(viewsets.ModelViewSet):
 class ProductImagesAPIView(APIView):
     """API View riêng để lấy ảnh sản phẩm không bị pagination"""
     permission_classes = [AllowAny]
-    
+
     def get(self, request):
         """Lấy tất cả ảnh sản phẩm"""
         from .models import Product
-        products = Product.objects.all().select_related('brand', 'category')
+        products = Product.objects.filter(is_visible=True).select_related('brand', 'category')
         print(f"🔍 DEBUG: Total products: {products.count()}")
         new_products = products.filter(status='new')
         print(f"🔍 DEBUG: Products with status='new': {new_products.count()}")
-        
+
         product_data = []
         products_with_image = 0
 

@@ -148,16 +148,16 @@ class ProductAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'display_image_preview', 'name', 'brand', 'rating', 'display_tags', 'category',
         'display_image_count', 'stock_quantity', 'import_price', 'original_price', 'discounted_price',
-        'discount_rate', 'status'
+        'discount_rate', 'status', 'is_visible'
     )
 
     # Chỉ giữ lại các trường có thể chỉnh sửa được
     list_editable = (
         'name', 'brand', 'stock_quantity', 'import_price',
-        'original_price', 'discounted_price', 'status'
+        'original_price', 'discounted_price', 'status', 'is_visible'
     )
 
-    list_filter = ('brand', 'category', 'tags', 'status', ImageCountFilter)
+    list_filter = ('brand', 'category', 'tags', 'status', 'is_visible', ImageCountFilter)
     search_fields = ('name', 'brand__name', 'status')
 
     # Sử dụng filter_horizontal để chọn tags và gifts
@@ -173,7 +173,7 @@ class ProductAdmin(admin.ModelAdmin):
         ('Mô tả', {'fields': ('description', 'ingredients')}),
         ('Thông tin giá và kho', {'fields': ('import_price', 'original_price', 'discounted_price', 'stock_quantity', 'sold_quantity')}),
         # Bỏ tags và gifts khỏi fieldsets để chúng được hiển thị bởi filter_horizontal
-        ('Thuộc tính khác', {'fields': ('rating', 'status')}),
+        ('Thuộc tính khác', {'fields': ('rating', 'status', 'is_visible')}),
         ('Tags và Quà tặng', {'fields': ('tags', 'gifts')}),
     )
 

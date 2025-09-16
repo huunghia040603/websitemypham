@@ -3,25 +3,27 @@
     <!-- Floating Action Button -->
 <div class="floating-actions">
     <div class="floating-action-item">
+        <button id="chatFab" class="floating-btn chat-btn" title="Chat trực tiếp" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); position: relative;">
+            <i class="fas fa-comments"></i>
+            <span id="chatNotificationBadge" class="notification-badge" style="display: none;">0</span>
+        </button>
+    </div>
+    <div class="floating-action-item">
         <button id="favFab" class="floating-btn" title="Yêu thích" style="background:#dc3545;display:flex;align-items:center;justify-content:center;border:none;outline:none;box-shadow:none;">
             <i class="fas fa-heart"></i>
         </button>
     </div>
     <div class="floating-action-item">
-        <a href="tel:1900-1234" class="floating-btn phone-btn" title="Gọi ngay">
-            <i class="fas fa-phone"></i>
+        <a href="https://zalo.me/0987789274" class="floating-btn phone-btn" title="Chat Zalo">
+            <img src="{{ url_for('static', filename='image/logozalo.webp') }}" alt="Zalo" style="width: 23px; height: 23px;">
         </a>
     </div>
     <div class="floating-action-item">
-        <a href="https://zalo.me/0123456789" class="floating-btn zalo-btn" title="Chat Zalo">
+        <a href="https://www.facebook.com/messages/t/822076197645395" class="floating-btn zalo-btn" title="Chat Messenger">
             <i class="fab fa-facebook-messenger"></i>
         </a>
     </div>
-    <div class="floating-action-item">
-        <button id="chatFab" class="floating-btn chat-btn" title="Chat trực tiếp" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <i class="fas fa-comments"></i>
-        </button>
-    </div>
+    
     <div class="floating-action-item">
         <a href="#" class="floating-btn scroll-top-btn" title="Lên đầu trang" onclick="scrollToTop()">
             <i class="fas fa-arrow-up"></i>
@@ -56,7 +58,7 @@
           <img src="{{ url_for('static', filename='image/logo.png') }}" alt="BuddySkincare" style="width: 32px; height: 32px; border-radius: 50%; margin-right: 10px;">
           <div>
             <h5 class="modal-title mb-0">Hỗ trợ BuddySkincare</h5>
-            <small>Trực tuyến</small>
+            <small>Trực tuyến - Bạn cần BuddySkincare hỗ trợ? Hãy chat với chúng tôi ngay!</small>
           </div>
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -170,11 +172,38 @@
           #chatModalBody .emoji-btn:hover {
             background: #f1f5f9;
           }
+          
+          /* Notification Badge Styles */
+          .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+            animation: pulse 2s infinite;
+          }
+          
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+          }
           </style>
           
           <div class="chat-input-area" style="border-radius: 20px;padding: 15px; background: white; border-top: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
             <div class="input-wrapper" style="flex: 1; position: relative;">
-              <textarea id="chatModalInput" class="chat-input" placeholder="Nhập tin nhắn..." rows="1" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 8px 12px; font-size: 14px; transition: all 0.2s ease; resize: none; min-height: 35px; max-height: 80px;"></textarea>
+              <textarea id="chatModalInput" class="chat-input" placeholder="Nhập tin nhắn..." rows="1" style="width: 100%; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 16px; padding: 8px 12px; font-size: 14px; transition: all 0.2s ease; resize: none; min-height: 40px; max-height: 80px;"></textarea>
               <div id="chatModalEmojiPanel" class="emoji-panel" style="position: absolute; bottom: 50px; left: 12px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px; display: none; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15); z-index: 1000;">
                 <div class="emoji-grid" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px;">
                   <div class="emoji-btn">😀</div>
@@ -311,10 +340,16 @@
     </div>
 </footer>
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
 <!-- Chat Modal JavaScript -->
 <script>
 // Chat Modal functionality - Đồng bộ với live-chat.js
-(function() {
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Chat Modal script starting...');
+    
     const chatFab = document.getElementById('chatFab');
     const chatModal = document.getElementById('chatModal');
     const chatModalContent = document.getElementById('chatModalContent');
@@ -325,13 +360,32 @@
     const chatModalEmojiBtn = document.getElementById('chatModalEmojiBtn');
     const chatModalEmojiPanel = document.getElementById('chatModalEmojiPanel');
     
+    console.log('Elements found:', {
+        chatFab: !!chatFab,
+        chatModal: !!chatModal,
+        chatModalContent: !!chatModalContent,
+        chatModalLoginPrompt: !!chatModalLoginPrompt,
+        chatModalBody: !!chatModalBody,
+        chatModalInput: !!chatModalInput,
+        chatModalSendBtn: !!chatModalSendBtn,
+        chatModalEmojiBtn: !!chatModalEmojiBtn,
+        chatModalEmojiPanel: !!chatModalEmojiPanel
+    });
+    
     let currentUserId = null;
+    let currentUserName = null; // Thêm biến để lưu tên người dùng
+    let currentUserAvatar = null; // Thêm biến để lưu avatar người dùng
     let currentToken = null;
     let isEmojiPanelOpen = false;
     let isSending = false; // Flag to prevent duplicate sends
     let isClearing = false; // Flag to prevent event listener interference
     let sentMessages = new Set(); // Track sent messages to prevent duplicates
     let displayedMessages = new Set(); // Track displayed messages to prevent duplicates
+    let unreadCount = 0; // Track unread messages count
+    let lastReadMessageId = null; // Track last read message
+    let isModalOpen = false; // Track if chat modal is open
+    let hasLoadedInitialMessages = false; // Track if initial messages have been loaded
+    let lastReadTimestamp = null; // Track last read timestamp
     
     // Cleanup old sent messages to prevent memory leak - Giống live-chat.js
     function cleanupSentMessages() {
@@ -350,88 +404,111 @@
         }
     }
     
-    // Check if user is logged in
-    function checkLoginStatus() {
-        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
-            const userProfile = getUserProfile();
-            currentUserId = userProfile.id ? String(userProfile.id) : null;
-            currentToken = userProfile.access_token ? String(userProfile.access_token) : null;
-            return true;
+    // Update notification badge
+    function updateNotificationBadge() {
+        const badge = document.getElementById('chatNotificationBadge');
+        if (!badge) return;
+        
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    
+    // Mark messages as read
+    function markMessagesAsRead() {
+        unreadCount = 0;
+        updateNotificationBadge();
+        lastReadMessageId = displayedMessages.size > 0 ? Array.from(displayedMessages).pop() : null;
+    }
+    
+    // Check if message is unread (from admin and not sent by current user)
+    function isUnreadMessage(senderId, messageId, messageText = '', messageTimestamp = null) {
+        if (senderId === currentUserId) return false; // User's own messages are not unread
+        if (senderId === "admin_001") {
+            // Don't count welcome messages as unread
+            const isWelcomeMessage = messageText.includes('Chào bạn!') || messageText.includes('Chúng tôi có nhiều sản phẩm');
+            if (isWelcomeMessage) return false;
+            
+            // Check if message is newer than last read timestamp
+            if (messageTimestamp && lastReadTimestamp) {
+                const messageTime = messageTimestamp.seconds ? messageTimestamp.seconds * 1000 : Date.now();
+                return messageTime > lastReadTimestamp;
+            }
+            
+            return true; // If no timestamp info, consider as unread
         }
         return false;
     }
     
-    // Initialize chat modal
-    function initializeChatModal() {
-        if (checkLoginStatus()) {
-            chatModalContent.style.display = 'flex';
-            chatModalLoginPrompt.style.display = 'none';
-            initializeFirebase();
-            loadWelcomeMessages();
+    // Reset unread count when modal is opened
+    function resetUnreadCount() {
+        unreadCount = 0;
+        updateNotificationBadge();
+        saveLastReadTimestamp(); // Save timestamp when opening chat
+    }
+    
+    // Save last read timestamp to localStorage
+    function saveLastReadTimestamp() {
+        const timestamp = Date.now();
+        lastReadTimestamp = timestamp;
+        localStorage.setItem('chat_last_read_timestamp', timestamp.toString());
+        console.log('Saved last read timestamp:', timestamp);
+    }
+    
+    // Load last read timestamp from localStorage
+    function loadLastReadTimestamp() {
+        const saved = localStorage.getItem('chat_last_read_timestamp');
+        if (saved) {
+            lastReadTimestamp = parseInt(saved);
+            console.log('Loaded last read timestamp:', lastReadTimestamp);
         } else {
-            chatModalContent.style.display = 'none';
-            chatModalLoginPrompt.style.display = 'flex';
+            lastReadTimestamp = Date.now(); // If no saved timestamp, consider all messages as read
+            console.log('No saved timestamp, setting to current time:', lastReadTimestamp);
         }
     }
     
-    // Load welcome messages
-    function loadWelcomeMessages() {
-        const adminId = "admin_001";
-        appendMessage(adminId, 'Chào bạn! Mình có thể hỗ trợ gì cho bạn hôm nay? 😊', null);
-        appendMessage(adminId, 'Chúng tôi có nhiều sản phẩm mỹ phẩm thanh lý với giá tốt. Bạn quan tâm đến sản phẩm nào?', null);
-    }
-    
-    // Initialize Firebase
-    function initializeFirebase() {
-        if (typeof firebase !== 'undefined') {
-            const firebaseConfig = {
-                apiKey: "AIzaSyBl_8N53eSIGEbBN2TBSGW36vabMdq2lbI",
-                authDomain: "buddyskincare-ec603.firebaseapp.com",
-                projectId: "buddyskincare-ec603",
-                storageBucket: "buddyskincare-ec603.firebasestorage.app",
-                messagingSenderId: "151445800213",
-                appId: "1:151445800213:web:62dafa29093235e913151c",
-                measurementId: "G-5PLJ2MQ9PW"
-            };
+    // Check if user is logged in
+    function checkLoginStatus() {
+        console.log('checkLoginStatus called');
+        console.log('isLoggedIn function available:', typeof isLoggedIn === 'function');
+        
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            console.log('User is logged in according to isLoggedIn()');
             
-            firebase.initializeApp(firebaseConfig);
-            const db = firebase.firestore();
+            if (typeof getUserProfile !== 'function') {
+                console.error('getUserProfile function not available in checkLoginStatus!');
+                return false;
+            }
             
-            const adminId = "admin_001";
-            const chatId = [currentUserId, adminId].sort().join('_');
-            const messagesRef = db.collection('chats').doc(chatId).collection('messages');
+            const userProfile = getUserProfile();
+            console.log('User profile in checkLoginStatus:', userProfile);
             
-            messagesRef.orderBy('timestamp').onSnapshot(snapshot => {
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'added') {
-                        const message = change.doc.data();
-                        console.log(`New message from Firebase. Sender: ${message.senderId}, Content: ${message.text}, MessageId: ${message.messageId}`);
-                        
-                        // Use the messageId from Firebase, or create a fallback
-                        const messageId = message.messageId || `${message.senderId}_${message.text}_${message.timestamp?.seconds || Date.now()}`;
-                        
-                        // Check if we already displayed this message
-                        if (displayedMessages.has(messageId)) {
-                            console.log('Skipping duplicate message - already in displayedMessages:', messageId);
-                            return;
-                        }
-                        
-                        // Check if we already have this message displayed in DOM
-                        const existingMessage = document.querySelector(`[data-message-id="${messageId}"]`);
-                        if (existingMessage) {
-                            console.log('Skipping duplicate message - already in DOM:', messageId);
-                            return;
-                        }
-                        
-                        appendMessage(message.senderId, message.text, message.timestamp, messageId);
-                    }
-                });
-            });
+            currentUserId = userProfile.id ? String(userProfile.id) : null;
+            currentUserName = userProfile.name; // Gán tên người dùng
+            currentUserAvatar = userProfile.avatar; // Gán avatar người dùng
+            currentToken = userProfile.access_token ? String(userProfile.access_token) : null;
+            
+            console.log('Updated current user info:', { currentUserId, currentUserName, currentUserAvatar, currentToken });
+            return true;
         }
+        
+        console.log('User is not logged in according to isLoggedIn()');
+        return false;
     }
     
     // Hàm để tạo và thêm một tin nhắn vào giao diện người dùng - Giống live-chat.js
     function appendMessage(senderId, text, timestamp, messageId = null) {
+        console.log('appendMessage called:', { senderId, text, timestamp, messageId });
+        console.log('chatModalBody element:', chatModalBody);
+        
+        if (!chatModalBody) {
+            console.error('chatModalBody not found!');
+            return;
+        }
+        
         const isUserMessage = (senderId === currentUserId);
         
         // Check if this message was already displayed
@@ -451,24 +528,19 @@
 
         const displayTime = timestamp ? new Date(timestamp.seconds * 1000).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : 'Vừa xong';
 
-        // Escape HTML để tránh lỗi hiển thị
-        const escapedText = text.replace(/&/g, '&amp;')
-                               .replace(/</g, '&lt;')
-                               .replace(/>/g, '&gt;')
-                               .replace(/"/g, '&quot;')
-                               .replace(/'/g, '&#39;');
+        // Convert links to clickable links
+        const processedText = convertLinksToClickable(text);
 
         let messageHTML = '';
         if (isUserMessage) {
-            // Get user avatar from API login response
-            const userProfile = getUserProfile();
-            const userAvatar = userProfile?.avatar || '/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg';
+            // Sử dụng avatar và tên đã lấy được
+            const avatarUrl = currentUserAvatar || '/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg';
             messageHTML = `
                 <div class="message-avatar">
-                    <img src="${userAvatar}" alt="User" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg'">
+                    <img src="${avatarUrl}" alt="${currentUserName || 'Người dùng'}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/khach/anh-avatar-nam-ca-tinh-nguoi-that.jpg'">
                 </div>
                 <div class="message-content">
-                    <div class="message-bubble">${escapedText}</div>
+                    <div class="message-bubble">${processedText}</div>
                     <div class="message-time">${displayTime}</div>
                 </div>`;
         } else {
@@ -478,13 +550,23 @@
                     <img src="/static/image/logo.png" alt="BuddySkincare" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.src='/static/image/logo.png'">
                 </div>
                 <div class="message-content">
-                    <div class="message-bubble">${escapedText}</div>
+                    <div class="message-bubble">${processedText}</div>
                     <div class="message-time">${displayTime}</div>
                 </div>`;
         }
 
         messageDiv.innerHTML = messageHTML;
         chatModalBody.appendChild(messageDiv);
+        console.log('Message appended to chatModalBody:', messageDiv);
+        console.log('chatModalBody children count:', chatModalBody.children.length);
+        console.log('chatModalBody innerHTML length:', chatModalBody.innerHTML.length);
+        
+        // Check if this is an unread message and update notification badge
+        // Only count as unread if modal is not open AND initial messages have been loaded
+        if (isUnreadMessage(senderId, messageId, text, timestamp) && !isModalOpen && hasLoadedInitialMessages) {
+            unreadCount++;
+            updateNotificationBadge();
+        }
         
         // Auto scroll to bottom with smooth animation
         setTimeout(() => {
@@ -493,6 +575,29 @@
                 behavior: 'smooth'
             });
         }, 100);
+    }
+    
+    // Convert links to clickable links
+    function convertLinksToClickable(text) {
+        // Escape HTML first to prevent XSS
+        const escapedText = text.replace(/&/g, '&amp;')
+                               .replace(/</g, '&lt;')
+                               .replace(/>/g, '&gt;')
+                               .replace(/"/g, '&quot;')
+                               .replace(/'/g, '&#39;');
+        
+        // URL regex pattern - matches http, https, www, and common domains
+        const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+        
+        return escapedText.replace(urlRegex, (url) => {
+            // Ensure URL has protocol
+            let href = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                href = 'https://' + url;
+            }
+            
+            return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline; word-break: break-all;">${url}</a>`;
+        });
     }
     
     // Force clear input function - Giống live-chat.js
@@ -574,6 +679,8 @@
         const messageData = {
             text: text,
             senderId: currentUserId,
+            senderName: currentUserName, // Gửi tên người dùng
+            senderAvatar: currentUserAvatar, // Gửi avatar người dùng
             receiverId: "admin_001",
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             authToken: currentToken,
@@ -635,12 +742,224 @@
         autoResize();
     }
     
+    // Initialize chat modal immediately if user is logged in (like live-chat.js)
+    // Add small delay to ensure Firebase SDK is loaded
+    setTimeout(() => {
+        console.log('Firebase available:', typeof firebase !== 'undefined');
+        console.log('isLoggedIn function available:', typeof isLoggedIn === 'function');
+        
+        if (typeof firebase === 'undefined') {
+            console.error('Firebase SDK not loaded!');
+            return;
+        }
+        
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+        console.log("User logged in. Initializing chat modal.");
+        
+        if (typeof getUserProfile !== 'function') {
+            console.error('getUserProfile function not available!');
+            return;
+        }
+        
+        const userProfile = getUserProfile();
+        console.log('User profile:', userProfile);
+        
+        currentUserId = userProfile.id ? String(userProfile.id) : null;
+        currentUserName = userProfile.name; // Gán tên người dùng
+        currentUserAvatar = userProfile.avatar; // Gán avatar người dùng
+        currentToken = userProfile.access_token ? String(userProfile.access_token) : null;
+        
+        console.log(`Current user ID: ${currentUserId}, Name: ${currentUserName}, Avatar: ${currentUserAvatar}`);
+        console.log(`Current token: ${currentToken}`);
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBl_8N53eSIGEbBN2TBSGW36vabMdq2lbI",
+            authDomain: "buddyskincare-ec603.firebaseapp.com",
+            projectId: "buddyskincare-ec603",
+            storageBucket: "buddyskincare-ec603.firebasestorage.app",
+            messagingSenderId: "151445800213",
+            appId: "1:151445800213:web:62dafa29093235e913151c",
+            measurementId: "G-5PLJ2MQ9PW"
+        };
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            console.log("Firebase initialized successfully");
+        } catch (error) {
+            console.log("Firebase already initialized or error:", error);
+        }
+        
+        const db = firebase.firestore();
+        console.log("Firestore database object:", db);
+        console.log("Firebase app:", firebase.app());
+        
+        // Load last read timestamp from localStorage
+        loadLastReadTimestamp();
+        
+        const adminId = "admin_001";
+        const chatId = [currentUserId, adminId].sort().join('_');
+        console.log('Chat ID:', chatId);
+        const messagesRef = db.collection('chats').doc(chatId).collection('messages');
+        
+        messagesRef.orderBy('timestamp').onSnapshot(snapshot => {
+            console.log('Firebase snapshot received:', snapshot.docChanges().length, 'changes');
+            console.log('Snapshot docs:', snapshot.docs.length);
+            
+            if (snapshot.docChanges().length === 0) {
+                console.log('No changes in snapshot, but docs exist:', snapshot.docs.length);
+                // Mark initial messages as loaded if no changes
+                if (!hasLoadedInitialMessages) {
+                    hasLoadedInitialMessages = true;
+                    console.log('Initial messages loaded (no changes)');
+                }
+            }
+            
+            snapshot.docChanges().forEach(change => {
+                console.log('Change type:', change.type, 'Doc ID:', change.doc.id);
+                if (change.type === 'added') {
+                    const message = change.doc.data();
+                    console.log(`New message from Firebase. Sender: ${message.senderId}, Content: ${message.text}, MessageId: ${message.messageId}`);
+                    
+                    // Use the messageId from Firebase, or create a fallback
+                    const messageId = message.messageId || `${message.senderId}_${message.text}_${message.timestamp?.seconds || Date.now()}`;
+                    
+                    // Check if we already displayed this message
+                    if (displayedMessages.has(messageId)) {
+                        console.log('Skipping duplicate message - already in displayedMessages:', messageId);
+                        return;
+                    }
+                    
+                    // Check if we already have this message displayed in DOM
+                    const existingMessage = document.querySelector(`[data-message-id="${messageId}"]`);
+                    if (existingMessage) {
+                        console.log('Skipping duplicate message - already in DOM:', messageId);
+                        return;
+                    }
+                    
+                    console.log('Appending message to chat modal:', messageId);
+                    appendMessage(message.senderId, message.text, message.timestamp, messageId);
+                    
+                    // Mark initial messages as loaded after first message
+                    if (!hasLoadedInitialMessages) {
+                        hasLoadedInitialMessages = true;
+                        console.log('Initial messages loaded (first message processed)');
+                    }
+                }
+            });
+        }, error => {
+            console.error('Firebase listener error:', error);
+        });
+
+        // Welcome message
+        console.log('Adding welcome messages...');
+        console.log('adminId:', adminId);
+        console.log('chatModalBody before welcome messages:', chatModalBody);
+        
+        appendMessage(adminId, 'Chào bạn! Mình có thể hỗ trợ gì cho bạn hôm nay? 😊', null);
+        console.log('First welcome message added. chatModalBody children:', chatModalBody.children.length);
+        
+        appendMessage(adminId, 'Chúng tôi có nhiều sản phẩm mỹ phẩm thanh lý với giá tốt. Bạn quan tâm đến sản phẩm nào?', null);
+        console.log('Second welcome message added. chatModalBody children:', chatModalBody.children.length);
+        
+        // Mark initial messages as loaded after welcome messages
+        hasLoadedInitialMessages = true;
+        console.log('Initial messages loaded (welcome messages added)');
+        
+        console.log('Welcome messages added. Total messages in chatModalBody:', chatModalBody.children.length);
+        console.log('chatModalBody innerHTML length:', chatModalBody.innerHTML.length);
+        
+        // Force show chatModalContent to test
+        console.log('Forcing chatModalContent to be visible for testing...');
+        chatModalContent.style.display = 'flex';
+        chatModalLoginPrompt.style.display = 'none';
+        console.log('chatModalContent display forced to flex');
+        
+        // Test if messages are visible
+        setTimeout(() => {
+            console.log('After 2 seconds - chatModalBody children:', chatModalBody.children.length);
+            console.log('After 2 seconds - chatModalBody innerHTML length:', chatModalBody.innerHTML.length);
+            console.log('After 2 seconds - chatModalContent display:', chatModalContent.style.display);
+            console.log('After 2 seconds - chatModalLoginPrompt display:', chatModalLoginPrompt.style.display);
+            
+            // Check if messages are actually visible in DOM
+            const messages = chatModalBody.querySelectorAll('.message');
+            console.log('Messages found in DOM:', messages.length);
+            messages.forEach((msg, index) => {
+                console.log(`Message ${index}:`, msg.textContent);
+            });
+            
+            // Check if chatModalBody is visible
+            const chatModalBodyRect = chatModalBody.getBoundingClientRect();
+            console.log('chatModalBody getBoundingClientRect:', chatModalBodyRect);
+            console.log('chatModalBody computed style display:', window.getComputedStyle(chatModalBody).display);
+            console.log('chatModalBody computed style visibility:', window.getComputedStyle(chatModalBody).visibility);
+        }, 2000);
+        } else {
+            console.log('User is not logged in');
+        }
+    }, 1000); // 1 second delay
+
     // Event listeners
     if (chatFab) {
         chatFab.addEventListener('click', function() {
-            initializeChatModal();
+            console.log('Chat Fab clicked!');
+            console.log('checkLoginStatus result:', checkLoginStatus());
+            console.log('chatModalContent element:', chatModalContent);
+            console.log('chatModalLoginPrompt element:', chatModalLoginPrompt);
+            
+            if (checkLoginStatus()) {
+                console.log('User is logged in, showing chat content');
+                chatModalContent.style.display = 'flex';
+                chatModalLoginPrompt.style.display = 'none';
+                console.log('chatModalContent display set to flex');
+                console.log('chatModalLoginPrompt display set to none');
+                
+                // Reset unread count when opening chat
+                resetUnreadCount();
+                markMessagesAsRead();
+                isModalOpen = true;
+                
+                // Auto scroll to bottom when opening chat
+                setTimeout(() => {
+                    if (chatModalBody) {
+                        chatModalBody.scrollTo({
+                            top: chatModalBody.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                        console.log('Auto scrolled to bottom when opening chat');
+                    }
+                }, 300); // Delay to ensure modal is fully opened
+            } else {
+                console.log('User is not logged in, showing login prompt');
+                chatModalContent.style.display = 'none';
+                chatModalLoginPrompt.style.display = 'flex';
+                console.log('chatModalContent display set to none');
+                console.log('chatModalLoginPrompt display set to flex');
+            }
+            
+            console.log('Opening modal...');
             const modal = new bootstrap.Modal(chatModal);
             modal.show();
+            console.log('Modal opened');
+            
+            // Set isModalOpen to false when modal is hidden
+            chatModal.addEventListener('hidden.bs.modal', function() {
+                isModalOpen = false;
+                console.log('Modal closed, isModalOpen set to false');
+            });
+            
+            // Auto scroll to bottom when modal is fully shown
+            chatModal.addEventListener('shown.bs.modal', function() {
+                setTimeout(() => {
+                    if (chatModalBody) {
+                        chatModalBody.scrollTo({
+                            top: chatModalBody.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                        console.log('Auto scrolled to bottom when modal fully shown');
+                    }
+                }, 100);
+            });
         });
     }
     
@@ -685,5 +1004,5 @@
             }
         }
     });
-})();
+});
 </script>

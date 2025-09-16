@@ -734,12 +734,32 @@ function startConversationsListener() {
             const isReadByAdmin = chatData.isReadByAdmin || false;
             const unread = hasUnreadMessage && !isReadByAdmin;
             
+            // Lấy tên và avatar từ conversation data (ưu tiên) hoặc fetch từ API
+            let customerName = `Người dùng ${userId}`;
+            let customerAvatar = null;
+            
+            // Ưu tiên lấy từ conversation data (đã lưu cố định)
+            if (chatData.customerName) {
+                customerName = chatData.customerName;
+                customerAvatar = chatData.customerAvatar;
+            } else if (chatData.latestMessage) {
+                // Fallback: lấy từ tin nhắn cuối cùng nếu là từ user
+                if (chatData.latestMessage.senderId !== 'admin_001') {
+                    customerName = chatData.latestMessage.senderName || `Người dùng ${userId}`;
+                    customerAvatar = chatData.latestMessage.senderAvatar;
+                }
+            }
+            
+            // Nếu chưa có thông tin user, fetch từ API
+            if (customerName === `Người dùng ${userId}` && userId && userId !== 'admin_001') {
+                fetchUserInfoFromAPI(userId, chatId);
+            }
+            
             conversations.push({
                 id: chatId,
                 userId: userId,
-                // Lấy tên và avatar từ latestMessage
-                customerName: chatData.latestMessage?.senderName || `Người dùng ${userId}`,
-                customerAvatar: chatData.latestMessage?.senderAvatar,
+                customerName: customerName,
+                customerAvatar: customerAvatar,
                 latestMessage: chatData.latestMessage,
                 lastMessage: chatData.latestMessage ? chatData.latestMessage.text : 'Chưa có tin nhắn',
                 lastMessageTime: chatData.latestMessage ? chatData.latestMessage.timestamp.toDate().toISOString() : new Date().toISOString(),
@@ -760,6 +780,21 @@ function startConversationsListener() {
                 activeItem.classList.add('active');
             }
         }
+        
+        // Debug: Log conversation data
+        console.log('Conversations loaded:', conversations.map(c => ({
+            id: c.id,
+            customerName: c.customerName,
+            customerAvatar: c.customerAvatar,
+            lastMessage: c.lastMessage
+        })));
+        
+        // Fetch thông tin user cho các conversations chưa có thông tin
+        conversations.forEach(conv => {
+            if (conv.customerName === `Người dùng ${conv.userId}` && conv.userId && conv.userId !== 'admin_001') {
+                fetchUserInfoFromAPI(conv.userId, conv.id);
+            }
+        });
     }, error => {
         console.error('Error listening to conversations:', error);
         document.getElementById('conversationsList').innerHTML = 
@@ -836,6 +871,11 @@ function selectConversation(conversationId) {
     chatUserNameEl.textContent = currentConversation.customerName;
     document.getElementById('chatUserInfo').textContent = `SĐT: ${currentConversation.userId}`;
     
+    // Fetch thông tin user mới nhất từ API nếu cần
+    if (currentConversation.userId && currentConversation.userId !== 'admin_001') {
+        fetchUserInfoFromAPI(currentConversation.userId, conversationId);
+    }
+    
     // Start messages listener
     startMessagesListener(conversationId);
     
@@ -890,6 +930,24 @@ function startMessagesListener(conversationId) {
                 isFromCustomer: doc.data().senderId !== 'admin_001'
             }));
             
+            // Tự động cập nhật conversation data nếu chưa có thông tin user
+            if (messages.length > 0 && !currentConversation.customerName) {
+                const firstUserMessage = messages.find(msg => msg.isFromCustomer);
+                if (firstUserMessage) {
+                    // Ưu tiên fetch từ API nếu có userId
+                    if (firstUserMessage.senderId && firstUserMessage.senderId !== 'admin_001') {
+                        fetchUserInfoFromAPI(firstUserMessage.senderId, conversationId);
+                    } else {
+                        // Fallback: dùng thông tin từ tin nhắn
+                        updateConversationUserInfo(conversationId, {
+                            name: firstUserMessage.senderName,
+                            avatar: firstUserMessage.senderAvatar,
+                            id: firstUserMessage.senderId
+                        });
+                    }
+                }
+            }
+            
             renderMessages(messages);
         }, error => {
             console.error('Error listening to messages:', error);
@@ -923,9 +981,9 @@ function renderMessages(messages) {
         let avatarHtml = '';
 
         if (message.isFromCustomer) {
-            // Ưu tiên dùng dữ liệu từ tin nhắn, nếu không có thì dùng từ cuộc trò chuyện
-            senderName = message.senderName || customerName;
-            senderAvatar = message.senderAvatar || customerAvatar;
+            // Luôn dùng thông tin từ conversation để đảm bảo nhất quán
+            senderName = customerName;
+            senderAvatar = customerAvatar;
 
             if (senderAvatar) {
                 avatarHtml = `<img src="${senderAvatar}" alt="${senderName}">`;
@@ -943,7 +1001,7 @@ function renderMessages(messages) {
             <div class="message ${messageClass}">
                 <div class="message-avatar">${avatarHtml}</div>
                 <div class="message-content">
-                    <div class="message-bubble">${message.text}</div>
+                    <div class="message-bubble">${convertLinksToClickable(message.text)}</div>
                     <div class="message-time">${time}</div>
                 </div>
             </div>
@@ -976,7 +1034,7 @@ async function sendMessage() {
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         
-        // Update latest message in chat document
+        // Update latest message in chat document (chỉ cập nhật text và timestamp)
         await db.collection('chats').doc(currentConversation.id)
             .update({
                 latestMessage: {
@@ -999,6 +1057,120 @@ async function sendMessage() {
         // Restore input text on error
         messageInput.value = messageText;
     }
+}
+
+// Function to fetch user info from API
+async function fetchUserInfoFromAPI(userId, conversationId) {
+    try {
+        console.log(`Fetching user info for userId: ${userId}`);
+        const response = await fetch(`https://buddyskincare.pythonanywhere.com/customer/${userId}`);
+        
+        if (response.ok) {
+            const userData = await response.json();
+            console.log('User data from API:', userData);
+            
+            // Cập nhật conversation data với thông tin user từ API
+            await updateConversationUserInfo(conversationId, {
+                name: userData.name,
+                avatar: userData.avatar,
+                id: userData.id
+            });
+            
+            // Cập nhật conversation trong danh sách hiện tại
+            const conversation = conversations.find(c => c.id === conversationId);
+            if (conversation) {
+                conversation.customerName = userData.name;
+                conversation.customerAvatar = userData.avatar;
+                
+                // Re-render conversations để hiển thị tên mới
+                renderConversations();
+                
+                // Cập nhật chat header nếu đang xem conversation này
+                if (currentConversation && currentConversation.id === conversationId) {
+                    updateChatHeader(userData);
+                }
+            }
+            
+        } else {
+            console.error(`Failed to fetch user info for userId ${userId}:`, response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('Error fetching user info from API:', error);
+    }
+}
+
+// Function to update chat header with user info
+function updateChatHeader(userData) {
+    const chatAvatarEl = document.getElementById('chatAvatar');
+    const chatUserNameEl = document.getElementById('chatUserName');
+    
+    if (chatAvatarEl && chatUserNameEl) {
+        // Cập nhật Avatar
+        if (userData.avatar) {
+            chatAvatarEl.innerHTML = `<img src="${userData.avatar}" alt="${userData.name}">`;
+        } else {
+            chatAvatarEl.innerHTML = userData.name.charAt(0).toUpperCase();
+        }
+        
+        // Cập nhật Tên
+        chatUserNameEl.textContent = userData.name;
+        
+        console.log('Updated chat header with user data:', userData);
+    }
+}
+
+// Function to update conversation data with user info
+async function updateConversationUserInfo(conversationId, userInfo) {
+    try {
+        await db.collection('chats').doc(conversationId).update({
+            customerName: userInfo.name,
+            customerAvatar: userInfo.avatar,
+            customerId: userInfo.id
+        });
+        console.log('Updated conversation user info:', userInfo);
+    } catch (error) {
+        console.error('Error updating conversation user info:', error);
+    }
+}
+
+// Convert links to clickable links
+function convertLinksToClickable(text) {
+    // Escape HTML first to prevent XSS
+    const escapedText = text.replace(/&/g, '&amp;')
+                           .replace(/</g, '&lt;')
+                           .replace(/>/g, '&gt;')
+                           .replace(/"/g, '&quot;')
+                           .replace(/'/g, '&#39;');
+    
+    // URL regex pattern - matches http, https, www, and common domains
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/g;
+    
+    return escapedText.replace(urlRegex, (url) => {
+        // Ensure URL has protocol
+        let href = url;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            href = 'https://' + url;
+        }
+        
+        return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color: #007bff; text-decoration: underline; word-break: break-all;">${url}</a>`;
+    });
+}
+
+// Debug function to check conversation data
+function debugConversationData(conversationId) {
+    if (!db) return;
+    
+    db.collection('chats').doc(conversationId).get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            console.log('Conversation data for', conversationId, ':', {
+                customerName: data.customerName,
+                customerAvatar: data.customerAvatar,
+                customerId: data.customerId,
+                latestMessage: data.latestMessage
+            });
+        }
+    });
 }
 
 // Utility function to get time ago

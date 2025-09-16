@@ -264,9 +264,18 @@ class Tag(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
-        # Enforce unique active flash sale
+        now = timezone.now()
+
+        # Logic tự động cập nhật status dựa vào start_date và end_date
+        if self.start_date <= now < self.end_date:
+            self.status = 'active'
+        elif now < self.start_date:
+            self.status = 'upcoming'
+        else: # now >= self.end_date
+            self.status = 'expired'
+
+        # Đảm bảo chỉ có một tag 'active' tại một thời điểm
         if self.status == 'active':
-            # Check for existing active tags (excluding the current one if it's an update)
             active_tags = Tag.objects.filter(status='active').exclude(pk=self.pk)
             if active_tags.exists():
                 raise ValidationError("Chỉ một tag có thể ở trạng thái 'active' tại một thời điểm.")
@@ -330,6 +339,7 @@ class Product(models.Model):
     original_price = models.IntegerField(verbose_name="Giá bán gốc (nghìn đồng)", default=0)
     discount_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name="Mức giảm giá (%)")
     discounted_price = models.IntegerField(blank=True, null=True, verbose_name="Giá sau giảm (nghìn đồng)")
+    is_visible = models.BooleanField(default=True, verbose_name="Hiển thị trên website")
 
     class Meta:
         verbose_name = "Sản phẩm"
@@ -337,7 +347,7 @@ class Product(models.Model):
 
     def __str__(self):
         return f"{self.name}"
-    
+
     def get_all_images(self):
         """Lấy tất cả ảnh của sản phẩm (tối đa 4 ảnh)"""
         images = []
@@ -350,7 +360,7 @@ class Product(models.Model):
         if self.image_4:
             images.append(self.image_4)
         return images
-    
+
     def get_image_count(self):
         """Đếm số lượng ảnh có sẵn"""
         return len(self.get_all_images())

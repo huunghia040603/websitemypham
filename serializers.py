@@ -8,6 +8,8 @@ from django.db.models import F
 from decimal import Decimal
 from django.utils import timezone
 from django.db.models import Sum
+from django.utils.translation import gettext_lazy as _
+# from .backends import PhoneNumberAuthenticationBackend
 
 
 # --- User Serializers ---
@@ -21,7 +23,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'name', 'email', 'phone_number', 'address', 'dob', 'avatar', 'points', 'level')
+        fields = ('id', 'name', 'email', 'phone_number', 'address', 'dob', 'avatar', 'points', 'level','date_joined')
 
     def get_points(self, obj):
         try:
@@ -42,7 +44,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = Customer
-        fields = ('id', 'name', 'email', 'phone_number', 'address', 'dob', 'avatar', 'points', 'level')
+        fields = ('id', 'name', 'email', 'phone_number', 'address','date_joined', 'dob', 'avatar', 'points', 'level')
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -93,54 +95,130 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         model = Collaborator
         fields = ('id', 'name', 'email', 'phone_number', 'sales_code', 'points', 'level')
 
-class PhoneNumberLoginSerializer(serializers.Serializer):
-    """
-    Serializer to handle login with phone number and password,
-    and return user info and JWT tokens.
-    """
-    phone_number = serializers.CharField(max_length=15)
+# class PhoneNumberLoginSerializer(serializers.Serializer):
+#     """
+#     Serializer to handle login with phone number and password,
+#     and return user info and JWT tokens.
+#     """
+#     phone_number = serializers.CharField(max_length=15)
+#     password = serializers.CharField(write_only=True)
+#     user_info = serializers.SerializerMethodField()
+
+#     def validate(self, data):
+#         phone_number = data.get('phone_number')
+#         password = data.get('password')
+
+#         if not phone_number or not password:
+#             raise serializers.ValidationError('Vui lòng cung cấp cả số điện thoại và mật khẩu.')
+
+#         user = authenticate(request=self.context.get('request'),
+#                             phone_number=phone_number, password=password)
+
+#         if not user:
+#             raise serializers.ValidationError('Số điện thoại hoặc mật khẩu không đúng.')
+
+#         if not user.is_active:
+#             raise serializers.ValidationError('Tài khoản đã bị vô hiệu hóa.')
+
+#         self.user = user  # Lưu người dùng vào self để sử dụng trong get_user_info
+#         return data
+
+#     def get_user_info(self, data):
+#         if self.user:
+#             return UserSerializer(self.user).data
+#         return None
+
+#     def to_representation(self, instance):
+#         representation = super().to_representation(instance)
+
+#         # Lấy người dùng từ validated data
+#         user = self.user
+
+#         # Lấy JWT tokens
+#         refresh = RefreshToken.for_user(user)
+#         representation['access_token'] = str(refresh.access_token)
+#         representation['refresh_token'] = str(refresh)
+
+#         # Trả về thông tin người dùng chi tiết
+#         representation['user'] = UserSerializer(user).data
+
+#         return representation
+
+# class PhoneNumberLoginSerializer(serializers.Serializer):
+#     phone_number = serializers.CharField(max_length=15)
+#     password = serializers.CharField(write_only=True)
+
+#     def validate(self, data):
+#         phone_number = data.get('phone_number')
+#         password = data.get('password')
+
+#         if not phone_number or not password:
+#             raise serializers.ValidationError(_('Vui lòng cung cấp cả số điện thoại và mật khẩu.'))
+
+#         # Gọi authenticate và chỉ định backend
+#         user = authenticate(request=self.context.get('request'),
+#                             phone_number=phone_number,
+#                             password=password,
+#                             backend=PhoneNumberAuthenticationBackend) # <-- Thêm dòng này
+
+#         if user is None:
+#             raise serializers.ValidationError(_('Số điện thoại hoặc mật khẩu không đúng.'))
+
+#         if not user.is_active:
+#             raise serializers.ValidationError(_('Tài khoản đã bị vô hiệu hóa.'))
+
+#         self.instance = user
+#         return data
+
+#     def to_representation(self, instance):
+#         # instance ở đây chính là user đã được xác thực
+#         representation = super().to_representation(instance)
+
+#         # Lấy JWT tokens
+#         refresh = RefreshToken.for_user(instance)
+#         representation['access_token'] = str(refresh.access_token)
+#         representation['refresh_token'] = str(refresh)
+
+#         # Thêm thông tin người dùng
+#         # Chắc chắn rằng UserSerializer đã được import
+#         representation['user'] = UserSerializer(instance).data
+
+#         return representation
+
+
+
+class LoginSerializer(serializers.Serializer):
+    identifier = serializers.CharField()
     password = serializers.CharField(write_only=True)
-    user_info = serializers.SerializerMethodField()
 
     def validate(self, data):
-        phone_number = data.get('phone_number')
+        identifier = data.get('identifier')
         password = data.get('password')
 
-        if not phone_number or not password:
-            raise serializers.ValidationError('Vui lòng cung cấp cả số điện thoại và mật khẩu.')
+        if not identifier or not password:
+            raise serializers.ValidationError('Vui lòng cung cấp đầy đủ thông tin.')
 
-        user = authenticate(request=self.context.get('request'),
-                            phone_number=phone_number, password=password)
+        # Explicitly use the correct backend
+        user = authenticate(request=self.context.get('request'), identifier=identifier, password=password)
 
-        if not user:
-            raise serializers.ValidationError('Số điện thoại hoặc mật khẩu không đúng.')
+        if user is None:
+            raise serializers.ValidationError('Tên đăng nhập hoặc mật khẩu không đúng.')
 
         if not user.is_active:
             raise serializers.ValidationError('Tài khoản đã bị vô hiệu hóa.')
 
-        self.user = user  # Lưu người dùng vào self để sử dụng trong get_user_info
+        self.instance = user
         return data
 
-    def get_user_info(self, data):
-        if self.user:
-            return UserSerializer(self.user).data
-        return None
-
     def to_representation(self, instance):
-        representation = super().to_representation(instance)
+        # instance ở đây là đối tượng User đã được xác thực
+        refresh = RefreshToken.for_user(instance)
 
-        # Lấy người dùng từ validated data
-        user = self.user
-
-        # Lấy JWT tokens
-        refresh = RefreshToken.for_user(user)
-        representation['access_token'] = str(refresh.access_token)
-        representation['refresh_token'] = str(refresh)
-
-        # Trả về thông tin người dùng chi tiết
-        representation['user'] = UserSerializer(user).data
-
-        return representation
+        return {
+            'access_token': str(refresh.access_token),
+            'refresh_token': str(refresh),
+            'user': UserSerializer(instance).data
+        }
 
 
 class GoogleSocialAuthSerializer(serializers.Serializer):
@@ -344,7 +422,7 @@ class ProductSerializer(serializers.ModelSerializer):
         write_only=True,
         required=False
     )
-    
+
     # Hiển thị tất cả ảnh
     all_images = serializers.SerializerMethodField()
     image_count = serializers.SerializerMethodField()
@@ -352,18 +430,18 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'id', 'name', 'description', 'image', 'image_2', 'image_3', 'image_4', 
-            'all_images', 'image_count', 'brand', 'brand_name', 'category', 'category_name', 
-            'tags', 'tags_write', 'gifts', 'stock_quantity', 'sold_quantity', 'rating', 
+            'id', 'name', 'description', 'image', 'image_2', 'image_3', 'image_4',
+            'all_images', 'image_count', 'brand', 'brand_name', 'category', 'category_name',
+            'tags', 'tags_write', 'gifts', 'stock_quantity', 'sold_quantity', 'rating',
             'savings_price', 'import_price', 'original_price', 'discount_rate',
-            'discounted_price', 'status'
+            'discounted_price', 'status', 'is_visible'
         )
         read_only_fields = ('savings_price', 'discount_rate')
 
     def get_all_images(self, obj):
         """Lấy tất cả ảnh của sản phẩm"""
         return obj.get_all_images()
-    
+
     def get_image_count(self, obj):
         """Đếm số lượng ảnh"""
         return obj.get_image_count()
@@ -907,7 +985,7 @@ class OrderSerializer(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), write_only=True, source='product'
+        queryset=Product.objects.filter(is_visible=True), write_only=True, source='product'
     )
 
     class Meta:
@@ -1054,12 +1132,6 @@ class CTVWalletSerializer(serializers.ModelSerializer):
 
 class CTVSerializer(serializers.ModelSerializer):
     level = CTVLevelSerializer(read_only=True)
-    level_id = serializers.PrimaryKeyRelatedField(
-        queryset=CTVLevel.objects.all(),
-        source='level',
-        write_only=True,
-        required=False
-    )
     wallet = CTVWalletSerializer(read_only=True)
 
     class Meta:
@@ -1067,7 +1139,7 @@ class CTVSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'code', 'desired_code', 'full_name', 'phone', 'email', 'address',
             'bank_name', 'bank_number', 'bank_holder', 'cccd_front_url', 'cccd_back_url',
-            'password_text', 'total_revenue', 'level', 'level_id', 'wallet', 'is_active', 'joined_at'
+            'password_text', 'total_revenue', 'level', 'wallet', 'is_active', 'joined_at'
         ]
 
 

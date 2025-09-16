@@ -26,11 +26,87 @@
 /* Responsive notification */
 @media (max-width: 768px) {
     .notification-fixed {
-        left: 20px !important;
-        right: 20px !important;
-        transform: none !important;
-        min-width: auto !important;
-        max-width: none !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        min-width: 280px !important;
+        max-width: 320px !important;
+        bottom: 80px !important;
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+    }
+    
+    .notification-fixed .alert {
+        margin-bottom: 0 !important;
+        padding: 8px 12px !important;
+        font-size: 0.85rem !important;
+        position: relative !important;
+        padding-right: 35px !important;
+    }
+    
+    .notification-fixed .btn-close {
+        padding: 4px !important;
+        font-size: 0.7rem !important;
+        position: absolute !important;
+        top: 50% !important;
+        right: 8px !important;
+        transform: translateY(-50%) !important;
+        margin: 0 !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-fixed {
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        min-width: 250px !important;
+        max-width: 280px !important;
+        bottom: 70px !important;
+        font-size: 0.8rem !important;
+        padding: 6px 10px !important;
+    }
+    
+    .notification-fixed .alert {
+        padding: 6px 10px !important;
+        font-size: 0.8rem !important;
+        position: relative !important;
+        padding-right: 30px !important;
+    }
+    
+    .notification-fixed .btn-close {
+        padding: 3px !important;
+        font-size: 0.65rem !important;
+        position: absolute !important;
+        top: 50% !important;
+        right: 6px !important;
+        transform: translateY(-50%) !important;
+        margin: 0 !important;
+    }
+}
+
+/* General alert responsive for mobile */
+@media (max-width: 768px) {
+    .alert {
+        font-size: 0.85rem !important;
+        padding: 8px 12px !important;
+    }
+    
+    .alert .btn-close {
+        padding: 4px !important;
+        font-size: 0.7rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .alert {
+        font-size: 0.8rem !important;
+        padding: 6px 10px !important;
+    }
+    
+    .alert .btn-close {
+        padding: 3px !important;
+        font-size: 0.65rem !important;
     }
 }
 
@@ -3411,13 +3487,14 @@ body.products-page .cart-icon { margin-left: 0 !important; }
 
 @media (max-width: 576px) {
     .header-brand {
-        flex-direction: column;
-        text-align: center;
+        flex-direction: row;
+        text-align: left;
+        align-items: center;
     }
     
     .header-logo {
-        margin-right: 0 !important;
-        margin-bottom: 0.25rem;
+        margin-right: 0.5rem !important;
+        margin-bottom: 0 !important;
         max-height: 35px !important;
     }
     
@@ -3428,19 +3505,155 @@ body.products-page .cart-icon { margin-left: 0 !important; }
     .logo-subtitle {
         font-size: 0.6rem;
     }
-    .text-muted {
-        font-size: 0.75rem;
+    
+    /* Fix header layout on small screens */
+    .header .container {
+        padding-left: 10px;
+        padding-right: 10px;
     }
-    h1 {
-        font-size: 1.5rem;
+    
+    .header .row {
+        margin-left: -5px;
+        margin-right: -5px;
     }
-    #detailName {
-        font-size: 1.3rem;
+    
+    .header .col-6 {
+        padding-left: 5px;
+        padding-right: 5px;
     }
-    #detailPrice {
-        font-size: 1.5rem;
+    
+    /* Fix top bar on small screens */
+    .top-bar .container {
+        padding-left: 10px;
+        padding-right: 10px;
     }
-    #detailStock {
+    
+    .top-bar .text-muted {
+        font-size: 0.7rem;
+    }
+    
+    .top-bar .mx-3 {
+        margin-left: 0.5rem !important;
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Fix navigation icons spacing */
+    .header .d-flex.align-items-center {
+        gap: 0.5rem;
+    }
+    
+    .header .me-3 {
+        margin-right: 0.5rem !important;
+    }
+    
+    /* Fix cart badge positioning */
+    .cart-badge {
+        font-size: 0.6rem;
+        padding: 0.2em 0.4em;
+    }
+    
+    /* Fix user dropdown */
+    .user-dropdown {
+        font-size: 0.85rem;
+    }
+    
+    /* Fix navbar toggler */
+    .navbar-toggler {
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .navbar-toggler-icon {
+        width: 1.2em;
+        height: 1.2em;
+    }
+}
+
+/* Additional fixes for very small screens */
+@media (max-width: 480px) {
+    .header .col-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+    
+    .logo-title {
+        font-size: 0.8rem;
+    }
+    
+    .logo-subtitle {
+        font-size: 0.55rem;
+    }
+    
+    .header-logo {
+        max-height: 30px !important;
+    }
+    
+    .top-bar .text-muted {
+        font-size: 0.65rem;
+    }
+    
+    .top-bar .d-none {
+        display: none !important;
+    }
+}
+
+/* Fix navbar responsive - force hamburger menu on smaller screens */
+@media (max-width: 991px) {
+    .navbar-expand-lg .navbar-nav {
+        display: none !important;
+    }
+    
+    .navbar-expand-lg .navbar-toggler {
+        display: block !important;
+    }
+    
+    .navbar-expand-lg .navbar-collapse {
+        display: none !important;
+    }
+    
+    .navbar-expand-lg .navbar-collapse.show {
+        display: block !important;
+    }
+}
+
+/* Force hamburger menu on medium screens when content is too wide */
+@media (max-width: 1200px) {
+    .header .col-lg-6 {
+        display: none !important;
+    }
+    
+    .header .col-lg-3 {
+        display: none !important;
+    }
+    
+    .header .col-lg-1 {
+        flex: 0 0 100%;
+        max-width: 100%;
+        display: flex !important;
+        justify-content: flex-end;
+    }
+    
+    .navbar-toggler {
+        display: block !important;
+    }
+}
+
+/* Ensure navbar toggler is always visible when needed */
+.navbar-toggler {
+    border: 1px solid #dee2e6;
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+    line-height: 1;
+    background-color: transparent;
+    border-radius: 0.375rem;
+    transition: all 0.15s ease-in-out;
+}
+
+.navbar-toggler:hover {
+    background-color: #f8f9fa;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 /* Login Modal Styles */

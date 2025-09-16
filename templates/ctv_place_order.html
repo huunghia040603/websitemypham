@@ -1,48 +1,254 @@
 {% extends "ctv_base.html" %}
 
-{% block title %}Tạo đơn đặc biệt{% endblock %}
+{% block title %}Tạo đơn nhanh{% endblock %}
 
 {% block ctv_body %}
-<div class="ctv-card p-3">
-  <h1 class="h6">Tạo đơn hàng đặc biệt</h1>
-  <div class="row g-3">
-    <div class="col-md-6">
-      <label class="form-label">Chọn sản phẩm</label>
-      <select id="poProduct" class="form-select"></select>
-    </div>
-    <div class="col-md-2">
-      <label class="form-label">Số lượng</label>
-      <input id="poQty" type="number" min="1" value="1" class="form-control">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">Giá bán đề xuất (đ/đơn vị)</label>
-      <input id="poPrice" type="number" class="form-control" placeholder="vd: 1200000">
-      <div class="small text-muted" id="poRef"></div>
-    </div>
+<div class="container-fluid" data-ctv='{% if g.ctv %}{{ g.ctv | tojson | safe }}{% else %}null{% endif %}'>
+  <!-- Header -->
+  <div class="row mb-4">
     <div class="col-12">
-      <button id="btnCalc" class="btn btn-outline-secondary">Tính hoa hồng</button>
-      <button id="btnCreate" class="btn btn-primary">Tạo đơn</button>
-      <span id="poMsg" class="small ms-2"></span>
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <h2 class="h4 mb-1"><i class="fas fa-plus-circle me-2 text-primary"></i>Tạo đơn nhanh</h2>
+          <p class="text-muted mb-0">Tạo đơn hàng nhanh chóng cho khách hàng</p>
+        </div>
+        <div class="text-end">
+          <div class="small text-muted">CTV: <span id="ctvCode" class="fw-bold"></span></div>
+          <div class="small text-muted">Cấp độ: <span id="ctvLevel" class="fw-bold"></span></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="row g-3 mt-3">
-    <div class="col-md-4">
-      <div class="ctv-card p-3">
-        <div class="text-muted small">Giá niêm yết</div>
-        <div class="h5" id="poListed">-</div>
+  <div class="row">
+    <!-- Form tạo đơn -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+          <h5 class="card-title mb-0"><i class="fas fa-shopping-cart me-2"></i>Thông tin đơn hàng</h5>
+        </div>
+        <div class="card-body">
+          <!-- Thông tin khách hàng -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="fw-bold mb-3"><i class="fas fa-user me-2"></i>Thông tin khách hàng</h6>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Tên khách hàng <span class="text-danger">*</span></label>
+              <input type="text" id="customerName" class="form-control" placeholder="Nhập tên khách hàng" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+              <input type="tel" id="customerPhone" class="form-control" placeholder="Nhập số điện thoại" required>
+            </div>
+            <div class="col-12 mt-3">
+              <label class="form-label">Địa chỉ giao hàng</label>
+              <textarea id="customerAddress" class="form-control" rows="2" placeholder="Nhập địa chỉ giao hàng"></textarea>
+            </div>
+          </div>
+
+          <!-- Sản phẩm -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0"><i class="fas fa-box me-2"></i>Sản phẩm</h6>
+                <button type="button" id="addProductBtn" class="btn btn-sm btn-outline-primary">
+                  <i class="fas fa-plus me-1"></i>Thêm sản phẩm
+                </button>
+              </div>
+            </div>
+            
+            <!-- Danh sách sản phẩm -->
+            <div class="col-12">
+              <div id="productsList">
+                <!-- Sản phẩm đầu tiên -->
+                <div class="product-item border rounded p-3 mb-3" data-product-index="0">
+                  <div class="row g-3">
+                    <div class="col-md-5">
+                      <label class="form-label">Chọn sản phẩm <span class="text-danger">*</span></label>
+                      <select class="form-select product-select" required>
+                        <option value="">-- Chọn sản phẩm --</option>
+                      </select>
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+                      <input type="number" min="1" value="1" class="form-control product-qty" required>
+                    </div>
+                    <div class="col-md-3">
+                      <label class="form-label">Giá bán (VNĐ) <i class="fas fa-info-circle text-muted" title="Giá bán được tự động điền theo giá quy định của sản phẩm"></i></label>
+                        <input type="number" class="form-control product-price" placeholder="Tự động" readonly style="background-color: #f8f9fa; cursor: not-allowed;" title="Giá bán được tự động điền theo giá quy định">
+                    </div>
+                    <div class="col-md-2">
+                      <label class="form-label">&nbsp;</label>
+                      <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-sm btn-outline-danger remove-product" style="display: none;">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+                    <div class="col-12">
+                      <div class="small text-muted product-info"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phương thức thanh toán -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="fw-bold mb-3"><i class="fas fa-credit-card me-2"></i>Phương thức thanh toán</h6>
+            </div>
+                 <div class="col-md-6">
+                   <label class="form-label">Phương thức <span class="text-danger">*</span></label>
+                   <select id="paymentMethod" class="form-select" required>
+                     <option value="cod" selected>Ship COD</option>
+                     <option value="bank">Chuyển khoản</option>
+                     <option value="cash">Tiền mặt</option>
+                   </select>
+                 </div>
+                 <div class="col-md-6">
+                   <label class="form-label">Phí ship (VNĐ)</label>
+                   <input id="shippingFee" type="number" min="0" value="30000" class="form-control">
+                 </div>
+          </div>
+
+          <!-- Mã voucher/CTV -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <h6 class="fw-bold mb-3"><i class="fas fa-ticket-alt me-2"></i>Mã voucher/CTV</h6>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mã voucher/CTV</label>
+              <input id="voucherCode" type="text" class="form-control" placeholder="Nhập mã voucher/CTV (nếu có)">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">&nbsp;</label>
+              <div id="voucherInfo" class="form-control-plaintext p-2 bg-light rounded border">
+                <small class="text-muted">Thông tin mã sẽ hiển thị ở đây</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ghi chú -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <label class="form-label">Ghi chú</label>
+              <textarea id="orderNotes" class="form-control" rows="3" placeholder="Ghi chú thêm cho đơn hàng..."></textarea>
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div class="row">
+            <div class="col-12">
+              <button id="btnCalc" class="btn btn-outline-primary me-2">
+                <i class="fas fa-calculator me-1"></i>Tính toán
+              </button>
+              <button id="btnCreate" class="btn btn-success">
+                <i class="fas fa-check me-1"></i>Tạo đơn hàng
+              </button>
+              <button id="btnReset" class="btn btn-outline-secondary ms-2">
+                <i class="fas fa-undo me-1"></i>Làm mới
+              </button>
+            </div>
+          </div>
+
+          <!-- Message -->
+          <div id="poMsg" class="mt-3"></div>
+        </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="ctv-card p-3">
-        <div class="text-muted small">Lợi nhuận</div>
-        <div class="h5" id="poProfit">-</div>
+
+    <!-- Thông tin tính toán -->
+    <div class="col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-header bg-info text-white">
+          <h5 class="card-title mb-0"><i class="fas fa-chart-line me-2"></i>Tính toán</h5>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                <div>
+                  <div class="text-muted small">Giá gốc</div>
+                  <div class="h6 mb-0" id="poListed">-</div>
+                </div>
+                <i class="fas fa-tag text-muted"></i>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                <div>
+                  <div class="text-muted small">Giá bán</div>
+                  <div class="h6 mb-0" id="poSelling">-</div>
+                </div>
+                <i class="fas fa-dollar-sign text-muted"></i>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                <div>
+                  <div class="text-muted small">Phí ship</div>
+                  <div class="h6 mb-0" id="poShipping">-</div>
+                </div>
+                <i class="fas fa-shipping-fast text-muted"></i>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-danger bg-opacity-10 rounded">
+                <div>
+                  <div class="text-danger small">Giảm giá</div>
+                  <div class="h6 mb-0 text-danger" id="poDiscount">-</div>
+                </div>
+                <i class="fas fa-percent text-danger"></i>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-success bg-opacity-10 rounded">
+                <div>
+                  <div class="text-success small">Tổng tiền</div>
+                  <div class="h5 mb-0 text-success" id="poTotal">-</div>
+                </div>
+                <i class="fas fa-calculator text-success"></i>
+              </div>
+            </div>
+            <!-- <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                <div>
+                  <div class="text-warning small">Lợi nhuận</div>
+                  <div class="h6 mb-0 text-warning" id="poProfit">-</div>
+                </div>
+                <i class="fas fa-chart-line text-warning"></i>
+              </div>
+            </div> -->
+            <div class="col-12">
+              <div class="d-flex justify-content-between align-items-center p-3 bg-warning bg-opacity-10 rounded">
+                <div>
+                  <div class="text-primary small">Hoa hồng dự kiến</div>
+                  <div class="h6 mb-0 text-primary" id="poCommission">-</div>
+                </div>
+                <i class="fas fa-percentage text-primary"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lịch sử đơn hàng gần đây -->
+      <div class="card shadow-sm mt-3">
+        <div class="card-header">
+          <h6 class="card-title mb-0"><i class="fas fa-history me-2"></i>Đơn hàng gần đây</h6>
+        </div>
+        <div class="card-body">
+          <div id="recentOrders" class="small">
+            <div class="text-center text-muted">
+              <i class="fas fa-spinner fa-spin"></i> Đang tải...
+            </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="ctv-card p-3">
-        <div class="text-muted small">Hoa hồng dự kiến</div>
-        <div class="h5" id="poCommission">-</div>
       </div>
     </div>
   </div>
@@ -52,11 +258,7 @@
 {% block extra_js %}
 <script>
 // Inject CTV data từ server-side session
-{% if g.ctv %}
-window.ctvData = {{ g.ctv | tojson }};
-{% else %}
 window.ctvData = null;
-{% endif %}
 
 function getCtv(){ 
   try { 
@@ -65,68 +267,896 @@ function getCtv(){
     return null; 
   } 
 }
+
 function fmt(n){return (Number(n)||0).toLocaleString('vi-VN')+" đ"}
 
+// Debounce function to limit API calls
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Global products data
+let allProducts = [];
+
+// Load products from API
 async function loadProducts(){
-  const sel = document.getElementById('poProduct'); sel.innerHTML='';
-  const res = await fetch('/products/').then(r=>r.json());
-  for (const p of res){
-    const opt = document.createElement('option');
-    opt.value = p.id; opt.textContent = `${p.name}`;
-    opt.dataset.original = p.original_price; opt.dataset.discounted = p.discounted_price;
-    sel.appendChild(opt);
+  try {
+    const res = await fetch('https://buddyskincare.pythonanywhere.com/products/?status=new');
+    allProducts = await res.json();
+    
+    // Load products into all select elements
+    updateAllProductSelects();
+    
+    updateRef();
+  } catch (error) {
+    console.error('Error loading products:', error);
+    showMessage('Lỗi khi tải danh sách sản phẩm', 'danger');
   }
-  updateRef();
 }
 
+// Load products into a select element
+function loadProductsIntoSelect(selectElement) {
+  selectElement.innerHTML = '<option value="">-- Chọn sản phẩm --</option>';
+  
+  allProducts.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id; 
+    opt.textContent = `${p.name} - ${p.brand_name || 'Không xác định'} (Còn: ${p.stock_quantity || 0})`;
+    opt.dataset.original = p.original_price; 
+    opt.dataset.discounted = p.discounted_price;
+    opt.dataset.stock = p.stock_quantity || 0;
+    opt.dataset.import = p.import_price || 0;
+    
+    // Debug logging for specific product
+    if (p.name && p.name.includes('Bột Tẩy Tế Bào Chết Enzyme Dermalc')) {
+      console.log('🔍 Debug product data:', {
+        name: p.name,
+        original_price: p.original_price,
+        discounted_price: p.discounted_price,
+        stock_quantity: p.stock_quantity,
+        import_price: p.import_price
+      });
+    }
+    
+    selectElement.appendChild(opt);
+  });
+}
+
+// Update all product select elements
+function updateAllProductSelects() {
+  const selects = document.querySelectorAll('.product-select');
+  selects.forEach(select => {
+    loadProductsIntoSelect(select);
+  });
+}
+
+// Add new product row
+function addProductRow() {
+  const productsList = document.getElementById('productsList');
+  const productItems = document.querySelectorAll('.product-item');
+  const newIndex = productItems.length;
+  
+  const newProductHTML = `
+    <div class="product-item border rounded p-3 mb-3" data-product-index="${newIndex}">
+      <div class="row g-3">
+        <div class="col-md-5">
+          <label class="form-label">Chọn sản phẩm <span class="text-danger">*</span></label>
+          <select class="form-select product-select" required>
+            <option value="">-- Chọn sản phẩm --</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+          <input type="number" min="1" value="1" class="form-control product-qty" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Giá bán (VNĐ) <i class="fas fa-info-circle text-muted" title="Giá bán được tự động điền theo giá quy định của sản phẩm"></i></label>
+            <input type="number" class="form-control product-price" placeholder="Tự động" readonly style="background-color: #f8f9fa; cursor: not-allowed;" title="Giá bán được tự động điền theo giá quy định">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">&nbsp;</label>
+          <div class="d-flex gap-1">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-product">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-2">
+        <div class="col-12">
+          <div class="small text-muted product-info"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  productsList.insertAdjacentHTML('beforeend', newProductHTML);
+  
+  // Update product selects in the new row
+  const newSelect = productsList.lastElementChild.querySelector('.product-select');
+  loadProductsIntoSelect(newSelect);
+  
+  // Add event listeners to the new row
+  addProductRowEventListeners(productsList.lastElementChild);
+  
+  // Update remove buttons visibility
+  updateRemoveButtonsVisibility();
+}
+
+// Remove product row
+function removeProductRow(element) {
+  const productItem = element.closest('.product-item');
+  productItem.remove();
+  
+  // Update remove buttons visibility
+  updateRemoveButtonsVisibility();
+  
+  // Recalculate totals
+  calc();
+}
+
+// Update remove buttons visibility
+function updateRemoveButtonsVisibility() {
+  const productItems = document.querySelectorAll('.product-item');
+  const removeButtons = document.querySelectorAll('.remove-product');
+  
+  // Show remove button only if there's more than 1 product
+  removeButtons.forEach(btn => {
+    btn.style.display = productItems.length > 1 ? 'block' : 'none';
+  });
+}
+
+// Add event listeners to a product row
+function addProductRowEventListeners(productItem) {
+  const select = productItem.querySelector('.product-select');
+  const qtyInput = productItem.querySelector('.product-qty');
+  const priceInput = productItem.querySelector('.product-price');
+  const removeBtn = productItem.querySelector('.remove-product');
+  
+  // Product selection change
+  select.addEventListener('change', function() {
+    updateProductInfo(productItem);
+    calc();
+  });
+  
+  // Quantity change
+  qtyInput.addEventListener('input', function() {
+    calc();
+  });
+  
+  // Price change - prevent manual editing and auto-correct to suggested price
+  priceInput.addEventListener('input', function() {
+    // Get the selected product's suggested price
+    const opt = select.options[select.selectedIndex];
+    if (opt && opt.value) {
+      const original = Number(opt.dataset.original || 0);
+      const discounted = Number(opt.dataset.discounted || 0);
+      const suggestedPrice = discounted > 0 ? discounted : original;
+      const correctValue = suggestedPrice * 1000;
+      
+      // If user tries to change the price, reset it to the correct value
+      if (this.value != correctValue) {
+        this.value = correctValue;
+        showMessage('⚠️ Giá bán được tự động điều chỉnh về giá quy định', 'warning');
+      }
+    }
+    calc();
+  });
+  
+  // Also prevent manual editing on focus/blur
+  priceInput.addEventListener('focus', function() {
+    // Get the selected product's suggested price
+    const opt = select.options[select.selectedIndex];
+    if (opt && opt.value) {
+      const original = Number(opt.dataset.original || 0);
+      const discounted = Number(opt.dataset.discounted || 0);
+      const suggestedPrice = discounted > 0 ? discounted : original;
+      this.value = suggestedPrice * 1000;
+    }
+  });
+  
+  // Remove button
+  removeBtn.addEventListener('click', function() {
+    removeProductRow(this);
+  });
+}
+
+// Update product info display
+function updateProductInfo(productItem) {
+  const select = productItem.querySelector('.product-select');
+  const opt = select.options[select.selectedIndex];
+  const infoEl = productItem.querySelector('.product-info');
+  const priceInput = productItem.querySelector('.product-price');
+  
+  if (!opt || !opt.value) {
+    infoEl.innerHTML = '';
+    return;
+  }
+  
+  const original = Number(opt.dataset.original || 0);
+  const discounted = Number(opt.dataset.discounted || 0);
+  const stock = Number(opt.dataset.stock || 0);
+  const importPrice = Number(opt.dataset.import || 0);
+  
+  // Debug logging
+  console.log('🔍 Product data for:', opt.textContent, {
+    original: original,
+    discounted: discounted,
+    stock: stock,
+    importPrice: importPrice
+  });
+  
+  infoEl.innerHTML = `
+    <div class="row">
+      
+      <div class="col-md-3"><strong>Giá gốc:</strong> ${fmt(original * 1000)}</div>
+      <div class="col-md-3"><strong>Giá hiện bán:</strong> ${fmt(discounted * 1000)}</div>
+      <div class="col-md-3"><strong>Tồn kho:</strong> <span class="${stock > 0 ? 'text-success' : 'text-danger'}">${stock}</span></div>
+    </div>
+  `;
+  
+  // Auto-fill selling price with discounted price
+  // Use discounted_price if available, otherwise use original_price
+  const sellingPrice = discounted > 0 ? discounted : original;
+  priceInput.value = sellingPrice * 1000;
+  
+  console.log('💰 Updated selling price:', {
+    product: opt.textContent,
+    original: original,
+    discounted: discounted,
+    sellingPrice: sellingPrice,
+    finalValue: sellingPrice * 1000
+  });
+  
+  // Check stock availability
+  if (stock === 0) {
+    showMessage('⚠️ Sản phẩm đã hết hàng!', 'warning');
+  }
+}
+
+// Update product reference info (legacy function for backward compatibility)
 function updateRef(){
-  const sel = document.getElementById('poProduct');
-  const opt = sel.options[sel.selectedIndex]; if (!opt) return;
-  const original = Number(opt.dataset.original||0), discounted = Number(opt.dataset.discounted||0);
-  document.getElementById('poRef').textContent = `Giá niêm yết: ${fmt(original)} • Giá hiện bán: ${fmt(discounted)}`;
-  document.getElementById('poListed').textContent = fmt(original);
+  // This function is kept for backward compatibility but is no longer used
+  // The new updateProductInfo function handles individual product info display
 }
 
+// Calculate order details for multiple products
 function calc(){
-  const sel = document.getElementById('poProduct'); const opt = sel.options[sel.selectedIndex];
-  if (!opt) return;
-  const qty = Number(document.getElementById('poQty').value||1);
-  const original = Number(opt.dataset.original||0);
-  let sell = Number(document.getElementById('poPrice').value||0);
-  if (!sell) sell = Number(opt.dataset.discounted||0);
-  const profit = Math.max(0, (original - sell) * qty);
-  const ctv = getCtv(); const percent = (ctv && ctv.level ? Number(ctv.level.commission_percent||10) : 10)/100.0;
-  const commission = profit*percent;
-  document.getElementById('poProfit').textContent = fmt(profit);
+  const productItems = document.querySelectorAll('.product-item');
+  let totalSelling = 0;
+  let totalOriginal = 0;
+  let totalImportCost = 0;
+  let hasValidProducts = false;
+  
+  // Calculate totals for all products
+  productItems.forEach((item, index) => {
+    const select = item.querySelector('.product-select');
+    const opt = select.options[select.selectedIndex];
+    
+    if (!opt || !opt.value) return;
+    
+    const qty = Number(item.querySelector('.product-qty').value || 1);
+    const original = Number(opt.dataset.original || 0);
+    const discounted = Number(opt.dataset.discounted || 0);
+    const stock = Number(opt.dataset.stock || 0);
+    const importPrice = Number(opt.dataset.import || 0);
+    let sell = Number(item.querySelector('.product-price').value || 0);
+    
+    if (!sell) sell = discounted;
+    
+    // Check stock
+    if (qty > stock) {
+      showMessage(`⚠️ Sản phẩm "${opt.textContent}" chỉ còn ${stock} trong kho!`, 'warning');
+      item.querySelector('.product-qty').value = stock;
+      return;
+    }
+    
+    // Check selling price - không được thấp hơn giá hiện bán
+    if (sell < discounted) {
+      showMessage(`⚠️ Giá bán sản phẩm "${opt.textContent}" không được thấp hơn giá hiện bán (${fmt(discounted * 1000)})!`, 'warning');
+      item.querySelector('.product-price').value = discounted * 1000;
+      sell = discounted;
+    }
+    
+    totalSelling += sell * qty;
+    totalOriginal += original * qty;
+    totalImportCost += importPrice * qty * 1000; // Convert to VNĐ
+    hasValidProducts = true;
+  });
+  
+  if (!hasValidProducts) {
+    showMessage('Vui lòng chọn ít nhất một sản phẩm', 'warning');
+    return;
+  }
+  
+  const shippingFee = Number(document.getElementById('shippingFee').value || 0);
+  
+  // Calculate discount based on voucher
+  let discountAmount = 0;
+  const voucherData = window.currentVoucherData;
+  
+  if (voucherData && voucherData.valid && voucherData.voucher) {
+    const voucher = voucherData.voucher;
+    const orderTotal = totalSelling + shippingFee;
+    
+    // Check minimum order amount (voucher values are in thousands, so multiply by 1000)
+    const minOrderAmountVND = voucher.min_order_amount * 1000;
+    if (orderTotal >= minOrderAmountVND) {
+      if (voucher.discount_type === 'amount') {
+        // Fixed amount discount (voucher.discount_value is in thousands, so multiply by 1000)
+        const voucherDiscount = voucher.discount_value * 1000;
+        discountAmount = Math.min(voucherDiscount, orderTotal);
+        
+        console.log('🔍 Voucher discount calculation:', {
+          voucherDiscount: voucherDiscount,
+          orderTotal: orderTotal,
+          discountAmount: discountAmount,
+          voucherValue: voucher.discount_value
+        });
+        
+        if (voucher.max_order_amount > 0) {
+          discountAmount = Math.min(discountAmount, voucher.max_order_amount * 1000);
+          console.log('🔍 After max_order_amount limit:', discountAmount);
+        }
+      } else if (voucher.discount_type === 'percentage') {
+        // Percentage discount (voucher.discount_value is already in percentage, no conversion needed)
+        discountAmount = (orderTotal * voucher.discount_value) / 100;
+        if (voucher.max_order_amount > 0) {
+          discountAmount = Math.min(discountAmount, voucher.max_order_amount * 1000);
+        }
+      }
+    }
+  }
+  
+  const totalWithShipping = totalSelling + shippingFee;
+  const finalTotal = Math.max(0, totalWithShipping - discountAmount);
+  
+  // Calculate commission based on new formula: (Giá bán - Phí ship - Giảm giá - Import price) * % hoa hồng
+  const commissionBase = Math.max(0, totalSelling  - discountAmount - totalImportCost);
+  
+  const ctv = getCtv(); 
+  const percent = (ctv && ctv.level ? Number(ctv.level.commission_percent||10) : 10)/100.0;
+  const commission = commissionBase * percent;
+  
+  // Update display
+  document.getElementById('poListed').textContent = fmt(totalOriginal * 1000);
+  document.getElementById('poSelling').textContent = fmt(totalSelling);
+  document.getElementById('poShipping').textContent = fmt(shippingFee);
+  document.getElementById('poDiscount').textContent = fmt(discountAmount);
+  document.getElementById('poTotal').textContent = fmt(finalTotal);
   document.getElementById('poCommission').textContent = fmt(commission);
 }
 
+// Create order with multiple products
 async function createOrder(){
-  const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
-  const sel = document.getElementById('poProduct'); const opt = sel.options[sel.selectedIndex];
-  const productId = Number(sel.value); const qty = Number(document.getElementById('poQty').value||1);
-  const sell = Number(document.getElementById('poPrice').value||0) || Number(opt.dataset.discounted||0);
-  const msg = document.getElementById('poMsg');
+  const ctv = getCtv(); 
+  if (!ctv){ 
+    location.href='/ctv/login/'; 
+    return; 
+  }
+  
+  // Validate required fields
+  const customerName = document.getElementById('customerName').value.trim();
+  const customerPhone = document.getElementById('customerPhone').value.trim();
+  
+  if (!customerName) {
+    showMessage('Vui lòng nhập tên khách hàng', 'danger');
+    return;
+  }
+  
+  if (!customerPhone) {
+    showMessage('Vui lòng nhập số điện thoại', 'danger');
+    return;
+  }
+  
+  // Collect all products
+  const productItems = document.querySelectorAll('.product-item');
+  const itemsData = [];
+  let hasValidProducts = false;
+  
+  productItems.forEach((item, index) => {
+    const select = item.querySelector('.product-select');
+    const opt = select.options[select.selectedIndex];
+    
+    if (!opt || !opt.value) return;
+    
+    const productId = Number(opt.value);
+    const qty = Number(item.querySelector('.product-qty').value || 1);
+    const discounted = Number(opt.dataset.discounted || 0);
+    let sell = Number(item.querySelector('.product-price').value || 0) || discounted;
+    
+    // Validate selling price - không được thấp hơn giá hiện bán
+    if (sell < discounted) {
+      showMessage(`⚠️ Giá bán sản phẩm "${opt.textContent}" không được thấp hơn giá hiện bán (${fmt(discounted * 1000)})!`, 'danger');
+      return;
+    }
+    
+    itemsData.push({
+      product: productId,
+      quantity: qty,
+      selling_price: sell // Include custom selling price
+    });
+    
+    hasValidProducts = true;
+  });
+  
+  if (!hasValidProducts) {
+    showMessage('Vui lòng chọn ít nhất một sản phẩm', 'danger');
+    return;
+  }
+  
+  const shippingFee = Number(document.getElementById('shippingFee').value || 0);
+  const paymentMethod = document.getElementById('paymentMethod').value;
+  const customerAddress = document.getElementById('customerAddress').value.trim();
+  const orderNotes = document.getElementById('orderNotes').value.trim();
+  const voucherCode = document.getElementById('voucherCode').value.trim();
+  
+  // Validate voucher/CTV code if provided
+  if (voucherCode) {
+    const result = await validateVoucherCTVCode(voucherCode);
+    if (!result.valid) {
+      showMessage(`⚠️ Mã "${voucherCode}" không tồn tại trong hệ thống!`, 'danger');
+      return;
+    }
+  }
+  
   const payload = {
-    customer_name: 'Khách của '+(ctv.full_name||ctv.code),
-    phone_number: 'N/A',
-    items_data: [{product: productId, quantity: qty}],
-    shipping_fee: 0,
+    customer_name: customerName,
+    phone_number: customerPhone,
+    address: customerAddress,
+    items_data: itemsData,
+    shipping_fee: shippingFee,
     collaborator_code: ctv.code,
+    payment_method: paymentMethod,
+    notes: orderNotes
   };
-  // Chúng ta ghi đè price_at_purchase phía admin khi xác nhận; ở đây tạo đơn nháp
-  const resp = await fetch('/orders/', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+  
+  // Add voucher code if provided - API will automatically calculate discount
+  if (voucherCode) {
+    payload.voucher_code = voucherCode;
+    console.log('🎫 Adding voucher code to order:', voucherCode);
+  }
+  
+  console.log('🚀 Creating order with payload:', payload);
+  
+  try {
+    const resp = await fetch('/orders/', {
+      method: 'POST', 
+      headers: {'Content-Type': 'application/json'}, 
+      body: JSON.stringify(payload)
+    });
+    
   const data = await resp.json().catch(()=>({}));
-  if (!resp.ok){ msg.textContent = data.detail || JSON.stringify(data) || 'Không tạo được đơn'; msg.className='small text-danger'; return; }
-  msg.textContent = `Đã tạo đơn #${data.id || ''} (mã: ${data.order_code||''}). Vui lòng gửi thông tin cho admin xác nhận.`; msg.className='small text-success';
+    
+    if (!resp.ok) {
+      showMessage(data.detail || JSON.stringify(data) || 'Không tạo được đơn', 'danger');
+      return;
+    }
+    
+    showMessage(`✅ Đã tạo đơn hàng thành công! Mã đơn: ${data.order_code || data.id}`, 'success');
+    
+    // Reset form
+    resetForm();
+    
+    // Reload recent orders
+    loadRecentOrders();
+    
+  } catch (error) {
+    console.error('Error creating order:', error);
+    showMessage('Lỗi khi tạo đơn hàng', 'danger');
+  }
 }
 
+// Reset form
+function resetForm() {
+  document.getElementById('customerName').value = '';
+  document.getElementById('customerPhone').value = '';
+  document.getElementById('customerAddress').value = '';
+  document.getElementById('paymentMethod').selectedIndex = 0;
+  document.getElementById('shippingFee').value = 30000; // Reset về 30000 (COD mặc định)
+  document.getElementById('voucherCode').value = '';
+  document.getElementById('orderNotes').value = '';
+  
+  // Reset voucher info
+  document.getElementById('voucherInfo').innerHTML = '<small class="text-muted">Thông tin mã sẽ hiển thị ở đây</small>';
+  document.getElementById('voucherInfo').className = 'form-control-plaintext p-2 bg-light rounded border';
+  window.currentVoucherData = null;
+  
+  // Reset products - keep only the first product and reset it
+  const productsList = document.getElementById('productsList');
+  const productItems = document.querySelectorAll('.product-item');
+  
+  // Remove all products except the first one
+  for (let i = productItems.length - 1; i > 0; i--) {
+    productItems[i].remove();
+  }
+  
+  // Reset the first product
+  const firstProduct = document.querySelector('.product-item');
+  if (firstProduct) {
+    firstProduct.querySelector('.product-select').selectedIndex = 0;
+    firstProduct.querySelector('.product-qty').value = 1;
+    firstProduct.querySelector('.product-price').value = '';
+    firstProduct.querySelector('.product-info').innerHTML = '';
+  }
+  
+  // Update remove buttons visibility
+  updateRemoveButtonsVisibility();
+  
+  // Auto update shipping fee after reset
+  updateShippingFee();
+  
+  // Reset calculations
+  document.getElementById('poListed').textContent = '-';
+  document.getElementById('poSelling').textContent = '-';
+  document.getElementById('poShipping').textContent = '-';
+  document.getElementById('poDiscount').textContent = '-';
+  document.getElementById('poTotal').textContent = '-';
+  document.getElementById('poCommission').textContent = '-';
+}
+
+// Update shipping fee based on payment method
+function updateShippingFee() {
+  const paymentMethod = document.getElementById('paymentMethod').value;
+  const shippingFeeInput = document.getElementById('shippingFee');
+  
+  let shippingFee = 0;
+  switch(paymentMethod) {
+    case 'cod':
+      shippingFee = 30000; // 30,000 VNĐ
+      break;
+    case 'bank':
+      shippingFee = 15000; // 15,000 VNĐ
+      break;
+    case 'cash':
+      shippingFee = 0; // 0 VNĐ
+      break;
+    default:
+      shippingFee = 0;
+  }
+  
+  shippingFeeInput.value = shippingFee;
+  
+  // Auto calculate after updating shipping fee
+  setTimeout(calc, 100);
+}
+
+// Validate voucher/CTV code and return detailed info
+async function validateVoucherCTVCode(code) {
+  if (!code || code.trim() === '') return { valid: true, type: null, data: null }; // Empty code is valid
+  
+  try {
+    let ctvData = null;
+    let voucherData = null;
+    
+    // Check if it's a CTV code (case insensitive)
+    // API endpoint: /ctvs/by-code/?code=CODE returns single object, not array
+    const ctvResponse = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/by-code/?code=${encodeURIComponent(code.toUpperCase())}`);
+    if (ctvResponse.ok) {
+      const ctvResult = await ctvResponse.json();
+      if (ctvResult && !ctvResult.error && ctvResult.code) {
+        ctvData = ctvResult;
+        console.log(`✅ Mã CTV "${code}" hợp lệ:`, ctvData);
+      }
+    } else if (ctvResponse.status !== 404) {
+      console.log(`❌ CTV API error: ${ctvResponse.status}`);
+    }
+    
+    // Check if it's a voucher code (case insensitive)
+    // Use the same approach as main.js - fetch all vouchers and filter
+    const voucherResponse = await fetch(`https://buddyskincare.pythonanywhere.com/vouchers/`);
+    console.log(`🔍 Voucher API response for all vouchers:`, voucherResponse.status, voucherResponse.ok);
+    
+    if (voucherResponse.ok) {
+      const allVouchers = await voucherResponse.json();
+      console.log(`📋 All vouchers:`, allVouchers);
+      
+      // Find voucher by code (case insensitive)
+      const foundVoucher = allVouchers.find(v => (v.code || '').toUpperCase() === code.toUpperCase());
+      console.log(`🎫 Found voucher for code "${code}":`, foundVoucher);
+      
+      if (foundVoucher) {
+        // Check if voucher is active and valid
+        const now = new Date();
+        const validFrom = new Date(foundVoucher.valid_from);
+        const validTo = new Date(foundVoucher.valid_to);
+        
+        console.log(`📅 Voucher validity check:`, {
+          now: now.toISOString(),
+          validFrom: validFrom.toISOString(),
+          validTo: validTo.toISOString(),
+          isActive: foundVoucher.is_active,
+          isValidTime: now >= validFrom && now <= validTo
+        });
+        
+        if (foundVoucher.is_active && now >= validFrom && now <= validTo) {
+          voucherData = foundVoucher;
+          console.log(`✅ Mã voucher "${code}" hợp lệ:`, foundVoucher);
+        } else {
+          console.log(`❌ Mã voucher "${code}" không còn hiệu lực:`, {
+            isActive: foundVoucher.is_active,
+            validFrom: foundVoucher.valid_from,
+            validTo: foundVoucher.valid_to,
+            now: now.toISOString()
+          });
+        }
+      } else {
+        console.log(`❌ No voucher found for code "${code}"`);
+      }
+    } else {
+      console.log(`❌ Voucher API error: ${voucherResponse.status}`);
+    }
+    
+    // Determine result type
+    if (ctvData && voucherData) {
+      return { valid: true, type: 'both', ctv: ctvData, voucher: voucherData };
+    } else if (ctvData) {
+      return { valid: true, type: 'ctv', ctv: ctvData, voucher: null };
+    } else if (voucherData) {
+      return { valid: true, type: 'voucher', ctv: null, voucher: voucherData };
+    } else {
+      console.log(`❌ Mã "${code}" không tồn tại trong hệ thống`);
+      return { valid: false, type: null, data: null };
+    }
+    
+  } catch (error) {
+    console.error('Error validating code:', error);
+    return { valid: false, type: null, data: null };
+  }
+}
+
+// Validate voucher/CTV code real-time
+async function validateVoucherCodeRealTime() {
+  const voucherCode = document.getElementById('voucherCode').value.trim();
+  const voucherInfoEl = document.getElementById('voucherInfo');
+  
+  if (!voucherCode) {
+    // Clear any previous validation messages
+    const msgEl = document.getElementById('poMsg');
+    const existingAlert = msgEl.querySelector('.alert');
+    if (existingAlert && existingAlert.textContent.includes('Mã')) {
+      existingAlert.remove();
+    }
+    // Reset voucher info display
+    voucherInfoEl.innerHTML = '<small class="text-muted">Thông tin mã sẽ hiển thị ở đây</small>';
+    voucherInfoEl.className = 'form-control-plaintext p-2 bg-light rounded border';
+    // Recalculate without discount
+    calc();
+    return;
+  }
+  
+  try {
+    const result = await validateVoucherCTVCode(voucherCode);
+    if (!result.valid) {
+      voucherInfoEl.innerHTML = `<small class="text-danger"><i class="fas fa-times-circle me-1"></i>Mã "${voucherCode}" không tồn tại</small>`;
+      voucherInfoEl.className = 'form-control-plaintext p-2 bg-danger bg-opacity-10 rounded border border-danger';
+      showMessage(`⚠️ Mã "${voucherCode}" không tồn tại trong hệ thống!`, 'warning');
+    } else {
+      // Clear validation message if code is valid
+      const msgEl = document.getElementById('poMsg');
+      const existingAlert = msgEl.querySelector('.alert');
+      if (existingAlert && existingAlert.textContent.includes('Mã')) {
+        existingAlert.remove();
+      }
+      
+      // Display appropriate message based on code type
+      let message = '';
+      let bgClass = 'bg-success bg-opacity-10 border border-success';
+      let textClass = 'text-success';
+      
+      if (result.type === 'both') {
+        const voucher = result.voucher;
+        const discountText = voucher.discount_type === 'amount' 
+          ? `Giảm ${fmt(voucher.discount_value * 1000)}` 
+          : `Giảm ${voucher.discount_value}%`;
+        
+        console.log('🔍 Voucher display info:', {
+          discountType: voucher.discount_type,
+          discountValue: voucher.discount_value,
+          displayText: discountText,
+          actualDiscount: voucher.discount_value * 1000
+        });
+        
+        message = `<small class="${textClass}"><i class="fas fa-check-circle me-1"></i>Voucher của ${result.ctv.full_name}<br><span class="small">${discountText}</span></small>`;
+      } else if (result.type === 'voucher') {
+        const voucher = result.voucher;
+        const discountText = voucher.discount_type === 'amount' 
+          ? `Giảm ${fmt(voucher.discount_value * 1000)}` 
+          : `Giảm ${voucher.discount_value}%`;
+        message = `<small class="${textClass}"><i class="fas fa-ticket-alt me-1"></i>Mã voucher hợp lệ<br><span class="small">${discountText}</span></small>`;
+      } else if (result.type === 'ctv') {
+        message = `<small class="${textClass}"><i class="fas fa-user me-1"></i>Đơn hàng của ${result.ctv.full_name}</small>`;
+      }
+      
+      voucherInfoEl.innerHTML = message;
+      voucherInfoEl.className = `form-control-plaintext p-2 ${bgClass} rounded border`;
+      
+      // Store voucher/CTV data for calculation
+      window.currentVoucherData = result;
+      
+      // Recalculate with discount
+      calc();
+    }
+  } catch (error) {
+    console.error('Error validating voucher code:', error);
+    voucherInfoEl.innerHTML = `<small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Lỗi kiểm tra mã</small>`;
+    voucherInfoEl.className = 'form-control-plaintext p-2 bg-danger bg-opacity-10 rounded border border-danger';
+    showMessage(`⚠️ Lỗi kiểm tra mã "${voucherCode}"!`, 'danger');
+  }
+}
+
+// Validate selling price
+function validateSellingPrice() {
+  const sel = document.getElementById('poProduct');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.value) return;
+  
+  const discounted = Number(opt.dataset.discounted || 0);
+  const sell = Number(document.getElementById('poPrice').value || 0);
+  
+  if (sell > 0 && sell < discounted) {
+    showMessage(`⚠️ Giá bán không được thấp hơn giá hiện bán (${fmt(discounted * 1000)})!`, 'warning');
+    // Tự động điều chỉnh về giá hiện bán
+    setTimeout(() => {
+      document.getElementById('poPrice').value = discounted * 1000;
+      calc(); // Recalculate after adjustment
+    }, 1000);
+  } else {
+    // Nếu giá hợp lệ, tính toán lại
+    calc();
+  }
+}
+
+// Show message
+function showMessage(message, type) {
+  const msgEl = document.getElementById('poMsg');
+  msgEl.innerHTML = `<div class="alert alert-${type} alert-dismissible fade show" role="alert">
+    ${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>`;
+  
+  // Auto hide after 5 seconds
+  setTimeout(() => {
+    const alert = msgEl.querySelector('.alert');
+    if (alert) {
+      alert.remove();
+    }
+  }, 5000);
+}
+
+// Load recent orders
+async function loadRecentOrders() {
+  try {
+    const ctv = getCtv();
+    if (!ctv) return;
+    
+    const response = await fetch(`/orders/?collaborator_code=${ctv.code}&ordering=-order_date`);
+    const orders = await response.json();
+    
+    const container = document.getElementById('recentOrders');
+    
+    if (orders.length === 0) {
+      container.innerHTML = '<div class="text-center text-muted">Chưa có đơn hàng nào</div>';
+      return;
+    }
+    
+    // Sắp xếp lại theo ID giảm dần để đảm bảo đơn mới nhất trước
+    const sortedOrders = orders.sort((a, b) => b.id - a.id);
+    
+    // Chỉ hiển thị 5 đơn gần đây nhất (ID cao nhất)
+    const recentOrders = sortedOrders.slice(0, 5);
+    
+    console.log('Recent orders (5 newest):', recentOrders.map(o => ({ id: o.id, order_code: o.order_code, customer_name: o.customer_name })));
+    
+    container.innerHTML = recentOrders.map(order => `
+      <div class="d-flex justify-content-between align-items-center mb-2 p-2 border-bottom">
+        <div>
+          <div class="fw-bold">#${order.order_code || order.id}</div>
+          <div class="small text-muted">${order.customer_name}</div>
+        </div>
+        <div class="text-end">
+          <div class="small">${fmt(order.total_amount*1000)}</div>
+          <div class="small">
+            <span class="badge bg-${order.status === 'pending' ? 'warning' : order.status === 'processing' ? 'info' : 'success'}">
+              ${order.status === 'pending' ? 'Chờ xử lý' : order.status === 'processing' ? 'Đang xử lý' : 'Hoàn thành'}
+            </span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
+  } catch (error) {
+    console.error('Error loading recent orders:', error);
+    document.getElementById('recentOrders').innerHTML = '<div class="text-center text-muted">Lỗi khi tải dữ liệu</div>';
+  }
+}
+
+// Test function to debug voucher validation
+async function testVoucherValidation(code) {
+  console.log(`🧪 Testing voucher validation for code: "${code}"`);
+  
+  try {
+    const result = await validateVoucherCTVCode(code);
+    console.log(`🧪 Test result:`, result);
+    
+    if (result.valid) {
+      console.log(`✅ Code "${code}" is valid:`, {
+        type: result.type,
+        hasCTV: !!result.ctv,
+        hasVoucher: !!result.voucher
+      });
+    } else {
+      console.log(`❌ Code "${code}" is invalid`);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error(`🧪 Test error for code "${code}":`, error);
+    return null;
+  }
+}
+
+// Initialize page
 document.addEventListener('DOMContentLoaded', () => {
-  const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
+  // Get CTV data from data attribute
+  const container = document.querySelector('.container-fluid');
+  const ctvDataAttr = container.getAttribute('data-ctv');
+  if (ctvDataAttr && ctvDataAttr !== 'null') {
+    try {
+      window.ctvData = JSON.parse(ctvDataAttr);
+    } catch (e) {
+      console.error('Error parsing CTV data:', e);
+      window.ctvData = null;
+    }
+  }
+  
+  const ctv = getCtv(); 
+  if (!ctv) { 
+    location.href='/ctv/login/'; 
+    return; 
+  }
+  
+  // Display CTV info
+  document.getElementById('ctvCode').textContent = ctv.code;
+  document.getElementById('ctvLevel').textContent = ctv.level ? ctv.level.name : 'Chưa xác định';
+  
+  // Set CTV code in the form
+  document.getElementById('ctvCode').value = ctv.code;
+  
+  // Auto update shipping fee on page load
+  updateShippingFee();
+  
+  // Load data
   loadProducts();
-  document.getElementById('poProduct')?.addEventListener('change', updateRef);
+  loadRecentOrders();
+  
+  // Event listeners
+  document.getElementById('shippingFee')?.addEventListener('input', calc);
+  document.getElementById('voucherCode')?.addEventListener('blur', validateVoucherCodeRealTime);
+  document.getElementById('voucherCode')?.addEventListener('input', debounce(validateVoucherCodeRealTime, 500));
   document.getElementById('btnCalc')?.addEventListener('click', calc);
   document.getElementById('btnCreate')?.addEventListener('click', createOrder);
+  document.getElementById('btnReset')?.addEventListener('click', resetForm);
+  
+  // Add product button
+  document.getElementById('addProductBtn')?.addEventListener('click', addProductRow);
+  
+  // Initialize event listeners for the first product
+  const firstProductItem = document.querySelector('.product-item');
+  if (firstProductItem) {
+    addProductRowEventListeners(firstProductItem);
+  }
+  
+  // Auto update shipping fee when payment method changes
+  document.getElementById('paymentMethod')?.addEventListener('change', updateShippingFee);
 });
 </script>
 {% endblock %}

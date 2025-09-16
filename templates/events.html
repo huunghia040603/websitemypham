@@ -6,193 +6,258 @@
 <div class="container my-5">
     <!-- Hero Section -->
     <div class="text-center mb-5">
-        <h1 class="display-4 fw-bold text-primary">🎉 Tất Cả Sự Kiện</h1>
-        <p class="lead text-muted">Khám phá các sự kiện hấp dẫn tại BuddySkincare</p>
+        <h1 class="display-4 fw-bold text-primary mb-3">🎉 Tất Cả Sự Kiện</h1>
+        <p class="lead text-muted mb-4">Khám phá các sự kiện hấp dẫn và ưu đãi đặc biệt tại BuddySkincare</p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="alert alert-info border-0 shadow-sm">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Thông báo:</strong> Tất cả sự kiện đều có thời gian giới hạn, hãy tham gia ngay để không bỏ lỡ cơ hội!
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Events Grid -->
-    <div class="row g-4">
-        <!-- Voucher Event -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 border-0 shadow-sm hover-lift">
-                <div class="position-relative">
-                    <img src="https://via.placeholder.com/400x250/667eea/ffffff?text=Vòng+Quay+May+Mắn" class="card-img-top" alt="Vòng Quay May Mắn">
-                    <div class="position-absolute top-0 start-0 m-3">
-                        <span class="badge bg-danger fs-6">HOT</span>
-                    </div>
-                    <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
-                        <div class="text-white">
-                            <small><i class="fas fa-clock me-1"></i>18:00 - 19:00 hàng ngày</small>
+    <!-- Active Events Section -->
+    <div class="mb-5">
+        <h2 class="h3 fw-bold text-primary mb-4">
+            <i class="fas fa-fire text-danger me-2"></i>Sự Kiện Đang Diễn Ra
+        </h2>
+        <div class="row g-4">
+            <!-- Lucky Number Event -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-lift event-card">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/sukien/qua.png') }}" class="card-img-top" alt="Con Số May Mắn" style="height: 200px; object-fit: cover;">
+                        <div class="position-absolute top-0 start-0 m-3">
+                            <span class="badge bg-danger fs-6">HOT</span>
+                        </div>
+                        <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                            <div class="text-white">
+                                <small><i class="fas fa-clock me-1"></i>Hàng ngày</small>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">🎰 Vòng Quay May Mắn</h5>
-                    <p class="card-text text-muted">Săn voucher khủng hàng ngày với vòng quay may mắn độc quyền!</p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-success">Đang diễn ra</span>
-                        <small class="text-muted">12 ô quà tặng</small>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">🍀 Con Số May Mắn</h5>
+                        <p class="card-text text-muted flex-grow-1">Tham gia chọn con số may mắn và nhận quà tặng hấp dẫn mỗi ngày!</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-success">Đang diễn ra</span>
+                            <small class="text-muted">Quà tặng hàng ngày</small>
+                        </div>
+                        <a href="/events/lucky-number" class="btn btn-primary w-100">
+                            <i class="fas fa-dice-one me-2"></i>Tham Gia Ngay
+                        </a>
                     </div>
-                    <a href="/events/voucher" class="btn btn-primary w-100">
-                        <i class="fas fa-play me-2"></i>Tham Gia Ngay
-                    </a>
                 </div>
             </div>
-        </div>
 
-        <!-- Flash Sale Event -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 border-0 shadow-sm hover-lift">
-                <div class="position-relative">
-                    <img src="https://via.placeholder.com/400x250/ff6b6b/ffffff?text=Flash+Sale" class="card-img-top" alt="Flash Sale">
-                    <div class="position-absolute top-0 start-0 m-3">
-                        <span class="badge bg-warning text-dark fs-6">FLASH</span>
-                    </div>
-                    <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
-                        <div class="text-white">
-                            <small><i class="fas fa-clock me-1"></i>24/7</small>
+            <!-- Flash Sale Event -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-lift event-card">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/sukien/banner01.png') }}" class="card-img-top" alt="Flash Sale" style="height: 200px; object-fit: cover;">
+                        <div class="position-absolute top-0 start-0 m-3">
+                            <span class="badge bg-warning text-dark fs-6">FLASH</span>
+                        </div>
+                        <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                            <div class="text-white">
+                                <small><i class="fas fa-bolt me-1"></i>24/7</small>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">⚡ Flash Sale Chớp Nhoáng</h5>
-                    <p class="card-text text-muted">Giảm giá sốc với số lượng có hạn, mua ngay kẻo lỡ!</p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-danger">Giảm đến 75%</span>
-                        <small class="text-muted">Số lượng có hạn</small>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">⚡ Flash Sale Chớp Nhoáng</h5>
+                        <p class="card-text text-muted flex-grow-1">Giảm giá sốc với số lượng có hạn, mua ngay kẻo lỡ!</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-danger">Giảm đến 75%</span>
+                            <small class="text-muted">Số lượng có hạn</small>
+                        </div>
+                        <a href="/products?tags=FlashSale" class="btn btn-danger w-100">
+                            <i class="fas fa-bolt me-2"></i>Mua Ngay
+                        </a>
                     </div>
-                    <a href="/events/flash-sale" class="btn btn-danger w-100">
-                        <i class="fas fa-bolt me-2"></i>Mua Ngay
-                    </a>
                 </div>
             </div>
-        </div>
 
-        <!-- Partner Event -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 border-0 shadow-sm hover-lift">
-                <div class="position-relative">
-                    <img src="https://via.placeholder.com/400x250/28a745/ffffff?text=Cộng+Tác+Viên" class="card-img-top" alt="Cộng Tác Viên">
-                    <div class="position-absolute top-0 start-0 m-3">
-                        <span class="badge bg-info fs-6">NEW</span>
-                    </div>
-                    <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
-                        <div class="text-white">
-                            <small><i class="fas fa-users me-1"></i>Mở rộng</small>
+            <!-- Partner Event -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-lift event-card">
+                    <div class="position-relative">
+                        <img src="{{ url_for('static', filename='image/sukien/banner02.png') }}" class="card-img-top" alt="Cộng Tác Viên" style="height: 200px; object-fit: cover;">
+                        <div class="position-absolute top-0 start-0 m-3">
+                            <span class="badge bg-info fs-6">NEW</span>
+                        </div>
+                        <div class="position-absolute bottom-0 start-0 w-100 p-3" style="background: linear-gradient(transparent, rgba(0,0,0,0.7));">
+                            <div class="text-white">
+                                <small><i class="fas fa-users me-1"></i>Mở rộng</small>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">🤝 Đăng Ký Cộng Tác Viên</h5>
-                    <p class="card-text text-muted">Thu nhập hấp dẫn với hoa hồng từ 10-30%!</p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-success">Hoa hồng cao</span>
-                        <small class="text-muted">Không giới hạn</small>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">🤝 Đăng Ký Cộng Tác Viên</h5>
+                        <p class="card-text text-muted flex-grow-1">Thu nhập hấp dẫn với hoa hồng từ 10-30% mỗi đơn hàng!</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-success">Hoa hồng cao</span>
+                            <small class="text-muted">Không giới hạn</small>
+                        </div>
+                        <a href="/events/partner" class="btn btn-success w-100">
+                            <i class="fas fa-handshake me-2"></i>Đăng Ký Ngay
+                        </a>
                     </div>
-                    <a href="/events/partner" class="btn btn-success w-100">
-                        <i class="fas fa-handshake me-2"></i>Đăng Ký Ngay
-                    </a>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Coming Soon Events -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 border-0 shadow-sm hover-lift">
-                <div class="position-relative">
-                    <img src="https://via.placeholder.com/400x250/6c757d/ffffff?text=Sắp+Diễn+Ra" class="card-img-top" alt="Sắp Diễn Ra">
-                    <div class="position-absolute top-0 start-0 m-3">
-                        <span class="badge bg-secondary fs-6">SOON</span>
+    <!-- Upcoming Events Section -->
+    <div class="mb-5">
+        <h2 class="h3 fw-bold text-primary mb-4">
+            <i class="fas fa-calendar-alt text-warning me-2"></i>Sự Kiện Sắp Diễn Ra
+        </h2>
+        <div class="row g-4">
+            <!-- Black Friday Event -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-lift event-card">
+                    <div class="position-relative">
+                        <div class="card-img-top bg-dark d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <div class="text-center text-white">
+                                <i class="fas fa-shopping-bag fa-3x mb-3"></i>
+                                <h4>Black Friday</h4>
+                            </div>
+                        </div>
+                        <div class="position-absolute top-0 start-0 m-3">
+                            <span class="badge bg-dark fs-6">COMING</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">🖤 Black Friday Sale</h5>
+                        <p class="card-text text-muted flex-grow-1">Sự kiện giảm giá lớn nhất năm với mức giảm lên đến 90%!</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-dark">Tháng 11</span>
+                            <small class="text-muted">Giảm đến 90%</small>
+                        </div>
+                        <button class="btn btn-dark w-100" onclick="notifyMe('Black Friday Sale')">
+                            <i class="fas fa-bell me-2"></i>Đăng Ký Nhận Thông Báo
+                        </button>
                     </div>
                 </div>
-                <div class="card-body">
-                    <h5 class="card-title">🎁 Sự Kiện Sắp Diễn Ra</h5>
-                    <p class="card-text text-muted">Các sự kiện đặc biệt đang được chuẩn bị...</p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-secondary">Sắp diễn ra</span>
-                        <small class="text-muted">Thông báo sớm</small>
+            </div>
+
+            <!-- Christmas Event -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-lift event-card">
+                    <div class="position-relative">
+                        <div class="card-img-top bg-danger d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <div class="text-center text-white">
+                                <i class="fas fa-gift fa-3x mb-3"></i>
+                                <h4>Christmas</h4>
+                            </div>
+                        </div>
+                        <div class="position-absolute top-0 start-0 m-3">
+                            <span class="badge bg-danger fs-6">FESTIVE</span>
+                        </div>
                     </div>
-                    <button class="btn btn-secondary w-100" disabled>
-                        <i class="fas fa-bell me-2"></i>Đăng Ký Nhận Thông Báo
-                    </button>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">🎄 Christmas Special</h5>
+                        <p class="card-text text-muted flex-grow-1">Mùa lễ hội với những ưu đãi đặc biệt và quà tặng hấp dẫn!</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-danger">Tháng 12</span>
+                            <small class="text-muted">Quà tặng đặc biệt</small>
+                        </div>
+                        <button class="btn btn-danger w-100" onclick="notifyMe('Christmas Special')">
+                            <i class="fas fa-bell me-2"></i>Đăng Ký Nhận Thông Báo
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Year Event -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card h-100 border-0 shadow-sm hover-lift event-card">
+                    <div class="position-relative">
+                        <div class="card-img-top bg-primary d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <div class="text-center text-white">
+                                <i class="fas fa-star fa-3x mb-3"></i>
+                                <h4>New Year</h4>
+                            </div>
+                        </div>
+                        <div class="position-absolute top-0 start-0 m-3">
+                            <span class="badge bg-primary fs-6">2025</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">✨ New Year Special</h5>
+                        <p class="card-text text-muted flex-grow-1">Chào đón năm mới với những ưu đãi đặc biệt và khuyến mãi hấp dẫn!</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-primary">Tháng 1/2025</span>
+                            <small class="text-muted">Ưu đãi đặc biệt</small>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="notifyMe('New Year Special')">
+                            <i class="fas fa-bell me-2"></i>Đăng Ký Nhận Thông Báo
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Black Friday Event -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 border-0 shadow-sm hover-lift">
-                <div class="position-relative">
-                    <img src="https://via.placeholder.com/400x250/000000/ffffff?text=Black+Friday" class="card-img-top" alt="Black Friday">
-                    <div class="position-absolute top-0 start-0 m-3">
-                        <span class="badge bg-dark fs-6">COMING</span>
+    <!-- Event Statistics -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow">
+                <div class="card-body py-4">
+                    <h4 class="text-center mb-4">📊 Thống Kê Sự Kiện</h4>
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="display-6 fw-bold">15+</div>
+                            <small>Sự kiện đã tổ chức</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="display-6 fw-bold">2,400+</div>
+                            <small>Khách hàng tham gia</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="display-6 fw-bold">300+</div>
+                            <small>Phần quà đã trao</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="display-6 fw-bold">98%</div>
+                            <small>Khách hàng hài lòng</small>
+                        </div>
                     </div>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">🖤 Black Friday Sale</h5>
-                    <p class="card-text text-muted">Sự kiện giảm giá lớn nhất năm đang đến!</p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-dark">Tháng 11</span>
-                        <small class="text-muted">Giảm đến 90%</small>
-                    </div>
-                    <button class="btn btn-dark w-100" disabled>
-                        <i class="fas fa-calendar me-2"></i>Sắp Diễn Ra
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Christmas Event -->
-        <div class="col-lg-4 col-md-6">
-            <div class="card h-100 border-0 shadow-sm hover-lift">
-                <div class="position-relative">
-                    <img src="https://via.placeholder.com/400x250/dc3545/ffffff?text=Christmas" class="card-img-top" alt="Christmas">
-                    <div class="position-absolute top-0 start-0 m-3">
-                        <span class="badge bg-danger fs-6">FESTIVE</span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <h5 class="card-title">🎄 Christmas Special</h5>
-                    <p class="card-text text-muted">Mùa lễ hội với những ưu đãi đặc biệt!</p>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-danger">Tháng 12</span>
-                        <small class="text-muted">Quà tặng đặc biệt</small>
-                    </div>
-                    <button class="btn btn-danger w-100" disabled>
-                        <i class="fas fa-gift me-2"></i>Sắp Diễn Ra
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Event Categories -->
-    <div class="row mt-5">
+    <div class="row mb-5">
         <div class="col-lg-8 mx-auto">
-            <div class="card bg-light">
+            <div class="card bg-light border-0 shadow-sm">
                 <div class="card-body">
                     <h4 class="text-center mb-4">📋 Phân Loại Sự Kiện</h4>
                     <div class="row">
                         <div class="col-md-4 text-center mb-3">
-                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <div class="bg-danger text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
                                 <i class="fas fa-fire fa-lg"></i>
                             </div>
-                            <h6 class="mt-2">Đang Diễn Ra</h6>
-                            <small class="text-muted">Sự kiện hot nhất</small>
+                            <h6 class="fw-bold">Đang Diễn Ra</h6>
+                            <small class="text-muted">Sự kiện hot nhất hiện tại</small>
                         </div>
                         <div class="col-md-4 text-center mb-3">
-                            <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <div class="bg-warning text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
                                 <i class="fas fa-clock fa-lg"></i>
                             </div>
-                            <h6 class="mt-2">Sắp Diễn Ra</h6>
-                            <small class="text-muted">Đăng ký nhận thông báo</small>
+                            <h6 class="fw-bold">Sắp Diễn Ra</h6>
+                            <small class="text-muted">Đăng ký nhận thông báo sớm</small>
                         </div>
                         <div class="col-md-4 text-center mb-3">
-                            <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <div class="bg-secondary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
                                 <i class="fas fa-history fa-lg"></i>
                             </div>
-                            <h6 class="mt-2">Đã Kết Thúc</h6>
-                            <small class="text-muted">Xem lại sự kiện cũ</small>
+                            <h6 class="fw-bold">Đã Kết Thúc</h6>
+                            <small class="text-muted">Xem lại sự kiện đã qua</small>
                         </div>
                     </div>
                 </div>
@@ -201,18 +266,19 @@
     </div>
 
     <!-- Newsletter Signup -->
-    <div class="row mt-5">
+    <div class="row">
         <div class="col-lg-6 mx-auto">
-            <div class="card bg-primary text-white text-center">
-                <div class="card-body py-4">
+            <div class="card bg-primary text-white text-center border-0 shadow">
+                <div class="card-body py-5">
                     <h4 class="mb-3">📧 Nhận Thông Báo Sự Kiện</h4>
-                    <p class="mb-4">Đăng ký để nhận thông báo sớm nhất về các sự kiện mới!</p>
+                    <p class="mb-4">Đăng ký để nhận thông báo sớm nhất về các sự kiện mới và ưu đãi đặc biệt!</p>
                     <div class="input-group">
-                        <input type="email" class="form-control" placeholder="Nhập email của bạn">
-                        <button class="btn btn-light" type="button">
-                            <i class="fas fa-paper-plane"></i>
+                        <input type="email" class="form-control" placeholder="Nhập email của bạn" id="eventEmail">
+                        <button class="btn btn-light" type="button" onclick="subscribeEvent()">
+                            <i class="fas fa-paper-plane me-2"></i>Đăng Ký
                         </button>
                     </div>
+                    <small class="mt-2 d-block opacity-75">Chúng tôi cam kết không spam và chỉ gửi thông tin hữu ích</small>
                 </div>
             </div>
         </div>
@@ -228,5 +294,67 @@
     transform: translateY(-5px);
     box-shadow: 0 10px 25px rgba(0,0,0,0.15) !important;
 }
+
+.event-card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.event-card .card-img-top {
+    border-radius: 15px 15px 0 0;
+}
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .display-4 {
+        font-size: 2rem;
+    }
+    
+    .lead {
+        font-size: 1rem;
+    }
+    
+    .event-card .card-img-top {
+        height: 150px !important;
+    }
+    
+    .display-6 {
+        font-size: 1.5rem;
+    }
+}
 </style>
-{% endblock %} 
+
+<script>
+function notifyMe(eventName) {
+    if (typeof showNotification === 'function') {
+        showNotification(`Đã đăng ký nhận thông báo cho sự kiện "${eventName}"!`, 'success');
+    } else {
+        alert(`Đã đăng ký nhận thông báo cho sự kiện "${eventName}"!`);
+    }
+}
+
+function subscribeEvent() {
+    const email = document.getElementById('eventEmail').value;
+    if (!email) {
+        if (typeof showNotification === 'function') {
+            showNotification('Vui lòng nhập email của bạn!', 'error');
+        } else {
+            alert('Vui lòng nhập email của bạn!');
+        }
+        return;
+    }
+    
+    if (typeof showNotification === 'function') {
+        showNotification('Đăng ký nhận thông báo sự kiện thành công!', 'success');
+    } else {
+        alert('Đăng ký nhận thông báo sự kiện thành công!');
+    }
+    
+    document.getElementById('eventEmail').value = '';
+}
+</script>
+{% endblock %}
