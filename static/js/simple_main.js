@@ -4,7 +4,7 @@ console.log('🚀 Simple main.js loaded');
 // Test function
 function initFlashSaleProducts() {
     console.log('🚀 Initializing Flash Sale products...');
-    const flashSaleApiUrl = '/api/products?tags=FlashSale';
+    const flashSaleApiUrl = 'https://buddyskincare.vn/backend/api/products?tags=FlashSale';
     const containerSelector = '#flash-sale-products';
     
     console.log('📡 Flash Sale API URL:', flashSaleApiUrl);

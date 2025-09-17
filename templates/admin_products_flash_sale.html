@@ -216,7 +216,7 @@
 
         function fetchAndRenderTags() {
             console.log('Đang tải danh sách tags...');
-            fetch('https://buddyskincare.pythonanywhere.com/tags/')
+            fetch('https://buddyskincare.vn/backend/api/tags/')
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Network response was not ok');
@@ -293,7 +293,7 @@
         }
 
         function fetchAllProducts() {
-            return fetch('https://buddyskincare.pythonanywhere.com/products/')
+            return fetch('https://buddyskincare.vn/backend/api/products/')
                 .then(response => response.json())
                 .then(products => {
                     allProducts = products;
@@ -302,7 +302,7 @@
         }
 
         function fetchProductsByTag(tag) {
-            return fetch(`https://buddyskincare.pythonanywhere.com/products/?tags=${tag}`)
+            return fetch(`https://buddyskincare.vn/backend/api/products/?tags=${tag}`)
                 .then(response => response.json())
                 .then(products => {
                     return products.map(p => p.id);
@@ -317,7 +317,7 @@
             console.log('Đang tải dữ liệu cho các modal...');
             
             // Tải danh sách tags
-            fetch('https://buddyskincare.pythonanywhere.com/tags/')
+            fetch('https://buddyskincare.vn/backend/api/tags/')
                 .then(response => response.json())
                 .then(tags => {
                     console.log('Tags đã được tải cho modal:', tags);
@@ -376,7 +376,7 @@
                 discounted_price_reduction: tagDiscount,
             };
 
-            fetch('https://buddyskincare.pythonanywhere.com/tags/', {
+            fetch('https://buddyskincare.vn/backend/api/tags/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newTag)
@@ -412,7 +412,7 @@
 
             const requestBody = { tag_id: selectedTagId, product_ids: selectedProductIds };
 
-            fetch(`https://buddyskincare.pythonanywhere.com/products/add_tag/`, {
+            fetch(`https://buddyskincare.vn/backend/api/products/add_tag/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(requestBody)
@@ -453,7 +453,7 @@
         currentEditingTagId = tagId;
         
         // Fetch tag details
-        fetch(`https://buddyskincare.pythonanywhere.com/tags/${tagId}/`)
+        fetch(`https://buddyskincare.vn/backend/api/tags/${tagId}/`)
             .then(response => response.json())
             .then(tag => {
                 // Populate edit form
@@ -485,7 +485,7 @@
         document.getElementById('viewTagProductsModalLabel').textContent = `Sản phẩm trong Tag: ${tagName}`;
         
         // Fetch products with this tag
-        fetch(`https://buddyskincare.pythonanywhere.com/products/?tags=${tagName}`)
+        fetch(`https://buddyskincare.vn/backend/api/products/?tags=${tagName}`)
             .then(response => response.json())
             .then(products => {
                 const productsList = document.getElementById('tagProductsList');
@@ -531,7 +531,7 @@
 
     function deleteTag(tagId, tagName) {
         if (confirm(`Bạn có chắc chắn muốn xóa tag "${tagName}"? Hành động này không thể hoàn tác.`)) {
-            fetch(`https://buddyskincare.pythonanywhere.com/tags/${tagId}/`, {
+            fetch(`https://buddyskincare.vn/backend/api/tags/${tagId}/`, {
                 method: 'DELETE'
             })
             .then(response => {
@@ -552,7 +552,7 @@
     function removeProductFromTag(productId, productName) {
         if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${productName}" khỏi tag này?`)) {
             // Remove tag from product
-            fetch(`https://buddyskincare.pythonanywhere.com/products/${productId}/remove_tag/`, {
+            fetch(`https://buddyskincare.vn/backend/api/products/${productId}/remove_tag/`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ tag_id: currentViewingTagId })
@@ -587,7 +587,7 @@
             discounted_price_reduction: document.getElementById('editTagDiscount').value
         };
 
-        fetch(`https://buddyskincare.pythonanywhere.com/tags/${currentEditingTagId}/`, {
+        fetch(`https://buddyskincare.vn/backend/api/tags/${currentEditingTagId}/`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(tagData)

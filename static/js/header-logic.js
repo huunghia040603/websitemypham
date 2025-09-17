@@ -126,7 +126,7 @@
 //     let searchTimeout;
     
 //     // Load products for search suggestions
-//     fetch('https://buddyskincare.pythonanywhere.com/products/')
+    //     fetch('https://buddyskincare.vn/backend/api/products/')
 //         .then(r => r.ok ? r.json() : [])
 //         .then(products => {
 //             allProducts = products || [];
@@ -437,7 +437,7 @@ function setupSearchRedirection() {
     let allProducts = [];
     let searchTimeout;
     
-    fetch('https://buddyskincare.pythonanywhere.com/products/')
+        fetch('https://buddyskincare.vn/backend/api/products/')
         .then(r => r.ok ? r.json() : [])
         .then(products => { allProducts = products || []; })
         .catch(() => {});

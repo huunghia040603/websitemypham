@@ -51,7 +51,7 @@ INSTALLED_APPS = [
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://buddyskincare.pythonanywhere.com", # Nếu Flask chạy trên domain này
+    "https://buddyskincare.vn", # Nếu Flask chạy trên domain này
     "http://127.0.0.1:8000",
     "http://localhost:8000",   # Nếu bạn test Flask trên localhost
     # Thêm bất kỳ domain nào khác mà bạn sẽ gọi API từ đó
@@ -175,10 +175,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-ALLOWED_HOSTS = ['buddyskincare.pythonanywhere.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['buddyskincare.vn', '127.0.0.1', 'localhost']
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://buddyskincare.pythonanywhere.com',
+    'https://buddyskincare.vn',
 ]
 
 

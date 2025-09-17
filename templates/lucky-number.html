@@ -1517,7 +1517,7 @@
 
 // Configuration
 const CONFIG = {
-  API_BASES: ['https://buddyskincare.pythonanywhere.com', ''],
+        API_BASES: ['https://buddyskincare.vn/backend/api', ''],
   TIMEOUT: 10000,
   RETRY_ATTEMPTS: 3,
   CACHE_DURATION: 300000, // 5 minutes
@@ -2253,7 +2253,7 @@ async function loadNewProducts() {
   if (!container) return;
   
   // Sử dụng cùng hàm fetchAndRenderProducts như trang index
-  await fetchAndRenderProducts('https://buddyskincare.pythonanywhere.com/products/?limit=20', '#newProductsContainer', createProductCard);
+        await fetchAndRenderProducts('https://buddyskincare.vn/backend/api/products/?limit=20', '#newProductsContainer', createProductCard);
 }
 
 // Hàm chung để fetch và render sản phẩm (copy từ main.js)

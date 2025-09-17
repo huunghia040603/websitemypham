@@ -480,7 +480,7 @@
 
 <script>
 // API Configuration
-const API_BASE_URL = 'https://buddyskincare.pythonanywhere.com';
+    const API_BASE_URL = 'https://buddyskincare.vn/backend/api';
 
 // Load skincare products from API
 async function loadSkincareProducts() {
@@ -723,7 +723,7 @@ function restoreFavoriteStates() {
 async function addToCartFromSkincare(productId) {
   try {
     // Get product details first
-    const productResponse = await fetch(`https://buddyskincare.pythonanywhere.com/products/${productId}/`);
+        const productResponse = await fetch(`https://buddyskincare.vn/backend/api/products/${productId}/`);
     if (!productResponse.ok) {
       showCartNotification('Không thể tải thông tin sản phẩm', 'error');
       return;
@@ -777,7 +777,7 @@ async function addToCartFromSkincare(productId) {
       if (typeof flyToCart === 'function' && productImage) {
         flyToCart(productImage, async () => {
           // Add to cart after animation
-          const response = await fetch('/api/add-to-cart', {
+          const response = await fetch('https://buddyskincare.vn/backend/api/add-to-cart', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -802,7 +802,7 @@ async function addToCartFromSkincare(productId) {
         });
       } else {
         // Add to cart without animation
-        const response = await fetch('/api/add-to-cart', {
+        const response = await fetch('https://buddyskincare.vn/backend/api/add-to-cart', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1064,7 +1064,7 @@ async function loadCartCount() {
   } else {
     // Fallback to direct API call
     try {
-      const response = await fetch('/api/cart');
+        const response = await fetch('https://buddyskincare.vn/backend/api/cart');
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -1179,7 +1179,7 @@ function getStatusBadgeClass(status) {
       const keywords = stepKeywords[step] || [];
       if (keywords.length === 0) return [];
 
-      const response = await fetch('https://buddyskincare.pythonanywhere.com/products/');
+        const response = await fetch('https://buddyskincare.vn/backend/api/products/');
       if (!response.ok) return [];
 
       const data = await response.json();

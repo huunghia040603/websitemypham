@@ -1216,7 +1216,7 @@ let ctvs = [];
 let currentApplication = null;
 
 // API endpoints
-const API_BASE = 'https://buddyskincare.pythonanywhere.com';
+    const API_BASE = 'https://buddyskincare.vn/backend/api';
 const ENDPOINTS = {
     applications: `${API_BASE}/ctv-applications/`,
     levels: `${API_BASE}/ctv-levels/`,
@@ -1695,9 +1695,9 @@ async function filterCTVOrders(ctvCode) {
     try {
         // Fetch all orders, vouchers, and CTV info
         const [ordersResponse, vouchersResponse, ctvResponse] = await Promise.all([
-            fetch('https://buddyskincare.pythonanywhere.com/orders/'),
-            fetch('https://buddyskincare.pythonanywhere.com/vouchers/'),
-            fetch(`https://buddyskincare.pythonanywhere.com/ctvs/by-code/?code=${ctvCode}`)
+        fetch('https://buddyskincare.vn/backend/api/orders/'),
+        fetch('https://buddyskincare.vn/backend/api/vouchers/'),
+        fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${ctvCode}`)
         ]);
         
         if (!ordersResponse.ok || !vouchersResponse.ok || !ctvResponse.ok) {
@@ -1942,7 +1942,7 @@ async function approveApplication() {
     
     // Kiểm tra SĐT đã tồn tại chưa
     try {
-        const phoneCheckResponse = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/by-phone/?phone=${app.phone}`);
+        const phoneCheckResponse = await fetch(`https://buddyskincare.vn/backend/api/ctvs/by-phone/?phone=${app.phone}`);
         if (phoneCheckResponse.ok) {
             const existingCTV = await phoneCheckResponse.json();
             showAlert(`Số điện thoại ${app.phone} đã được sử dụng bởi CTV: ${existingCTV.code}`, 'warning');
@@ -1956,7 +1956,7 @@ async function approveApplication() {
     const desiredCode = app.desired_code || app.ctv_code;
     if (desiredCode) {
         try {
-            const codeCheckResponse = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/by-code/?code=${desiredCode}`);
+            const codeCheckResponse = await fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${desiredCode}`);
             if (codeCheckResponse.ok) {
                 showAlert(`Mã CTV "${desiredCode}" đã được sử dụng`, 'warning');
                 return;
@@ -2072,13 +2072,13 @@ async function createCTVAccount(app) {
         };
         
         console.log('Sending approve request:', {
-            url: `https://buddyskincare.pythonanywhere.com/ctv-applications/${app.id}/approve/`,
+            url: `https://buddyskincare.vn/backend/api/ctv-applications/${app.id}/approve/`,
             method: 'POST',
             data: requestData
         });
         
         // Gọi API approve application (tạo CTV)
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctv-applications/${app.id}/approve/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctv-applications/${app.id}/approve/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2120,15 +2120,15 @@ async function testAPI() {
         console.log('Testing API endpoints...');
         
         // Test 1: Check applications
-        const appsResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctv-applications/');
+        const appsResponse = await fetch('https://buddyskincare.vn/backend/api/ctv-applications/');
         console.log('Applications API:', appsResponse.status, appsResponse.ok);
         
         // Test 2: Check CTVs
-        const ctvsResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctvs/');
+        const ctvsResponse = await fetch('https://buddyskincare.vn/backend/api/ctvs/');
         console.log('CTVs API:', ctvsResponse.status, ctvsResponse.ok);
         
         // Test 3: Check by-phone endpoint
-        const phoneResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctvs/by-phone/?phone=123456789');
+        const phoneResponse = await fetch('https://buddyskincare.vn/backend/api/ctvs/by-phone/?phone=123456789');
         console.log('By-phone API:', phoneResponse.status, phoneResponse.ok);
         
     } catch (error) {
@@ -2145,12 +2145,12 @@ async function rejectApplicationAPI(applicationId) {
         };
         
         console.log('Sending reject request:', {
-            url: `https://buddyskincare.pythonanywhere.com/ctv-applications/${applicationId}/`,
+            url: `https://buddyskincare.vn/backend/api/ctv-applications/${applicationId}/`,
             method: 'PATCH',
             data: requestData
         });
         
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctv-applications/${applicationId}/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctv-applications/${applicationId}/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -2200,7 +2200,7 @@ async function saveLevel() {
     }
     
     try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/ctv-levels/', {
+        const response = await fetch('https://buddyskincare.vn/backend/api/ctv-levels/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2245,7 +2245,7 @@ async function updateLevel() {
     }
     
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctv-levels/${id}/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctv-levels/${id}/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -2479,7 +2479,7 @@ async function updateCTV() {
         console.log('🔧 Updating CTV with data:', updateData);
         console.log('🔧 Level ID being sent:', levelId, 'as integer:', levelIdNum);
         
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/${id}/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctvs/${id}/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -2539,9 +2539,9 @@ async function viewCTVOrders(ctvCode) {
     try {
         // Fetch all orders, vouchers, and CTV info
         const [ordersResponse, vouchersResponse, ctvResponse] = await Promise.all([
-            fetch('https://buddyskincare.pythonanywhere.com/orders/'),
-            fetch('https://buddyskincare.pythonanywhere.com/vouchers/'),
-            fetch(`https://buddyskincare.pythonanywhere.com/ctvs/by-code/?code=${ctvCode}`)
+        fetch('https://buddyskincare.vn/backend/api/orders/'),
+        fetch('https://buddyskincare.vn/backend/api/vouchers/'),
+        fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${ctvCode}`)
         ]);
         
         if (!ordersResponse.ok || !vouchersResponse.ok || !ctvResponse.ok) {
@@ -2760,7 +2760,7 @@ let currentWithdrawalId = null;
 // Load withdrawals data
 async function loadWithdrawals() {
     try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/ctv-withdrawals/');
+        const response = await fetch('https://buddyskincare.vn/backend/api/ctv-withdrawals/');
         if (!response.ok) {
             throw new Error('Failed to load withdrawals');
         }
@@ -2906,7 +2906,7 @@ async function approveWithdrawal(id = null) {
     }
 
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctv-withdrawals/${withdrawalId}/approve/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctv-withdrawals/${withdrawalId}/approve/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -2941,7 +2941,7 @@ async function rejectWithdrawal(id = null) {
     }
 
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/ctv-withdrawals/${withdrawalId}/reject/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctv-withdrawals/${withdrawalId}/reject/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -3019,7 +3019,7 @@ async function sendWelcomeEmail(ctvId, ctvName, ctvEmail, buttonElement) {
     buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     try {
-        const response = await fetch(`/admin/api/ctvs/${ctvId}/send-welcome-email`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctvs/${ctvId}/send-welcome-email`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

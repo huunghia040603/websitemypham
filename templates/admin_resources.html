@@ -293,7 +293,7 @@ async function loadResources() {
             return;
         }
         
-        let url = 'https://buddyskincare.pythonanywhere.com/marketing-resources/';
+        let url = 'https://buddyskincare.vn/backend/api/marketing-resources/';
         const params = new URLSearchParams();
         
         if (typeFilter) params.append('resource_type', typeFilter);
@@ -317,7 +317,7 @@ async function loadResources() {
 async function loadProductImages() {
     try {
         // Gọi trực tiếp Django API thay vì endpoint có vấn đề
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/products/?status=new');
+        const response = await fetch('https://buddyskincare.vn/backend/api/products/?status=new');
         const products = await response.json();
         console.log(`🔍 Admin loaded ${products.length} products from Django API`);
         
@@ -461,7 +461,7 @@ function updateDeleteButton() {
 
 async function loadStats() {
     try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/marketing-resources/');
+        const response = await fetch('https://buddyskincare.vn/backend/api/marketing-resources/');
         const resources = await response.json();
         
         const total = resources.length;
@@ -523,7 +523,7 @@ async function uploadFiles() {
             
             while (retryCount <= maxRetries) {
                 try {
-                    cloudinaryResponse = await fetch('/api/upload-marketing-resource', {
+                    cloudinaryResponse = await fetch('https://buddyskincare.vn/backend/api/upload-marketing-resource', {
                         method: 'POST',
                         body: cloudinaryData
                     });
@@ -566,7 +566,7 @@ async function uploadFiles() {
                 is_active: formData.get('is_active') ? true : false
             };
             
-            const resourceResponse = await fetch('https://buddyskincare.pythonanywhere.com/marketing-resources/', {
+            const resourceResponse = await fetch('https://buddyskincare.vn/backend/api/marketing-resources/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -623,7 +623,7 @@ async function updateResource() {
     const resourceId = formData.get('id');
     
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/marketing-resources/${resourceId}/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -658,7 +658,7 @@ async function deleteResource(resourceId, event) {
     }
     
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/marketing-resources/${resourceId}/`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/`, {
             method: 'DELETE'
         });
         
@@ -685,7 +685,7 @@ document.getElementById('deleteSelectedBtn').addEventListener('click', async fun
     
     try {
         for (const resourceId of selectedResources) {
-            const response = await fetch(`https://buddyskincare.pythonanywhere.com/marketing-resources/${resourceId}/`, {
+            const response = await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/`, {
                 method: 'DELETE'
             });
             

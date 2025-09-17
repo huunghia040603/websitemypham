@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             // URL của API đăng ký
-            const registerApiUrl = 'https://buddyskincare.pythonanywhere.com/auth/register/';
+            const registerApiUrl = 'https://buddyskincare.vn/backend/api/auth/register/';
 
             // Gửi yêu cầu POST đến API
             fetch(registerApiUrl, {

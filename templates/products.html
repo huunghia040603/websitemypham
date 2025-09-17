@@ -493,8 +493,8 @@
 
     // Fetch categories - only show categories with products in stock
     Promise.all([
-      fetch('https://buddyskincare.pythonanywhere.com/category/').then(r => r.ok ? r.json() : []),
-      fetch('https://buddyskincare.pythonanywhere.com/products/').then(r => r.ok ? r.json() : [])
+        fetch('https://buddyskincare.vn/backend/api/category/').then(r => r.ok ? r.json() : []),
+        fetch('https://buddyskincare.vn/backend/api/products/').then(r => r.ok ? r.json() : [])
     ])
       .then(([categoriesList, productsList]) => {
         if (!Array.isArray(categoriesList) || !Array.isArray(productsList)) return;
@@ -521,8 +521,8 @@
 
     // Fetch brands - only show brands with products in stock
     Promise.all([
-      fetch('https://buddyskincare.pythonanywhere.com/brands/').then(r => r.ok ? r.json() : []),
-      fetch('https://buddyskincare.pythonanywhere.com/products/').then(r => r.ok ? r.json() : [])
+        fetch('https://buddyskincare.vn/backend/api/brands/').then(r => r.ok ? r.json() : []),
+        fetch('https://buddyskincare.vn/backend/api/products/').then(r => r.ok ? r.json() : [])
     ])
       .then(([brandsList, productsList]) => {
         if (!Array.isArray(brandsList) || !Array.isArray(productsList)) return;
@@ -550,7 +550,7 @@
         }).catch(() => {});
 
     // Fetch tags from products - only show tags with products in stock
-    fetch('https://buddyskincare.pythonanywhere.com/products/')
+        fetch('https://buddyskincare.vn/backend/api/products/')
       .then(r => r.ok ? r.json() : [])
       .then(products => {
         if (!Array.isArray(products)) return;
@@ -857,7 +857,7 @@
         let searchTimeout;
 
         // Load products for search
-        fetch('https://buddyskincare.pythonanywhere.com/products/')
+        fetch('https://buddyskincare.vn/backend/api/products/')
             .then(r => r.ok ? r.json() : [])
             .then(products => {
                 allProducts = products || [];

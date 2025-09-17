@@ -55,7 +55,7 @@
                 <button type="button" id="addProductBtn" class="btn btn-sm btn-outline-primary">
                   <i class="fas fa-plus me-1"></i>Thêm sản phẩm
                 </button>
-              </div>
+            </div>
             </div>
             
             <!-- Danh sách sản phẩm -->
@@ -65,19 +65,19 @@
                 <div class="product-item border rounded p-3 mb-3" data-product-index="0">
                   <div class="row g-3">
                     <div class="col-md-5">
-                      <label class="form-label">Chọn sản phẩm <span class="text-danger">*</span></label>
+              <label class="form-label">Chọn sản phẩm <span class="text-danger">*</span></label>
                       <select class="form-select product-select" required>
-                        <option value="">-- Chọn sản phẩm --</option>
-                      </select>
-                    </div>
+                <option value="">-- Chọn sản phẩm --</option>
+              </select>
+            </div>
                     <div class="col-md-2">
-                      <label class="form-label">Số lượng <span class="text-danger">*</span></label>
+              <label class="form-label">Số lượng <span class="text-danger">*</span></label>
                       <input type="number" min="1" value="1" class="form-control product-qty" required>
-                    </div>
-                    <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
                       <label class="form-label">Giá bán (VNĐ) <i class="fas fa-info-circle text-muted" title="Giá bán được tự động điền theo giá quy định của sản phẩm"></i></label>
                         <input type="number" class="form-control product-price" placeholder="Tự động" readonly style="background-color: #f8f9fa; cursor: not-allowed;" title="Giá bán được tự động điền theo giá quy định">
-                    </div>
+            </div>
                     <div class="col-md-2">
                       <label class="form-label">&nbsp;</label>
                       <div class="d-flex gap-1">
@@ -289,7 +289,7 @@ let allProducts = [];
 // Load products from API
 async function loadProducts(){
   try {
-    const res = await fetch('https://buddyskincare.pythonanywhere.com/products/?status=new');
+        const res = await fetch('https://buddyskincare.vn/backend/api/products/?status=new');
     allProducts = await res.json();
     
     // Load products into all select elements
@@ -308,11 +308,11 @@ function loadProductsIntoSelect(selectElement) {
   
   allProducts.forEach(p => {
     const opt = document.createElement('option');
-    opt.value = p.id; 
-    opt.textContent = `${p.name} - ${p.brand_name || 'Không xác định'} (Còn: ${p.stock_quantity || 0})`;
-    opt.dataset.original = p.original_price; 
-    opt.dataset.discounted = p.discounted_price;
-    opt.dataset.stock = p.stock_quantity || 0;
+      opt.value = p.id; 
+      opt.textContent = `${p.name} - ${p.brand_name || 'Không xác định'} (Còn: ${p.stock_quantity || 0})`;
+      opt.dataset.original = p.original_price; 
+      opt.dataset.discounted = p.discounted_price;
+      opt.dataset.stock = p.stock_quantity || 0;
     opt.dataset.import = p.import_price || 0;
     
     // Debug logging for specific product
@@ -549,23 +549,23 @@ function calc(){
     const stock = Number(opt.dataset.stock || 0);
     const importPrice = Number(opt.dataset.import || 0);
     let sell = Number(item.querySelector('.product-price').value || 0);
-    
-    if (!sell) sell = discounted;
-    
-    // Check stock
-    if (qty > stock) {
+  
+  if (!sell) sell = discounted;
+  
+  // Check stock
+  if (qty > stock) {
       showMessage(`⚠️ Sản phẩm "${opt.textContent}" chỉ còn ${stock} trong kho!`, 'warning');
       item.querySelector('.product-qty').value = stock;
-      return;
-    }
-    
-    // Check selling price - không được thấp hơn giá hiện bán
-    if (sell < discounted) {
+    return;
+  }
+  
+  // Check selling price - không được thấp hơn giá hiện bán
+  if (sell < discounted) {
       showMessage(`⚠️ Giá bán sản phẩm "${opt.textContent}" không được thấp hơn giá hiện bán (${fmt(discounted * 1000)})!`, 'warning');
       item.querySelector('.product-price').value = discounted * 1000;
-      sell = discounted;
-    }
-    
+    sell = discounted;
+  }
+  
     totalSelling += sell * qty;
     totalOriginal += original * qty;
     totalImportCost += importPrice * qty * 1000; // Convert to VNĐ
@@ -676,9 +676,9 @@ async function createOrder(){
     // Validate selling price - không được thấp hơn giá hiện bán
     if (sell < discounted) {
       showMessage(`⚠️ Giá bán sản phẩm "${opt.textContent}" không được thấp hơn giá hiện bán (${fmt(discounted * 1000)})!`, 'danger');
-      return;
-    }
-    
+    return;
+  }
+  
     itemsData.push({
       product: productId,
       quantity: qty,
@@ -839,7 +839,7 @@ async function validateVoucherCTVCode(code) {
     
     // Check if it's a CTV code (case insensitive)
     // API endpoint: /ctvs/by-code/?code=CODE returns single object, not array
-    const ctvResponse = await fetch(`https://buddyskincare.pythonanywhere.com/ctvs/by-code/?code=${encodeURIComponent(code.toUpperCase())}`);
+        const ctvResponse = await fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${encodeURIComponent(code.toUpperCase())}`);
     if (ctvResponse.ok) {
       const ctvResult = await ctvResponse.json();
       if (ctvResult && !ctvResult.error && ctvResult.code) {
@@ -852,7 +852,7 @@ async function validateVoucherCTVCode(code) {
     
     // Check if it's a voucher code (case insensitive)
     // Use the same approach as main.js - fetch all vouchers and filter
-    const voucherResponse = await fetch(`https://buddyskincare.pythonanywhere.com/vouchers/`);
+        const voucherResponse = await fetch(`https://buddyskincare.vn/backend/api/vouchers/`);
     console.log(`🔍 Voucher API response for all vouchers:`, voucherResponse.status, voucherResponse.ok);
     
     if (voucherResponse.ok) {

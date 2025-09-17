@@ -1,24 +1,24 @@
 // Admin Dashboard JavaScript
-const API_BASE_URL = 'https://buddyskincare.pythonanywhere.com';
-const FLASK_API_BASE = ''; // Use relative URLs for Flask API
+const API_BASE_URL = 'https://buddyskincare.vn/backend/api';
+const FLASK_API_BASE = 'https://buddyskincare.vn/backend/api'; // Use new API base
 
 // AdminAPI Object
 const AdminAPI = {
     // Orders
     async getOrders() {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders`);
+        const response = await fetch(`${FLASK_API_BASE}/orders`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     },
     
     async getOrder(orderId) {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}`);
+        const response = await fetch(`${FLASK_API_BASE}/orders/${orderId}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     },
     
     async confirmOrder(orderId) {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}/confirm`, {
+        const response = await fetch(`${FLASK_API_BASE}/orders/${orderId}/confirm`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -27,7 +27,7 @@ const AdminAPI = {
     },
     
     async cancelOrder(orderId) {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}/cancel`, {
+        const response = await fetch(`${FLASK_API_BASE}/orders/${orderId}/cancel`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
         });
@@ -37,13 +37,13 @@ const AdminAPI = {
     
     // Products
     async getProducts() {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/products`);
+        const response = await fetch(`${FLASK_API_BASE}/admin-products`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     },
     
     async updateProduct(productId, data) {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/products/${productId}`, {
+        const response = await fetch(`${FLASK_API_BASE}/admin-products/${productId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -54,7 +54,7 @@ const AdminAPI = {
     
     // Customers
     async getCustomers() {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/customers`);
+        const response = await fetch(`${FLASK_API_BASE}/customer`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     },
@@ -234,7 +234,7 @@ async function updateProduct(productId, data) {
     try {
         console.log(`🔧 Updating product ${productId} with data:`, data);
         
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/products/${productId}`, {
+        const response = await fetch(`${FLASK_API_BASE}/admin-products/${productId}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -263,7 +263,7 @@ async function updateProduct(productId, data) {
 // Order Management Functions
 async function fetchOrders() {
     try {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders`);
+        const response = await fetch(`${FLASK_API_BASE}/orders`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -300,7 +300,7 @@ async function updateOrder(orderId, data) {
 
 async function confirmOrder(orderId) {
     try {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}/confirm`, {
+        const response = await fetch(`${FLASK_API_BASE}/orders/${orderId}/confirm`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -335,7 +335,7 @@ async function confirmOrder(orderId) {
 
 async function cancelOrder(orderId) {
     try {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/orders/${orderId}/cancel`, {
+        const response = await fetch(`${FLASK_API_BASE}/orders/${orderId}/cancel`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -387,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Customer Management Functions
 async function fetchCustomers() {
     try {
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/customers`);
+        const response = await fetch(`${FLASK_API_BASE}/customer`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -403,7 +403,7 @@ async function fetchCustomers() {
 async function updateCustomer(customerId, data) {
     try {
         console.log('🔧 Updating customer', customerId, 'with data:', data);
-        const response = await fetch(`${FLASK_API_BASE}/admin/api/customers/${customerId}`, {
+        const response = await fetch(`${FLASK_API_BASE}/customer/${customerId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)

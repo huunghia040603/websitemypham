@@ -459,7 +459,7 @@ function checkFlashSaleStatus() {
     if (!hasFlashSaleTag) return;
     
     // Fetch active flash sale tag details
-    fetch('https://buddyskincare.pythonanywhere.com/tags/')
+        fetch('https://buddyskincare.vn/backend/api/tags/')
         .then(response => response.json())
         .then(tags => {
             const activeFlashSaleTag = tags.find(tag => 
@@ -674,7 +674,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Always use backend proxy to force download with correct headers
             const productId = (window.productData && (window.productData.id || window.productData.product_id)) || 'product';
             const filename = `${nameFromTitle}-${productId}.jpg`;
-            const proxy = `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+            const proxy = `https://buddyskincare.vn/backend/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
             const a = document.createElement('a');
             a.href = proxy;
             a.download = filename;

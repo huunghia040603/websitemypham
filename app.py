@@ -22,7 +22,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HT
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # API URL for PythonAnywhere
-API_BASE_URL = 'https://buddyskincare.pythonanywhere.com'
+API_BASE_URL = 'https://buddyskincare.vn/backend/api'
 
 # Cache for products
 products_cache = {

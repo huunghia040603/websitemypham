@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {string} searchTerm - Từ khóa cần tìm.
      */
     async function performSearch(searchTerm) {
-        const url = `https://buddyskincare.pythonanywhere.com/products/?search=${encodeURIComponent(searchTerm)}`;
+        const url = `https://buddyskincare.vn/backend/api/products/?search=${encodeURIComponent(searchTerm)}`;
         console.log('Searching for:', searchTerm);
         
         try {

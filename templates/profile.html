@@ -222,7 +222,7 @@
         }
 
         try {
-            const response = await fetch('https://buddyskincare.pythonanywhere.com/api/token/refresh/', {
+            const response = await fetch('https://buddyskincare.vn/backend/api/token/refresh/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -274,7 +274,7 @@
             const data = Object.fromEntries(formData.entries());
 
             try {
-                let response = await fetch('https://buddyskincare.pythonanywhere.com/profile/', {
+                let response = await fetch('https://buddyskincare.vn/backend/api/profile/', {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -289,7 +289,7 @@
                     if (newAccessToken) {
                         accessToken = newAccessToken;
                         // Thử lại yêu cầu với token mới
-                        response = await fetch('https://buddyskincare.pythonanywhere.com/profile/', {
+                        response = await fetch('https://buddyskincare.vn/backend/api/profile/', {
                             method: 'PATCH',
                             headers: {
                                 'Content-Type': 'application/json',

@@ -847,7 +847,7 @@ async function loadOrders() {
             }
         }
         
-        const response = await fetch('/admin/api/orders');
+        const response = await fetch('https://buddyskincare.vn/backend/api/orders');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -1448,7 +1448,7 @@ async function confirmOrder() {
                 
                 console.log(`Checking stock for product ${productId}: ${productName}`);
                 
-                const response = await fetch(`/api/product-stock/${productId}`);
+                const response = await fetch(`https://buddyskincare.vn/backend/api/product-stock/${productId}`);
                 if (!response.ok) {
                     console.warn(`Stock check failed for product ${productId}: ${response.status}`);
                     return null; // Skip this product
@@ -1484,7 +1484,7 @@ async function confirmOrder() {
         }
         
         // Direct API call
-        const response = await fetch(`/admin/api/orders/${currentOrderId}/confirm`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/orders/${currentOrderId}/confirm`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1554,7 +1554,7 @@ async function cancelOrder() {
     
     try {
         // Direct API call
-        const response = await fetch(`/admin/api/orders/${currentOrderId}/cancel`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/orders/${currentOrderId}/cancel`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1627,7 +1627,7 @@ async function shipOrder() {
     
     try {
         // Direct API call to update status to 'shipped'
-        const response = await fetch(`/admin/api/orders/${currentOrderId}/ship`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/orders/${currentOrderId}/ship`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -1991,7 +1991,7 @@ async function autoCompleteShippedOrders() {
     try {
         console.log('🔄 Checking for orders to auto-complete...');
         
-        const response = await fetch('/admin/api/orders/auto-complete', {
+        const response = await fetch('https://buddyskincare.vn/backend/api/orders/auto-complete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

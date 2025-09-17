@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const refreshToken = userData.refresh_token;
-        const apiUrl = 'https://buddyskincare.pythonanywhere.com/api/token/refresh/';
+        const apiUrl = 'https://buddyskincare.vn/backend/api/token/refresh/';
         const data = { refresh: refreshToken };
 
         try {
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Vui lòng nhập đầy đủ số điện thoại và mật khẩu.');
                 return;
             }
-            const apiUrl = 'https://buddyskincare.pythonanywhere.com/login/';
+            const apiUrl = 'https://buddyskincare.vn/backend/api/login/';
             const data = { identifier: phoneNumber, password: password };
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = document.getElementById('modalEmail').value.trim();
             if (!email) { alert('Vui lòng nhập địa chỉ email.'); return; }
-            const apiUrl = 'https://buddyskincare.pythonanywhere.com/users/forgot-password/';
+            const apiUrl = 'https://buddyskincare.vn/backend/api/users/forgot-password/';
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
                 if (response.ok) {
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Vui lòng điền Tên, Số điện thoại và Mật khẩu.');
                 return;
             }
-            const apiUrl = 'https://buddyskincare.pythonanywhere.com/users/register/';
+            const apiUrl = 'https://buddyskincare.vn/backend/api/users/register/';
             const data = { name, phone_number: phone, password, email };
             try {
                 const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -263,7 +263,7 @@ async function handleCredentialResponse(response) {
     const googleToken = response.credential;
     console.log("ID Token của Google:", googleToken);
 
-    const apiUrl = 'https://buddyskincare.pythonanywhere.com/api/auth/google/';
+        const apiUrl = 'https://buddyskincare.vn/backend/api/auth/google/';
     const data = {
         auth_token: googleToken
     };

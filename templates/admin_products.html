@@ -503,7 +503,7 @@
 
         async function fetchBrandsFromAPI() {
             try {
-                const response = await fetch('https://buddyskincare.pythonanywhere.com/brands/');
+                const response = await fetch('https://buddyskincare.vn/backend/api/brands/');
                 if (response.ok) {
                     const brands = await response.json();
                     return brands.map(brand => brand.name || brand).filter(Boolean);
@@ -555,7 +555,7 @@
         async function populateFilters() {
             // Populate category filter from API
             try {
-                const response = await fetch('https://buddyskincare.pythonanywhere.com/category/');
+                const response = await fetch('https://buddyskincare.vn/backend/api/category/');
                 if (response.ok) {
                     const categories = await response.json();
                     const categorySelect = document.getElementById('categoryFilter');
@@ -651,7 +651,7 @@
                 const formData = new FormData();
                 formData.append('file', file);
 
-                const resp = await fetch('https://buddyskincare.pythonanywhere.com/products/import-xlsx/', {
+                const resp = await fetch('https://buddyskincare.vn/backend/api/products/import-xlsx/', {
                     method: 'POST',
                     body: formData
                 });

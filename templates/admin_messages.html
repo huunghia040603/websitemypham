@@ -1469,7 +1469,7 @@ async function sendMessage() {
 async function fetchUserInfoFromAPI(userId, conversationId) {
     try {
         console.log(`Fetching user info for userId: ${userId}`);
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/customer/${userId}`);
+        const response = await fetch(`https://buddyskincare.vn/backend/api/customer/${userId}`);
         
         if (response.ok) {
             const userData = await response.json();

@@ -293,7 +293,7 @@ async function fetchRealAnalyticsData() {
     console.log('🔍 Fetching real analytics data from Google Analytics...');
     
     // Use Google Analytics Reporting API via our backend
-    const response = await fetch('/admin/api/email-analytics', {
+        const response = await fetch('https://buddyskincare.vn/backend/api/email-analytics', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

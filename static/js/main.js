@@ -11,7 +11,7 @@ function generateRandomDiscount() {
 // Fetch voucher by code from backend API
 async function fetchVoucherFromAPI(code){
     try{
-        const res = await fetch('https://buddyskincare.pythonanywhere.com/vouchers/');
+        const res = await fetch('https://buddyskincare.vn/backend/api/vouchers/');
         if(!res.ok) return null;
         const list = await res.json();
         const found = (list||[]).find(v => (v.code||'').toUpperCase() === String(code||'').toUpperCase());
@@ -25,7 +25,7 @@ async function fetchVoucherFromAPI(code){
 // Fetch CTV by code from backend API
 async function fetchCTVFromAPI(code){
     try{
-        const res = await fetch('https://buddyskincare.pythonanywhere.com/ctvs/');
+        const res = await fetch('https://buddyskincare.vn/backend/api/ctvs/');
         if(!res.ok) return null;
         const list = await res.json();
         const found = (list||[]).find(ctv => (ctv.code||'').toUpperCase() === String(code||'').toUpperCase());
@@ -910,7 +910,7 @@ async function handlePlaceOrder() {
                         const uploadFormData = new FormData();
                         uploadFormData.append('file', proofInput.files[0]);
                         
-                        const uploadResponse = await fetch('/api/upload-bank-transfer', {
+                        const uploadResponse = await fetch('https://buddyskincare.vn/backend/api/upload-bank-transfer', {
                             method: 'POST',
                             body: uploadFormData
                         });
@@ -1016,7 +1016,7 @@ async function handlePlaceOrder() {
         try {
 
             // Send order to API
-            const response = await fetch('https://buddyskincare.pythonanywhere.com/orders/', {
+            const response = await fetch('https://buddyskincare.vn/backend/api/orders/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1055,7 +1055,7 @@ async function handlePlaceOrder() {
                 try {
                     const appliedVoucher = getAppliedVoucher();
                     if (appliedVoucher && appliedVoucher.id) {
-                        const usageRes = await fetch(`https://buddyskincare.pythonanywhere.com/vouchers/${appliedVoucher.id}/`, {
+                        const usageRes = await fetch(`https://buddyskincare.vn/backend/api/vouchers/${appliedVoucher.id}/`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1306,7 +1306,7 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
 // Hàm khởi tạo cho Flash Sale
 function initFlashSaleProducts() {
 
-    const flashSaleApiUrl = `https://buddyskincare.pythonanywhere.com/products/?tags=${activeFlashSaleCode}`;
+        const flashSaleApiUrl = `https://buddyskincare.vn/backend/api/products/?tags=${activeFlashSaleCode}`;
 
     console.log("activeFlashSaleCode", activeFlashSaleCode);
 
@@ -1321,7 +1321,7 @@ function initFlashSaleProducts() {
 function initAoThunProducts() {
     // Tạm thời sử dụng API sản phẩm mới và filter client-side
     // Sau này có thể tạo danh mục "Áo thun" riêng
-    const aoThunApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?status=new';
+        const aoThunApiUrl = 'https://buddyskincare.vn/backend/api/products/?status=new';
     const containerSelector = '#ao-thun-products';
     
     // Gọi API và filter client-side
@@ -1442,14 +1442,14 @@ async function renderFilteredProducts(products, containerSelector) {
 
 // Hàm khởi tạo cho sản phẩm mới
 function initNewProducts() {
-    const newProductsApiUrl = 'https://buddyskincare.pythonanywhere.com/latest-products/';
+        const newProductsApiUrl = 'https://buddyskincare.vn/backend/api/latest-products/';
     const containerSelector = '#new-product-products';
     fetchAndRenderProducts(newProductsApiUrl, containerSelector, createProductCard);
 }
 
 // Hàm khởi tạo cho sản phẩm nổi bật
 function initFeaturedProducts() {
-    const featuredProductsApiUrl = 'https://buddyskincare.pythonanywhere.com/products/?sort=sales';
+        const featuredProductsApiUrl = 'https://buddyskincare.vn/backend/api/products/?sort=sales';
     const containerSelector = '#featured-products-container';
     fetchAndRenderProducts(featuredProductsApiUrl, containerSelector, createProductCard);
 }
@@ -1811,7 +1811,7 @@ function initCountdownTimer() {
     const countdownElements = document.querySelectorAll('.countdown-number');
     if (countdownElements.length === 0) return;
 
-    fetch('https://buddyskincare.pythonanywhere.com/tags/?status=active')
+        fetch('https://buddyskincare.vn/backend/api/tags/?status=active')
         .then(response => {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -2537,7 +2537,7 @@ function initCartQuantityControls() {
     // Function to check stock and update quantity
     async function checkStockAndUpdateQuantity(productId, newQuantity, input, lineTotalEl, unitPrice) {
         try {
-            const response = await fetch(`/api/product-stock/${productId}`);
+            const response = await fetch(`https://buddyskincare.vn/backend/api/product-stock/${productId}`);
             let stockQuantity = 999; // Default fallback
             
             if (response.ok) {
@@ -2578,7 +2578,7 @@ function initCartQuantityControls() {
                 }
                 
                 // Check stock availability before updating
-                const response = await fetch(`/api/product-stock/${productId}`);
+                const response = await fetch(`https://buddyskincare.vn/backend/api/product-stock/${productId}`);
                 let stockQuantity = 999; // Default fallback
                 
                 if (response.ok) {
@@ -2738,7 +2738,7 @@ async function addProductToCart(productId, productName, productPrice, productImg
     const qty = Math.max(1, parseInt(quantity, 10) || 1);
         
         // Fetch product stock information from API
-        const response = await fetch(`/api/product-stock/${productId}`);
+        const response = await fetch(`https://buddyskincare.vn/backend/api/product-stock/${productId}`);
         let stockQuantity = 999; // Default fallback
         
         if (response.ok) {
@@ -3523,7 +3523,7 @@ window.manualSelectPayment = function(method = 'bankTransfer') {
 
 // Hàm khởi tạo cho sản phẩm gợi ý trong checkout
 function initCheckoutSuggestedProducts() {
-    const suggestedProductsApiUrl = `https://buddyskincare.pythonanywhere.com/products/?tags=${activeFlashSaleCode}&limit=10`;
+        const suggestedProductsApiUrl = `https://buddyskincare.vn/backend/api/products/?tags=${activeFlashSaleCode}&limit=10`;
     const containerSelector = '#checkout-suggested-products';
     fetchAndRenderSuggestedProducts(suggestedProductsApiUrl, containerSelector);
     
@@ -3742,7 +3742,7 @@ function initProductsPage() {
         else if (path.includes('/products/used')) condition = 'used';
     }
 
-    let apiUrl = 'https://buddyskincare.pythonanywhere.com/products/';
+        let apiUrl = 'https://buddyskincare.vn/backend/api/products/';
     const qs = [];
     if (query) qs.push(`search=${encodeURIComponent(query)}`);
     if (condition) qs.push(`condition=${encodeURIComponent(condition)}`);
@@ -4114,7 +4114,7 @@ defineProductDetailInit = (function(){
     async function fetchBrandInfo(brandName, descEl, description) {
         try {
             console.log('🔍 Fetching brand info for:', brandName);
-            const response = await fetch('https://buddyskincare.pythonanywhere.com/brands/');
+            const response = await fetch('https://buddyskincare.vn/backend/api/brands/');
             if (response.ok) {
                 const brands = await response.json();
                 console.log('📦 Total brands found:', brands.length);
@@ -4593,7 +4593,7 @@ defineProductDetailInit = (function(){
         }
         
         // Fallback: fetch từ API PythonAnywhere
-        const apiUrl = `https://buddyskincare.pythonanywhere.com/products/${id}/`;
+        const apiUrl = `https://buddyskincare.vn/backend/api/products/${id}/`;
         console.log('Fetching product from API:', apiUrl);
         fetch(apiUrl)
             .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
@@ -4702,7 +4702,7 @@ function initRelatedProducts() {
     if (!container) return;
 
     // Build API: fetch a list (we'll randomize client-side) then slice 10
-    const apiUrl = 'https://buddyskincare.pythonanywhere.com/products/';
+        const apiUrl = 'https://buddyskincare.vn/backend/api/products/';
 
     fetch(apiUrl)
         .then(r => r.ok ? r.json() : Promise.reject(new Error('API error')))
@@ -4822,7 +4822,7 @@ window.initProductDetailPageGlobal = function() {
     console.log('⚠️ No product data from Flask template, trying API...');
     
     // Fallback: fetch từ API PythonAnywhere
-    const apiUrl = `https://buddyskincare.pythonanywhere.com/products/${id}/`;
+        const apiUrl = `https://buddyskincare.vn/backend/api/products/${id}/`;
     console.log('Fetching product from API:', apiUrl);
     fetch(apiUrl)
         .then(r => r.ok ? r.json() : Promise.reject(new Error('Not found')))
@@ -4849,7 +4849,7 @@ async function notifyAdminNewOrder(orderId) {
     try {
         console.log(`[Order Notification] Sending notification for order ${orderId}`);
         
-        const response = await fetch('/api/send-new-order-notification', {
+        const response = await fetch('https://buddyskincare.vn/backend/api/send-new-order-notification', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

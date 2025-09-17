@@ -616,7 +616,7 @@ async function loadBlogDetail() {
     const blogContent = document.getElementById('blogContent');
     
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/blog/${blogId}/`);
+        const response = await fetch(`https://buddyskincare.vn/backend/api/blog/${blogId}/`);
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -669,7 +669,7 @@ function renderBlogContent(blog) {
 // Load related posts
 async function loadRelatedPosts(currentTag) {
     try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/blog/');
+        const response = await fetch('https://buddyskincare.vn/backend/api/blog/');
         if (!response.ok) return;
         
         const data = await response.json();

@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 async function loadAllResources() {
     try {
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/marketing-resources/');
+        const response = await fetch('https://buddyskincare.vn/backend/api/marketing-resources/');
         const resources = await response.json();
         displayResources(resources, 'allResources');
     } catch (error) {
@@ -169,7 +169,7 @@ async function loadAllResources() {
 
 async function loadResourcesByType(type) {
     try {
-        const response = await fetch(`https://buddyskincare.pythonanywhere.com/marketing-resources/by-type/?type=${type}`);
+        const response = await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/by-type/?type=${type}`);
         const resources = await response.json();
         const containerId = type === 'new_product' ? 'newProductResources' : 
                            type === 'event' ? 'eventResources' : 'articleResources';
@@ -185,7 +185,7 @@ async function loadResourcesByType(type) {
 async function loadProductImages() {
     try {
         // Gọi trực tiếp Django API thay vì Flask API
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/products/?status=new');
+        const response = await fetch('https://buddyskincare.vn/backend/api/products/?status=new');
         const products = await response.json();
         console.log(`🔍 Loaded ${products.length} products from Django API`);
         
@@ -323,7 +323,7 @@ function displayResources(resources, containerId) {
 async function downloadResource(resourceId, fileUrl, fileName) {
     try {
         // Track download first
-        await fetch(`https://buddyskincare.pythonanywhere.com/marketing-resources/${resourceId}/download/`, {
+        await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/download/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -361,7 +361,7 @@ async function downloadResource(resourceId, fileUrl, fileName) {
 
 async function trackDownload(resourceId) {
     try {
-        await fetch(`https://buddyskincare.pythonanywhere.com/marketing-resources/${resourceId}/download/`, {
+        await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/download/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -1,7 +1,7 @@
 const blogList = document.getElementById('blog-list');
 const paginationContainer = document.getElementById('pagination-container');
 const filterButtons = document.querySelectorAll('.filter-btn');
-const API_URL = 'https://buddyskincare.pythonanywhere.com/blog/';
+const API_URL = 'https://buddyskincare.vn/backend/api/blog/';
 
 let currentPage = 1;
 let currentTag = 'all';

@@ -36,6 +36,9 @@
             <div class="carousel-item">
                 <img src="{{ url_for('static', filename='image/sukien/banner02.png') }}" class="d-block w-100" alt="Banner 1" style="height: 520px; object-fit: cover;">
             </div>
+            <div class="carousel-item">
+                <img src="{{ url_for('static', filename='image/sukien/banner03.png') }}" class="d-block w-100" alt="Banner 1" style="height: 520px; object-fit: cover;">
+            </div>
         </div>
         <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
             <span class="carousel-control-prev-icon"></span>
@@ -420,7 +423,7 @@ async function loadHomepageBlogPosts() {
     
     try {
         // Load all posts without pagination
-        const response = await fetch('https://buddyskincare.pythonanywhere.com/blog/');
+        const response = await fetch('https://buddyskincare.vn/backend/api/blog/');
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }

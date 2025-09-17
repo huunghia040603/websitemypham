@@ -234,7 +234,7 @@ async function loadDashboardStats() {
         
         // Load CTV Applications (chỉ đếm những đơn chờ duyệt)
         try {
-            const applicationsResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctv-applications/');
+            const applicationsResponse = await fetch('https://buddyskincare.vn/backend/api/ctv-applications/');
             if (applicationsResponse.ok) {
                 const applications = await applicationsResponse.json();
                 const pendingApplications = applications.filter(app => app.status === 'pending').length;
@@ -246,7 +246,7 @@ async function loadDashboardStats() {
         
         // Load Withdrawals
         try {
-            const withdrawalsResponse = await fetch('https://buddyskincare.pythonanywhere.com/ctv-withdrawals/');
+            const withdrawalsResponse = await fetch('https://buddyskincare.vn/backend/api/ctv-withdrawals/');
             if (withdrawalsResponse.ok) {
                 const withdrawals = await withdrawalsResponse.json();
                 const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').length;

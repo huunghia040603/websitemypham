@@ -52,7 +52,7 @@ BuddySkincare là website bán mỹ phẩm với giao diện hiện đại, tố
 ### Backend
 - **Python Flask** - Web framework
 - **Jinja2** - Template engine
-- **requests** - Gọi API tới `https://buddyskincare.pythonanywhere.com`
+- **requests** - Gọi API tới `https://buddyskincare.vn/backend/api`
 - **smtplib** - Gửi email (Gmail SMTP)
 - **cloudinary** - Lưu ảnh chuyển khoản
 
@@ -217,7 +217,7 @@ Website được thiết kế responsive cho các thiết bị:
 
 ## 🧩 Tích hợp & API
 
-- Nguồn dữ liệu: `API_BASE_URL = https://buddyskincare.pythonanywhere.com`
+- Nguồn dữ liệu: `API_BASE_URL = https://buddyskincare.vn/backend/api`
 - Các route quan trọng (Flask):
   - Trang chủ: `/`
   - Danh sách SP: `/products`

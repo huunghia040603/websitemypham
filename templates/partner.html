@@ -231,7 +231,7 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
     async function uploadImage(file){
       const fd = new FormData();
       fd.append('file', file);
-      const resp = await fetch('/api/upload-bank-transfer', { method: 'POST', body: fd });
+        const resp = await fetch('https://buddyskincare.vn/backend/api/upload-bank-transfer', { method: 'POST', body: fd });
       if (!resp.ok) throw new Error('Upload ảnh thất bại');
       const data = await resp.json();
       if (!data.success || !data.url) throw new Error('Upload ảnh thất bại');
@@ -256,7 +256,7 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
       agreed: true
     };
 
-    const resp = await fetch('https://buddyskincare.pythonanywhere.com/ctv-applications/', {
+        const resp = await fetch('https://buddyskincare.vn/backend/api/ctv-applications/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
