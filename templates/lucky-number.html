@@ -1012,6 +1012,80 @@
     .countdown-number { font-size: 1.5rem; }
     .number-pill { font-size: 2rem; padding: 0.75rem 1.5rem; }
     .number-input { font-size: 2rem; padding: 0.25rem 0.1rem; }
+    
+    /* Mobile product carousel fixes */
+    .homepage-products {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      margin-right: 80px; /* Space for floating buttons */
+    }
+    
+    .homepage-products::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .slider-item {
+      flex-shrink: 0 !important;
+      width: 160px !important;
+      max-width: 160px !important;
+    }
+    
+    .product-card {
+      width: 100%;
+      max-width: 100%;
+      min-width: 140px;
+    }
+    
+    .product-card .card-img-top {
+      height: 180px !important;
+    }
+    
+    .product-card .card-title {
+      font-size: 11px !important;
+      line-height: 1.2 !important;
+      height: 14px !important;
+    }
+    
+    .product-card .text-muted {
+      font-size: 9px !important;
+    }
+    
+    .product-card .btn {
+      font-size: 11px !important;
+      padding: 6px !important;
+    }
+  }
+  
+  /* Extra small mobile */
+  @media (max-width: 480px) {
+    .slider-item {
+      width: 140px !important;
+      max-width: 140px !important;
+    }
+    
+    .product-card {
+      min-width: 120px;
+    }
+    
+    .product-card .card-img-top {
+      height: 160px !important;
+    }
+    
+    .product-card .card-title {
+      font-size: 10px !important;
+      height: 12px !important;
+    }
+    
+    .product-card .text-muted {
+      font-size: 8px !important;
+    }
+    
+    .product-card .btn {
+      font-size: 10px !important;
+      padding: 5px !important;
+    }
   }
 
   /* === ACCESSIBILITY === */
@@ -1393,7 +1467,7 @@
                    <i class="fas fa-users me-2 text-info"></i>
                    Danh sách tham gia <span id="participantCount" class="badge bg-info ms-2">0 người</span>
                  </h3>
-                 <button class="btn btn-outline-info btn-sm" onclick="loadParticipants()">
+                 <button class="btn btn-outline-info btn-sm" onclick="loadParticipants()" id="refreshParticipantsBtn">
                    <i class="fas fa-sync-alt me-1"></i>
                    Làm mới
                  </button>
@@ -2112,6 +2186,20 @@ let searchMode = false;
 async function loadParticipants() {
   const loadingEl = document.getElementById('participantsLoading');
   const bodyEl = document.getElementById('participantsBody');
+  const refreshBtn = document.getElementById('refreshParticipantsBtn');
+  
+  // Show loading state on refresh button
+  if (refreshBtn) {
+    const originalHTML = refreshBtn.innerHTML;
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tải...';
+    
+    // Reset button after 3 seconds even if error occurs
+    setTimeout(() => {
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = originalHTML;
+    }, 3000);
+  }
   
   if (loadingEl) loadingEl.style.display = 'block';
   if (bodyEl) bodyEl.innerHTML = '';
@@ -2120,6 +2208,10 @@ async function loadParticipants() {
     const participants = await SmartAPI.getJson('/lucky-participants/');
     
     if (loadingEl) loadingEl.style.display = 'none';
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Làm mới';
+    }
     
     if (!participants || participants.length === 0) {
       if (bodyEl) {
@@ -2138,6 +2230,10 @@ async function loadParticipants() {
   } catch (error) {
     console.error('Error loading participants:', error);
     if (loadingEl) loadingEl.style.display = 'none';
+    if (refreshBtn) {
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Làm mới';
+    }
     if (bodyEl) {
       bodyEl.innerHTML = '<p class="text-danger text-center">Lỗi tải danh sách người tham gia</p>';
     }
@@ -2285,6 +2381,12 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
         carouselWrapper.style.overflow = 'hidden';
         carouselWrapper.style.padding = '10px 40px';
         
+        // Trên mobile, điều chỉnh padding để có đủ không gian cho floating buttons
+        if (window.innerWidth <= 575.98) {
+          carouselWrapper.style.padding = '10px 20px 10px 20px';
+          carouselWrapper.style.marginRight = '80px';
+        }
+        
         // Tạo container cho sản phẩm (1 hàng, không xuống dòng)
         const productsContainer = document.createElement('div');
         productsContainer.className = 'homepage-products';
@@ -2340,8 +2442,14 @@ async function fetchAndRenderProducts(apiUrl, containerSelector, cardFunction = 
             carouselWrapper.appendChild(leftBtn);
             carouselWrapper.appendChild(rightBtn);
 
+            // Thêm touch/swipe support
+            addTouchSupport(containerSelector, productsContainer);
+
             // Cập nhật trạng thái ban đầu
             updateNavigationButtons(containerSelector, 0);
+        } else {
+            // Nếu ít sản phẩm hơn productsPerView, vẫn cho phép swipe để xem tất cả
+            addTouchSupport(containerSelector, productsContainer);
         }
 
         // Tính layout theo kích thước wrapper hiện tại
@@ -2576,8 +2684,16 @@ function navigateProducts(containerSelector, direction) {
   const itemWidth = firstItem ? firstItem.offsetWidth : Math.floor((availableWidth - totalGapWidth) / productsPerView);
   const step = itemWidth + gap;
 
-  // Chỉ số bắt đầu tối đa sao cho vẫn đủ productsPerView sản phẩm trong khung nhìn
-  const maxStartIndex = Math.max(0, totalProducts - productsPerView);
+  // Trên mobile, cho phép xem tất cả sản phẩm
+  // Trên desktop, chỉ cho phép xem đủ productsPerView
+  let maxStartIndex;
+  if (window.innerWidth <= 575.98) {
+    // Mobile: cho phép xem tất cả sản phẩm
+    maxStartIndex = Math.max(0, totalProducts - 1);
+  } else {
+    // Desktop/Tablet: chỉ cho phép xem đủ productsPerView
+    maxStartIndex = Math.max(0, totalProducts - productsPerView);
+  }
 
   let newIndex = currentIndex;
   if (direction === 'left') {
@@ -2614,7 +2730,16 @@ function updateNavigationButtons(containerSelector, currentIndex) {
     productsPerView = 3; // Tablet: 3 sản phẩm
   }
   
-  const maxStartIndex = Math.max(0, totalProducts - productsPerView);
+  // Trên mobile, cho phép xem tất cả sản phẩm
+  // Trên desktop, chỉ cho phép xem đủ productsPerView
+  let maxStartIndex;
+  if (window.innerWidth <= 575.98) {
+    // Mobile: cho phép xem tất cả sản phẩm
+    maxStartIndex = Math.max(0, totalProducts - 1);
+  } else {
+    // Desktop/Tablet: chỉ cho phép xem đủ productsPerView
+    maxStartIndex = Math.max(0, totalProducts - productsPerView);
+  }
   
   if (leftBtn) {
     leftBtn.style.opacity = currentIndex === 0 ? '0.5' : '1';
@@ -2624,6 +2749,193 @@ function updateNavigationButtons(containerSelector, currentIndex) {
   if (rightBtn) {
     rightBtn.style.opacity = currentIndex >= maxStartIndex ? '0.5' : '1';
     rightBtn.disabled = currentIndex >= maxStartIndex;
+  }
+}
+
+// Add touch/swipe support for carousel
+function addTouchSupport(containerSelector, productsContainer) {
+  let startX = 0;
+  let startY = 0;
+  let isDragging = false;
+  let startTransform = 0;
+  
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+  
+  // Touch events
+  container.addEventListener('touchstart', handleTouchStart, { passive: false });
+  container.addEventListener('touchmove', handleTouchMove, { passive: false });
+  container.addEventListener('touchend', handleTouchEnd, { passive: false });
+  
+  // Mouse events for desktop
+  container.addEventListener('mousedown', handleMouseDown);
+  container.addEventListener('mousemove', handleMouseMove);
+  container.addEventListener('mouseup', handleMouseUp);
+  container.addEventListener('mouseleave', handleMouseUp);
+  
+  function handleTouchStart(e) {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    isDragging = false;
+    
+    // Get current transform
+    const transform = productsContainer.style.transform;
+    const match = transform.match(/translateX\(([^)]+)px\)/);
+    startTransform = match ? parseFloat(match[1]) : 0;
+  }
+  
+  function handleTouchMove(e) {
+    if (!startX || !startY) return;
+    
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = startX - currentX;
+    const diffY = startY - currentY;
+    
+    // Only start dragging if horizontal movement is greater than vertical
+    if (!isDragging && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+      isDragging = true;
+      e.preventDefault();
+    }
+    
+    if (isDragging) {
+      e.preventDefault();
+      const newTransform = startTransform - diffX;
+      productsContainer.style.transform = `translateX(${newTransform}px)`;
+    }
+  }
+  
+  function handleTouchEnd(e) {
+    if (!isDragging) return;
+    
+    const endX = e.changedTouches[0].clientX;
+    const diffX = startX - endX;
+    const threshold = 50; // Minimum swipe distance
+    
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
+        // Swipe left - go to next
+        navigateProducts(containerSelector, 'right');
+      } else {
+        // Swipe right - go to previous
+        navigateProducts(containerSelector, 'left');
+      }
+    } else {
+      // Not enough movement, snap back to current position
+      const currentIndex = parseInt(productsContainer.dataset.currentIndex || '0', 10);
+      updateCarouselPosition(containerSelector, currentIndex);
+    }
+    
+    isDragging = false;
+    startX = 0;
+    startY = 0;
+  }
+  
+  function handleMouseDown(e) {
+    if (e.target.closest('.carousel-nav-btn')) return; // Don't interfere with navigation buttons
+    if (e.target.closest('a')) return; // Don't interfere with product links
+    if (e.target.closest('button')) return; // Don't interfere with buttons
+    
+    startX = e.clientX;
+    startY = e.clientY;
+    isDragging = false;
+    
+    const transform = productsContainer.style.transform;
+    const match = transform.match(/translateX\(([^)]+)px\)/);
+    startTransform = match ? parseFloat(match[1]) : 0;
+    
+    e.preventDefault();
+  }
+  
+  function handleMouseMove(e) {
+    if (!startX || !startY) return;
+    
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    const diffX = startX - currentX;
+    const diffY = startY - currentY;
+    
+    if (!isDragging && Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+      isDragging = true;
+    }
+    
+    if (isDragging) {
+      const newTransform = startTransform - diffX;
+      productsContainer.style.transform = `translateX(${newTransform}px)`;
+    }
+  }
+  
+  function handleMouseUp(e) {
+    if (!isDragging) return;
+    
+    const endX = e.clientX;
+    const diffX = startX - endX;
+    const threshold = 50;
+    
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
+        navigateProducts(containerSelector, 'right');
+      } else {
+        navigateProducts(containerSelector, 'left');
+      }
+    } else {
+      const currentIndex = parseInt(productsContainer.dataset.currentIndex || '0', 10);
+      updateCarouselPosition(containerSelector, currentIndex);
+    }
+    
+    isDragging = false;
+    startX = 0;
+    startY = 0;
+  }
+  
+  // Helper function to update carousel position
+  function updateCarouselPosition(containerSelector, currentIndex) {
+    const container = document.querySelector(containerSelector);
+    const productsContainer = container.querySelector('.homepage-products');
+    const wrapper = productsContainer.parentElement;
+    
+    if (!productsContainer) return;
+    
+    const totalProducts = parseInt(productsContainer.dataset.totalProducts || '0', 10);
+    
+    // Responsive products per view
+    let productsPerView = 5;
+    let paddingX = 80;
+    let gap = 16;
+    
+    if (window.innerWidth <= 575.98) {
+      productsPerView = 2;
+      paddingX = 40;
+      gap = 12;
+    } else if (window.innerWidth <= 991.98) {
+      productsPerView = 3;
+      paddingX = 60;
+      gap = 14;
+    }
+    
+    const availableWidth = wrapper.clientWidth - paddingX;
+    const totalGapWidth = gap * (productsPerView - 1);
+    const itemWidth = Math.floor((availableWidth - totalGapWidth) / productsPerView);
+    const step = itemWidth + gap;
+    
+    // Trên mobile, cho phép xem tất cả sản phẩm
+    // Trên desktop, chỉ cho phép xem đủ productsPerView
+    let maxStartIndex;
+    if (window.innerWidth <= 575.98) {
+      // Mobile: cho phép xem tất cả sản phẩm
+      maxStartIndex = Math.max(0, totalProducts - 1);
+    } else {
+      // Desktop/Tablet: chỉ cho phép xem đủ productsPerView
+      maxStartIndex = Math.max(0, totalProducts - productsPerView);
+    }
+    
+    // Đảm bảo currentIndex không vượt quá maxStartIndex
+    const clampedIndex = Math.min(currentIndex, maxStartIndex);
+    
+    const translatePx = -clampedIndex * step;
+    productsContainer.style.transform = `translateX(${translatePx}px)`;
+    productsContainer.dataset.currentIndex = String(clampedIndex);
+    updateNavigationButtons(containerSelector, clampedIndex);
   }
 }
 

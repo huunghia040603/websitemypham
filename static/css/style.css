@@ -1,3 +1,88 @@
+/* Swipe functionality for product carousels */
+.homepage-products {
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    touch-action: pan-x pan-y;
+    -webkit-touch-callout: none;
+    -webkit-user-drag: none;
+    /* Tối ưu hiệu suất cho mobile */
+    will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.homepage-products:active {
+    cursor: grabbing;
+}
+
+.homepage-products .slider-item {
+    pointer-events: auto;
+    /* Tối ưu hiệu suất cho mobile */
+    will-change: transform;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
+
+.homepage-products .slider-item img {
+    pointer-events: none;
+}
+
+/* Smooth transitions for swipe */
+.homepage-products {
+    transition: transform 0.3s ease-out;
+    /* Tối ưu hiệu suất transition */
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+/* Visual feedback during swipe */
+.homepage-products.swiping {
+    transition: none;
+}
+
+/* Allow vertical scrolling when not swiping horizontally */
+.homepage-products.allow-scroll {
+    touch-action: pan-y;
+    pointer-events: auto;
+}
+
+/* Tối ưu hiệu suất cho mobile - giảm thiểu lag khi scroll */
+@media (max-width: 768px) {
+    .homepage-products {
+        /* Sử dụng GPU acceleration */
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+        /* Tối ưu rendering */
+        -webkit-perspective: 1000px;
+        perspective: 1000px;
+        /* Giảm thiểu reflow */
+        contain: layout style paint;
+    }
+    
+    .homepage-products .slider-item {
+        /* Tối ưu cho từng item */
+        -webkit-transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0);
+        /* Giảm thiểu repaint */
+        contain: layout style paint;
+    }
+    
+    .homepage-products .slider-item img {
+        /* Tối ưu hình ảnh */
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        /* Giảm thiểu reflow khi load ảnh */
+        contain: layout style paint;
+    }
+}
+
 /* Notification Styles */
 .notification-fixed {
     position: fixed !important;
@@ -434,6 +519,9 @@
         font-size: 0.8rem;
         padding: 0 0.75rem;
     }
+    #detailName{
+        font-size: 1.2rem;
+    }
 }
 
 /* Custom CSS for BuddySkincare Website - TheFaceShop Style */
@@ -584,6 +672,7 @@ body {
     color: #2c2c2c;
     background-color: #fff;
     font-size: 14px;
+    overflow-x: hidden;
 }
 
 /* Reset and Base Styles */
@@ -595,6 +684,7 @@ body {
     max-width: 1350px;
     margin: 0 auto;
     padding: 0 15px;
+    /* overflow-x: hidden; */
 }
 
 /* Typography */
@@ -1048,6 +1138,9 @@ p {
 
 /* Responsive Dropdown */
 @media (max-width: 768px) {
+    .container{
+        overflow-x: hidden;
+    }
     .dropdown-menu {
         border-radius: 8px;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -6887,4 +6980,90 @@ ul.pagination .page-link {
     }
 }
 
-/* Cache bust: 1757233601 */
+/* Disable hover effects on mobile/touch devices to prevent cards from jumping up */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 5px !important;
+    }
+    
+    .product-card {
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    .category-card {
+        border: 1px solid #e5e7eb !important;
+    }
+    
+    .cart-title {
+        font-size: 12px !important;
+        line-height: 1.3 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 3 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        height: 16px !important;
+    }
+    
+    .cart-price {
+        font-size: 0.75rem !important;
+    }
+    
+    .cart-quantity {
+        /* Add styles here if needed */
+    }
+    
+    /* Flash sale products gap adjustment */
+    #flash-sale-products-products {
+        gap: 5px !important;
+    }
+    
+    /* Disable hover effects */
+    .product-card:hover {
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .category-card:hover {
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .category-card:hover .category-icon {
+        transform: none !important;
+    }
+    
+    .product-card:hover img {
+        transform: none !important;
+    }
+    
+    .product-card:hover .card-img-top {
+        transform: none !important;
+    }
+}
+
+/* Additional mobile hover fixes for touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .product-card:hover {
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .category-card:hover {
+        transform: none !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .category-card:hover .category-icon {
+        transform: none !important;
+    }
+    
+    .product-card:hover img {
+        transform: none !important;
+    }
+    
+    .product-card:hover .card-img-top {
+        transform: none !important;
+    }
+}
+
+/* Cache bust: 1757233603 */

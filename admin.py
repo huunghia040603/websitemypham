@@ -307,6 +307,24 @@ class BlogAdmin(admin.ModelAdmin):
 
 
 # --- Đăng ký các models với admin_site tùy chỉnh ---
+# Register with default Django admin site
+admin.site.register(User, CustomUserAdmin)
+admin.site.register(Admin)
+# Ẩn model Collaborator cũ để tránh nhầm lẫn
+# admin.site.register(Collaborator, CollaboratorAdmin)
+admin.site.register(Staff)
+admin.site.register(Customer, CustomerAdmin)
+admin.site.register(Brand, BrandAdmin)
+admin.site.register(Category)
+admin.site.register(Tag, TagAdmin)
+admin.site.register(Gift, GiftAdmin)
+admin.site.register(Product, ProductAdmin)
+admin.site.register(Voucher, VoucherAdmin)
+admin.site.register(Order, OrderAdmin)
+admin.site.register(OrderItem)
+admin.site.register(Blog, BlogAdmin)
+
+# Also register with custom admin site
 admin_site.register(User, CustomUserAdmin)
 admin_site.register(Admin)
 # Ẩn model Collaborator cũ để tránh nhầm lẫn
@@ -330,6 +348,8 @@ class AnalyticsSnapshotAdmin(admin.ModelAdmin):
     search_fields = ('period_key',)
     readonly_fields = ('created_at',)
 
+# Register Analytics with default Django admin
+admin.site.register(AnalyticsSnapshot, AnalyticsSnapshotAdmin)
 admin_site.register(AnalyticsSnapshot, AnalyticsSnapshotAdmin)
 
 
@@ -374,6 +394,11 @@ class LuckyWinnerAdmin(admin.ModelAdmin):
             return '-'
     get_number.short_description = 'Số may mắn'
 
+
+# Register Lucky models with default Django admin
+admin.site.register(LuckyEvent, LuckyEventAdmin)
+admin.site.register(LuckyParticipant, LuckyParticipantAdmin)
+admin.site.register(LuckyWinner, LuckyWinnerAdmin)
 
 admin_site.register(LuckyEvent, LuckyEventAdmin)
 admin_site.register(LuckyParticipant, LuckyParticipantAdmin)
@@ -576,6 +601,13 @@ class CTVWithdrawalAdmin(admin.ModelAdmin):
     reject_withdrawals.short_description = "Từ chối các yêu cầu rút tiền được chọn"
 
 
+# Register CTV models with default Django admin
+admin.site.register(CTVLevel, CTVLevelAdmin)
+admin.site.register(CTVApplication, CTVApplicationAdmin)
+admin.site.register(CTV, CTVAdmin)
+admin.site.register(CTVWallet, CTVWalletAdmin)
+admin.site.register(CTVWithdrawal, CTVWithdrawalAdmin)
+
 admin_site.register(CTVLevel, CTVLevelAdmin)
 admin_site.register(CTVApplication, CTVApplicationAdmin)
 admin_site.register(CTV, CTVAdmin)
@@ -591,6 +623,8 @@ class CustomerLeadAdmin(admin.ModelAdmin):
     list_filter = ('updated_at',)
     readonly_fields = ('created_at', 'updated_at')
 
+# Register CustomerLead with default Django admin
+admin.site.register(CustomerLead, CustomerLeadAdmin)
 admin_site.register(CustomerLead, CustomerLeadAdmin)
 
 # Cart Admin
@@ -632,7 +666,12 @@ class MarketingResourceAdmin(admin.ModelAdmin):
     )
 
 
-# Đăng ký các model còn thiếu
+# Đăng ký các model còn thiếu với default Django admin
+admin.site.register(Cart, CartAdmin)
+admin.site.register(CartItem, CartItemAdmin)
+admin.site.register(LuckyPrize, LuckyPrizeAdmin)
+admin.site.register(MarketingResource, MarketingResourceAdmin)
+
 admin_site.register(Cart, CartAdmin)
 admin_site.register(CartItem, CartItemAdmin)
 admin_site.register(LuckyPrize, LuckyPrizeAdmin)

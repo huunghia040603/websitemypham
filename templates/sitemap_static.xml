@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Giới thiệu -->
+    <url>
+        <loc>https://buddyskincare.vn/about</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Liên hệ -->
+    <url>
+        <loc>https://buddyskincare.vn/contact</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Hướng dẫn mua hàng -->
+    <url>
+        <loc>https://buddyskincare.vn/shopping-guide</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Hướng dẫn chăm sóc da -->
+    <url>
+        <loc>https://buddyskincare.vn/skincare</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Các bước chăm sóc da -->
+    <url>
+        <loc>https://buddyskincare.vn/skincare-step</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Vận chuyển và thanh toán -->
+    <url>
+        <loc>https://buddyskincare.vn/shipping-payment</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Chính sách đổi trả -->
+    <url>
+        <loc>https://buddyskincare.vn/return-policy</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Chính sách bảo mật -->
+    <url>
+        <loc>https://buddyskincare.vn/privacy-policy</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+    <!-- An toàn thanh toán online -->
+    <url>
+        <loc>https://buddyskincare.vn/online-payment-safety</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Hỗ trợ -->
+    <url>
+        <loc>https://buddyskincare.vn/support</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Live Chat Tư vấn -->
+    <url>
+        <loc>https://buddyskincare.vn/live-chat</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Đối tác -->
+    <url>
+        <loc>https://buddyskincare.vn/partner</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+    <!-- Ký gửi -->
+    <url>
+        <loc>https://buddyskincare.vn/consign</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Đăng xuất -->
+    <url>
+        <loc>https://buddyskincare.vn/logout</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.3</priority>
+    </url>
+    
+</urlset>

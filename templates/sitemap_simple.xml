@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Trang chủ -->
+    <url>
+        <loc>https://buddyskincare.vn/</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    
+    <!-- Trang sản phẩm -->
+    <url>
+        <loc>https://buddyskincare.vn/products</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.9</priority>
+    </url>
+    
+    <!-- Flash Sale -->
+    <url>
+        <loc>https://buddyskincare.vn/flash-sale</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Tin tức -->
+    <url>
+        <loc>https://buddyskincare.vn/news</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Sự kiện -->
+    <url>
+        <loc>https://buddyskincare.vn/events</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Về chúng tôi -->
+    <url>
+        <loc>https://buddyskincare.vn/about</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+    <!-- Liên hệ -->
+    <url>
+        <loc>https://buddyskincare.vn/contact</loc>
+        <lastmod>2025-09-21</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    
+</urlset>

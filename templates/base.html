@@ -4,8 +4,113 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="/static/image/logo.png">
+    <!-- CSRF Token for API calls -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
 
     <title>{% block title %}Mỹ Phẩm Thanh Lý - Giá Tốt Nhất{% endblock %}</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="{% block description %}Mỹ phẩm thanh lý chính hãng với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng chất lượng cao. Giao hàng nhanh, đảm bảo uy tín.{% endblock %}">
+    <meta name="keywords" content="{% block keywords %}mỹ phẩm thanh lý, mỹ phẩm giá rẻ, mỹ phẩm chính hãng, kem dưỡng da, son môi, trang điểm, mỹ phẩm online, mỹ phẩm giảm giá, mỹ phẩm sale, mỹ phẩm thanh lý tphcm, mỹ phẩm thanh lý hà nội, mỹ phẩm thanh lý giá rẻ, mỹ phẩm thanh lý chính hãng, mỹ phẩm thanh lý online, mỹ phẩm thanh lý uy tín, mỹ phẩm thanh lý chất lượng, mỹ phẩm thanh lý giá tốt, mỹ phẩm thanh lý giao hàng nhanh, mỹ phẩm thanh lý đảm bảo, mỹ phẩm thanh lý tin cậy{% endblock %}">
+    <meta name="author" content="BuddySkincare">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta name="bingbot" content="index, follow">
+    <meta name="language" content="Vietnamese">
+    <meta name="geo.region" content="VN">
+    <meta name="geo.placename" content="Vietnam">
+    <meta name="distribution" content="global">
+    <meta name="rating" content="general">
+    <meta name="revisit-after" content="1 days">
+    <meta name="classification" content="Business">
+    <meta name="category" content="Beauty and Cosmetics">
+    <meta name="coverage" content="worldwide">
+    <meta name="target" content="all">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Google Search Console Verification -->
+    <!-- Thay YOUR_VERIFICATION_CODE bằng mã verification từ Google Search Console -->
+    <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" />
+    
+    <!-- Google Analytics 4 -->
+    <!-- Thay G-XXXXXXXXXX bằng Measurement ID từ Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+    </script>
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="{% block canonical_url %}{{ request.url }}{% endblock %}">
+    
+    <!-- Alternate Language Versions -->
+    <link rel="alternate" hreflang="vi" href="https://buddyskincare.vn/">
+    <link rel="alternate" hreflang="x-default" href="https://buddyskincare.vn/">
+    
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "BuddySkincare",
+        "alternateName": "Mỹ Phẩm Thanh Lý BuddySkincare",
+        "url": "https://buddyskincare.vn",
+        "logo": "https://buddyskincare.vn/static/image/logo.png",
+        "description": "Mỹ phẩm thanh lý chính hãng với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng chất lượng cao. Giao hàng nhanh, đảm bảo uy tín.",
+        "foundingDate": "2024",
+        "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "VN",
+            "addressRegion": "Vietnam"
+        },
+        "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+84-xxx-xxx-xxx",
+            "contactType": "customer service",
+            "availableLanguage": "Vietnamese"
+        },
+        "sameAs": [
+            "https://www.facebook.com/buddyskincare",
+            "https://www.instagram.com/buddyskincare"
+        ],
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://buddyskincare.vn/products?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    
+    <!-- Open Graph Meta Tags (Facebook, Messenger, Zalo) -->
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}Mỹ Phẩm Thanh Lý - Giá Tốt Nhất{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Mỹ phẩm thanh lý chính hãng với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng chất lượng cao. Giao hàng nhanh, đảm bảo uy tín.{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{{ request.url }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}https://buddyskincare.vn/static/image/sukien/banner01.png{% endblock %}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{% block og_image_alt %}BuddySkincare - Mỹ phẩm thanh lý chính hãng{% endblock %}">
+    <meta property="og:site_name" content="BuddySkincare">
+    <meta property="og:locale" content="vi_VN">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}Mỹ Phẩm Thanh Lý - Giá Tốt Nhất{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Mỹ phẩm thanh lý chính hãng với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng chất lượng cao. Giao hàng nhanh, đảm bảo uy tín.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}https://buddyskincare.vn/static/image/sukien/banner01.png{% endblock %}">
+    <meta name="twitter:image:alt" content="{% block twitter_image_alt %}BuddySkincare - Mỹ phẩm thanh lý chính hãng{% endblock %}">
+    
+    <!-- Additional Meta Tags for Better Sharing -->
+    <meta name="theme-color" content="#e91e63">
+    <meta name="msapplication-TileColor" content="#e91e63">
+    <meta name="apple-mobile-web-app-title" content="BuddySkincare">
+    <meta name="application-name" content="BuddySkincare">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

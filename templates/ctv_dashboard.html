@@ -87,9 +87,9 @@ async function loadDashboard(){
   const s = await fetch(`/ctvs/${id}/stats/`).then(r=>r.json());
   document.getElementById('mTotalOrders').textContent = s.total_orders ?? 0;
   document.getElementById('mTotalRevenue').textContent = fmt((s.total_revenue ?? 0) * 1000);
-  document.getElementById('mCommissionBal').textContent = fmt(s.commission_balance ?? 0);
-  document.getElementById('mCommissionPending').textContent = fmt(s.commission_pending ?? 0);
-  document.getElementById('mCommissionWithdrawn').textContent = fmt(s.commission_withdrawn ?? 0);
+  document.getElementById('mCommissionBal').textContent = fmt((s.commission_balance ?? 0) * 1000);
+  document.getElementById('mCommissionPending').textContent = fmt((s.commission_pending ?? 0) );
+  document.getElementById('mCommissionWithdrawn').textContent = fmt((s.commission_withdrawn ?? 0) );
 
   const list = await fetch(`/ctvs/${id}/commissions/`).then(r=>r.json());
   const tbody = document.getElementById('commissionRows');

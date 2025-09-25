@@ -36,6 +36,44 @@
     </li>
   </ul>
 
+  <!-- Download Options -->
+  <div class="row mb-3">
+    <div class="col-12">
+      <div class="card border-0 bg-light">
+        <div class="card-body py-2">
+          <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center">
+              <div class="form-check form-switch me-3">
+                <input class="form-check-input" type="checkbox" id="watermarkToggle" checked>
+                <label class="form-check-label fw-semibold" for="watermarkToggle">
+                  <i class="fas fa-stamp me-1"></i>Tải ảnh có mô tả
+                </label>
+              </div>
+              <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                Khi bật: Ảnh tải xuống sẽ có logo, tên sản phẩm, giá, tình trạng in sẵn
+              </small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <button class="btn btn-outline-secondary btn-sm" onclick="selectAllProducts()" id="selectAllBtn">
+                <i class="fas fa-check-square me-1"></i>Chọn tất cả
+              </button>
+              <button class="btn btn-outline-secondary btn-sm" onclick="deselectAllProducts()" id="deselectAllBtn">
+                <i class="fas fa-square me-1"></i>Bỏ chọn
+              </button>
+              <button class="btn btn-outline-success btn-sm" onclick="downloadSelectedWithWatermark()" id="downloadSelectedBtn" disabled>
+                <i class="fas fa-download me-1"></i>Tải đã chọn
+              </button>
+              <button class="btn btn-outline-primary btn-sm" onclick="downloadAllWithWatermark()" id="downloadAllBtn">
+                <i class="fas fa-download me-1"></i>Tải tất cả
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Tab content -->
   <div class="tab-content" id="resourceTabContent">
     <div class="tab-pane fade show active" id="all" role="tabpanel">
@@ -69,6 +107,128 @@
     </div>
     
     <div class="tab-pane fade" id="product" role="tabpanel">
+      <!-- Product Filters -->
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="card border-0 bg-light">
+            <div class="card-body py-3">
+              <h6 class="card-title mb-3">
+                <i class="fas fa-filter me-2"></i>Bộ lọc sản phẩm
+              </h6>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label for="productNameFilter" class="form-label small fw-semibold">Tìm theo tên</label>
+                  <input type="text" class="form-control form-control-sm" id="productNameFilter" 
+                         placeholder="Nhập tên sản phẩm..." onkeyup="filterProducts()">
+                </div>
+                <div class="col-md-3">
+                  <label for="productCategoryFilter" class="form-label small fw-semibold">Danh mục</label>
+                  <select class="form-select form-select-sm" id="productCategoryFilter" onchange="filterProducts()">
+                    <option value="">Tất cả danh mục</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="productBrandFilter" class="form-label small fw-semibold">Hãng</label>
+                  <select class="form-select form-select-sm" id="productBrandFilter" onchange="filterProducts()">
+                    <option value="">Tất cả hãng</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="productStockFilter" class="form-label small fw-semibold">Tình trạng</label>
+                  <select class="form-select form-select-sm" id="productStockFilter" onchange="filterProducts()">
+                    <option value="">Tất cả</option>
+                    <option value="in_stock">Còn hàng</option>
+                    <option value="out_of_stock">Hết hàng</option>
+                  </select>
+                </div>
+              </div>
+              <div class="row mt-2">
+                <div class="col-12">
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="clearProductFilters()">
+                      <i class="fas fa-times me-1"></i>Xóa bộ lọc
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="selectAllFilteredProducts()" id="selectFilteredBtn">
+                      <i class="fas fa-check-square me-1"></i>Chọn tất cả đã lọc
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="deselectAllFilteredProducts()" id="deselectFilteredBtn">
+                      <i class="fas fa-square me-1"></i>Bỏ chọn đã lọc
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="toggleSelectedProductsView()" id="toggleViewBtn">
+                      <i class="fas fa-images me-1"></i>Hiện ảnh
+                    </button>
+                    <button class="btn btn-outline-warning btn-sm" onclick="toggleSelectedProductsSummary()" id="toggleSummaryBtn">
+                      <i class="fas fa-calculator me-1"></i>Hiện tính toán
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearAllSelectedProducts()" id="clearAllBtn">
+                      <i class="fas fa-trash me-1"></i>Xóa tất cả
+                    </button>
+                    <span class="text-muted small ms-3" id="productFilterCount">
+                      Hiển thị: <span id="productCount">0</span> sản phẩm
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Selected Products Images View -->
+              <div class="row mt-3" id="selectedProductsImages" style="display: none;">
+                <div class="col-12">
+                  <div class="card border-info">
+                    <div class="card-header bg-info text-white py-2">
+                      <h6 class="mb-0">
+                        <i class="fas fa-images me-2"></i>Danh sách sản phẩm đã chọn (Ảnh)
+                        <span class="badge bg-light text-info ms-2" id="selectedImagesCount">0</span>
+                      </h6>
+                    </div>
+                    <div class="card-body py-2">
+                      <div class="row g-2" id="selectedProductsImagesList">
+                        <!-- Selected product images will be displayed here -->
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selected Products Summary -->
+              <div class="row mt-3" id="selectedProductsSummary" style="display: none;">
+                <div class="col-12">
+                  <div class="card border-success">
+                    <div class="card-header bg-success text-white py-2">
+                      <h6 class="mb-0">
+                        <i class="fas fa-calculator me-2"></i>Tính toán chi tiết
+                        <span class="badge bg-light text-success ms-2" id="selectedCount">0</span>
+                      </h6>
+                    </div>
+                    <div class="card-body py-2">
+                      <div class="row">
+                        <div class="col-md-8">
+                          <div id="selectedProductsList" class="small">
+                            <!-- Selected products will be listed here -->
+                          </div>
+                        </div>
+                        <div class="col-md-4">
+                          <div class="text-end">
+                            <div class="fw-bold text-success">
+                              Tổng giá: <span id="selectedTotalPrice">0đ</span>
+                            </div>
+                            <div class="text-muted small">
+                              Số loại sản phẩm: <span id="selectedTotalItems">0</span> 
+                            </div>
+                            <div class="text-muted small">
+                              Tổng số lượng: <span id="selectedTotalQuantity">0</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div class="row g-3" id="productResources">
         <div class="col-12 text-center">
           <div class="spinner-border text-primary" role="status">
@@ -122,13 +282,249 @@
 .resource-item:hover .resource-overlay {
     display: flex !important;
 }
+
+/* Watermark styles */
+.watermark-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.watermark-logo {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.watermark-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: bold;
+    max-width: 80px;
+}
+
+.watermark-name {
+    position: absolute;
+    bottom: 1px;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 4px 8px;
+    font-size: 9px;
+    font-weight: 500;
+    text-align: center;
+    border-radius: 0 0 4px 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    max-height: 2.4em;
+}
+
+/* Checkbox styles */
+.resource-checkbox {
+    width: 18px;
+    height: 18px;
+    background-color: white;
+    border: 2px solid #007bff;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.resource-checkbox:checked {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.resource-checkbox:checked::after {
+    content: '✓';
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Selected product item styles */
+.selected-product-item {
+    transition: background-color 0.2s ease;
+}
+
+.selected-product-item:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* Desktop layout - all in one row */
+@media (min-width: 992px) {
+    .selected-product-item .d-lg-flex {
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .selected-product-item .flex-grow-1 {
+        min-width: 0;
+        flex-shrink: 1;
+    }
+    
+    .selected-product-item .fw-semibold {
+        margin-bottom: 0.25rem;
+        line-height: 1.3;
+    }
+    
+    .selected-product-item .text-muted.small {
+        font-size: 0.75rem;
+        line-height: 1.2;
+        margin-bottom: 0;
+    }
+    
+    .selected-product-item .text-success {
+        min-width: fit-content;
+        flex-shrink: 0;
+        margin-top: 0.25rem;
+    }
+    
+    .selected-product-item .d-flex.align-items-center {
+        min-width: fit-content;
+        flex-shrink: 0;
+        margin-top: 0.25rem;
+    }
+}
+
+/* Mobile layout - responsive */
+@media (max-width: 991.98px) {
+    .selected-product-item .fw-semibold {
+        font-size: 0.9rem;
+        line-height: 1.3;
+    }
+    
+    .selected-product-item .text-success {
+        font-size: 0.9rem;
+    }
+}
+
+/* Selected products images view */
+.selected-product-image {
+    position: relative;
+    border: 2px solid #007bff;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.selected-product-image:hover {
+    transform: scale(1.05);
+}
+
+.selected-product-image img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+}
+
+.selected-product-image .quantity-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 123, 255, 0.9);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.selected-product-image .remove-btn {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(220, 53, 69, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.selected-product-image .remove-btn:hover {
+    background: rgba(220, 53, 69, 1);
+}
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// Function to get product status text
+function getProductStatusText(status) {
+    const statusMap = {
+        'new': 'New đẹp',
+        '30': 'Còn 30%',
+        '80': 'Còn 80%',
+        '75': 'Còn 75%',
+        '70': 'Còn 70%',
+        '60': 'Còn 60%',
+        '50': 'Còn 50%',
+        '90': 'Còn 90%',
+        '85': 'Còn 85%',
+        '95': 'Còn 95%',
+        'test': 'Test 1-2 lần',
+        'newmh': 'New mất hộp',
+        'newm': 'New móp hộp',
+        'newrt': 'New rách tem',
+        'newmn': 'New móp nhẹ',
+        'newx': 'New xước nhẹ',
+        'newspx': 'New xước',
+        'chiet': 'Chiết'
+    };
+    
+    return statusMap[status] || status || 'N/A';
+}
+
 // Load resources when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Add roundRect polyfill for older browsers
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+            if (typeof radius === 'number') {
+                radius = {tl: radius, tr: radius, br: radius, bl: radius};
+            } else {
+                radius = {tl: 0, tr: 0, br: 0, bl: 0, ...radius};
+            }
+            this.beginPath();
+            this.moveTo(x + radius.tl, y);
+            this.lineTo(x + width - radius.tr, y);
+            this.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+            this.lineTo(x + width, y + height - radius.br);
+            this.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+            this.lineTo(x + radius.bl, y + height);
+            this.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+            this.lineTo(x, y + radius.tl);
+            this.quadraticCurveTo(x, y, x + radius.tl, y);
+            this.closePath();
+        };
+    }
+    
     loadAllResources();
     
     // Load resources when tab is clicked
@@ -182,31 +578,50 @@ async function loadResourcesByType(type) {
     }
 }
 
+// Global variable to store all product data
+let allProductData = [];
+
+// Global variable to store selected products with quantities
+let selectedProducts = new Map(); // key: resourceId, value: {productData, quantity}
+
 async function loadProductImages() {
     try {
-        // Gọi trực tiếp Django API thay vì Flask API
-        const response = await fetch('https://buddyskincare.vn/backend/api/products/?status=new');
-        const products = await response.json();
+        // Gọi trực tiếp Django API để lấy TẤT CẢ sản phẩm (không filter theo status)
+        const response = await fetch('https://buddyskincare.vn/backend/api/products/?page_size=1000');
+        const data = await response.json();
+        const products = data.results || data; // Handle both paginated and non-paginated responses
         console.log(`🔍 Loaded ${products.length} products from Django API`);
         
-        const productData = [];
+        allProductData = [];
+        const categories = new Set();
+        const brands = new Set();
         
         products.forEach(product => {
             // Lấy tất cả ảnh của sản phẩm
             const allImages = product.all_images || [];
             
+            // Add to filter sets - try different possible field names for category
+            const category = product.category || product.category_name || product.product_category || '';
+            if (category) categories.add(category);
+            if (product.brand_name) brands.add(product.brand_name);
+            
             allImages.forEach((imageUrl, index) => {
                 if (imageUrl && imageUrl.trim()) {
-                    productData.push({
+                    allProductData.push({
                         id: `product_${product.id}_${index + 1}`,
-                        name: `${product.name} - Ảnh ${index + 1}`,
+                        name: product.name,
                         description: `Sản phẩm ${product.brand_name || 'Không xác định'}`,
                         resource_type: 'product',
                         file_url: imageUrl,
                         thumbnail_url: imageUrl,
                         product_id: product.id,
                         product_name: product.name,
+                        product_category: category,
+                        product_brand: product.brand_name || '',
                         stock_quantity: product.stock_quantity || 0,
+                        discounted_price: product.discounted_price || product.original_price || 0,
+                        original_price: product.original_price || 0,
+                        status: product.status || 0,
                         is_image: true,
                         file_extension: imageUrl.split('.').pop().toLowerCase() || 'jpg',
                         image_index: index + 1,
@@ -216,8 +631,15 @@ async function loadProductImages() {
             });
         });
         
-        console.log(`🔍 Products with images: ${productData.length}`);
-        displayResources(productData, 'productResources');
+        // Populate filter dropdowns
+        console.log('🔍 Categories found:', Array.from(categories));
+        console.log('🔍 Brands found:', Array.from(brands));
+        populateCategoryFilter(Array.from(categories).sort());
+        populateBrandFilter(Array.from(brands).sort());
+        
+        console.log(`🔍 Products with images: ${allProductData.length}`);
+        displayResources(allProductData, 'productResources');
+        updateProductCount(allProductData.length);
     } catch (error) {
         console.error('Error loading product images:', error);
         document.getElementById('productResources').innerHTML = '<div class="col-12 text-center text-danger">Lỗi khi tải ảnh sản phẩm</div>';
@@ -242,19 +664,51 @@ function displayResources(resources, containerId) {
                      style="cursor: default;" 
                      title="${resource.name}"
                      data-resource-id="${resource.id}"
-                     data-resource-type="${resource.resource_type}">
+                     data-resource-type="${resource.resource_type}"
+                     data-stock="${resource.stock_quantity || 0}"
+                     data-price="${resource.discounted_price ? Number(resource.discounted_price * 1000).toLocaleString('vi-VN') + 'đ' : '0đ'}"
+                     data-status="${resource.status ? getProductStatusText(resource.status) : 'N/A'}">
+                    <!-- Selection checkbox -->
+                    <div class="position-absolute top-0 start-0 m-2" style="z-index: 20;">
+                        <div class="form-check">
+                            <input class="form-check-input resource-checkbox" 
+                                   type="checkbox" 
+                                   value="${resource.id}"
+                                   id="checkbox_${resource.id}"
+                                   onchange="updateDownloadSelectedButton()">
+                        </div>
+                    </div>
                     ${isImage ? `
-                        <div class="text-center position-relative">
+                        <div class="text-center position-relative" 
+                             onclick="downloadResource('${String(resource.id)}', '${resource.file_url}', '${resource.name.replace(/'/g, "\\'")}')"
+                             style="cursor: pointer;">
                             <img src="${resource.thumbnail_url || resource.file_url}" 
                                  class="img-fluid rounded shadow-sm" 
                                  style="width: 100%; max-height: 300px; object-fit: contain;"
                                  alt="${resource.name}">
                             ${resource.resource_type === 'product' && resource.stock_quantity !== undefined ? `
+                                <!-- Logo at top left -->
+                                <div class="position-absolute top-0 start-0 m-1">
+                                    <img src="/static/image/logo.png" 
+                                         style="width: 20px; height: 20px; border-radius: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);" 
+                                         alt="BuddySkincare Logo">
+                                </div>
+                                
+                                <!-- Stock badge at top right -->
                                 <div class="position-absolute top-0 end-0 m-1">
                                     <span class="badge ${resource.stock_quantity > 0 ? 'bg-success' : 'bg-danger'}" 
-                                          style="font-size: 10px; padding: 2px 6px;">
-                                        <i class="fas fa-boxes me-1"></i>${resource.stock_quantity}
+                                          style="font-size: 9px; padding: 2px 4px; line-height: 1.2;">
+                                        <div><i class="fas fa-boxes me-1"></i>${resource.stock_quantity > 0 ? resource.stock_quantity : 'Hết hàng'}</div>
+                                        ${resource.discounted_price * 1000 ? `<div style="font-size: 8px; margin-top: 1px;">Giá: ${Number(resource.discounted_price *1000).toLocaleString('vi-VN')}đ</div>` : ''}
+                                        ${resource.status ? `<div style="font-size: 7px; margin-top: 1px; color: #fff; font-weight: bold;">${getProductStatusText(resource.status)}</div>` : ''}
                                     </span>
+                                </div>
+                                
+                                <!-- Product name at bottom -->
+                                <div class="position-absolute bottom-0 start-0 end-0" style="bottom: 1px; text-align: center; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; font-size: 9px; font-weight: 500; border-radius: 0 0 4px 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; max-height: 3.0em;">
+                                    ${resource.product_name || resource.name}
+                                    ${resource.product_category ? `<br><small style="font-size: 7px; opacity: 0.8;">${resource.product_category}</small>` : ''}
+                                    ${resource.product_brand ? `<br><small style="font-size: 7px; opacity: 0.8;">${resource.product_brand}</small>` : ''}
                                 </div>
                             ` : ''}
                         </div>
@@ -286,7 +740,7 @@ function displayResources(resources, containerId) {
                                         <div>Copy mô tả</div>
                                     </div>
                                     <div class="text-center" 
-                                         onclick="event.stopPropagation(); downloadResource(${resource.id}, '${resource.file_url}', '${resource.name}')"
+                                         onclick="event.stopPropagation(); downloadResource('${String(resource.id)}', '${resource.file_url}', '${resource.name.replace(/'/g, "\\'")}')"
                                          style="cursor: pointer;">
                                         <i class="fas fa-download fa-2x mb-2"></i>
                                         <div>Tải xuống</div>
@@ -295,7 +749,7 @@ function displayResources(resources, containerId) {
                             </div>
                         ` : `
                             <div class="text-center" 
-                                 onclick="downloadResource(${resource.id}, '${resource.file_url}', '${resource.name}')"
+                                 onclick="downloadResource('${String(resource.id)}', '${resource.file_url}', '${resource.name.replace(/'/g, "\\'")}')"
                                  style="cursor: pointer;">
                                 <i class="fas fa-download fa-2x mb-2"></i>
                                 <div>Click để tải xuống</div>
@@ -318,44 +772,245 @@ function displayResources(resources, containerId) {
             copyDescription(description, resourceName);
         });
     });
+    
+    // Thêm event listeners cho product images (alternative to onclick)
+    container.querySelectorAll('[data-resource-type="product"]').forEach(item => {
+        const img = item.querySelector('img');
+        if (img) {
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                const resourceId = item.getAttribute('data-resource-id');
+                const resourceName = item.getAttribute('title');
+                const imgSrc = this.src;
+                
+                console.log('🖱️ Image clicked:', { resourceId, resourceName, imgSrc });
+                
+                // Call download function
+                downloadResource(resourceId, imgSrc, resourceName);
+            });
+        }
+    });
 }
 
 async function downloadResource(resourceId, fileUrl, fileName) {
+    console.log('🔍 DownloadResource called:', { resourceId, fileUrl, fileName });
+    
+    // Ensure resourceId is a string
+    resourceId = String(resourceId);
+    
+    // Check if watermark is enabled
+    const watermarkEnabled = document.getElementById('watermarkToggle').checked;
+    console.log('🎨 Watermark enabled:', watermarkEnabled);
+    
     try {
-        // Track download first
-        await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/download/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        // Only track download for marketing resources, not product images
+        if (!resourceId.startsWith('product_')) {
+            try {
+                console.log('📊 Tracking download for marketing resource:', resourceId);
+                await fetch(`https://buddyskincare.vn/backend/api/marketing-resources/${resourceId}/download/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+            } catch (trackError) {
+                console.warn('Download tracking failed:', trackError);
             }
-        });
+        }
         
-        // Force download the file
-        const response = await fetch(fileUrl);
-        const blob = await response.blob();
+        console.log('📥 Starting download process...');
         
-        // Create download link
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
+        // Method 1: Try fetch + blob download (force download)
+        try {
+            console.log('🔄 Trying fetch + blob download...');
+            
+            // Better filename for product images
+            const cleanFileName = fileName.replace(/[^a-zA-Z0-9\-_]/g, '_');
+            const urlParts = fileUrl.split('.');
+            const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1] : 'jpg';
+            // Extract product ID from resourceId (format: product_123_1)
+            const productId = resourceId.startsWith('product_') ? 
+                resourceId.split('_')[1] : // Get the product ID part
+                resourceId;
+                
+            const finalFilename = resourceId.startsWith('product_') ? 
+                `Sản_Phẩm_buddyskincare.vn_${productId}.${extension}` : 
+                `${cleanFileName}.${extension}`;
+            
+            // Fetch the image as blob
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            let blob = await response.blob();
+            console.log('📦 Blob created, size:', blob.size);
+            
+            // Add watermark if enabled and it's a product image
+            if (watermarkEnabled && resourceId.startsWith('product_')) {
+                console.log('🎨 Adding watermark to product image...');
+                blob = await addWatermarkToImage(blob, resourceId, fileName);
+            }
+            
+            // Create download link with blob URL
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = finalFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            // Clean up blob URL
+            setTimeout(() => {
+                window.URL.revokeObjectURL(downloadUrl);
+            }, 1000);
+            
+            console.log('✅ Fetch + blob download completed');
+            return;
+            
+        } catch (fetchError) {
+            console.warn('Fetch + blob download failed, trying simple download:', fetchError);
+        }
         
-        // Get file extension from URL or default to jpg
-        const urlParts = fileUrl.split('.');
-        const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1] : 'jpg';
-        link.download = `buddy_image_${resourceId}.${extension}`;
+        // Method 2: Try simple direct download
+        try {
+            console.log('🔄 Trying simple direct download...');
+            
+            // Better filename for product images
+            const cleanFileName = fileName.replace(/[^a-zA-Z0-9\-_]/g, '_');
+            const urlParts = fileUrl.split('.');
+            const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1] : 'jpg';
+            // Extract product ID from resourceId (format: product_123_1)
+            const productId = resourceId.startsWith('product_') ? 
+                resourceId.split('_')[1] : // Get the product ID part
+                resourceId;
+                
+            const finalFilename = resourceId.startsWith('product_') ? 
+                `Sản_Phẩm_buddyskincare.vn_${productId}.${extension}` : 
+                `${cleanFileName}.${extension}`;
+            
+            const a = document.createElement('a');
+            a.href = fileUrl;
+            a.download = finalFilename;
+            // Remove target='_blank' to force download instead of opening in new tab
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            console.log('✅ Simple download started');
+            return;
+            
+        } catch (simpleError) {
+            console.warn('Simple download failed, trying Django proxy:', simpleError);
+        }
         
-        // Trigger download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        // Method 3: Try Django download proxy
+        try {
+            console.log('🔄 Trying Django download proxy...');
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const baseUrl = isLocalhost ? window.location.origin : 'https://buddyskincare.vn';
+            
+            // Better filename for product images
+            const cleanFileName = fileName.replace(/[^a-zA-Z0-9\-_]/g, '_');
+            const urlParts = fileUrl.split('.');
+            const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1] : 'jpg';
+            // Extract product ID from resourceId (format: product_123_1)
+            const productId = resourceId.startsWith('product_') ? 
+                resourceId.split('_')[1] : // Get the product ID part
+                resourceId;
+                
+            const finalFilename = resourceId.startsWith('product_') ? 
+                `Sản_Phẩm_buddyskincare.vn_${productId}.${extension}` : 
+                `${cleanFileName}.${extension}`;
+            
+            const proxy = `${baseUrl}/backend/api/download-image/?url=${encodeURIComponent(fileUrl)}&filename=${encodeURIComponent(finalFilename)}`;
+            
+            const a = document.createElement('a');
+            a.href = proxy;
+            a.download = finalFilename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+            console.log('✅ Download started via Django proxy');
+            return;
+            
+        } catch (proxyError) {
+            console.warn('Django proxy failed, trying fallback:', proxyError);
+        }
         
-        // Clean up
-        window.URL.revokeObjectURL(downloadUrl);
+        // Method 4: Final fallback - open in new tab
+        try {
+            console.log('🔄 Trying direct fetch method...');
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const blob = await response.blob();
+            console.log('📦 Blob created, size:', blob.size);
+            
+            // Create download link
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            
+            // Get file extension from URL or default to jpg
+            const urlParts = fileUrl.split('.');
+            const extension = urlParts.length > 1 ? urlParts[urlParts.length - 1] : 'jpg';
+            
+            // Better filename for product images
+            const cleanFileName = fileName.replace(/[^a-zA-Z0-9\-_]/g, '_');
+            
+            // Extract product ID from resourceId (format: product_123_1)
+            const productId = resourceId.startsWith('product_') ? 
+                resourceId.split('_')[1] : // Get the product ID part
+                resourceId;
+                
+            link.download = resourceId.startsWith('product_') ? 
+                `Sản_Phẩm_buddyskincare.vn_${productId}.${extension}` : 
+                `buddy_image_${resourceId}.${extension}`;
+            
+            console.log('📁 Download filename:', link.download);
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Clean up
+            setTimeout(() => {
+                window.URL.revokeObjectURL(downloadUrl);
+            }, 1000);
+            
+            console.log('✅ Download completed via direct method');
+            
+        } catch (fetchError) {
+            console.error('Direct fetch failed:', fetchError);
+            throw fetchError;
+        }
         
     } catch (error) {
-        console.error('Error downloading resource:', error);
-        // Fallback: open in new tab
-        window.open(fileUrl, '_blank');
+        console.error('❌ All download methods failed:', error);
+        
+        // Final fallback: try simple download link
+        console.log('🔄 Trying simple download link as fallback...');
+        try {
+            const a = document.createElement('a');
+            a.href = fileUrl;
+            a.download = fileName || 'download';
+            a.target = '_blank';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            console.log('✅ Simple download link triggered');
+        } catch (fallbackError) {
+            console.error('❌ Even simple download failed:', fallbackError);
+            // Ultimate fallback: open in new tab
+            console.log('🔄 Opening in new tab as ultimate fallback...');
+            window.open(fileUrl, '_blank');
+        }
     }
 }
 
@@ -405,6 +1060,1050 @@ async function copyDescription(description, resourceName) {
         
         // Fallback: show alert
         alert(`Mô tả của "${resourceName}":\n\n${description}`);
+    }
+}
+
+// Function to add watermark to image
+async function addWatermarkToImage(blob, resourceId, fileName) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        img.onload = function() {
+            // Set canvas size to match image
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw original image
+            ctx.drawImage(img, 0, 0);
+            
+            // Get product data from resourceId
+            const productData = getProductDataFromResourceId(resourceId);
+            
+            // Add watermarks sequentially to ensure logo loads first
+            addLogoWatermark(ctx, canvas.width, canvas.height).then(() => {
+                // Add product info watermark (top right)
+                addProductInfoWatermark(ctx, canvas.width, canvas.height, productData);
+                
+                // Add product name watermark (bottom)
+                addProductNameWatermark(ctx, canvas.width, canvas.height, productData);
+                
+                // Convert canvas to blob after all watermarks are added
+                canvas.toBlob((watermarkedBlob) => {
+                    if (watermarkedBlob) {
+                        console.log('✅ Watermark added successfully');
+                        resolve(watermarkedBlob);
+                    } else {
+                        console.error('❌ Failed to create watermarked blob');
+                        resolve(blob); // Return original blob if watermark fails
+                    }
+                }, 'image/jpeg', 0.9);
+            });
+        };
+        
+        img.onerror = function() {
+            console.error('❌ Failed to load image for watermarking');
+            resolve(blob); // Return original blob if image loading fails
+        };
+        
+        // Load image from blob
+        const url = URL.createObjectURL(blob);
+        img.src = url;
+    });
+}
+
+// Function to get product data from resourceId
+function getProductDataFromResourceId(resourceId) {
+    // Extract product info from the current page data
+    const productElement = document.querySelector(`[data-resource-id="${resourceId}"]`);
+    if (!productElement) return null;
+    
+    // Try to get data from data attributes first (more reliable)
+    const stockAttr = productElement.getAttribute('data-stock');
+    const priceAttr = productElement.getAttribute('data-price');
+    const statusAttr = productElement.getAttribute('data-status');
+    
+    let stock = 0;
+    let price = '0đ';
+    let status = 'N/A';
+    
+    // Use data attributes if available
+    if (stockAttr !== null) {
+        stock = parseInt(stockAttr) || 0;
+    } else {
+        // Fallback: Extract from badge text
+        const badgeElement = productElement.querySelector('.badge');
+        if (badgeElement) {
+            const badgeText = badgeElement.textContent;
+            const lines = badgeText.split('\n').map(line => line.trim()).filter(line => line);
+            
+            // Extract stock
+            const stockLine = lines.find(line => line.includes('Hết hàng') || line.includes('📦'));
+            if (stockLine) {
+                if (stockLine.includes('Hết hàng')) {
+                    stock = 0;
+                } else {
+                    const stockMatch = stockLine.match(/(\d+)/);
+                    stock = stockMatch ? parseInt(stockMatch[1]) : 0;
+                }
+            }
+        }
+    }
+    
+    if (priceAttr !== null) {
+        price = priceAttr;
+    } else {
+        // Fallback: Extract from badge text
+        const badgeElement = productElement.querySelector('.badge');
+        if (badgeElement) {
+            const badgeText = badgeElement.textContent;
+            const lines = badgeText.split('\n').map(line => line.trim()).filter(line => line);
+            
+            // Extract price
+            const priceLine = lines.find(line => line.includes('Giá:') || line.includes('đ'));
+            if (priceLine) {
+                const priceMatch = priceLine.match(/([\d,\.]+đ)/);
+                price = priceMatch ? priceMatch[1] : '0đ';
+            }
+        }
+    }
+    
+    if (statusAttr !== null) {
+        status = statusAttr;
+    } else {
+        // Fallback: Extract from badge text
+        const badgeElement = productElement.querySelector('.badge');
+        if (badgeElement) {
+            const badgeText = badgeElement.textContent;
+            const lines = badgeText.split('\n').map(line => line.trim()).filter(line => line);
+            
+            // Extract status
+            const statusLine = lines.find(line => line.includes('New') || line.includes('Còn') || line.includes('Test'));
+            if (statusLine) {
+                status = statusLine;
+            }
+        }
+    }
+    
+    console.log('🔍 Product data extracted:', { resourceId, stock, price, status });
+    
+    return {
+        name: productElement.getAttribute('title') || 'Sản phẩm',
+        stock: stock,
+        price: price,
+        status: status
+    };
+}
+
+// Function to add logo watermark
+function addLogoWatermark(ctx, canvasWidth, canvasHeight) {
+    return new Promise((resolve) => {
+        const logoSize = Math.min(canvasWidth, canvasHeight) * 0.15; // 15% of smaller dimension for better proportion with large text
+        const logoX = 8;
+        const logoY = 8;
+        
+        // Load the actual logo image
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous'; // Enable CORS for external images
+        
+        logoImg.onload = function() {
+            // Draw the actual logo with proper scaling
+            ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+            resolve();
+        };
+        
+        logoImg.onerror = function() {
+            console.warn('Failed to load logo, using fallback');
+            // Fallback to simple logo if image fails to load
+            ctx.fillStyle = '#007bff';
+            ctx.beginPath();
+            ctx.arc(logoX + logoSize/2, logoY + logoSize/2, logoSize/2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${logoSize * 0.6}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('B', logoX + logoSize/2, logoY + logoSize/2);
+            resolve();
+        };
+        
+        // Load the actual logo from the static directory
+        logoImg.src = '/static/image/logo.png';
+    });
+}
+
+// Function to add product info watermark
+function addProductInfoWatermark(ctx, canvasWidth, canvasHeight, productData) {
+    // Calculate font size based on image height * 0.03
+    const fontSize = Math.max(canvasHeight * 0.03, 30); // Minimum 12px
+    
+    // Calculate badge size based on font size
+    const badgeWidth = Math.min(canvasWidth * 0.5);
+    const badgeHeight = fontSize * 4.5; // Height based on font size
+    const badgeX = canvasWidth - canvasWidth * 0.25; // Dynamic position based on image width * 0.06
+    const badgeY = 30;
+    
+    // Determine background color based on stock
+    const hasStock = productData?.stock > 0;
+    console.log('🎨 Watermark stock check:', { 
+        productData, 
+        stock: productData?.stock, 
+        hasStock, 
+        stockType: typeof productData?.stock 
+    });
+    const backgroundColor = hasStock ? 'rgba(0, 128, 0, 0.8)' : 'rgba(220, 53, 69, 0.8)'; // Green or Red
+    
+    // Draw badge background with rounded corners
+    ctx.fillStyle = backgroundColor;
+    ctx.beginPath();
+    ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 4);
+    ctx.fill();
+    
+    // Draw badge text with dynamic font size
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    
+    const textX = badgeX + canvasWidth * 0.015; // Padding
+    const textY = badgeY + canvasHeight * 0.015; // Padding
+    const lineSpacing = fontSize * 1.2; // Line spacing based on font size
+    
+    // Stock info
+    ctx.font = `bold ${fontSize}px Arial`;
+    const stockText = hasStock ? `📦 Còn ${productData.stock}` : '📦 Hết hàng';
+    ctx.fillText(stockText, textX, textY);
+    
+    // Price info
+    ctx.font = `bold ${fontSize}px Arial`;
+    const priceText = `💰 ${productData?.price || '0đ'}`;
+    ctx.fillText(priceText, textX, textY + lineSpacing);
+    
+    // Status info
+    ctx.font = `bold ${fontSize}px Arial`;
+    const statusText = `📋 ${productData?.status || 'N/A'}`;
+    ctx.fillText(statusText, textX, textY + lineSpacing * 2);
+}
+
+// Function to add product name watermark
+function addProductNameWatermark(ctx, canvasWidth, canvasHeight, productData) {
+    // Calculate font size based on image height * 0.03
+    const fontSize = Math.max(canvasHeight * 0.03, 40); // Minimum 12px
+    
+    // Calculate height based on font size
+    const nameHeight = fontSize * 3; // Height based on font size
+    const nameY = canvasHeight - nameHeight;
+    
+    // Draw name background with rounded bottom corners
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.beginPath();
+    ctx.roundRect(0, nameY, canvasWidth, nameHeight, {tl: 0, tr: 0, br: 4, bl: 4}); // Rounded bottom corners only
+    ctx.fill();
+    
+    // Draw name text with dynamic font size
+    ctx.fillStyle = 'white';
+    ctx.font = `700 ${fontSize}px Arial`; // Dynamic font size
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Use real product name from data
+    const productName = productData?.name || 'Sản phẩm mỹ phẩm';
+    const maxWidth = canvasWidth - 16; // Padding on both sides
+    
+    // Truncate text if too long (support 2 lines max)
+    let displayName = productName;
+    const lineHeight = fontSize * 1.2; // Line height based on font size
+    const maxLines = 2;
+    
+    // Check if text fits in one line
+    if (ctx.measureText(displayName).width <= maxWidth) {
+        // Single line - center vertically
+        ctx.fillText(displayName, canvasWidth / 2, nameY + nameHeight / 2);
+    } else {
+        // Multi-line - split text and center
+        const words = displayName.split(' ');
+        let line1 = '';
+        let line2 = '';
+        let currentLine = '';
+        
+        for (let i = 0; i < words.length; i++) {
+            const testLine = currentLine + (currentLine ? ' ' : '') + words[i];
+            if (ctx.measureText(testLine).width <= maxWidth) {
+                currentLine = testLine;
+            } else {
+                if (!line1) {
+                    line1 = currentLine;
+                    currentLine = words[i];
+                } else {
+                    line2 = currentLine + ' ' + words.slice(i).join(' ');
+                    break;
+                }
+            }
+        }
+        
+        if (!line1) line1 = currentLine;
+        if (!line2) line2 = currentLine;
+        
+        // Truncate line2 if still too long
+        if (ctx.measureText(line2).width > maxWidth) {
+            while (ctx.measureText(line2 + '...').width > maxWidth && line2.length > 0) {
+                line2 = line2.slice(0, -1);
+            }
+            line2 += '...';
+        }
+        
+        // Draw lines
+        const totalHeight = line2 ? lineHeight * 2 : lineHeight;
+        const startY = nameY + (nameHeight - totalHeight) / 2 + lineHeight / 2;
+        
+        ctx.fillText(line1, canvasWidth / 2, startY);
+        if (line2 && line2 !== line1) {
+            ctx.fillText(line2, canvasWidth / 2, startY + lineHeight);
+        }
+    }
+}
+
+// Function to populate category filter
+function populateCategoryFilter(categories) {
+    const categorySelect = document.getElementById('productCategoryFilter');
+    categorySelect.innerHTML = '<option value="">Tất cả danh mục</option>';
+    
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+    });
+}
+
+// Function to populate brand filter
+function populateBrandFilter(brands) {
+    const brandSelect = document.getElementById('productBrandFilter');
+    brandSelect.innerHTML = '<option value="">Tất cả hãng</option>';
+    
+    brands.forEach(brand => {
+        const option = document.createElement('option');
+        option.value = brand;
+        option.textContent = brand;
+        brandSelect.appendChild(option);
+    });
+}
+
+// Function to filter products
+function filterProducts() {
+    const nameFilter = document.getElementById('productNameFilter').value.toLowerCase();
+    const categoryFilter = document.getElementById('productCategoryFilter').value;
+    const brandFilter = document.getElementById('productBrandFilter').value;
+    const stockFilter = document.getElementById('productStockFilter').value;
+    
+    const filteredData = allProductData.filter(product => {
+        const nameMatch = !nameFilter || product.product_name.toLowerCase().includes(nameFilter);
+        const categoryMatch = !categoryFilter || product.product_category === categoryFilter;
+        const brandMatch = !brandFilter || product.product_brand === brandFilter;
+        
+        // Stock filter logic
+        let stockMatch = true;
+        if (stockFilter === 'in_stock') {
+            stockMatch = product.stock_quantity > 0;
+        } else if (stockFilter === 'out_of_stock') {
+            stockMatch = product.stock_quantity <= 0;
+        }
+        
+        return nameMatch && categoryMatch && brandMatch && stockMatch;
+    });
+    
+    console.log(`🔍 Filtered products: ${filteredData.length} out of ${allProductData.length}`, {
+        nameFilter, categoryFilter, brandFilter, stockFilter
+    });
+    displayResources(filteredData, 'productResources');
+    updateProductCount(filteredData.length);
+    
+    // Update button states
+    updateFilteredSelectionButtons();
+}
+
+// Function to clear all filters
+function clearProductFilters() {
+    document.getElementById('productNameFilter').value = '';
+    document.getElementById('productCategoryFilter').value = '';
+    document.getElementById('productBrandFilter').value = '';
+    document.getElementById('productStockFilter').value = '';
+    
+    displayResources(allProductData, 'productResources');
+    updateProductCount(allProductData.length);
+    
+    // Update button states
+    updateFilteredSelectionButtons();
+}
+
+// Function to update product count
+function updateProductCount(count) {
+    document.getElementById('productCount').textContent = count;
+}
+
+// Function to update selected products summary
+function updateSelectedProductsSummary() {
+    const summaryDiv = document.getElementById('selectedProductsSummary');
+    const selectedCount = document.getElementById('selectedCount');
+    const selectedProductsList = document.getElementById('selectedProductsList');
+    const selectedTotalPrice = document.getElementById('selectedTotalPrice');
+    const selectedTotalItems = document.getElementById('selectedTotalItems');
+    
+    if (selectedProducts.size === 0) {
+        summaryDiv.style.display = 'none';
+        return;
+    }
+    
+    // Show summary
+    summaryDiv.style.display = 'block';
+    selectedCount.textContent = selectedProducts.size;
+    selectedTotalItems.textContent = selectedProducts.size;
+    
+    // Calculate total price and total quantity
+    let totalPrice = 0;
+    let totalQuantity = 0;
+    let productListHTML = '';
+    
+    selectedProducts.forEach((selectedProduct, resourceId) => {
+        // Try to get product element from current display first
+        let productElement = document.querySelector(`[data-resource-id="${resourceId}"]`);
+        
+        // If not found in current display, try to find in allProductData
+        if (!productElement) {
+            const productData = allProductData.find(p => p.id === resourceId);
+            if (productData) {
+                // Create a virtual element with the data
+                productElement = {
+                    getAttribute: (attr) => {
+                        switch(attr) {
+                            case 'title': return productData.name;
+                            case 'data-stock': return productData.stock_quantity || 0;
+                            case 'data-price': return productData.discounted_price ? Number(productData.discounted_price * 1000).toLocaleString('vi-VN') + 'đ' : '0đ';
+                            case 'data-status': return productData.status ? getProductStatusText(productData.status) : 'N/A';
+                            default: return '';
+                        }
+                    }
+                };
+            }
+        }
+        
+        if (productElement) {
+            const productName = productElement.getAttribute('title') || 'Sản phẩm';
+            const stockAttr = productElement.getAttribute('data-stock');
+            const priceAttr = productElement.getAttribute('data-price');
+            const statusAttr = productElement.getAttribute('data-status');
+            
+            // Parse price (remove 'đ' and convert to number)
+            let price = 0;
+            if (priceAttr) {
+                const priceStr = priceAttr.replace(/[^\d]/g, '');
+                price = parseInt(priceStr) || 0;
+            }
+            
+            // Get quantity from selected products map
+            const quantity = selectedProduct.quantity || 1;
+            
+            totalPrice += price * quantity;
+            totalQuantity += quantity;
+            
+            // Build product item
+            productListHTML += `
+                <div class="selected-product-item border-bottom py-2 mb-2">
+                    <!-- Desktop: All in one row -->
+                    <div class="d-none d-lg-flex justify-content-between align-items-center">
+                        <div class="flex-grow-1 me-3">
+                            <div class="fw-semibold">${productName}</div>
+                            <div class="text-muted small">
+                                ${priceAttr || '0đ'} • 
+                                ${stockAttr > 0 ? `Còn ${stockAttr}` : 'Hết hàng'} • 
+                                ${statusAttr || 'N/A'}
+                            </div>
+                        </div>
+                        <div class="fw-bold text-success me-3">
+                            ${(price * quantity).toLocaleString('vi-VN')}đ
+                        </div>
+                        <div class="d-flex align-items-center gap-2 me-3">
+                            <label class="small fw-semibold mb-0">Số lượng:</label>
+                            <input type="number" 
+                                   class="form-control form-control-sm" 
+                                   style="width: 80px;" 
+                                   min="1" 
+                                   max="${stockAttr || 1}" 
+                                   value="${quantity}"
+                                   onchange="updateProductQuantity('${resourceId}', this.value)"
+                                   id="quantity_${resourceId}">
+                            <span class="text-muted small">/ ${stockAttr || 0}</span>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" onclick="removeSelectedProduct('${resourceId}')" title="Bỏ chọn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Mobile: Two rows -->
+                    <div class="d-lg-none">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="fw-semibold">${productName}</div>
+                            <div class="fw-bold text-success">
+                                ${(price * quantity).toLocaleString('vi-VN')}đ
+                            </div>
+                        </div>
+                        <div class="text-muted small mb-2">
+                            ${priceAttr || '0đ'} • 
+                            ${stockAttr > 0 ? `Còn ${stockAttr}` : 'Hết hàng'} • 
+                            ${statusAttr || 'N/A'}
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="small fw-semibold">Số lượng:</label>
+                                <input type="number" 
+                                       class="form-control form-control-sm" 
+                                       style="width: 80px;" 
+                                       min="1" 
+                                       max="${stockAttr || 1}" 
+                                       value="${quantity}"
+                                       onchange="updateProductQuantity('${resourceId}', this.value)"
+                                       id="quantity_${resourceId}">
+                                <span class="text-muted small">/ ${stockAttr || 0}</span>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" onclick="removeSelectedProduct('${resourceId}')" title="Bỏ chọn">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    // Update UI
+    selectedProductsList.innerHTML = productListHTML;
+    selectedTotalPrice.textContent = totalPrice.toLocaleString('vi-VN') + 'đ';
+    
+    // Update total quantity
+    const selectedTotalQuantity = document.getElementById('selectedTotalQuantity');
+    if (selectedTotalQuantity) {
+        selectedTotalQuantity.textContent = totalQuantity;
+    }
+}
+
+// Function to remove a selected product
+function removeSelectedProduct(resourceId) {
+    // Try to uncheck checkbox if it exists in current display
+    const checkbox = document.querySelector(`input[value="${resourceId}"]`);
+    if (checkbox) {
+        checkbox.checked = false;
+    }
+    
+    // Remove from selected products map
+    selectedProducts.delete(resourceId);
+    
+    updateDownloadSelectedButton();
+    showFilterFeedback('Đã bỏ chọn sản phẩm');
+}
+
+// Function to update product quantity
+function updateProductQuantity(resourceId, newQuantity) {
+    const quantity = parseInt(newQuantity) || 1;
+    
+    // Try to get product element from current display first
+    let productElement = document.querySelector(`[data-resource-id="${resourceId}"]`);
+    
+    // If not found in current display, try to find in allProductData
+    if (!productElement) {
+        const productData = allProductData.find(p => p.id === resourceId);
+        if (productData) {
+            // Create a virtual element with the data
+            productElement = {
+                getAttribute: (attr) => {
+                    switch(attr) {
+                        case 'data-stock': return productData.stock_quantity || 0;
+                        default: return '';
+                    }
+                }
+            };
+        }
+    }
+    
+    if (productElement) {
+        const stockAttr = productElement.getAttribute('data-stock');
+        const maxStock = parseInt(stockAttr) || 1;
+        
+        // Validate quantity
+        if (quantity < 1) {
+            const quantityInput = document.getElementById(`quantity_${resourceId}`);
+            if (quantityInput) quantityInput.value = 1;
+            return;
+        }
+        
+        if (quantity > maxStock) {
+            const quantityInput = document.getElementById(`quantity_${resourceId}`);
+            if (quantityInput) quantityInput.value = maxStock;
+            showFilterFeedback(`Số lượng không được vượt quá ${maxStock}`);
+            return;
+        }
+        
+        // Update selected products map
+        const selectedProduct = selectedProducts.get(resourceId);
+        if (selectedProduct) {
+            selectedProduct.quantity = quantity;
+            selectedProducts.set(resourceId, selectedProduct);
+        }
+        
+        // Update UI
+        updateSelectedProductsSummary();
+    }
+}
+
+// Function to add product to selected list
+function addProductToSelected(resourceId) {
+    // Try to get product element from current display first
+    let productElement = document.querySelector(`[data-resource-id="${resourceId}"]`);
+    
+    // If not found in current display, try to find in allProductData
+    if (!productElement) {
+        const productData = allProductData.find(p => p.id === resourceId);
+        if (productData) {
+            // Create a virtual element with the data
+            productElement = {
+                getAttribute: (attr) => {
+                    switch(attr) {
+                        case 'title': return productData.name;
+                        case 'data-stock': return productData.stock_quantity || 0;
+                        case 'data-price': return productData.discounted_price ? Number(productData.discounted_price * 1000).toLocaleString('vi-VN') + 'đ' : '0đ';
+                        case 'data-status': return productData.status ? getProductStatusText(productData.status) : 'N/A';
+                        default: return '';
+                    }
+                }
+            };
+        }
+    }
+    
+    if (productElement) {
+        const productData = {
+            name: productElement.getAttribute('title') || 'Sản phẩm',
+            stock: productElement.getAttribute('data-stock') || 0,
+            price: productElement.getAttribute('data-price') || '0đ',
+            status: productElement.getAttribute('data-status') || 'N/A'
+        };
+        
+        selectedProducts.set(resourceId, {
+            productData: productData,
+            quantity: 1
+        });
+    }
+}
+
+// Function to clear all selected products
+function clearAllSelectedProducts() {
+    // Uncheck all checkboxes
+    const allCheckboxes = document.querySelectorAll('.resource-checkbox');
+    allCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Clear selected products map
+    selectedProducts.clear();
+    
+    // Hide both views
+    document.getElementById('selectedProductsImages').style.display = 'none';
+    document.getElementById('selectedProductsSummary').style.display = 'none';
+    
+    // Update UI
+    updateDownloadSelectedButton();
+    showFilterFeedback('Đã xóa tất cả sản phẩm đã chọn');
+}
+
+// Function to toggle selected products images view
+function toggleSelectedProductsView() {
+    const imagesView = document.getElementById('selectedProductsImages');
+    const summaryView = document.getElementById('selectedProductsSummary');
+    const toggleBtn = document.getElementById('toggleViewBtn');
+    const summaryBtn = document.getElementById('toggleSummaryBtn');
+    
+    if (imagesView.style.display === 'none') {
+        // Show images view
+        imagesView.style.display = 'block';
+        summaryView.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Ẩn ảnh';
+        toggleBtn.classList.remove('btn-outline-info');
+        toggleBtn.classList.add('btn-info');
+        summaryBtn.classList.remove('btn-warning');
+        summaryBtn.classList.add('btn-outline-warning');
+        
+        // Update images display
+        updateSelectedProductsImages();
+    } else {
+        // Hide images view
+        imagesView.style.display = 'none';
+        toggleBtn.innerHTML = '<i class="fas fa-images me-1"></i>Hiện ảnh';
+        toggleBtn.classList.remove('btn-info');
+        toggleBtn.classList.add('btn-outline-info');
+    }
+}
+
+// Function to toggle selected products summary view
+function toggleSelectedProductsSummary() {
+    const imagesView = document.getElementById('selectedProductsImages');
+    const summaryView = document.getElementById('selectedProductsSummary');
+    const toggleBtn = document.getElementById('toggleViewBtn');
+    const summaryBtn = document.getElementById('toggleSummaryBtn');
+    
+    if (summaryView.style.display === 'none') {
+        // Show summary view
+        summaryView.style.display = 'block';
+        imagesView.style.display = 'none';
+        summaryBtn.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Ẩn tính toán';
+        summaryBtn.classList.remove('btn-outline-warning');
+        summaryBtn.classList.add('btn-warning');
+        toggleBtn.classList.remove('btn-info');
+        toggleBtn.classList.add('btn-outline-info');
+        
+        // Update summary display
+        updateSelectedProductsSummary();
+    } else {
+        // Hide summary view
+        summaryView.style.display = 'none';
+        summaryBtn.innerHTML = '<i class="fas fa-calculator me-1"></i>Hiện tính toán';
+        summaryBtn.classList.remove('btn-warning');
+        summaryBtn.classList.add('btn-outline-warning');
+    }
+}
+
+// Function to update selected products images display
+function updateSelectedProductsImages() {
+    const imagesList = document.getElementById('selectedProductsImagesList');
+    const imagesCount = document.getElementById('selectedImagesCount');
+    
+    if (selectedProducts.size === 0) {
+        imagesList.innerHTML = '<div class="col-12 text-center text-muted">Không có sản phẩm nào được chọn</div>';
+        imagesCount.textContent = '0';
+        return;
+    }
+    
+    imagesCount.textContent = selectedProducts.size;
+    
+    // Clear current list
+    imagesList.innerHTML = '';
+    
+    selectedProducts.forEach((selectedProduct, resourceId) => {
+        // Find the actual tile in #productResources
+        const itemEl = document.querySelector(`#productResources [data-resource-id="${resourceId}"]`);
+        if (itemEl) {
+            const columnEl = itemEl.closest('div.col-md-3, div.col-lg-2, div.col-6, .mb-3') || itemEl.parentElement;
+            const clone = columnEl.cloneNode(true);
+            // Ensure checkbox reflects selected state
+            const cb = clone.querySelector(`input.resource-checkbox[value="${resourceId}"]`);
+            if (cb) cb.checked = true;
+            // Append to images list
+            const wrapper = document.createElement('div');
+            wrapper.className = 'col-md-2 col-sm-3 col-4';
+            // Keep only the core card (.resource-item) to make grid compact
+            const core = clone.querySelector('.resource-item') || clone;
+            wrapper.appendChild(core.cloneNode(true));
+            imagesList.appendChild(wrapper);
+            return;
+        }
+        
+        // Fallback: build a minimal card from allProductData
+        const productData = allProductData.find(p => p.id === resourceId);
+        if (productData && productData.file_url) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'col-md-2 col-sm-3 col-4';
+            wrapper.innerHTML = `
+                <div class="selected-product-image" title="${productData.name}">
+                    <img src="${productData.file_url}" alt="${productData.name}">
+                    <div class="quantity-badge">${selectedProduct.quantity || 1}</div>
+                    <button class="remove-btn" onclick="removeSelectedProduct('${resourceId}')" title="Bỏ chọn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            imagesList.appendChild(wrapper);
+        }
+    });
+}
+
+// Function to select all filtered products (only visible ones)
+function selectAllFilteredProducts() {
+    const visibleCheckboxes = document.querySelectorAll('#productResources .resource-checkbox');
+    visibleCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateDownloadSelectedButton();
+    
+    // Show feedback
+    const count = visibleCheckboxes.length;
+    showFilterFeedback(`Đã chọn ${count} sản phẩm đang hiển thị`);
+}
+
+// Function to deselect all filtered products (only visible ones)
+function deselectAllFilteredProducts() {
+    const visibleCheckboxes = document.querySelectorAll('#productResources .resource-checkbox');
+    visibleCheckboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateDownloadSelectedButton();
+    
+    // Show feedback
+    const count = visibleCheckboxes.length;
+    showFilterFeedback(`Đã bỏ chọn ${count} sản phẩm đang hiển thị`);
+}
+
+// Function to show filter feedback
+function showFilterFeedback(message) {
+    // Remove existing feedback if any
+    const existingFeedback = document.getElementById('filterFeedback');
+    if (existingFeedback) {
+        existingFeedback.remove();
+    }
+    
+    // Create new feedback
+    const feedback = document.createElement('div');
+    feedback.id = 'filterFeedback';
+    feedback.className = 'position-fixed top-0 end-0 m-3 p-2 bg-info text-white rounded shadow';
+    feedback.style.zIndex = '9999';
+    feedback.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-info-circle me-2"></i>
+            <small>${message}</small>
+        </div>
+    `;
+    
+    document.body.appendChild(feedback);
+    
+    // Remove after 2 seconds
+    setTimeout(() => {
+        if (feedback.parentNode) {
+            feedback.parentNode.removeChild(feedback);
+        }
+    }, 2000);
+}
+
+// Function to update filtered selection button states
+function updateFilteredSelectionButtons() {
+    const visibleCheckboxes = document.querySelectorAll('#productResources .resource-checkbox');
+    const selectFilteredBtn = document.getElementById('selectFilteredBtn');
+    const deselectFilteredBtn = document.getElementById('deselectFilteredBtn');
+    
+    if (visibleCheckboxes.length === 0) {
+        selectFilteredBtn.disabled = true;
+        deselectFilteredBtn.disabled = true;
+        selectFilteredBtn.innerHTML = '<i class="fas fa-check-square me-1"></i>Chọn tất cả đã lọc';
+        deselectFilteredBtn.innerHTML = '<i class="fas fa-square me-1"></i>Bỏ chọn đã lọc';
+    } else {
+        selectFilteredBtn.disabled = false;
+        deselectFilteredBtn.disabled = false;
+        selectFilteredBtn.innerHTML = `<i class="fas fa-check-square me-1"></i>Chọn tất cả đã lọc (${visibleCheckboxes.length})`;
+        deselectFilteredBtn.innerHTML = `<i class="fas fa-square me-1"></i>Bỏ chọn đã lọc (${visibleCheckboxes.length})`;
+    }
+}
+
+// Function to select all products
+function selectAllProducts() {
+    const checkboxes = document.querySelectorAll('.resource-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    updateDownloadSelectedButton();
+}
+
+// Function to deselect all products
+function deselectAllProducts() {
+    const checkboxes = document.querySelectorAll('.resource-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    updateDownloadSelectedButton();
+}
+
+// Function to update download selected button state
+function updateDownloadSelectedButton() {
+    const selectedCheckboxes = document.querySelectorAll('.resource-checkbox:checked');
+    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+    
+    // Add newly selected products to map
+    selectedCheckboxes.forEach(checkbox => {
+        const resourceId = checkbox.value;
+        if (!selectedProducts.has(resourceId)) {
+            addProductToSelected(resourceId);
+        }
+    });
+    
+    // Only remove from map if checkbox is explicitly unchecked (not just hidden by filter)
+    selectedProducts.forEach((value, resourceId) => {
+        const checkbox = document.querySelector(`input[value="${resourceId}"]`);
+        // Only remove if checkbox exists and is explicitly unchecked
+        if (checkbox && !checkbox.checked) {
+            selectedProducts.delete(resourceId);
+        }
+    });
+    
+    if (selectedProducts.size > 0) {
+        downloadSelectedBtn.disabled = false;
+        downloadSelectedBtn.innerHTML = `<i class="fas fa-download me-1"></i>Tải đã chọn (${selectedProducts.size})`;
+    } else {
+        downloadSelectedBtn.disabled = true;
+        downloadSelectedBtn.innerHTML = '<i class="fas fa-download me-1"></i>Tải đã chọn';
+    }
+    
+    // Update selected products summary
+    updateSelectedProductsSummary();
+    
+    // Update images view if it's visible
+    const imagesView = document.getElementById('selectedProductsImages');
+    if (imagesView && imagesView.style.display !== 'none') {
+        updateSelectedProductsImages();
+    }
+}
+
+// Function to download selected products with watermark
+async function downloadSelectedWithWatermark() {
+    if (selectedProducts.size === 0) {
+        alert('Vui lòng chọn ít nhất một sản phẩm để tải xuống');
+        return;
+    }
+    
+    const watermarkEnabled = document.getElementById('watermarkToggle').checked;
+    const confirmMessage = watermarkEnabled ? 
+        `Tải xuống ${selectedProducts.size} sản phẩm đã chọn với watermark (logo, tên, giá, tình trạng)?` :
+        `Tải xuống ${selectedProducts.size} sản phẩm đã chọn không có watermark?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Disable button during download
+    const downloadBtn = document.getElementById('downloadSelectedBtn');
+    const originalText = downloadBtn.innerHTML;
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tải...';
+    
+    try {
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (const [resourceId, selectedProduct] of selectedProducts) {
+            // Try to get product element from current display first
+            let productElement = document.querySelector(`[data-resource-id="${resourceId}"]`);
+            
+            // If not found in current display, try to find in allProductData
+            if (!productElement) {
+                const productData = allProductData.find(p => p.id === resourceId);
+                if (productData) {
+                    // Create a virtual element with the data
+                    productElement = {
+                        getAttribute: (attr) => {
+                            switch(attr) {
+                                case 'title': return productData.name;
+                                default: return '';
+                            }
+                        },
+                        querySelector: (selector) => {
+                            if (selector === 'img' && productData.file_url) {
+                                return { src: productData.file_url };
+                            }
+                            return null;
+                        }
+                    };
+                }
+            }
+            
+            const resourceName = productElement ? productElement.getAttribute('title') : 'Sản phẩm';
+            const img = productElement ? productElement.querySelector('img') : null;
+            
+            if (img && resourceId && resourceName) {
+                try {
+                    // Download multiple times based on quantity
+                    for (let i = 0; i < selectedProduct.quantity; i++) {
+                        await downloadResource(resourceId, img.src, resourceName);
+                        successCount++;
+                        
+                        // Small delay between downloads
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                } catch (error) {
+                    console.error(`Error downloading ${resourceName}:`, error);
+                    errorCount++;
+                }
+            }
+        }
+        
+        alert(`Tải xuống hoàn tất!\nThành công: ${successCount}\nLỗi: ${errorCount}`);
+        
+        // Clear all selected products
+        clearAllSelectedProducts();
+        
+        // Hide summary after download
+        document.getElementById('selectedProductsSummary').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Error in selected download:', error);
+        alert('Có lỗi xảy ra khi tải xuống các sản phẩm đã chọn');
+    } finally {
+        // Re-enable button
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = originalText;
+    }
+}
+
+// Function to download all products with watermark
+async function downloadAllWithWatermark() {
+    const watermarkEnabled = document.getElementById('watermarkToggle').checked;
+    const productElements = document.querySelectorAll('[data-resource-type="product"]');
+    
+    if (productElements.length === 0) {
+        alert('Không có sản phẩm nào để tải xuống');
+        return;
+    }
+    
+    const confirmMessage = watermarkEnabled ? 
+        `Tải xuống ${productElements.length} sản phẩm với watermark (logo, tên, giá, tình trạng)?` :
+        `Tải xuống ${productElements.length} sản phẩm không có watermark?`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // Disable button during download
+    const downloadBtn = document.getElementById('downloadAllBtn');
+    const originalText = downloadBtn.innerHTML;
+    downloadBtn.disabled = true;
+    downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang tải...';
+    
+    try {
+        let successCount = 0;
+        let errorCount = 0;
+        
+        for (let i = 0; i < productElements.length; i++) {
+            const element = productElements[i];
+            const resourceId = element.getAttribute('data-resource-id');
+            const resourceName = element.getAttribute('title');
+            const img = element.querySelector('img');
+            
+            if (img && resourceId && resourceName) {
+                try {
+                    await downloadResource(resourceId, img.src, resourceName);
+                    successCount++;
+                    
+                    // Small delay between downloads
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } catch (error) {
+                    console.error(`Error downloading ${resourceName}:`, error);
+                    errorCount++;
+                }
+            }
+        }
+        
+        alert(`Tải xuống hoàn tất!\nThành công: ${successCount}\nLỗi: ${errorCount}`);
+        
+    } catch (error) {
+        console.error('Error in batch download:', error);
+        alert('Có lỗi xảy ra khi tải xuống hàng loạt');
+    } finally {
+        // Re-enable button
+        downloadBtn.disabled = false;
+        downloadBtn.innerHTML = originalText;
     }
 }
 </script>

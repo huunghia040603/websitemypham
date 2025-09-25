@@ -711,9 +711,9 @@ async function createOrder(){
   const payload = {
     customer_name: customerName,
     phone_number: customerPhone,
-    address: customerAddress,
+    street: customerAddress,  // ✅ Sửa từ 'address' thành 'street'
     items_data: itemsData,
-    shipping_fee: shippingFee,
+    shipping_fee: shippingFee / 1000,  // ✅ Chia cho 1000 để chuyển từ VND sang nghìn đồng
     collaborator_code: ctv.code,
     payment_method: paymentMethod,
     notes: orderNotes
@@ -728,16 +728,33 @@ async function createOrder(){
   console.log('🚀 Creating order with payload:', payload);
   
   try {
-    const resp = await fetch('/orders/', {
+    // Use the correct API endpoint
+    const apiUrl = '/backend/api/orders/';
+    console.log('📡 Calling API:', apiUrl);
+    
+    const resp = await fetch(apiUrl, {
       method: 'POST', 
-      headers: {'Content-Type': 'application/json'}, 
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken') || ''
+      }, 
       body: JSON.stringify(payload)
     });
     
-  const data = await resp.json().catch(()=>({}));
+    console.log('📡 API Response status:', resp.status);
+    console.log('📡 API Response headers:', resp.headers);
+    
+    const data = await resp.json().catch((e) => {
+      console.error('❌ Error parsing JSON response:', e);
+      return {};
+    });
+    
+    console.log('📡 API Response data:', data);
     
     if (!resp.ok) {
-      showMessage(data.detail || JSON.stringify(data) || 'Không tạo được đơn', 'danger');
+      const errorMsg = data.detail || data.message || JSON.stringify(data) || 'Không tạo được đơn';
+      console.error('❌ API Error:', errorMsg);
+      showMessage(`❌ Lỗi: ${errorMsg}`, 'danger');
       return;
     }
     
@@ -750,8 +767,8 @@ async function createOrder(){
     loadRecentOrders();
     
   } catch (error) {
-    console.error('Error creating order:', error);
-    showMessage('Lỗi khi tạo đơn hàng', 'danger');
+    console.error('❌ Network/Request Error:', error);
+    showMessage(`❌ Lỗi kết nối: ${error.message}`, 'danger');
   }
 }
 
@@ -1038,7 +1055,7 @@ async function loadRecentOrders() {
     const ctv = getCtv();
     if (!ctv) return;
     
-    const response = await fetch(`/orders/?collaborator_code=${ctv.code}&ordering=-order_date`);
+    const response = await fetch(`/backend/api/orders/?collaborator_code=${ctv.code}&ordering=-order_date`);
     const orders = await response.json();
     
     const container = document.getElementById('recentOrders');
@@ -1102,6 +1119,22 @@ async function testVoucherValidation(code) {
     console.error(`🧪 Test error for code "${code}":`, error);
     return null;
   }
+}
+
+// Helper function to get cookie
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
 }
 
 // Initialize page

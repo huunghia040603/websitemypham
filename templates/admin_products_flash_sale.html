@@ -551,24 +551,32 @@
 
     function removeProductFromTag(productId, productName) {
         if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${productName}" khỏi tag này?`)) {
-            // Remove tag from product
+            // Get tag name from the modal title
+            const tagName = document.getElementById('viewTagProductsModalLabel').textContent.split(': ')[1];
+            
+            // Remove tag from product using the new API
             fetch(`https://buddyskincare.vn/backend/api/products/${productId}/remove_tag/`, {
-                method: 'PATCH',
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tag_id: currentViewingTagId })
+                body: JSON.stringify({ tag_name: tagName })
             })
             .then(response => {
                 if (response.ok) {
-                    alert('Xóa sản phẩm khỏi tag thành công!');
-                    // Refresh the products list
-                    viewTagProducts(currentViewingTagId, document.getElementById('viewTagProductsModalLabel').textContent.split(': ')[1]);
+                    return response.json();
                 } else {
-                    throw new Error('Xóa sản phẩm khỏi tag thất bại');
+                    return response.json().then(err => { 
+                        throw new Error(err.detail || 'Xóa sản phẩm khỏi tag thất bại'); 
+                    });
                 }
+            })
+            .then(data => {
+                alert(data.detail || 'Xóa sản phẩm khỏi tag thành công!');
+                // Refresh the products list
+                viewTagProducts(currentViewingTagId, tagName);
             })
             .catch(error => {
                 console.error('Lỗi khi xóa sản phẩm khỏi tag:', error);
-                alert('Xóa sản phẩm khỏi tag thất bại. Vui lòng thử lại.');
+                alert('Lỗi khi xóa sản phẩm khỏi tag: ' + error.message);
             });
         }
     }

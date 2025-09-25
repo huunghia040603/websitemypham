@@ -341,6 +341,7 @@ class Product(models.Model):
     discounted_price = models.IntegerField(blank=True, null=True, verbose_name="Giá sau giảm (nghìn đồng)")
     is_visible = models.BooleanField(default=True, verbose_name="Hiển thị trên website")
 
+
     class Meta:
         verbose_name = "Sản phẩm"
         verbose_name_plural = "Sản phẩm"
@@ -413,6 +414,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Chờ xử lý'),
         ('processing', 'Đang xử lý'),
+        ('confirmed', 'Đã xác nhận'),
         ('shipped', 'Đã giao hàng'),
         ('delivered', 'Đã nhận hàng'),
         ('cancelled', 'Đã hủy'),
@@ -758,8 +760,8 @@ class CTVApplication(models.Model):
     bank_name = models.CharField(max_length=120)
     bank_number = models.CharField(max_length=50)
     bank_holder = models.CharField(max_length=150)
-    cccd_front_url = models.CharField(max_length=500)
-    cccd_back_url = models.CharField(max_length=500)
+    cccd_front_url = models.TextField()
+    cccd_back_url = models.TextField()
     sales_plan = models.TextField(blank=True, null=True)
     agreed = models.BooleanField(default=False)
     status = models.CharField(max_length=20, default='pending')  # pending/approved/rejected
@@ -784,8 +786,8 @@ class CTV(models.Model):
     bank_name = models.CharField(max_length=120)
     bank_number = models.CharField(max_length=50)
     bank_holder = models.CharField(max_length=150)
-    cccd_front_url = models.CharField(max_length=500, blank=True, null=True, verbose_name="Ảnh CCCD mặt trước")
-    cccd_back_url = models.CharField(max_length=500, blank=True, null=True, verbose_name="Ảnh CCCD mặt sau")
+    cccd_front_url = models.TextField(blank=True, null=True, verbose_name="Ảnh CCCD mặt trước")
+    cccd_back_url = models.TextField(blank=True, null=True, verbose_name="Ảnh CCCD mặt sau")
     password_text = models.CharField(max_length=255, blank=True, null=True, verbose_name="Mật khẩu đăng nhập")
     total_revenue = models.DecimalField(max_digits=14, decimal_places=2, default=0, verbose_name="Tổng doanh thu bán được (VND)")
     level = models.ForeignKey(CTVLevel, on_delete=models.SET_NULL, null=True, blank=True)

@@ -2,6 +2,20 @@
 
 {% block title %}BuddySkincare - Mỹ Phẩm Thanh Lý Giá Tốt Nhất{% endblock %}
 
+{% block description %}Mỹ phẩm thanh lý chính hãng với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng chất lượng cao từ các thương hiệu nổi tiếng. Flash sale hàng ngày, giao hàng nhanh, đảm bảo uy tín.{% endblock %}
+
+{% block keywords %}mỹ phẩm thanh lý, mỹ phẩm giá rẻ, mỹ phẩm chính hãng, kem dưỡng da, son môi, trang điểm, flash sale, giao hàng nhanh{% endblock %}
+
+{% block og_type %}website{% endblock %}
+
+{% block og_title %}BuddySkincare - Mỹ Phẩm Thanh Lý Giá Tốt Nhất{% endblock %}
+
+{% block og_description %}Mỹ phẩm thanh lý chính hãng với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng chất lượng cao. Flash sale hàng ngày, giao hàng nhanh.{% endblock %}
+
+{% block og_image %}https://buddyskincare.vn/static/image/sukien/banner01.png{% endblock %}
+
+{% block og_image_alt %}BuddySkincare - Mỹ phẩm thanh lý chính hãng{% endblock %}
+
 {% block content %}
 <style>
     /* Responsive hero banner heights to avoid clipping on small screens */
@@ -142,39 +156,6 @@
 <!-- Brands Section -->
 
 
-<!-- Categories Section -->
-<section class="categories-section section-padding">
-    <div class="container">
-        <style>
-            .most-search-title { text-transform: uppercase; font-weight: 800; letter-spacing: .5px; color: #222; }
-            .search-tags { gap: 16px; }
-            .search-pill { display: inline-block; padding: 5px 20px; border-radius: 999px; background: #f2f3f5; color: #1f2937; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: all .2s ease; }
-            .search-pill:hover { background: #e9ecef; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
-            @media (max-width: 576px) { .search-pill { padding: 8px 14px; font-weight: 600; } }
-        </style>
-        <div class="row">
-            <div class="col-12 text-center mb-4">
-                <h3 class="most-search-title">Tìm kiếm nhiều nhất</h3>
-            </div>
-        </div>
-        <div class="d-flex flex-wrap justify-content-center search-tags">
-            <a href="/products?query=Vitamin%20C%20serum" class="search-pill">Vitamin C serum</a>
-            <a href="/products?query=Nuoc%20hoa" class="search-pill">Nước hoa</a>
-            <a href="/products?query=Zo" class="search-pill">Zo</a>
-            <a href="/products?query=m%E1%BA%B7t%20n%E1%BA%A1" class="search-pill">mặt nạ</a>
-            <a href="/products?query=Kem%20ch%E1%BB%91ng%20n%E1%BA%AFng" class="search-pill">Kem chống nắng</a>
-            <a href="/products?query=cushion" class="search-pill">cushion</a>
-            <a href="/products?query=rice%20water%20bright" class="search-pill">rice water bright</a>
-            <a href="/products?query=obagi" class="search-pill">obgai</a>
-            <a href="/products?query=Ch%E1%BB%91ng%20l%C3%A3o%20h%C3%B3a" class="search-pill">Chống lão hóa</a>
-            <a href="/products?query=freshian" class="search-pill">freshian</a>
-            <a href="/products?query=T%E1%BA%A9y%20trang" class="search-pill">Tẩy trang</a>
-            <a href="/products?query=Mat%20na%20dat%20set" class="search-pill">Mặt nạ đất sét</a>
-            <a href="/products?query=son%20d%C6%B0%E1%BB%A1ng%20c%C3%B3%20m%C3%A0u" class="search-pill">son dưỡng có màu</a>
-        </div>
-    </div>
-</section>
-
 
 <!-- New Product Section -->
 <section id="products" class="new-product section-padding">
@@ -220,6 +201,40 @@
         </div>
     </div>
 </section>
+
+<!-- Categories Section -->
+<section class="categories-section section-padding">
+    <div class="container">
+        <style>
+            .most-search-title { text-transform: uppercase; font-weight: 800; letter-spacing: .5px; color: #222; }
+            .search-tags { gap: 16px; }
+            .search-pill { display: inline-block; padding: 5px 20px; border-radius: 999px; background: #f2f3f5; color: #1f2937; font-weight: 600; text-decoration: none; box-shadow: 0 1px 2px rgba(0,0,0,.05); transition: all .2s ease; }
+            .search-pill:hover { background: #e9ecef; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
+            @media (max-width: 576px) { .search-pill { padding: 8px 14px; font-weight: 600; } }
+        </style>
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <h3 class="most-search-title">Tìm kiếm nhiều nhất</h3>
+            </div>
+        </div>
+        <div class="d-flex flex-wrap justify-content-center search-tags">
+            <a href="/products?query=Vitamin%20C%20serum" class="search-pill">Vitamin C serum</a>
+            <a href="/products?query=Nuoc%20hoa" class="search-pill">Nước hoa</a>
+            <a href="/products?query=Zo" class="search-pill">Zo</a>
+            <a href="/products?query=m%E1%BA%B7t%20n%E1%BA%A1" class="search-pill">mặt nạ</a>
+            <a href="/products?query=Kem%20ch%E1%BB%91ng%20n%E1%BA%AFng" class="search-pill">Kem chống nắng</a>
+            <a href="/products?query=cushion" class="search-pill">cushion</a>
+            <a href="/products?query=rice%20water%20bright" class="search-pill">rice water bright</a>
+            <a href="/products?query=obagi" class="search-pill">obgai</a>
+            <a href="/products?query=Ch%E1%BB%91ng%20l%C3%A3o%20h%C3%B3a" class="search-pill">Chống lão hóa</a>
+            <a href="/products?query=freshian" class="search-pill">freshian</a>
+            <a href="/products?query=T%E1%BA%A9y%20trang" class="search-pill">Tẩy trang</a>
+            <a href="/products?query=Mat%20na%20dat%20set" class="search-pill">Mặt nạ đất sét</a>
+            <a href="/products?query=son%20d%C6%B0%E1%BB%A1ng%20c%C3%B3%20m%C3%A0u" class="search-pill">son dưỡng có màu</a>
+        </div>
+    </div>
+</section>
+
 
 
 

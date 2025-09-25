@@ -12,8 +12,22 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+import os
+
+# Cloudinary configuration
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+cloudinary.config(
+    cloud_name="deoknys7k",
+    api_key="657643869681298",
+    api_secret="K8pAAJPmIUcO7ThRnfOtJx7Ntwg"
+)
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
+# BASE_DIR = Path(__file__).resolve().parent.parent
 
 from datetime import timedelta
 # Quick-start development settings - unsuitable for production
@@ -25,6 +39,14 @@ SECRET_KEY = 'django-insecure-e7f$b$k49bk6m!)yh5=fp0a*4o1nsxv97h&bt5e=pov2t)el00
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+CSRF_EXEMPT_PATHS = [
+    'https://buddyskincare.vn/backend/api/auth/google/', # Hoặc đường dẫn API cụ thể của bạn
+    'https://buddyskincare.vn/backend/api/ctv-applications/',
+    'https://buddyskincare.vn/backend/api/upload-bank-transfer/',
+    'https://buddyskincare.vn/backend/api/upload-cccd/',
+]
+
+APPEND_SLASH = False
 
 
 
@@ -40,21 +62,25 @@ INSTALLED_APPS = [
     'django_filters',
     'ckeditor',
     'BuddyApp',
+    'drf_yasg',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework.authtoken',
     'oauth2_provider',
-    'drf_yasg',
     'corsheaders',
     'social_django',
+    'django.contrib.humanize',
+    'drf_spectacular',
 ]
 
 
 CORS_ALLOWED_ORIGINS = [
-    "https://buddyskincare.vn", # Nếu Flask chạy trên domain này
+    "https://buddyskincare.pythonanywhere.com",
     "http://127.0.0.1:8000",
-    "http://localhost:8000",   # Nếu bạn test Flask trên localhost
-    # Thêm bất kỳ domain nào khác mà bạn sẽ gọi API từ đó
+    "http://localhost:8000",
+    "https://buddyskincare.vn",
+    "http://buddyskincare.vn", # Thêm http để test
+    "http://localhost:3000", # Nếu bạn dùng React/Vue
 ]
 
 CKEDITOR_CONFIGS = {
@@ -70,13 +96,13 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'BuddyProject.middleware.CsrfExemptMiddleware', # Thêm middleware mới ở đây
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware',
 ]
-
 
 # AUTHENTICATION_BACKENDS = [
 #     'BuddyApp.backends.PhoneNumberAuthenticationBackend',
@@ -102,10 +128,28 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
 ]
 
 
+# TEMPLATES = [
+#     {
+#         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+#         'DIRS': [],
+#         'APP_DIRS': True,
+#         'OPTIONS': {
+#             'context_processors': [
+#                 'django.template.context_processors.debug',
+#                 'django.template.context_processors.request',
+#                 'django.contrib.auth.context_processors.auth',
+#                 'django.contrib.messages.context_processors.messages',
+#                 'social_django.context_processors.backends',
+#                 'social_django.context_processors.login_redirect',
+#             ],
+#         },
+#     },
+# ]
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'websitemypham/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -113,8 +157,6 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'social_django.context_processors.backends',
-                'social_django.context_processors.login_redirect',
             ],
         },
     },
@@ -132,8 +174,12 @@ REST_FRAMEWORK = {
         # Mặc định yêu cầu xác thực
 
     ),
-     'DEFAULT_PAGINATION_CLASS': None,  # Tắt pagination mặc định
+    'DEFAULT_PAGINATION_CLASS': None,  # Tắt pagination mặc định
     'PAGE_SIZE': None,  # Không giới hạn page size
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 WSGI_APPLICATION = 'BuddyProject.wsgi.application'
@@ -175,18 +221,43 @@ USE_I18N = True
 
 USE_TZ = True
 
-ALLOWED_HOSTS = ['buddyskincare.vn', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['buddyskincare.pythonanywhere.com', '127.0.0.1', 'localhost',"buddyskincare.vn"]
 
 CSRF_TRUSTED_ORIGINS = [
+    'https://buddyskincare.pythonanywhere.com',
     'https://buddyskincare.vn',
+    'https://*.buddyskincare.vn', # Hỗ trợ subdomains
 ]
+
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+CORS_ALLOW_CREDENTIALS = True
+
+
+
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+# PythonAnywhere static files configuration
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Additional locations of static files (không được chứa STATIC_ROOT)
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+# Media files (user uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Static files finders
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -264,6 +335,14 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'buddyskincarevn@gmail.com'  # Thay bằng email của bạn
 EMAIL_HOST_PASSWORD = 'fkoz aohr yeub fncz'  # Thay bằng mật khẩu ứng dụng
 DEFAULT_FROM_EMAIL = 'buddyskincarevn@gmail.com'
+
+# DRF Spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Buddy Skincare API',
+    'DESCRIPTION': 'API documentation for Buddy Skincare website',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+}
 
 
 

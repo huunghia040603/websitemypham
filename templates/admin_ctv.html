@@ -1509,14 +1509,21 @@ function getCTVStatusText(isActive) {
 }
 
 function getOrderStatusText(status) {
+    // Debug logging to see what status values we're getting
+    console.log('🔍 getOrderStatusText called with status:', status, 'type:', typeof status);
+    
     const statusMap = {
         'pending': 'Chờ xử lý',
         'processing': 'Đang xử lý',
+        'confirmed': 'Đã xác nhận',
         'shipped': 'Đã giao hàng',
         'delivered': 'Đã nhận hàng',
         'cancelled': 'Đã hủy'
     };
-    return statusMap[status] || 'Không xác định';
+    
+    const result = statusMap[status] || 'Không xác định';
+    console.log('🔍 getOrderStatusText result:', result);
+    return result;
 }
 
 // Helper functions for date filtering
@@ -1641,6 +1648,10 @@ function renderCTVOrdersTable(orders, ctvInfo = null) {
     }
     
     return orders.map(order => {
+        // Debug logging to see order data
+        console.log('🔍 Order data:', order);
+        console.log('🔍 Order status:', order.status, 'type:', typeof order.status);
+        
         // Calculate profit and commission for this order
         const profit = calculateOrderProfit(order);
         const commission = calculateOrderCommission(order, profit, ctvInfo);
@@ -1693,42 +1704,36 @@ async function filterCTVOrders(ctvCode) {
     }
     
     try {
-        // Fetch all orders, vouchers, and CTV info
-        const [ordersResponse, vouchersResponse, ctvResponse] = await Promise.all([
-        fetch('https://buddyskincare.vn/backend/api/orders/'),
-        fetch('https://buddyskincare.vn/backend/api/vouchers/'),
-        fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${ctvCode}`)
+        // Show loading state
+        const tbody = document.getElementById('ctvOrdersTableBody');
+        tbody.innerHTML = '<tr><td colspan="10" class="text-center"><div class="loading-spinner"><i class="fas fa-spinner fa-spin me-2"></i>Đang lọc...</div></td></tr>';
+        
+        // Build API URL with filters - using backend filtering
+        const apiUrl = new URL('https://buddyskincare.vn/backend/api/orders/');
+        apiUrl.searchParams.append('collaborator_code', ctvCode);
+        apiUrl.searchParams.append('order_date__gte', startDate + 'T00:00:00');
+        apiUrl.searchParams.append('order_date__lte', endDate + 'T23:59:59');
+        
+        // Fetch filtered orders and CTV info
+        const [ordersResponse, ctvResponse] = await Promise.all([
+            fetch(apiUrl.toString()),
+            fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${ctvCode}`)
         ]);
         
-        if (!ordersResponse.ok || !vouchersResponse.ok || !ctvResponse.ok) {
+        if (!ordersResponse.ok || !ctvResponse.ok) {
             throw new Error('Failed to load data');
         }
         
-        const allOrders = await ordersResponse.json();
-        const vouchers = await vouchersResponse.json();
+        const filteredOrders = await ordersResponse.json();
         const ctvInfo = await ctvResponse.json();
         
-        // Create voucher lookup map
-        const voucherMap = {};
-        vouchers.forEach(voucher => {
-            voucherMap[voucher.id] = voucher.code;
-        });
-        
-        // Filter orders by CTV code and date range
-        const filteredOrders = allOrders.filter(order => {
-            // Check if order has voucher and the voucher code matches CTV code
-            if (!order.voucher) return false;
-            const voucherCode = voucherMap[order.voucher];
-            if (voucherCode !== ctvCode) return false;
-            
-            // Check date range
-            const orderDate = new Date(order.order_date);
-            const start = new Date(startDate);
-            const end = new Date(endDate);
-            end.setHours(23, 59, 59, 999); // Include end date
-            
-            return orderDate >= start && orderDate <= end;
-        });
+        // Debug: Log filtered orders to see the data structure
+        console.log('🔍 Filtered Orders - First 3 orders:', filteredOrders.slice(0, 3));
+        if (filteredOrders.length > 0) {
+            console.log('🔍 First filtered order structure:', Object.keys(filteredOrders[0]));
+            console.log('🔍 First filtered order status field:', filteredOrders[0].status);
+            console.log('🔍 First filtered order is_confirmed field:', filteredOrders[0].is_confirmed);
+        }
         
         // Update table and totals
         document.getElementById('ctvOrdersTableBody').innerHTML = renderCTVOrdersTable(filteredOrders, ctvInfo);
@@ -1787,13 +1792,13 @@ function updateLastUpdated() {
         `Cập nhật lần cuối: ${now.toLocaleTimeString('vi-VN')}`;
 }
 
-function showAlert(message, type = 'info') {
+function showAlert(title, message, type = 'info') {
     const alertContainer = document.getElementById('alertContainer');
     const alertId = 'alert-' + Date.now();
     
     const alertHTML = `
         <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
+            <strong>${title}:</strong> ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     `;
@@ -1812,17 +1817,17 @@ function showAlert(message, type = 'info') {
 // Action functions
 function refreshApplications() {
     loadApplications();
-    showAlert('Đã làm mới danh sách đơn đăng ký', 'success');
+    showAlert('Thành công', 'Đã làm mới danh sách đơn đăng ký', 'success');
 }
 
 function refreshLevels() {
     loadLevels();
-    showAlert('Đã làm mới danh sách cấp độ', 'success');
+    showAlert('Thành công', 'Đã làm mới danh sách cấp độ', 'success');
 }
 
 function refreshCTVs() {
     loadCTVs();
-    showAlert('Đã làm mới danh sách CTV', 'success');
+    showAlert('Thành công', 'Đã làm mới danh sách CTV', 'success');
 }
 
 function viewApplication(id) {
@@ -2537,47 +2542,48 @@ async function viewCTVOrders(ctvCode) {
     }
     
     try {
-        // Fetch all orders, vouchers, and CTV info
-        const [ordersResponse, vouchersResponse, ctvResponse] = await Promise.all([
-        fetch('https://buddyskincare.vn/backend/api/orders/'),
-        fetch('https://buddyskincare.vn/backend/api/vouchers/'),
-        fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${ctvCode}`)
-        ]);
+        // Show loading state
+        const modalBody = document.getElementById('applicationDetailBody');
+        modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div><p class="text-muted mt-2">Đang tải đơn hàng CTV...</p></div>';
         
-        if (!ordersResponse.ok || !vouchersResponse.ok || !ctvResponse.ok) {
-            throw new Error('Failed to load data');
-        }
-        
-        const allOrders = await ordersResponse.json();
-        const vouchers = await vouchersResponse.json();
-        const ctvInfo = await ctvResponse.json();
-        
-        // Create voucher lookup map
-        const voucherMap = {};
-        vouchers.forEach(voucher => {
-            voucherMap[voucher.id] = voucher.code;
-        });
-        
-        // Filter orders that used voucher with code matching CTV code
-        let orders = allOrders.filter(order => {
-            if (!order.voucher) return false;
-            const voucherCode = voucherMap[order.voucher];
-            return voucherCode === ctvCode;
-        });
-        
-        // Apply default 7-day filter
+        // Apply default 7-day filter on backend
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
         const today = new Date();
         today.setHours(23, 59, 59, 999);
         
-        orders = orders.filter(order => {
-            const orderDate = new Date(order.order_date);
-            return orderDate >= sevenDaysAgo && orderDate <= today;
-        });
+        // Format dates for backend
+        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+        const todayStr = today.toISOString().split('T')[0];
+        
+        // Build backend filter URL
+        const ordersUrl = new URL('https://buddyskincare.vn/backend/api/orders/');
+        ordersUrl.searchParams.append('collaborator_code', ctvCode);
+        ordersUrl.searchParams.append('order_date__gte', sevenDaysAgoStr + 'T00:00:00');
+        ordersUrl.searchParams.append('order_date__lte', todayStr + 'T23:59:59');
+        
+        // Fetch CTV info and filtered orders from backend
+        const [ordersResponse, ctvResponse] = await Promise.all([
+            fetch(ordersUrl.toString()),
+            fetch(`https://buddyskincare.vn/backend/api/ctvs/by-code/?code=${ctvCode}`)
+        ]);
+        
+        if (!ordersResponse.ok || !ctvResponse.ok) {
+            throw new Error('Failed to load data');
+        }
+        
+        const orders = await ordersResponse.json();
+        const ctvInfo = await ctvResponse.json();
+        
+        // Debug: Log orders to see the data structure
+        console.log('🔍 View CTV Orders - First 3 orders:', orders.slice(0, 3));
+        if (orders.length > 0) {
+            console.log('🔍 First view order structure:', Object.keys(orders[0]));
+            console.log('🔍 First view order status field:', orders[0].status);
+            console.log('🔍 First view order is_confirmed field:', orders[0].is_confirmed);
+        }
         
         // Create modal content
-        const modalBody = document.getElementById('applicationDetailBody');
         modalBody.innerHTML = `
             <div class="row">
                 <div class="col-12">
@@ -3019,7 +3025,7 @@ async function sendWelcomeEmail(ctvId, ctvName, ctvEmail, buttonElement) {
     buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     try {
-        const response = await fetch(`https://buddyskincare.vn/backend/api/ctvs/${ctvId}/send-welcome-email`, {
+        const response = await fetch(`https://buddyskincare.vn/backend/api/ctvs/${ctvId}/send-welcome-email/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -3034,13 +3040,13 @@ async function sendWelcomeEmail(ctvId, ctvName, ctvEmail, buttonElement) {
         const result = await response.json();
 
         if (result.success) {
-            showAlert('Thành công', result.message, 'success');
+            showAlert('🎉 Gửi email thành công', result.message, 'success');
         } else {
-            showAlert('Lỗi', result.message, 'danger');
+            showAlert('❌ Lỗi gửi email', result.message, 'danger');
         }
     } catch (error) {
         console.error('Error sending welcome email:', error);
-        showAlert('Lỗi', 'Không thể gửi email. Vui lòng thử lại sau.', 'danger');
+        showAlert('❌ Lỗi kết nối', 'Không thể gửi email. Vui lòng thử lại sau.', 'danger');
     } finally {
         // Re-enable button
         buttonElement.disabled = false;
@@ -3077,16 +3083,10 @@ async function loadAllCTVOrders() {
         // Load CTV codes for filter
         await loadCTVCodeFilter();
         
-        // Load all orders and CTVs in parallel
-        const [ordersResponse, ctvsResponse] = await Promise.all([
-            fetch('/orders/'),
-            fetch('/ctvs/')
-        ]);
-        
-        if (!ordersResponse.ok) throw new Error('Failed to load orders');
+        // Load CTVs first to get active CTV codes
+        const ctvsResponse = await fetch('/ctvs/');
         if (!ctvsResponse.ok) throw new Error('Failed to load CTVs');
         
-        const allOrders = await ordersResponse.json();
         const ctvs = await ctvsResponse.json();
         
         // Get list of active CTV codes
@@ -3096,21 +3096,38 @@ async function loadAllCTVOrders() {
         
         console.log('📋 Active CTV codes:', activeCTVCodes);
         
+        // Build backend filter URL for CTV orders with date range
+        const ordersUrl = new URL('https://buddyskincare.vn/backend/api/orders/');
+        
+        // Filter by date range (last 7 days)
+        ordersUrl.searchParams.append('order_date__gte', sevenDaysAgoStr + 'T00:00:00');
+        ordersUrl.searchParams.append('order_date__lte', todayStr + 'T23:59:59');
+        
+        // Filter by collaborator_code (only orders with CTV codes)
+        ordersUrl.searchParams.append('collaborator_code__isnull', 'false');
+        
+        console.log('🔍 Backend filter URL:', ordersUrl.toString());
+        
+        // Load filtered orders from backend
+        const ordersResponse = await fetch(ordersUrl.toString());
+        if (!ordersResponse.ok) throw new Error('Failed to load orders');
+        
+        const allOrders = await ordersResponse.json();
+        
+        // Debug: Log first few orders to see the data structure
+        console.log('🔍 API Response - First 3 orders:', allOrders.slice(0, 3));
+        if (allOrders.length > 0) {
+            console.log('🔍 First order structure:', Object.keys(allOrders[0]));
+            console.log('🔍 First order status field:', allOrders[0].status);
+            console.log('🔍 First order is_confirmed field:', allOrders[0].is_confirmed);
+        }
+        
         // Filter orders that have collaborator_code matching active CTV codes
+        // This is a small filter since backend already filtered by date and CTV existence
         let ctvOrders = allOrders.filter(order => {
             const hasCTVCode = order.collaborator_code && order.collaborator_code.trim() !== '';
             const isActiveCTV = activeCTVCodes.includes(order.collaborator_code);
             return hasCTVCode && isActiveCTV;
-        });
-        
-        // Apply default date filter (last 7 days)
-        ctvOrders = ctvOrders.filter(order => {
-            const orderDate = new Date(order.order_date);
-            const filterStartDate = new Date(sevenDaysAgoStr);
-            const filterEndDate = new Date(todayStr);
-            filterEndDate.setHours(23, 59, 59, 999); // End of day
-            
-            return orderDate >= filterStartDate && orderDate <= filterEndDate;
         });
         
         console.log(`📊 Total orders: ${allOrders.length}, CTV orders: ${ctvOrders.length}, Filtered (last 7 days): ${ctvOrders.length}`);
@@ -3177,6 +3194,10 @@ function renderAllCTVOrdersTable(orders, ctvs = []) {
     });
     
     tbody.innerHTML = validOrders.map(order => {
+        // Debug logging to see order data
+        console.log('🔍 All CTV Orders - Order data:', order);
+        console.log('🔍 All CTV Orders - Order status:', order.status, 'type:', typeof order.status);
+        
         // Calculate profit and commission
         const profit = calculateOrderProfit(order);
         
@@ -3487,7 +3508,7 @@ function renderCTVWalletsTable(ctvs) {
                 <td><span class="badge bg-info">${ctv.code || 'N/A'}</span></td>
                 <td>${ctv.full_name || ctv.name || 'N/A'}</td>
                 <td>${ctv.phone || 'N/A'}</td>
-                <td class="text-success fw-bold">${formatPrice(wallet.balance/1000)}</td>
+                <td class="text-success fw-bold">${formatPrice(wallet.balance)}</td>
                 <td class="text-warning">${formatPrice(wallet.pending/1000)}</td>
                 <td class="text-info">${formatPrice(totalWithdrawn/1000)}</td>
                 <td class="text-primary">${formatPrice(totalRevenue)}</td>

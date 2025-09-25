@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Sản phẩm mới -->
+    <url>
+        <loc>https://buddyskincare.vn/products?filter=new</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Sản phẩm đã qua sử dụng -->
+    <url>
+        <loc>https://buddyskincare.vn/products?filter=used</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Flash Sale Products -->
+    <url>
+        <loc>https://buddyskincare.vn/products?filter=flashsale</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>hourly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    
+    <!-- Sản phẩm theo thương hiệu phổ biến -->
+    <url>
+        <loc>https://buddyskincare.vn/products?brand=Obagi</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?brand=ZO</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?brand=Freshian</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Sản phẩm theo danh mục -->
+    <url>
+        <loc>https://buddyskincare.vn/products?category=Serum</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?category=Kem%20chống%20nắng</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?category=Mặt%20nạ</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?category=Nước%20hoa</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?category=Tẩy%20trang</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Tìm kiếm phổ biến -->
+    <url>
+        <loc>https://buddyskincare.vn/products?query=Vitamin%20C%20serum</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?query=cushion</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?query=rice%20water%20bright</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/products?query=son%20dưỡng%20có%20màu</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+</urlset>

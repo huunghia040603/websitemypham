@@ -1,0 +1,47 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://buddyskincare.vn/sitemap_index.xml
+Sitemap: https://buddyskincare.vn/sitemap_pages.xml
+Sitemap: https://buddyskincare.vn/sitemap_products.xml
+Sitemap: https://buddyskincare.vn/sitemap_blog.xml
+Sitemap: https://buddyskincare.vn/sitemap_categories.xml
+Sitemap: https://buddyskincare.vn/sitemap_static.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /ctv/
+Disallow: /api/
+Disallow: /backend/
+Disallow: /static/admin/
+Disallow: /sent_emails/
+
+# Allow important pages
+Allow: /products
+Allow: /news
+Allow: /flash-sale
+Allow: /events
+Allow: /lucky-number
+Allow: /voucher
+Allow: /static/image/
+Allow: /static/css/
+Allow: /static/js/
+
+# Specific bot instructions
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1

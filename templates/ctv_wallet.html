@@ -83,7 +83,7 @@ async function loadWallet(){
   const ctv = getCtv(); if (!ctv){ location.href='/ctv/login/'; return; }
   const id = ctv.id;
   const w = await fetch(`/ctvs/${id}/wallet/`).then(r=>r.json());
-  document.getElementById('wBal').textContent = fmt(w.balance||0);
+  document.getElementById('wBal').textContent = fmt((w.balance||0)*1000);
   document.getElementById('wPending').textContent = fmt(w.pending||0);
   const withdrawals = await fetch(`/ctvs/${id}/withdrawals/`).then(r=>r.json());
   const totalApproved = withdrawals.filter(x=>x.status==='approved').reduce((s,x)=>s+(Number(x.amount)||0),0);

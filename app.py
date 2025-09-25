@@ -1,10 +1,12 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file, session
 import os
 from datetime import datetime, timedelta
+import secrets
 import cloudinary
 import cloudinary.uploader
 import time
 import smtplib
+import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from io import BytesIO
@@ -48,9 +50,16 @@ categories_data = [
     {'name': 'Nước Hoa', 'icon': 'fas fa-spray-can', 'color': 'text-secondary', 'count': 25}
 ]
 
+# Context processor để tạo CSRF token cho templates
+@app.context_processor
+def inject_csrf_token():
+    if 'csrf_token' not in session:
+        session['csrf_token'] = secrets.token_hex(16)
+    return dict(csrf_token=session['csrf_token'])
+
 # Dữ liệu thương hiệu
 brands_data = [
-    'Bioderma', 'Cetaphil', 'Chanel', 'Dior', 'Estee Lauder', 
+    'Bioderma', 'Cetaphil', 'Chanel', 'Dior', 'Estee Lauder',
     'L\'Oreal Paris', 'Mac Cosmetics', 'SK-II', 'The Ordinary', 'TheFaceShop'
 ]
 
@@ -109,19 +118,19 @@ testimonials_data = [
 def get_products_with_cache():
     """Get products from cache or API"""
     current_time = time.time()
-    
+
     # Check if cache is valid
-    if (products_cache['data'] is not None and 
+    if (products_cache['data'] is not None and
         current_time - products_cache['timestamp'] < products_cache['ttl']):
         print("📦 Using cached products")
         return products_cache['data']
-    
+
     # Fetch from API with shorter timeout
     try:
         import requests
         api_url = f'{API_BASE_URL}/products/'
         response = requests.get(api_url, timeout=5)  # Shorter timeout
-        
+
         if response.status_code == 200:
             products = response.json()
             # Update cache
@@ -165,17 +174,17 @@ def index():
     """Trang chủ"""
     # Use cached products
     all_products = get_products_with_cache()
-    
+
     # Filter flash sale products (có discount > 0)
     flash_sale_products = [p for p in all_products if float(p.get('discount_rate', 0)) > 0][:4]
-    
+
     # Filter featured products (không có discount hoặc discount thấp)
     featured_products = [p for p in all_products if float(p.get('discount_rate', 0)) <= 10][:4]
-    
+
     # Tính thời gian flash sale (2 ngày từ hiện tại)
     flash_sale_end = datetime.now() + timedelta(days=2, hours=15, minutes=30, seconds=45)
-    
-    return render_template('index.html', 
+
+    return render_template('index.html',
                          categories=categories_data,
                          flash_sale_products=flash_sale_products,
                          featured_products=featured_products,
@@ -187,7 +196,7 @@ def api_filters_data():
     """API endpoint để lấy dữ liệu filters (danh mục, thương hiệu, tags) - cache để không load lại"""
     try:
         print(f"🔍 Loading REAL filters data from {API_BASE_URL}")
-        
+
         # Get categories
         try:
             categories_response = requests.get(f"{API_BASE_URL}/category/", timeout=10)
@@ -197,7 +206,7 @@ def api_filters_data():
         except Exception as e:
             print(f"❌ Categories error: {e}")
             categories = []
-        
+
         # Get brands
         try:
             brands_response = requests.get(f"{API_BASE_URL}/brands/", timeout=10)
@@ -207,17 +216,17 @@ def api_filters_data():
         except Exception as e:
             print(f"❌ Brands error: {e}")
             brands = []
-        
+
         # Get products for tags (only get first page to avoid timeout)
         try:
-            products_response = requests.get(f"{API_BASE_URL}/products/?page=1&per_page=50", timeout=10)
+            products_response = requests.get(f"{API_BASE_URL}/products/?page=1&per_page=48", timeout=10)
             print(f"🔍 Products response status: {products_response.status_code}")
             products = products_response.json().get('results', []) if products_response.status_code == 200 else []
             print(f"🔍 Found {len(products)} products for tags")
         except Exception as e:
             print(f"❌ Products error: {e}")
             products = []
-        
+
         # Get tags from products
         all_tags = set()
         for product in products:
@@ -228,19 +237,19 @@ def api_filters_data():
                         all_tags.add(tag.strip())
                     elif isinstance(tag, dict) and tag.get('name'):
                         all_tags.add(tag['name'].strip())
-        
+
         tags_with_stock = sorted(list(all_tags))
         print(f"🔍 Found {len(tags_with_stock)} tags")
-        
+
         result = {
             'categories': categories,
             'brands': brands,
             'tags': tags_with_stock
         }
-        
+
         print(f"✅ Returning REAL filters data: {len(result['categories'])} categories, {len(result['brands'])} brands, {len(result['tags'])} tags")
         return jsonify(result)
-        
+
     except Exception as e:
         print(f"❌ Error in api_filters_data: {e}")
         import traceback
@@ -253,7 +262,7 @@ def api_products_filtered():
     try:
         # Get filter parameters
         page = request.args.get('page', 1, type=int)
-        per_page = request.args.get('per_page', 12, type=int)
+        per_page = request.args.get('per_page', 48, type=int)
         search_query = request.args.get('search', '').strip()
         category_name = request.args.get('category_name', '').strip()
         brands_name = request.args.get('brands_name', '').strip()
@@ -270,7 +279,7 @@ def api_products_filtered():
             'page': page,
             'per_page': per_page
         }
-        
+
         # Add ordering
         if sort_by == 'newest':
             api_params['ordering'] = '-id'
@@ -282,7 +291,7 @@ def api_products_filtered():
             api_params['ordering'] = '-sold_quantity'
         elif sort_by == 'discount':
             api_params['ordering'] = '-discount_rate'
-        
+
         if search_query:
             api_params['search'] = search_query
         if category_name:
@@ -298,17 +307,17 @@ def api_products_filtered():
         api_url = f"{API_BASE_URL}/products/"
         print(f"🔍 Fetching from: {api_url} with params: {api_params}")
         response = requests.get(api_url, params=api_params, timeout=30)
-        
+
         if response.status_code != 200:
             print(f"❌ API Error: {response.status_code} - {response.text}")
             return jsonify({'error': 'Không thể lấy dữ liệu sản phẩm'}), 500
-            
+
         data = response.json()
         print(f"🔍 Got {len(data.get('results', []))} products from API")
-        
+
         # Apply client-side filters for price and discount
         filtered_products = data.get('results', [])
-        
+
         # Price filter (VND)
         if price_range:
             print(f"🔍 DEBUG: Price range filter: {price_range}")
@@ -339,10 +348,10 @@ def api_products_filtered():
         # Update data with filtered results
         data['results'] = filtered_products
         data['count'] = len(filtered_products)
-        
+
         print(f"✅ Returning REAL products data: {len(filtered_products)} products")
         return jsonify(data)
-        
+
     except Exception as e:
         print(f"❌ Error in api_products_filtered: {e}")
         import traceback
@@ -354,7 +363,7 @@ def products():
     """Trang danh sách sản phẩm"""
     # Use cached products
     all_products = get_products_with_cache()
-    
+
     # Lấy tham số filter
     category = request.args.get('category')
     brand = request.args.get('brand')
@@ -369,25 +378,25 @@ def products():
     new_price_range = request.args.get('price_range') or price_range
     new_discount = request.args.get('discount_range') or discount
     tags_filter = request.args.get('tags')
-    
+
     # Filter sản phẩm
     filtered_products = all_products.copy()
-    
+
     # Filter by multiple categories
     if category_names:
         category_targets = [name.strip().lower() for name in category_names if name.strip()]
         if category_targets:
             filtered_products = [p for p in filtered_products if _extract_category_name(p).lower() in category_targets]
-    
+
     # Filter by multiple brands
     if brands_names:
         brand_targets = [name.strip() for name in brands_names if name.strip()]
         if brand_targets:
             filtered_products = [p for p in filtered_products if (p.get('brand_name') or (p.get('brand') or {}).get('name') or '').strip() in brand_targets]
-    
+
     if condition != 'all':
         filtered_products = [p for p in filtered_products if p.get('status') == condition]
-    
+
     # Filter by tags
     if tags_filter:
         def has_tag(product, target_tag):
@@ -402,9 +411,9 @@ def products():
                 )
             except Exception:
                 return False
-        
+
         filtered_products = [p for p in filtered_products if has_tag(p, tags_filter)]
-    
+
     # Khoảng giá mới (VND)
     if new_price_range:
         print(f"🔍 DEBUG: Price range filter: {new_price_range}")
@@ -429,7 +438,7 @@ def products():
             filtered_products = [p for p in filtered_products if 1_000_000 <= price_vnd(p) < 2_000_000]
         elif new_price_range == 'over_2m':
             filtered_products = [p for p in filtered_products if price_vnd(p) >= 2_000_000]
-    
+
     # Giảm giá mới
     if new_discount:
         def rate(x):
@@ -450,7 +459,7 @@ def products():
             filtered_products = [p for p in filtered_products if 30 <= rate(p) < 50]
         elif new_discount == 'under_30_old':
             filtered_products = [p for p in filtered_products if rate(p) < 30]
-    
+
     # Sort sản phẩm
     if sort_by == 'price_low':
         filtered_products.sort(key=lambda x: x.get('discounted_price', 0) * 1000)
@@ -462,23 +471,23 @@ def products():
         filtered_products.sort(key=lambda x: float(x.get('discount_rate', 0)), reverse=True)
     else:  # newest
         filtered_products.sort(key=lambda x: x.get('id', 0), reverse=True)
-    
+
     # Pagination logic
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-    
+    per_page = request.args.get('per_page', 48, type=int)
+
     # Calculate pagination
     total_products = len(filtered_products)
     total_pages = (total_products + per_page - 1) // per_page
-    
+
     # Get products for current page
     start_idx = (page - 1) * per_page
     end_idx = start_idx + per_page
     paginated_products = filtered_products[start_idx:end_idx]
-    
+
     # Check if this is an AJAX request
     is_ajax = request.args.get('ajax') == '1'
-    
+
     if is_ajax:
         # Return only the products grid HTML for AJAX requests
         from flask import render_template_string
@@ -533,17 +542,17 @@ def products():
                     {% set discount_rate = (product.discount_rate | float | round | int) if product.discount_rate else 0 %}
                     {% set stock_quantity = product.stock_quantity or 0 %}
                     {% set is_out_of_stock = stock_quantity <= 0 %}
-                    
+
                     <div class="product-card card h-100 border-0 shadow-sm">
                         <div class="position-relative">
                             <a href="/product/{{ product.id }}" class="text-decoration-none">
-                                <img src="{{ image_url }}" 
+                                <img src="{{ image_url }}"
                                      class="card-img-top" alt="{{ product.name }}"
                                      style="height: 220px; object-fit: cover;{% if is_out_of_stock %} filter: grayscale(100%);{% endif %}"
                                      onerror="this.src='/static/image/default-product.jpg'">
                             </a>
                             {% if is_out_of_stock %}
-                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
                                  style="background-color: rgba(0,0,0,0.7); border-radius: 6px;">
                                 <div class="text-center text-white">
                                     <i class="fas fa-times-circle fa-2x mb-1"></i>
@@ -551,8 +560,8 @@ def products():
                                 </div>
                             </div>
                             {% endif %}
-                            <button class="fav-toggle position-absolute top-0 end-0 m-2" 
-                                    title="Thêm vào yêu thích" 
+                            <button class="fav-toggle position-absolute top-0 end-0 m-2"
+                                    title="Thêm vào yêu thích"
                                     data-id="{{ product.id }}"
                                     data-name="{{ product.name }}"
                                     data-image="{{ image_url }}"
@@ -599,9 +608,9 @@ def products():
                                 <small class="text-muted" style="font-size: 11px;">({{ rating }})</small>
                                 <span class="badge {% if is_out_of_stock %}bg-danger{% else %}bg-success{% endif %}" style="font-size: 10px; padding: 4px 8px; margin-left: 10px;">{% if is_out_of_stock %}Hết hàng{% else %}Còn {{ stock_quantity }}{% endif %}</span>
                             </div>
-                            <button class="btn w-100 add-to-cart-btn {% if is_out_of_stock %}btn-secondary{% else %}btn-light text-dark border{% endif %}" 
-                                    data-product-id="{{ product.id }}" 
-                                    style="font-size: 13px; padding: 8px;" 
+                            <button class="btn w-100 add-to-cart-btn {% if is_out_of_stock %}btn-secondary{% else %}btn-light text-dark border{% endif %}"
+                                    data-product-id="{{ product.id }}"
+                                    style="font-size: 13px; padding: 8px;"
                                     {% if is_out_of_stock %}disabled{% endif %}>
                                 {% if is_out_of_stock %}Hết hàng{% else %}Thêm vào giỏ{% endif %}
                             </button>
@@ -613,7 +622,7 @@ def products():
             <div id="products-showing">{{ products|length }}</div>
             <div id="products-total">{{ total_products }}</div>
         ''', products=paginated_products, total_products=total_products)
-    
+
     return render_template('products.html',
                          products=paginated_products,
                          total_products=total_products,
@@ -628,23 +637,23 @@ def products():
 def products_new():
     """Trang sản phẩm mới 100%"""
     import requests
-    
+
     try:
         # Fetch products from API
         api_url = f'{API_BASE_URL}/products/'
         response = requests.get(api_url, timeout=30)
-        
+
         if response.status_code == 200:
             all_products = response.json()
             # Filter products with status treated as 'new' (contains 'new' or 'chiet')
             filtered_products = [p for p in all_products if _is_new_status(p.get('status'))]
         else:
             filtered_products = []
-            
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching new products: {e}")
         filtered_products = []
-    
+
     return render_template('products.html',
                          products=filtered_products,
                          categories=categories_data,
@@ -656,23 +665,23 @@ def products_new():
 def products_used():
     """Trang sản phẩm đã sử dụng"""
     import requests
-    
+
     try:
         # Fetch products from API
         api_url = f'{API_BASE_URL}/products/'
         response = requests.get(api_url, timeout=30)
-        
+
         if response.status_code == 200:
             all_products = response.json()
             # Filter products treated as 'used' (not new by our rule)
             filtered_products = [p for p in all_products if not _is_new_status(p.get('status'))]
         else:
             filtered_products = []
-            
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching used products: {e}")
         filtered_products = []
-    
+
     return render_template('products.html',
                          products=filtered_products,
                          categories=categories_data,
@@ -684,30 +693,30 @@ def products_used():
 def product_detail(product_id):
     """Trang chi tiết sản phẩm"""
     import requests
-    
+
     try:
         # Fetch product data from API
         api_url = f'{API_BASE_URL}/products/{product_id}/'
         response = requests.get(api_url, timeout=30)
-        
+
         if response.status_code == 200:
             product = response.json()
             print(f"✅ Fetched product {product_id} from API: {product.get('name', 'Unknown')}")
         else:
             print(f"❌ API returned status {response.status_code} for product {product_id}")
             return redirect(url_for('products'))
-    
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching product {product_id} from API: {e}")
         return redirect(url_for('products'))
-    
+
     # Lấy đánh giá của sản phẩm (tạm thời để trống)
     product_reviews = []
     avg_rating = product.get('rating', 0)
-    
+
     # Sản phẩm liên quan (tạm thời để trống)
     related_products = []
-    
+
     return render_template('product-detail.html',
                          product=product,
                          reviews=product_reviews,
@@ -718,26 +727,26 @@ def product_detail(product_id):
 def add_to_cart():
     """API thêm vào giỏ hàng"""
     import requests
-    
+
     data = request.get_json()
     product_id = data.get('product_id')
     quantity = data.get('quantity', 1)
-    
+
     try:
         # Fetch product from API
         api_url = f'{API_BASE_URL}/products/{product_id}/'
         response = requests.get(api_url, timeout=30)
-        
+
         if response.status_code == 200:
             product = response.json()
             # Check stock
             if product.get('stock_quantity', 0) < quantity:
                 return jsonify({'success': False, 'message': 'Số lượng không đủ'})
-            
+
             # Initialize cart in session if not exists
             if 'cart' not in session:
                 session['cart'] = {}
-            
+
             # Add/update product in cart
             cart = session['cart']
             if str(product_id) in cart:
@@ -751,23 +760,23 @@ def add_to_cart():
                     'brand': product.get('brand_name', ''),
                     'quantity': quantity
                 }
-            
+
             # Update session
             session['cart'] = cart
             session.modified = True
-            
+
             # Calculate total items in cart
             total_items = sum(item['quantity'] for item in cart.values())
-            
+
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Đã thêm {quantity} {product.get("name", "sản phẩm")} vào giỏ hàng',
                 'cart_count': total_items,
                 'cart': cart
             })
         else:
             return jsonify({'success': False, 'message': 'Sản phẩm không tồn tại'})
-            
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching product for cart: {e}")
         return jsonify({'success': False, 'message': 'Lỗi khi tải thông tin sản phẩm'})
@@ -778,7 +787,7 @@ def get_cart():
     cart = session.get('cart', {})
     total_items = sum(item['quantity'] for item in cart.values())
     total_price = sum(item['price'] * item['quantity'] for item in cart.values())
-    
+
     return jsonify({
         'success': True,
         'cart': cart,
@@ -798,10 +807,10 @@ def newsletter_subscribe():
     """API đăng ký newsletter"""
     data = request.get_json()
     email = data.get('email')
-    
+
     if not email or '@' not in email:
         return jsonify({'success': False, 'message': 'Email không hợp lệ'})
-    
+
     # Ở đây sẽ lưu email vào database
     return jsonify({'success': True, 'message': 'Đăng ký thành công!'})
 
@@ -809,12 +818,12 @@ def newsletter_subscribe():
 def search_products():
     """API tìm kiếm sản phẩm"""
     import requests
-    
+
     query = request.args.get('q', '').lower()
-    
+
     if len(query) < 2:
         return jsonify([])
-    
+
     try:
         # Fetch products from API
         api_url = f'{API_BASE_URL}/products/'
@@ -863,8 +872,8 @@ def cart():
     subtotal = 0
     shipping = 0
     total = 0
-    
-    return render_template('cart.html', 
+
+    return render_template('cart.html',
                          cart_items=cart_items,
                          subtotal=subtotal,
                          shipping=shipping,
@@ -977,7 +986,7 @@ def admin_login():
         data = request.get_json()
         username = data.get('username', '').strip()
         password = data.get('password', '')
-        
+
         # Check admin credentials
         admin_credentials = [
             {'username': 'admin', 'password': 'admin123'},
@@ -985,14 +994,14 @@ def admin_login():
             {'username': 'admin@buddyskincare.com', 'password': '123'},
             {'username': 'Admin BuddySkincare', 'password': '123'}
         ]
-        
+
         # Validate credentials
         valid_login = False
         for cred in admin_credentials:
             if username == cred['username'] and password == cred['password']:
                 valid_login = True
                 break
-        
+
         if valid_login:
             return jsonify({
                 'success': True,
@@ -1003,7 +1012,7 @@ def admin_login():
                 'success': False,
                 'message': 'Tên đăng nhập hoặc mật khẩu không đúng'
             }), 401
-    
+
     return render_template('admin_login.html')
 
 @app.route('/logout')
@@ -1086,15 +1095,58 @@ def admin_order_invoice_email(order_id: int):
     # Render minimal HTML invoice for email
     html_content = render_template('emails/invoice_email.html', order=order)
 
-    # SMTP configuration from environment
+    # SMTP configuration from Django settings
     smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
     smtp_port = int(os.getenv('SMTP_PORT', '587'))
-    smtp_user = os.getenv('SMTP_USER')
-    smtp_pass = os.getenv('SMTP_PASS')
-    sender = os.getenv('SMTP_SENDER', smtp_user or 'no-reply@buddyskincare.vn')
+    smtp_user = os.getenv('SMTP_USER') or 'buddyskincarevn@gmail.com'
+    smtp_pass = os.getenv('SMTP_PASS') or 'fkoz aohr yeub fncz'
+    sender = os.getenv('SMTP_SENDER', smtp_user or 'buddyskincarevn@gmail.com')
 
-    if not (smtp_user and smtp_pass):
-        # Development fallback: save invoice HTML to file instead of sending email
+    # Try Gmail API first, then SMTP, then fallback to file
+    email_sent = False
+    
+    # Try Gmail API
+    try:
+        email_sent = send_email_via_gmail_api(
+            to_email=recipient,
+            subject=f'Hóa đơn đơn hàng #{order_id} - BuddySkincare',
+            html_content=html_content,
+            plain_text=f'Hóa đơn đơn hàng #{order_id} từ BuddySkincare'
+        )
+    except Exception as e:
+        print(f"❌ Gmail API failed: {e}")
+    
+    # If Gmail API failed, try SMTP
+    if not email_sent and (smtp_user and smtp_pass):
+        try:
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = f'Hóa đơn đơn hàng #{order_id} - BuddySkincare'
+            msg['From'] = sender
+            msg['To'] = recipient
+            
+            # Add plain text version
+            text_content = f'Hóa đơn đơn hàng #{order_id} từ BuddySkincare'
+            text_part = MIMEText(text_content, 'plain', 'utf-8')
+            msg.attach(text_part)
+            
+            # Add HTML version
+            html_part = MIMEText(html_content, 'html', 'utf-8')
+            msg.attach(html_part)
+            
+            # Send email
+            server = smtplib.SMTP(smtp_host, smtp_port)
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+            server.quit()
+            
+            email_sent = True
+            print(f"✅ Email sent via SMTP to {recipient}")
+        except Exception as e:
+            print(f"❌ SMTP failed: {e}")
+    
+    # If both failed, save to file
+    if not email_sent:
         try:
             fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
             os.makedirs(fallback_dir, exist_ok=True)
@@ -1104,34 +1156,13 @@ def admin_order_invoice_email(order_id: int):
                 f.write(html_content)
             return jsonify({'success': True, 'message': f'Đã lưu hóa đơn vào file: {file_path}', 'saved_path': file_path}), 200
         except Exception as e:
-            return jsonify({'success': False, 'message': f'SMTP chưa cấu hình và lưu file thất bại: {str(e)}'}), 500
+            return jsonify({'success': False, 'message': f'Gửi email thất bại và lưu file thất bại: {str(e)}'}), 500
 
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f'Hóa đơn đơn hàng #{order_id} - BuddySkincare'
-        msg['From'] = sender
-        msg['To'] = recipient
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.sendmail(sender, [recipient], msg.as_string())
+    # Return success if email was sent
+    if email_sent:
         return jsonify({'success': True, 'message': f'Đã gửi hóa đơn đến {recipient}'}), 200
-    except (smtplib.SMTPAuthenticationError, smtplib.SMTPException, TimeoutError) as e:
-        # Graceful fallback: save HTML to file when SMTP fails, return 200 for UX
-        try:
-            fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
-            os.makedirs(fallback_dir, exist_ok=True)
-            filename = f'invoice_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
-            file_path = os.path.join(fallback_dir, filename)
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(html_content)
-            return jsonify({'success': True, 'message': f'Không gửi được qua SMTP, đã lưu hóa đơn vào file', 'saved_path': file_path, 'error': str(e)}), 200
-        except Exception as save_err:
-            return jsonify({'success': False, 'message': f'Lỗi SMTP và lưu file thất bại: {str(save_err)}', 'error': str(e)}), 500
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi gửi email: {str(e)}'}), 500
+    else:
+        return jsonify({'success': False, 'message': 'Không thể gửi email'}), 500
 
 @app.route('/admin/customers')
 def admin_customers():
@@ -1176,16 +1207,16 @@ def admin_api_email_analytics():
         # Get date range from query parameters
         start_date = request.args.get('start_date', '7daysAgo')
         end_date = request.args.get('end_date', 'today')
-        
+
         # Get Gmail data (emails sent)
         gmail_data = get_gmail_data(start_date, end_date)
-        
+
         # Get Google Analytics data (clicks, conversions)
         analytics_data = get_google_analytics_data(start_date, end_date)
-        
+
         # Combine data
         combined_data = {}
-        
+
         if gmail_data:
             combined_data['total_emails'] = gmail_data['total_emails']
             combined_data['flashsale_emails'] = gmail_data['flashsale_emails']
@@ -1197,16 +1228,16 @@ def admin_api_email_analytics():
             combined_data['flashsale_emails'] = 0
             combined_data['luckygame_emails'] = 0
             combined_data['other_emails'] = 0
-        
+
         if analytics_data:
             combined_data.update(analytics_data)
         else:
             # Fallback to mock data for analytics
             mock_data = get_mock_analytics_data()
             combined_data.update(mock_data)
-        
+
         return jsonify(combined_data)
-            
+
     except Exception as e:
         print(f"❌ Error in email analytics API: {e}")
         return jsonify(get_mock_analytics_data())
@@ -1216,12 +1247,12 @@ def get_gmail_data(start_date, end_date):
     try:
         # Check if Gmail credentials are available
         credentials_path = os.path.join(os.getcwd(), 'gmail-credentials.json')
-        
+
         if not os.path.exists(credentials_path):
             print("❌ Gmail credentials not found at:", credentials_path)
             print("💡 To enable real Gmail data, create gmail-credentials.json")
             return None
-        
+
         # Try to import and use Gmail API
         try:
             from google.oauth2 import service_account
@@ -1230,40 +1261,40 @@ def get_gmail_data(start_date, end_date):
             print("❌ Gmail API not installed")
             print("💡 Run: pip install google-api-python-client")
             return None
-        
+
         # Initialize Gmail service
         credentials = service_account.Credentials.from_service_account_file(
             credentials_path,
             scopes=['https://www.googleapis.com/auth/gmail.readonly']
         )
-        
+
         service = build('gmail', 'v1', credentials=credentials)
-        
+
         print(f"🔍 Fetching Gmail data from buddyskincarevn@gmail.com ({start_date} to {end_date})")
-        
+
         # Query for sent emails
         query = f'from:buddyskincarevn@gmail.com after:{start_date} before:{end_date}'
-        
+
         try:
             results = service.users().messages().list(
                 userId='buddyskincarevn@gmail.com',
                 q=query,
                 maxResults=1000
             ).execute()
-            
+
             messages = results.get('messages', [])
-            
+
             # Count emails by campaign
             flashsale_count = 0
             luckygame_count = 0
             total_emails = len(messages)
-            
+
             for message in messages:
                 msg = service.users().messages().get(
                     userId='buddyskincarevn@gmail.com',
                     id=message['id']
                 ).execute()
-                
+
                 # Check subject for campaign type
                 headers = msg['payload'].get('headers', [])
                 subject = ''
@@ -1271,38 +1302,88 @@ def get_gmail_data(start_date, end_date):
                     if header['name'] == 'Subject':
                         subject = header['value']
                         break
-                
+
                 if 'flash' in subject.lower() or 'sale' in subject.lower():
                     flashsale_count += 1
                 elif 'lucky' in subject.lower() or 'game' in subject.lower():
                     luckygame_count += 1
-            
+
             return {
                 'total_emails': total_emails,
                 'flashsale_emails': flashsale_count,
                 'luckygame_emails': luckygame_count,
                 'other_emails': total_emails - flashsale_count - luckygame_count
             }
-            
+
         except Exception as e:
             print(f"❌ Error querying Gmail: {e}")
             return None
-            
+
     except Exception as e:
         print(f"❌ Error setting up Gmail API: {e}")
         return None
+
+def send_email_via_gmail_api(to_email, subject, html_content, plain_text=None):
+    """Gửi email qua Gmail API"""
+    try:
+        from google.oauth2 import service_account
+        from googleapiclient.discovery import build
+        
+        credentials_path = os.path.join(os.getcwd(), 'gmail-credentials.json')
+        if not os.path.exists(credentials_path):
+            print("❌ Gmail credentials not found")
+            return False
+            
+        # Initialize Gmail service with send scope
+        credentials = service_account.Credentials.from_service_account_file(
+            credentials_path,
+            scopes=['https://www.googleapis.com/auth/gmail.send']
+        )
+        
+        service = build('gmail', 'v1', credentials=credentials)
+        
+        # Create message
+        message = MIMEMultipart('alternative')
+        message['to'] = to_email
+        message['from'] = 'buddyskincarevn@gmail.com'
+        message['subject'] = subject
+        
+        # Add plain text version if provided
+        if plain_text:
+            text_part = MIMEText(plain_text, 'plain', 'utf-8')
+            message.attach(text_part)
+        
+        # Add HTML version
+        html_part = MIMEText(html_content, 'html', 'utf-8')
+        message.attach(html_part)
+        
+        # Encode message
+        raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        
+        # Send email
+        result = service.users().messages().send(
+            userId='me',
+            body={'raw': raw_message}
+        ).execute()
+        
+        print(f"✅ Email sent successfully to {to_email}, message ID: {result['id']}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error sending email via Gmail API: {e}")
+        return False
 
 def get_google_analytics_data(start_date, end_date):
     """Lấy dữ liệu thật từ Google Analytics"""
     try:
         # Check if Google Analytics credentials are available
         credentials_path = os.path.join(os.getcwd(), 'google-analytics-credentials.json')
-        
+
         if not os.path.exists(credentials_path):
             print("❌ Google Analytics credentials not found at:", credentials_path)
             print("💡 To enable real data, follow the setup guide in GOOGLE_ANALYTICS_SETUP.md")
             return None
-        
+
         # Try to import and use Google Analytics Data API
         try:
             from google.analytics.data_v1beta import BetaAnalyticsDataClient
@@ -1316,15 +1397,15 @@ def get_google_analytics_data(start_date, end_date):
             print("❌ Google Analytics Data API not installed")
             print("💡 Run: pip install google-analytics-data")
             return None
-        
+
         # Initialize client
         client = BetaAnalyticsDataClient.from_service_account_file(credentials_path)
-        
+
         # Your actual Property ID from Google Analytics
         property_id = "504734762"  # Real Property ID from GA4
-        
+
         print(f"🔍 Fetching GA4 data from property {property_id} ({start_date} to {end_date})")
-        
+
         # Query for email campaign data
         request = RunReportRequest(
             property=f"properties/{property_id}",
@@ -1351,16 +1432,16 @@ def get_google_analytics_data(start_date, end_date):
                 }
             }
         )
-        
+
         response = client.run_report(request)
-        
+
         # Process the response
         campaigns = []
         total_sessions = 0
         total_users = 0
         total_conversions = 0
         total_revenue = 0
-        
+
         for row in response.rows:
             campaign_name = row.dimension_values[0].value
             sessions = int(row.metric_values[0].value)
@@ -1368,12 +1449,12 @@ def get_google_analytics_data(start_date, end_date):
             bounce_rate = float(row.metric_values[2].value)
             conversions = int(row.metric_values[3].value)
             revenue = float(row.metric_values[4].value)
-            
+
             total_sessions += sessions
             total_users += new_users
             total_conversions += conversions
             total_revenue += revenue
-            
+
             campaigns.append({
                 'name': campaign_name,
                 'sessions': sessions,
@@ -1383,13 +1464,13 @@ def get_google_analytics_data(start_date, end_date):
                 'revenue': revenue,
                 'roi': (revenue / sessions * 100) if sessions > 0 else 0
             })
-        
+
         # Get timeline data
         timeline = get_timeline_data(client, property_id, start_date, end_date)
-        
+
         # Get top pages data
         top_pages = get_top_pages_data(client, property_id, start_date, end_date)
-        
+
         result = {
             'totalSessions': total_sessions,
             'totalUsers': total_users,
@@ -1400,10 +1481,10 @@ def get_google_analytics_data(start_date, end_date):
             'topPages': top_pages,
             'recentActivity': []  # This would need additional API calls
         }
-        
+
         print(f"✅ Successfully fetched {len(campaigns)} campaigns from Google Analytics")
         return result
-        
+
     except Exception as e:
         print(f"❌ Error fetching Google Analytics data: {e}")
         return None
@@ -1430,17 +1511,17 @@ def get_timeline_data(client, property_id, start_date, end_date):
                 }
             }
         )
-        
+
         response = client.run_report(request)
         timeline = []
-        
+
         for row in response.rows:
             timeline.append({
                 'date': row.dimension_values[0].value,
                 'sessions': int(row.metric_values[0].value),
                 'users': int(row.metric_values[1].value)
             })
-        
+
         return timeline
     except Exception as e:
         print(f"❌ Error fetching timeline data: {e}")
@@ -1467,21 +1548,21 @@ def get_top_pages_data(client, property_id, start_date, end_date):
             order_bys=[{"metric": {"metric_name": "activeUsers"}, "desc": True}],
             limit=10
         )
-        
+
         response = client.run_report(request)
         top_pages = []
         total_users = sum(int(row.metric_values[0].value) for row in response.rows)
-        
+
         for row in response.rows:
             users = int(row.metric_values[0].value)
             percentage = (users / total_users * 100) if total_users > 0 else 0
-            
+
             top_pages.append({
                 'page': row.dimension_values[0].value,
                 'users': users,
                 'percentage': percentage
             })
-        
+
         return top_pages
     except Exception as e:
         print(f"❌ Error fetching top pages data: {e}")
@@ -1688,7 +1769,7 @@ def preview_new_order_notification():
     order = None
     pending_orders = []
     order_id = request.args.get('order_id')
-    
+
     if order_id:
         try:
             # Get specific order
@@ -1697,7 +1778,7 @@ def preview_new_order_notification():
                 order = resp.json()
         except Exception:
             order = None
-    
+
     if not order:
         # Fallback demo order for preview
         order = {
@@ -1715,7 +1796,7 @@ def preview_new_order_notification():
             'province': 'TP.HCM',
             'total_amount': 450.0,
         }
-    
+
     # Get pending orders for demo
     try:
         resp = requests.get(f'{API_BASE_URL}/orders/', timeout=15)
@@ -1750,9 +1831,9 @@ def preview_new_order_notification():
                 'is_confirmed': False
             }
         ]
-    
-    return render_template('emails/new_order_notification.html', 
-                         order=order, 
+
+    return render_template('emails/new_order_notification.html',
+                         order=order,
                          pending_orders=pending_orders,
                          current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
 
@@ -1761,22 +1842,22 @@ def preview_new_order_notification():
 def api_orders():
     """API lấy danh sách đơn hàng (public endpoint for CTV orders)"""
     import requests
-    
+
     try:
         # Get query parameters
         collaborator_code = request.args.get('collaborator_code__isnull', '')
         ctv_code = request.args.get('collaborator_code', '')
         start_date = request.args.get('order_date__gte', '')
         end_date = request.args.get('order_date__lte', '')
-        
+
         print(f"🔍 Fetching orders from: {API_BASE_URL}/orders/")
         print(f"📋 Query params: collaborator_code__isnull={collaborator_code}, collaborator_code={ctv_code}")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         # Build query URL
         query_params = []
         if collaborator_code == 'false':
@@ -1787,17 +1868,17 @@ def api_orders():
             query_params.append(f'order_date__gte={start_date}')
         if end_date:
             query_params.append(f'order_date__lte={end_date}')
-        
+
         query_string = '&'.join(query_params)
         url = f'{API_BASE_URL}/orders/?ordering=-order_date'
         if query_string:
             url += f'&{query_string}'
-            
+
         print(f"📡 Full URL: {url}")
-        
+
         response = requests.get(url, headers=headers, timeout=30)
         print(f"📡 Orders API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             orders = response.json()
             print(f"✅ Successfully fetched {len(orders)} orders")
@@ -1814,18 +1895,18 @@ def api_orders():
 def api_ctvs():
     """API lấy danh sách CTV"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching CTVs from: {API_BASE_URL}/ctvs/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/ctvs/', headers=headers, timeout=30)
         print(f"📡 CTVs API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             ctvs = response.json()
             print(f"✅ Successfully fetched {len(ctvs)} CTVs")
@@ -1841,22 +1922,22 @@ def api_ctvs():
 def api_ctvs_by_code():
     """API lấy CTV theo mã"""
     import requests
-    
+
     try:
         code = request.args.get('code', '').strip()
         if not code:
             return jsonify({'error': 'Thiếu mã CTV'}), 400
-        
+
         print(f"🔍 Fetching CTV by code: {code} from: {API_BASE_URL}/ctvs/by-code/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/ctvs/by-code/?code={code}', headers=headers, timeout=30)
         print(f"📡 CTV by code API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             ctv = response.json()
             print(f"✅ Successfully fetched CTV: {ctv.get('code', 'N/A')}")
@@ -1875,18 +1956,18 @@ def api_ctvs_by_code():
 def api_ctv_stats(ctv_id):
     """API lấy thống kê CTV"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching CTV stats for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/stats/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/stats/', headers=headers, timeout=30)
         print(f"📡 CTV stats API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             stats = response.json()
             print(f"✅ Successfully fetched CTV stats for ID: {ctv_id}")
@@ -1905,18 +1986,18 @@ def api_ctv_stats(ctv_id):
 def api_ctv_commissions(ctv_id):
     """API lấy danh sách hoa hồng CTV"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching CTV commissions for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/commissions/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/commissions/', headers=headers, timeout=30)
         print(f"📡 CTV commissions API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             commissions = response.json()
             print(f"✅ Successfully fetched CTV commissions for ID: {ctv_id}")
@@ -1935,18 +2016,18 @@ def api_ctv_commissions(ctv_id):
 def api_ctv_wallet(ctv_id):
     """API lấy thông tin ví CTV"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching CTV wallet for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/wallet/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/wallet/', headers=headers, timeout=30)
         print(f"📡 CTV wallet API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             wallet = response.json()
             print(f"✅ Successfully fetched CTV wallet for ID: {ctv_id}")
@@ -1965,18 +2046,18 @@ def api_ctv_wallet(ctv_id):
 def api_ctv_withdrawals(ctv_id):
     """API lấy lịch sử rút tiền CTV"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching CTV withdrawals for ID: {ctv_id} from: {API_BASE_URL}/ctvs/{ctv_id}/withdrawals/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/withdrawals/', headers=headers, timeout=30)
         print(f"📡 CTV withdrawals API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             withdrawals = response.json()
             print(f"✅ Successfully fetched CTV withdrawals for ID: {ctv_id}")
@@ -1995,22 +2076,22 @@ def api_ctv_withdrawals(ctv_id):
 def api_ctv_withdraw(ctv_id):
     """API gửi yêu cầu rút tiền CTV"""
     import requests
-    
+
     try:
         print(f"🔍 Sending CTV withdrawal request for ID: {ctv_id} to: {API_BASE_URL}/ctvs/{ctv_id}/withdraw/")
-        
+
         # Lấy dữ liệu từ request body
         data = request.get_json()
         print(f"📋 Withdrawal data: {data}")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.post(f'{API_BASE_URL}/ctvs/{ctv_id}/withdraw/', json=data, headers=headers, timeout=30)
         print(f"📡 CTV withdraw API response status: {response.status_code}")
-        
+
         if response.status_code == 200 or response.status_code == 201:
             result = response.json()
             print(f"✅ Successfully sent CTV withdrawal request for ID: {ctv_id}")
@@ -2034,21 +2115,21 @@ def api_ctv_withdraw(ctv_id):
 def admin_api_orders():
     """API lấy danh sách đơn hàng cho admin"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching orders from: {API_BASE_URL}/orders/")
-        
+
         # Try with different authentication methods
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         # First try without authentication (in case it's public)
         # Sort by order_date descending (newest first)
         response = requests.get(f'{API_BASE_URL}/orders/?ordering=-order_date', headers=headers, timeout=30)
         print(f"📡 Orders API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             orders = response.json()
             print(f"✅ Successfully fetched {len(orders)} orders")
@@ -2068,13 +2149,13 @@ def admin_api_orders():
 def admin_api_order_detail(order_id):
     """API chi tiết đơn hàng cho admin"""
     import requests
-    
+
     try:
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         if request.method == 'GET':
             response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', headers=headers, timeout=30)
             if response.status_code == 200:
@@ -2083,10 +2164,10 @@ def admin_api_order_detail(order_id):
                 return jsonify({'error': 'API yêu cầu xác thực'}), 401
             else:
                 return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
-                
+
         elif request.method == 'PATCH':
             data = request.get_json()
-            response = requests.patch(f'{API_BASE_URL}/orders/{order_id}/', 
+            response = requests.patch(f'{API_BASE_URL}/orders/{order_id}/',
                                     json=data, headers=headers, timeout=30)
             if response.status_code == 200:
                 return jsonify(response.json())
@@ -2094,7 +2175,7 @@ def admin_api_order_detail(order_id):
                 return jsonify({'error': 'API yêu cầu xác thực'}), 401
             else:
                 return jsonify({'error': 'Không thể cập nhật đơn hàng'}), 500
-                
+
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
 
@@ -2102,52 +2183,52 @@ def admin_api_order_detail(order_id):
 def admin_api_confirm_order(order_id):
     """API xác nhận đơn hàng"""
     import requests
-    
+
     try:
         print(f"🔍 Confirming order {order_id}...")
-        
+
         # Lấy thông tin đơn hàng trước
         order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
         if order_response.status_code != 200:
             return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
-        
+
         order_data = order_response.json()
         print(f"📦 Order data: {order_data}")
-        
+
         # Cập nhật trạng thái đơn hàng
         update_data = {
             'is_confirmed': True,
             'status': 'processing'
         }
-        
+
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
-            f'{API_BASE_URL}/orders/{order_id}/', 
+            f'{API_BASE_URL}/orders/{order_id}/',
             json=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
-        
+
         print(f"🔍 Update response status: {update_response.status_code}")
         print(f"🔍 Update response content: {update_response.text}")
-        
+
         if update_response.status_code == 200:
             print(f"✅ Order {order_id} confirmed successfully")
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Đã xác nhận đơn hàng #{order_id} thành công!'
             })
         elif update_response.status_code == 401:
             print(f"🔐 API requires authentication for order update")
             return jsonify({
-                'success': False, 
+                'success': False,
                 'message': f'⚠️ Không thể cập nhật đơn hàng #{order_id} do yêu cầu xác thực API.',
                 'error': 'API requires authentication for order updates'
             })
         else:
             print(f"❌ Failed to update order: {update_response.status_code}")
             return jsonify({'error': f'Không thể cập nhật đơn hàng: {update_response.status_code}'}), 500
-        
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error confirming order {order_id}: {e}")
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
@@ -2159,49 +2240,49 @@ def admin_api_confirm_order(order_id):
 def admin_api_cancel_order(order_id):
     """API hủy đơn hàng"""
     import requests
-    
+
     try:
         print(f"🔍 Cancelling order {order_id}...")
-        
+
         # Lấy thông tin đơn hàng trước
         order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
         if order_response.status_code != 200:
             return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
-        
+
         order_data = order_response.json()
         print(f"📦 Order data: {order_data}")
-        
+
         # Cập nhật trạng thái đơn hàng
         update_data = {
             'is_confirmed': False,
             'status': 'cancelled'
         }
-        
+
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
-            f'{API_BASE_URL}/orders/{order_id}/', 
+            f'{API_BASE_URL}/orders/{order_id}/',
             json=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
-        
+
         if update_response.status_code == 200:
             print(f"✅ Order {order_id} cancelled successfully")
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Đã hủy đơn hàng #{order_id} thành công!'
             })
         elif update_response.status_code == 401:
             print(f"🔐 API requires authentication for order update")
             return jsonify({
-                'success': False, 
+                'success': False,
                 'message': f'⚠️ Không thể hủy đơn hàng #{order_id} do yêu cầu xác thực API.',
                 'error': 'API requires authentication for order updates'
             })
         else:
             print(f"❌ Failed to update order: {update_response.status_code}")
             return jsonify({'error': f'Không thể cập nhật đơn hàng: {update_response.status_code}'}), 500
-        
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error cancelling order {order_id}: {e}")
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
@@ -2213,41 +2294,41 @@ def admin_api_cancel_order(order_id):
 def admin_api_ship_order(order_id):
     """API đánh dấu đơn hàng đã giao hàng"""
     import requests
-    
+
     try:
         print(f"🚚 Shipping order {order_id}...")
-        
+
         # Lấy thông tin đơn hàng trước
         order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
         if order_response.status_code != 200:
             return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
-        
+
         order_data = order_response.json()
         print(f"📦 Order data: {order_data}")
-        
+
         # Cập nhật trạng thái đơn hàng thành 'shipped'
         update_data = {
             'status': 'shipped'
         }
-        
+
         # Gọi API cập nhật đơn hàng
         update_response = requests.patch(
-            f'{API_BASE_URL}/orders/{order_id}/', 
+            f'{API_BASE_URL}/orders/{order_id}/',
             json=update_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
         )
-        
+
         if update_response.status_code == 200:
             print(f"✅ Order {order_id} shipped successfully")
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Đã đánh dấu đơn hàng #{order_id} là đã giao hàng thành công!'
             })
         else:
             print(f"❌ Failed to update order: {update_response.status_code}")
             return jsonify({'error': f'Không thể cập nhật đơn hàng: {update_response.status_code}'}), 500
-        
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error shipping order {order_id}: {e}")
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
@@ -2259,17 +2340,17 @@ def admin_api_ship_order(order_id):
 def admin_api_auto_complete_orders():
     """API tự động cập nhật đơn hàng từ 'shipped' sang 'completed' sau 10 phút (để test)"""
     import requests
-    
+
     try:
         # Lấy tất cả đơn hàng có trạng thái 'shipped'
         response = requests.get(f'{API_BASE_URL}/orders/', timeout=30)
         if response.status_code != 200:
             return jsonify({'error': 'Không thể lấy danh sách đơn hàng'}), 500
-        
+
         orders = response.json()
         current_time = datetime.now()
         updated_orders = []
-        
+
         for order in orders:
             if order.get('status') == 'shipped':
                 # Kiểm tra xem đơn hàng đã được giao hàng hơn 5 ngày chưa
@@ -2280,7 +2361,7 @@ def admin_api_auto_complete_orders():
                         updated_at = datetime.fromisoformat(updated_at_str.replace('Z', '+00:00'))
                         # Chuyển về timezone local để so sánh
                         updated_at = updated_at.replace(tzinfo=None)
-                        
+
                         # Kiểm tra nếu đã qua 10 phút (để test)
                         time_diff = current_time - updated_at
                         if time_diff.total_seconds() >= 600:  # 600 giây = 10 phút
@@ -2288,13 +2369,13 @@ def admin_api_auto_complete_orders():
                             update_data = {
                                 'status': 'completed'
                             }
-                            
+
                             update_response = requests.patch(
                                 f'{API_BASE_URL}/orders/{order["id"]}/',
                                 data=update_data,
                                 timeout=30
                             )
-                            
+
                             if update_response.status_code == 200:
                                 updated_orders.append({
                                     'id': order['id'],
@@ -2307,12 +2388,12 @@ def admin_api_auto_complete_orders():
                     except Exception as e:
                         print(f"❌ Error processing order {order['id']}: {e}")
                         continue
-        
+
         return jsonify({
             'message': f'Đã tự động hoàn thành {len(updated_orders)} đơn hàng',
             'updated_orders': updated_orders
         })
-        
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Error in auto-complete: {e}")
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
@@ -2324,7 +2405,7 @@ def admin_api_auto_complete_orders():
 def admin_api_products():
     """API lấy danh sách tất cả sản phẩm cho admin"""
     import requests
-    
+
     try:
         response = requests.get(f'{API_BASE_URL}/admin-products/', timeout=30)
         if response.status_code == 200:
@@ -2339,7 +2420,7 @@ def admin_api_products():
 def admin_api_add_product():
     """API thêm sản phẩm mới cho admin"""
     import requests
-    
+
     try:
         data = request.get_json()
         response = requests.post(f'{API_BASE_URL}/admin-products/', json=data, timeout=30)
@@ -2355,18 +2436,18 @@ def admin_api_add_product():
 def admin_api_customers():
     """API lấy danh sách khách hàng cho admin"""
     import requests
-    
+
     try:
         print(f"🔍 Fetching customers from: {API_BASE_URL}/customer/")
-        
+
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         response = requests.get(f'{API_BASE_URL}/customer/', headers=headers, timeout=30)
         print(f"📡 Customers API response status: {response.status_code}")
-        
+
         if response.status_code == 200:
             customers = response.json()
             print(f"✅ Successfully fetched {len(customers)} customers")
@@ -2385,13 +2466,13 @@ def admin_api_customers():
 def admin_api_customer_detail(customer_id):
     """API chi tiết khách hàng cho admin"""
     import requests
-    
+
     try:
         headers = {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         }
-        
+
         if request.method == 'GET':
             response = requests.get(f'{API_BASE_URL}/customer/{customer_id}/', headers=headers, timeout=30)
             if response.status_code == 200:
@@ -2400,10 +2481,10 @@ def admin_api_customer_detail(customer_id):
                 return jsonify({'error': 'API yêu cầu xác thực'}), 401
             else:
                 return jsonify({'error': 'Không tìm thấy khách hàng'}), 404
-                
+
         elif request.method == 'PATCH':
             data = request.get_json()
-            response = requests.patch(f'{API_BASE_URL}/customer/{customer_id}/', 
+            response = requests.patch(f'{API_BASE_URL}/customer/{customer_id}/',
                                     json=data, headers=headers, timeout=30)
             if response.status_code == 200:
                 return jsonify(response.json())
@@ -2411,7 +2492,7 @@ def admin_api_customer_detail(customer_id):
                 return jsonify({'error': 'API yêu cầu xác thực'}), 401
             else:
                 return jsonify({'error': 'Không thể cập nhật khách hàng'}), 500
-                
+
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
 
@@ -2419,23 +2500,23 @@ def admin_api_customer_detail(customer_id):
 def admin_api_update_product(product_id):
     """API cập nhật sản phẩm cho admin"""
     import requests
-    
+
     try:
         data = request.get_json()
         print(f"🔧 Updating product {product_id} with data: {data}")
         print(f"🔧 Data keys: {list(data.keys()) if data else 'None'}")
-        
+
         # Validate required fields
         if not data:
             return jsonify({'error': 'Không có dữ liệu để cập nhật'}), 400
-            
+
         # Clean up data - remove None values and ensure proper types
         # Only send fields that the Django API can handle for updates
         allowed_fields = {
             'name', 'brand_name', 'original_price', 'discounted_price', 'import_price',
             'stock_quantity', 'sold_quantity', 'status', 'description', 'is_visible'
         }
-        
+
         cleaned_data = {}
         for key, value in data.items():
             if key in allowed_fields and value is not None and value != '':
@@ -2457,10 +2538,10 @@ def admin_api_update_product(product_id):
                     cleaned_data[key] = bool(value)
                 else:
                     cleaned_data[key] = str(value)
-        
+
         print(f"🧹 Cleaned data: {cleaned_data}")
         print(f"🧹 Cleaned data keys: {list(cleaned_data.keys())}")
-        
+
         # Try to work around the Django model bug by sending minimal data
         # Start with just the most essential fields that we know work
         minimal_data = {}
@@ -2472,16 +2553,16 @@ def admin_api_update_product(product_id):
             minimal_data['description'] = cleaned_data['description']
         if 'is_visible' in cleaned_data:
             minimal_data['is_visible'] = cleaned_data['is_visible']
-        
+
         print(f"🎯 Trying minimal update with: {minimal_data}")
-        
-        response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/', 
+
+        response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/',
                                 data=minimal_data, timeout=30)
-        
+
         # If the minimal update works, try to update additional fields in separate requests
         if response.status_code == 200 and len(cleaned_data) > len(minimal_data):
             print(f"✅ Minimal update successful, trying additional fields...")
-            
+
             # Try to update price fields separately
             price_data = {}
             if 'original_price' in cleaned_data:
@@ -2490,37 +2571,37 @@ def admin_api_update_product(product_id):
                 price_data['discounted_price'] = cleaned_data['discounted_price']
             if 'import_price' in cleaned_data:
                 price_data['import_price'] = cleaned_data['import_price']
-            
+
             if price_data:
                 print(f"💰 Trying price update with: {price_data}")
-                price_response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/', 
+                price_response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/',
                                               data=price_data, timeout=30)
                 if price_response.status_code != 200:
                     print(f"⚠️ Price update failed: {price_response.status_code}")
                 else:
                     print(f"✅ Price update successful")
-            
+
             # Try to update quantity fields separately
             quantity_data = {}
             if 'stock_quantity' in cleaned_data:
                 quantity_data['stock_quantity'] = cleaned_data['stock_quantity']
             if 'sold_quantity' in cleaned_data:
                 quantity_data['sold_quantity'] = cleaned_data['sold_quantity']
-            
+
             if quantity_data:
                 print(f"📦 Trying quantity update with: {quantity_data}")
-                quantity_response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/', 
+                quantity_response = requests.patch(f'{API_BASE_URL}/admin-products/{product_id}/',
                                                   data=quantity_data, timeout=30)
                 if quantity_response.status_code != 200:
                     print(f"⚠️ Quantity update failed: {quantity_response.status_code}")
                 else:
                     print(f"✅ Quantity update successful")
-            
+
             # Get the final updated product data
             final_response = requests.get(f'{API_BASE_URL}/admin-products/{product_id}/', timeout=30)
             if final_response.status_code == 200:
                 response = final_response
-        
+
         print(f"📡 API Response status: {response.status_code}")
         if response.status_code != 200:
             print(f"❌ API Error response: {response.text}")
@@ -2529,17 +2610,143 @@ def admin_api_update_product(product_id):
                 return jsonify({'error': f'API Error: {error_data}'}), response.status_code
             except:
                 return jsonify({'error': f'API Error: {response.text}'}), response.status_code
-            
+
         if response.status_code == 200:
             result = response.json()
             print(f"✅ Update successful: {result}")
             return jsonify(result)
         else:
             return jsonify({'error': f'Không thể cập nhật sản phẩm. API trả về: {response.status_code} - {response.text}'}), 500
-            
+
     except requests.exceptions.RequestException as e:
         print(f"❌ Request error: {e}")
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
+
+@app.route('/backend/api/products/<int:product_id>/remove_tag/', methods=['POST'])
+def remove_product_tag(product_id):
+    """API xóa tag khỏi sản phẩm"""
+    import requests
+
+    try:
+        data = request.get_json()
+        tag_name = data.get('tag_name', 'FlashSale')
+        
+        print(f"🏷️ Removing tag '{tag_name}' from product {product_id}")
+        
+        # Gọi Django API để xóa tag
+        response = requests.post(
+            f'{API_BASE_URL}/products/{product_id}/remove_tag/',
+            json={'tag_name': tag_name},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print(f"✅ Successfully removed tag '{tag_name}' from product {product_id}")
+            return jsonify({
+                'success': True,
+                'message': f'Đã xóa tag "{tag_name}" khỏi sản phẩm',
+                'data': result
+            })
+        elif response.status_code == 404:
+            print(f"❌ Product {product_id} not found")
+            return jsonify({'error': 'Không tìm thấy sản phẩm'}), 404
+        else:
+            print(f"❌ Failed to remove tag: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Không thể xóa tag khỏi sản phẩm'}), 500
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
+
+@app.route('/backend/api/products/<int:product_id>/add_tag/', methods=['POST'])
+def add_product_tag(product_id):
+    """API thêm tag vào sản phẩm"""
+    import requests
+
+    try:
+        data = request.get_json()
+        tag_name = data.get('tag_name', 'FlashSale')
+        
+        print(f"🏷️ Adding tag '{tag_name}' to product {product_id}")
+        
+        # Gọi Django API để thêm tag
+        response = requests.post(
+            f'{API_BASE_URL}/products/{product_id}/add_tag/',
+            json={'tag_name': tag_name},
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result = response.json()
+            print(f"✅ Successfully added tag '{tag_name}' to product {product_id}")
+            return jsonify({
+                'success': True,
+                'message': f'Đã thêm tag "{tag_name}" vào sản phẩm',
+                'data': result
+            })
+        elif response.status_code == 404:
+            print(f"❌ Product {product_id} not found")
+            return jsonify({'error': 'Không tìm thấy sản phẩm'}), 404
+        else:
+            print(f"❌ Failed to add tag: {response.status_code} - {response.text}")
+            return jsonify({'error': 'Không thể thêm tag vào sản phẩm'}), 500
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
+
+@app.route('/backend/api/products/add_tag/', methods=['POST'])
+def add_products_to_tag():
+    """API thêm nhiều sản phẩm vào tag"""
+    import requests
+
+    try:
+        data = request.get_json()
+        tag_name = data.get('tag_name', 'FlashSale')
+        product_ids = data.get('product_ids', [])
+        
+        if not product_ids:
+            return jsonify({'error': 'Không có sản phẩm nào được chọn'}), 400
+        
+        print(f"🏷️ Adding tag '{tag_name}' to products: {product_ids}")
+        
+        success_count = 0
+        errors = []
+        
+        # Thêm tag cho từng sản phẩm
+        for product_id in product_ids:
+            try:
+                response = requests.post(
+                    f'{API_BASE_URL}/products/{product_id}/add_tag/',
+                    json={'tag_name': tag_name},
+                    timeout=30
+                )
+                
+                if response.status_code == 200:
+                    success_count += 1
+                else:
+                    errors.append(f"Sản phẩm {product_id}: {response.status_code}")
+            except Exception as e:
+                errors.append(f"Sản phẩm {product_id}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Đã thêm tag "{tag_name}" cho {success_count}/{len(product_ids)} sản phẩm',
+            'success_count': success_count,
+            'total_count': len(product_ids),
+            'errors': errors
+        })
+        
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
         return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
@@ -2550,20 +2757,20 @@ def upload_blog_image():
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'Không có file được chọn'}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'Không có file được chọn'}), 400
-        
+
         if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
             # Check file size (max 10MB)
             file.seek(0, 2)  # Seek to end
             file_size = file.tell()
             file.seek(0)  # Reset to beginning
-            
+
             if file_size > 10 * 1024 * 1024:  # 10MB limit
                 return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
-            
+
             # Upload to Cloudinary with image optimization for blog
             upload_result = cloudinary.uploader.upload(
                 file,
@@ -2583,7 +2790,7 @@ def upload_blog_image():
                     {"fetch_format": "auto"}
                 ]
             )
-            
+
             return jsonify({
                 'success': True,
                 'url': upload_result['secure_url'],
@@ -2591,7 +2798,7 @@ def upload_blog_image():
             })
         else:
             return jsonify({'error': 'Định dạng file không được hỗ trợ. Chỉ chấp nhận PNG, JPG, JPEG, GIF, WEBP'}), 400
-            
+
     except Exception as e:
         print(f"Error uploading blog image: {str(e)}")
         return jsonify({'error': f'Lỗi upload: {str(e)}'}), 500
@@ -2600,53 +2807,203 @@ def upload_blog_image():
 def upload_bank_transfer():
     """API upload ảnh chuyển khoản lên Cloudinary"""
     try:
+        print(f"🔍 Upload request received. Files: {list(request.files.keys())}")
+        
         if 'file' not in request.files:
+            print("❌ No file in request")
             return jsonify({'error': 'Không có file được chọn'}), 400
-        
+
         file = request.files['file']
-        if file.filename == '':
-            return jsonify({'error': 'Không có file được chọn'}), 400
+        print(f"📁 File received: {file.filename}, Content type: {file.content_type}")
         
-        if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
-            # Check file size (max 10MB)
-            file.seek(0, 2)  # Seek to end
-            file_size = file.tell()
-            file.seek(0)  # Reset to beginning
-            
-            if file_size > 10 * 1024 * 1024:  # 10MB limit
-                return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
-            
-            # Upload to Cloudinary with image optimization
-            upload_result = cloudinary.uploader.upload(
-                file,
-                folder="bank_transfers",
-                public_id=f"transfer_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                resource_type="image",
-                # Image optimization settings
-                quality="auto:low",  # Tự động giảm chất lượng để giảm dung lượng
-                fetch_format="auto",  # Tự động chọn format tối ưu (WebP nếu browser hỗ trợ)
-                width=1200,  # Giới hạn chiều rộng tối đa
-                height=1200,  # Giới hạn chiều cao tối đa
-                crop="limit",  # Giữ nguyên tỷ lệ, chỉ resize nếu vượt quá giới hạn
-                flags="progressive",  # Tạo ảnh progressive JPEG
-                transformation=[
-                    {"width": 1200, "height": 1200, "crop": "limit"},
-                    {"quality": "auto:low"},
-                    {"fetch_format": "auto"}
-                ]
-            )
-            
-            return jsonify({
-                'success': True,
-                'url': upload_result['secure_url'],
-                'public_id': upload_result['public_id']
-            })
-        else:
+        if file.filename == '':
+            print("❌ Empty filename")
+            return jsonify({'error': 'Không có file được chọn'}), 400
+
+        # Check file extension
+        allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp')
+        if not file.filename.lower().endswith(allowed_extensions):
+            print(f"❌ Invalid file extension: {file.filename}")
             return jsonify({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}), 400
-            
+
+        # Check file size (max 10MB)
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        print(f"📏 File size: {file_size} bytes")
+
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            print(f"❌ File too large: {file_size} bytes")
+            return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
+
+        # Check Cloudinary configuration
+        try:
+            import cloudinary
+            print(f"☁️ Cloudinary configured: {cloudinary.config().cloud_name}")
+        except Exception as config_error:
+            print(f"❌ Cloudinary config error: {config_error}")
+            return jsonify({'error': 'Lỗi cấu hình Cloudinary'}), 500
+
+        # Upload to Cloudinary with simplified settings
+        print("🚀 Starting Cloudinary upload...")
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="bank_transfers",
+            public_id=f"transfer_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            resource_type="image",
+            quality="auto",
+            fetch_format="auto"
+        )
+
+        print(f"✅ Upload successful: {upload_result.get('secure_url', 'No URL')}")
+        return jsonify({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        })
+
     except Exception as e:
         print(f"❌ Error uploading bank transfer image: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Lỗi upload ảnh: {str(e)}'}), 500
+
+@app.route('/api/ctv-applications/', methods=['POST'])
+def api_ctv_applications():
+    """API proxy cho đăng ký CTV - forward đến Django backend"""
+    import requests
+    
+    try:
+        # Forward request đến Django backend
+        django_url = f'{API_BASE_URL}/ctv-applications/'
+        
+        # Lấy dữ liệu từ request
+        data = request.get_json()
+        
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+        
+        print(f"🔍 Forwarding CTV application to: {django_url}")
+        print(f"📝 Data: {data}")
+        
+        response = requests.post(django_url, json=data, headers=headers, timeout=30)
+        
+        print(f"📡 Django response status: {response.status_code}")
+        
+        if response.status_code in [200, 201]:
+            result = response.json()
+            print(f"✅ CTV application submitted successfully")
+            return jsonify(result)
+        else:
+            print(f"❌ Django API error: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Đăng ký thất bại. API trả về: {response.status_code}'}), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Django API connection error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+    except Exception as e:
+        print(f"❌ CTV application error: {e}")
+        return jsonify({'error': f'Lỗi hệ thống: {str(e)}'}), 500
+
+@app.route('/api/upload-marketing-resources-bulk', methods=['POST'])
+def upload_marketing_resources_bulk():
+    """API upload nhiều ảnh tài nguyên marketing lên Cloudinary hàng loạt"""
+    try:
+        files = request.files.getlist('files')
+        if not files or files[0].filename == '':
+            return jsonify({'error': 'Không có file nào được chọn'}), 400
+
+        # Get form data
+        resource_type = request.form.get('resource_type', 'new_product')
+        description = request.form.get('description', '')
+        is_active = request.form.get('is_active') == 'on'
+
+        results = []
+        errors = []
+
+        for i, file in enumerate(files):
+            try:
+                if file.filename == '':
+                    errors.append(f"File {i+1}: Tên file trống")
+                    continue
+
+                # Check file extension
+                if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx')):
+                    errors.append(f"File {i+1} ({file.filename}): Định dạng không hỗ trợ")
+                    continue
+
+                # Check file size (max 10MB)
+                file.seek(0, 2)  # Seek to end
+                file_size = file.tell()
+                file.seek(0)  # Reset to beginning
+
+                if file_size > 10 * 1024 * 1024:
+                    errors.append(f"File {i+1} ({file.filename}): Quá lớn ({file_size/1024/1024:.1f}MB)")
+                    continue
+
+                # Upload to Cloudinary
+                upload_result = cloudinary.uploader.upload(
+                    file,
+                    folder="marketing_resources",
+                    public_id=f"resource_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}_{file.filename.split('.')[0]}",
+                    resource_type="image" if file.content_type.startswith('image/') else "raw",
+                    quality="auto:good" if file.content_type.startswith('image/') else None,
+                    fetch_format="auto" if file.content_type.startswith('image/') else None,
+                    width=2000 if file.content_type.startswith('image/') else None,
+                    height=2000 if file.content_type.startswith('image/') else None,
+                    crop="limit" if file.content_type.startswith('image/') else None,
+                    flags="progressive" if file.content_type.startswith('image/') else None
+                )
+
+                # Create MarketingResource record via API
+                resource_data = {
+                    'name': file.filename.rsplit('.', 1)[0],  # Remove extension
+                    'description': description,
+                    'resource_type': resource_type,
+                    'file_url': upload_result['secure_url'],
+                    'thumbnail_url': upload_result['secure_url'],
+                    'file_size': upload_result.get('bytes', file_size),
+                    'is_active': is_active
+                }
+
+                # Call Django API to create resource record
+                import requests
+                api_response = requests.post(
+                    f'{API_BASE_URL}/marketing-resources/',
+                    json=resource_data,
+                    headers={'Content-Type': 'application/json'},
+                    timeout=30
+                )
+
+                if api_response.status_code in [200, 201]:
+                    results.append({
+                        'filename': file.filename,
+                        'url': upload_result['secure_url'],
+                        'status': 'success'
+                    })
+                    print(f"✅ Successfully processed: {file.filename}")
+                else:
+                    errors.append(f"File {i+1} ({file.filename}): Lỗi tạo record ({api_response.status_code})")
+                    print(f"❌ Failed to create record for: {file.filename}")
+
+            except Exception as file_error:
+                errors.append(f"File {i+1} ({file.filename}): {str(file_error)}")
+                print(f"❌ Error processing {file.filename}: {str(file_error)}")
+
+        return jsonify({
+            'success': True,
+            'total_files': len(files),
+            'successful_uploads': len(results),
+            'errors': errors,
+            'results': results,
+            'message': f'Upload hoàn tất: {len(results)}/{len(files)} file thành công'
+        })
+
+    except Exception as e:
+        print(f"❌ Bulk upload error: {str(e)}")
+        return jsonify({'error': f'Lỗi upload hàng loạt: {str(e)}'}), 500
 
 @app.route('/api/upload-marketing-resource', methods=['POST'])
 def upload_marketing_resource():
@@ -2654,20 +3011,20 @@ def upload_marketing_resource():
     try:
         if 'file' not in request.files:
             return jsonify({'error': 'Không có file được chọn'}), 400
-        
+
         file = request.files['file']
         if file.filename == '':
             return jsonify({'error': 'Không có file được chọn'}), 400
-        
+
         if file and file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
             # Check file size (max 10MB)
             file.seek(0, 2)  # Seek to end
             file_size = file.tell()
             file.seek(0)  # Reset to beginning
-            
+
             if file_size > 10 * 1024 * 1024:  # 10MB limit
                 return jsonify({'error': 'File quá lớn. Kích thước tối đa là 10MB'}), 400
-            
+
             # Upload to Cloudinary with image optimization for marketing resources
             upload_result = cloudinary.uploader.upload(
                 file,
@@ -2687,7 +3044,7 @@ def upload_marketing_resource():
                     {"fetch_format": "auto"}
                 ]
             )
-            
+
             return jsonify({
                 'success': True,
                 'url': upload_result['secure_url'],
@@ -2696,7 +3053,7 @@ def upload_marketing_resource():
             })
         else:
             return jsonify({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}), 400
-            
+
     except Exception as e:
         print(f"❌ Error uploading marketing resource image: {e}")
         return jsonify({'error': f'Lỗi upload ảnh: {str(e)}'}), 500
@@ -2705,7 +3062,7 @@ def upload_marketing_resource():
 def api_product_stock(product_id):
     """API lấy thông tin stock của sản phẩm"""
     import requests
-    
+
     try:
         response = requests.get(f'{API_BASE_URL}/admin-products/{product_id}/', timeout=30)
         if response.status_code == 200:
@@ -2717,6 +3074,77 @@ def api_product_stock(product_id):
             })
         else:
             return jsonify({'error': 'Không tìm thấy sản phẩm'}), 404
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/backend/api/orders/<int:order_id>/confirm', methods=['POST'])
+def api_confirm_order(order_id):
+    """API xác nhận đơn hàng (không giảm tồn kho)"""
+    import requests
+    
+    try:
+        # Gọi API Django để xác nhận đơn hàng
+        response = requests.post(f'{API_BASE_URL}/orders/{order_id}/confirm/', timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify(result)
+        else:
+            error_data = response.json() if response.content else {}
+            return jsonify({'error': error_data.get('error', f'HTTP error! status: {response.status_code}')}), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/backend/api/orders/<int:order_id>/cancel', methods=['POST'])
+def api_cancel_order(order_id):
+    """API hủy đơn hàng và khôi phục tồn kho"""
+    import requests
+    
+    try:
+        # Gọi API Django để hủy đơn hàng
+        response = requests.post(f'{API_BASE_URL}/orders/{order_id}/cancel/', timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify(result)
+        else:
+            error_data = response.json() if response.content else {}
+            return jsonify({'error': error_data.get('error', f'HTTP error! status: {response.status_code}')}), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/backend/api/orders/<int:order_id>/update-items', methods=['POST'])
+def api_update_order_items(order_id):
+    """Proxy cập nhật danh sách sản phẩm trong đơn hàng"""
+    import requests
+    try:
+        response = requests.post(f'{API_BASE_URL}/orders/{order_id}/update-items/', json=request.get_json(force=True), timeout=30)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        else:
+            error_data = response.json() if response.content else {}
+            return jsonify({'error': error_data.get('error', f'HTTP error! status: {response.status_code}')}), response.status_code
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+
+@app.route('/backend/api/orders/<int:order_id>/ship', methods=['POST'])
+def api_ship_order(order_id):
+    """API đánh dấu đơn hàng đã giao"""
+    import requests
+    
+    try:
+        # Gọi API Django để đánh dấu đơn hàng đã giao
+        response = requests.post(f'{API_BASE_URL}/orders/{order_id}/ship/', timeout=30)
+        
+        if response.status_code == 200:
+            result = response.json()
+            return jsonify(result)
+        else:
+            error_data = response.json() if response.content else {}
+            return jsonify({'error': error_data.get('error', f'HTTP error! status: {response.status_code}')}), response.status_code
+            
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
 
@@ -2769,34 +3197,40 @@ def api_download_image():
 def send_new_order_notification():
     """API gửi thông báo đơn hàng mới cho admin"""
     import requests
-    
+
     try:
         data = request.get_json()
         order_id = data.get('order_id')
-        
+
         if not order_id:
             return jsonify({'error': 'Thiếu order_id'}), 400
-        
+
         # Lấy thông tin đơn hàng
         order_response = requests.get(f'{API_BASE_URL}/orders/{order_id}/', timeout=30)
         if order_response.status_code != 200:
             return jsonify({'error': 'Không tìm thấy đơn hàng'}), 404
-        
+
         order = order_response.json()
-        
+
         # Lấy danh sách đơn hàng chờ xác nhận
         orders_response = requests.get(f'{API_BASE_URL}/orders/', timeout=30)
         pending_orders = []
         if orders_response.status_code == 200:
             all_orders = orders_response.json()
             pending_orders = [o for o in all_orders if not o.get('is_confirmed', False)][:10]  # Lấy tối đa 10 đơn hàng
-        
+
+        # Tạo URLs cho admin panel
+        order_absolute_url = f'https://buddyskincare.vn/admin/orders/{order_id}/'
+        all_orders_url = 'https://buddyskincare.vn/admin/orders'
+
         # Render email template
-        html_content = render_template('emails/new_order_notification.html', 
-                                     order=order, 
+        html_content = render_template('emails/new_order_notification.html',
+                                     order=order,
                                      pending_orders=pending_orders,
+                                     order_absolute_url=order_absolute_url,
+                                     all_orders_url=all_orders_url,
                                      current_time=datetime.now().strftime('%d/%m/%Y %H:%M:%S'))
-        
+
         # SMTP configuration
         smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
         smtp_port = int(os.getenv('SMTP_PORT', '587'))
@@ -2804,10 +3238,52 @@ def send_new_order_notification():
         smtp_pass = os.getenv('SMTP_PASS')
         sender = os.getenv('SMTP_SENDER', smtp_user or 'no-reply@buddyskincare.vn')
         admin_email = os.getenv('ADMIN_EMAIL', 'buddyskincarevn@gmail.com')
+
+        # Try Gmail API first, then SMTP, then fallback to file
+        email_sent = False
         
-        if not (smtp_user and smtp_pass):
-            # Development fallback: save email HTML to file
-            print(f"🔍 SMTP not configured, saving email to file for order {order_id}")
+        # Try Gmail API
+        try:
+            email_sent = send_email_via_gmail_api(
+                to_email=admin_email,
+                subject=f'🔔 Đơn hàng mới #{order_id} cần xác nhận - BuddySkincare',
+                html_content=html_content,
+                plain_text=f'Đơn hàng mới #{order_id} từ {order.get("customer_name", "Khách hàng")} cần xác nhận'
+            )
+        except Exception as e:
+            print(f"❌ Gmail API failed: {e}")
+        
+        # If Gmail API failed, try SMTP
+        if not email_sent and (smtp_user and smtp_pass):
+            try:
+                msg = MIMEMultipart('alternative')
+                msg['Subject'] = f'🔔 Đơn hàng mới #{order_id} cần xác nhận - BuddySkincare'
+                msg['From'] = sender
+                msg['To'] = admin_email
+                
+                # Add plain text version
+                text_content = f'Đơn hàng mới #{order_id} từ {order.get("customer_name", "Khách hàng")} cần xác nhận'
+                text_part = MIMEText(text_content, 'plain', 'utf-8')
+                msg.attach(text_part)
+                
+                # Add HTML version
+                html_part = MIMEText(html_content, 'html', 'utf-8')
+                msg.attach(html_part)
+                
+                # Send email
+                server = smtplib.SMTP(smtp_host, smtp_port)
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+                server.quit()
+                
+                email_sent = True
+                print(f"✅ Email sent via SMTP to {admin_email}")
+            except Exception as e:
+                print(f"❌ SMTP failed: {e}")
+        
+        # If both failed, save to file
+        if not email_sent:
             try:
                 fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
                 os.makedirs(fallback_dir, exist_ok=True)
@@ -2818,55 +3294,23 @@ def send_new_order_notification():
                     f.write(html_content)
                 print(f"✅ Email saved successfully to: {file_path}")
                 return jsonify({
-                    'success': True, 
+                    'success': True,
                     'message': f'Đã lưu thông báo đơn hàng mới vào file: {file_path}',
                     'saved_path': file_path
                 }), 200
             except Exception as e:
                 print(f"❌ Error saving email file: {e}")
-                return jsonify({'success': False, 'message': f'SMTP chưa cấu hình và lưu file thất bại: {str(e)}'}), 500
-        
-        try:
-            msg = MIMEMultipart('alternative')
-            msg['Subject'] = f'🔔 Đơn hàng mới #{order_id} cần xác nhận - BuddySkincare'
-            msg['From'] = sender
-            msg['To'] = admin_email
-            msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-            
-            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.sendmail(sender, [admin_email], msg.as_string())
-            
+                return jsonify({'success': False, 'message': f'Gửi email thất bại và lưu file thất bại: {str(e)}'}), 500
+
+        # Return success if email was sent
+        if email_sent:
             return jsonify({
-                'success': True, 
+                'success': True,
                 'message': f'Đã gửi thông báo đơn hàng mới đến {admin_email}'
             }), 200
-            
-        except (smtplib.SMTPAuthenticationError, smtplib.SMTPException, TimeoutError) as e:
-            # Graceful fallback: save HTML to file when SMTP fails
-            try:
-                fallback_dir = os.path.join(os.getcwd(), 'sent_emails')
-                os.makedirs(fallback_dir, exist_ok=True)
-                filename = f'new_order_notification_{order_id}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.html'
-                file_path = os.path.join(fallback_dir, filename)
-                with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(html_content)
-                return jsonify({
-                    'success': True, 
-                    'message': f'Không gửi được qua SMTP, đã lưu thông báo vào file',
-                    'saved_path': file_path,
-                    'error': str(e)
-                }), 200
-            except Exception as save_err:
-                return jsonify({
-                    'success': False, 
-                    'message': f'Lỗi SMTP và lưu file thất bại: {str(save_err)}',
-                    'error': str(e)
-                }), 500
-        except Exception as e:
-            return jsonify({'success': False, 'message': f'Lỗi gửi email: {str(e)}'}), 500
-            
+        else:
+            return jsonify({'success': False, 'message': 'Không thể gửi email'}), 500
+
     except requests.exceptions.RequestException as e:
         return jsonify({'error': f'Lỗi kết nối API: {str(e)}'}), 500
     except Exception as e:
@@ -2886,7 +3330,7 @@ if __name__ == '__main__':
     os.makedirs('static/css', exist_ok=True)
     os.makedirs('static/js', exist_ok=True)
     os.makedirs('static/image', exist_ok=True)
-    
+
     print("🚀 BuddySkincare Website đang khởi động...")
     print("📱 Truy cập: http://localhost:8000")
     print("🛍️ Trang chủ: http://localhost:8000/")
@@ -2957,17 +3401,17 @@ def ctv_auth_login():
         resp = requests.post(f"{API_BASE_URL}/ctvs/login/", json=data, timeout=20)
         print(f"🔍 API Response status: {resp.status_code}")
         print(f"🔍 API Response content: {resp.text}")
-        
+
         if resp.status_code != 200:
             return (resp.text, resp.status_code, resp.headers.items())
         payload = resp.json()
         print(f"🔍 API Payload: {payload}")
-        
+
         # Set session với CTV data
         session['ctv'] = payload.get('ctv', {})
         print(f"✅ Session set: {session.get('ctv', {}).get('code', 'Unknown')}")
         print(f"✅ Session data: {session.get('ctv')}")
-        
+
         return jsonify({'success': True, 'ctv': payload.get('ctv', {})})
     except Exception as e:
         print(f"❌ Login error: {str(e)}")
@@ -3004,75 +3448,75 @@ def send_ctv_welcome_email(ctv_id):
         resp = requests.get(f'{API_BASE_URL}/ctvs/{ctv_id}/', timeout=30)
         if resp.status_code != 200:
             return jsonify({'success': False, 'message': 'Không tìm thấy CTV'}), 404
-        
+
         ctv_data = resp.json()
-        
+
         # Get data from request
         data = request.get_json(silent=True) or {}
         ctv_name = data.get('ctv_name') or ctv_data.get('full_name', '')
         ctv_email = data.get('ctv_email') or ctv_data.get('email', '')
         ctv_phone = ctv_data.get('phone', '')
         ctv_password = ctv_data.get('password_text', '')
-        
+
         if not ctv_email or '@' not in ctv_email:
             return jsonify({'success': False, 'message': 'Email CTV không hợp lệ'}), 400
-        
+
         if not ctv_password:
             return jsonify({'success': False, 'message': 'CTV chưa có mật khẩu. Vui lòng cập nhật mật khẩu trước khi gửi email.'}), 400
-        
+
         # Create login URL
         login_url = f"{request.url_root}ctv/login"
-        
+
         # Render email template
-        html_content = render_template('emails/ctv_welcome_email.html', 
+        html_content = render_template('emails/ctv_welcome_email.html',
                                      ctv_name=ctv_name,
                                      ctv_phone=ctv_phone,
                                      ctv_password=ctv_password,
                                      login_url=login_url)
-        
+
         # SMTP configuration
         smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
         smtp_port = int(os.getenv('SMTP_PORT', '587'))
         smtp_user = os.getenv('SMTP_USER', 'buddyskincarevn@gmail.com')
         smtp_pass = os.getenv('SMTP_PASS', 'pyvd idcm rsrf apjn')
         sender = os.getenv('SMTP_SENDER', smtp_user)
-        
+
         # Create email message
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f'🎉 Chào mừng đến với BuddySkincare - Thông tin tài khoản CTV'
         msg['From'] = sender
         msg['To'] = ctv_email
-        
+
         # Attach HTML content
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-        
+
         # Send email
         with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
             server.starttls()
             server.login(smtp_user, smtp_pass)
             server.sendmail(sender, [ctv_email], msg.as_string())
-        
+
         return jsonify({
-            'success': True, 
+            'success': True,
             'message': f'Đã gửi email chào mừng đến {ctv_email}',
             'email_sent': True
         }), 200
-        
+
     except smtplib.SMTPAuthenticationError:
         return jsonify({
-            'success': False, 
+            'success': False,
             'message': 'Lỗi xác thực email. Vui lòng kiểm tra cấu hình SMTP.',
             'email_sent': False
         }), 500
     except smtplib.SMTPException as e:
         return jsonify({
-            'success': False, 
+            'success': False,
             'message': f'Lỗi khi gửi email: {str(e)}',
             'email_sent': False
         }), 500
     except Exception as e:
         return jsonify({
-            'success': False, 
+            'success': False,
             'message': f'Lỗi hệ thống: {str(e)}',
             'email_sent': False
         }), 500
@@ -3094,6 +3538,153 @@ def _guard_ctv_pages():
             from flask import g
             g.ctv = ctv_session
 
+
+# Sitemap routes
+@app.route('/sitemap_index.xml')
+def sitemap_index():
+    """Sitemap index file"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_index.html', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/sitemap_pages.xml')
+def sitemap_pages():
+    """Main pages sitemap"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_pages.xml', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/sitemap_products.xml')
+def sitemap_products():
+    """Products sitemap"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_products.xml', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/sitemap_blog.xml')
+def sitemap_blog():
+    """Blog sitemap"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_blog.xml', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/sitemap_categories.xml')
+def sitemap_categories():
+    """Categories sitemap"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_categories.xml', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/sitemap_static.xml')
+def sitemap_static():
+    """Static pages sitemap"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_static.xml', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/sitemap_simple.xml')
+def sitemap_simple():
+    """Simple sitemap for testing"""
+    from flask import make_response
+    response = make_response(render_template('sitemap_simple.xml', current_date=datetime.now().strftime('%Y-%m-%d')))
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Robots.txt file"""
+    from flask import make_response
+    response = make_response(render_template('robots.txt'))
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
+
+
+@app.route('/api/upload-cccd', methods=['POST'])
+def upload_cccd_image():
+    """Upload ảnh CCCD lên Cloudinary - đơn giản"""
+    try:
+        print(f"🔍 CCCD Upload request received")
+        
+        if 'file' not in request.files:
+            return jsonify({'error': 'Không có file được chọn'}), 400
+
+        file = request.files['file']
+        print(f"📁 File: {file.filename}")
+        
+        # Upload trực tiếp lên Cloudinary
+        from datetime import datetime
+        
+        # Reset file pointer
+        file.seek(0)
+        
+        print(f"🚀 Uploading to Cloudinary...")
+        print(f"📁 File size: {file.content_length} bytes")
+        print(f"📁 File type: {file.content_type}")
+        
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="ctv_cccd",
+            public_id=f"cccd_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            resource_type="image",
+            # Thêm các tham số để đảm bảo upload thành công
+            use_filename=True,
+            unique_filename=True,
+            overwrite=False
+        )
+
+        print(f"✅ Upload successful!")
+        print(f"🔗 URL: {upload_result['secure_url']}")
+        print(f"🆔 Public ID: {upload_result['public_id']}")
+        print(f"📏 Size: {upload_result.get('bytes', 'Unknown')} bytes")
+        
+        return jsonify({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id'],
+            'size': upload_result.get('bytes', 0)
+        })
+
+    except Exception as e:
+        print(f"❌ Upload error: {e}")
+        return jsonify({'error': f'Lỗi upload: {str(e)}'}), 500
+
+# Backlink Content Routes
+@app.route('/beauty-ingredient-dictionary')
+def beauty_ingredient_dictionary():
+    """Từ điển thành phần mỹ phẩm - Linkable asset cho backlinks"""
+    return render_template('beauty_ingredient_dictionary.html')
+
+@app.route('/skin-type-quiz')
+def skin_type_quiz():
+    """Quiz kiểm tra loại da - Interactive tool cho backlinks"""
+    return render_template('skin_type_quiz.html')
+
+@app.route('/skincare-step')
+def skincare_step():
+    """Quy trình skincare - Hướng dẫn chăm sóc da"""
+    return render_template('skincare-step.html')
+
+@app.route('/skincare-guide-2024')
+def skincare_guide_2024():
+    """Hướng dẫn skincare toàn diện 2024 - Ultimate guide cho backlinks"""
+    return render_template('skincare_guide_2024.html')
+
+@app.route('/beauty-trends-vietnam')
+def beauty_trends_vietnam():
+    """Xu hướng làm đẹp Việt Nam 2024 - Data-driven content cho backlinks"""
+    return render_template('beauty_trends_vietnam.html')
+
+@app.route('/expert-beauty-advice')
+def expert_beauty_advice():
+    """Tư vấn làm đẹp từ chuyên gia - Expert roundup cho backlinks"""
+    return render_template('expert_beauty_advice.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8000)

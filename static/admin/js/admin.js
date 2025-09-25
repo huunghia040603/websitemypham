@@ -318,7 +318,7 @@ async function confirmOrder(orderId) {
         }
 
         const result = await response.json();
-        showNotification(result.message || 'Đã xác nhận đơn hàng và cập nhật số lượng tồn kho', 'success');
+        showNotification(result.message || 'Đã xác nhận đơn hàng thành công', 'success');
         
         // Reload orders to update UI
         if (typeof loadOrders === 'function') {

@@ -3,6 +3,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from . import views
 from .views import *
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from django.contrib import admin
 
 # Tạo router cho API của BuddyApp
 r = DefaultRouter()
@@ -15,7 +17,7 @@ r.register(r'category', views.CategoryViewSet)
 r.register(r'tags', views.TagViewSet)
 r.register(r'gifts', views.GiftViewSet)
 r.register(r'products', views.ProductViewSet)
-r.register(r'admin-products', views.AdminProductViewSet, basename='admin-product')
+r.register(r'admin-products', views.ProductViewSet, basename='admin-product')
 r.register(r'vouchers', views.VoucherViewSet)
 r.register(r'orders', views.OrderViewSet)
 r.register(r'order-items', views.OrderItemViewSet)
@@ -23,7 +25,7 @@ r.register(r'latest-products', views.LatestProductsViewSet, basename='latest-pro
 r.register(r'carts', CartViewSet, basename='cart')
 # Blog API (sửa lỗi: dùng ViewSet duy nhất BlogAPIView)
 r.register(r'blog', views.BlogAPIView, basename='blog')
-r.register(r'admin', views.AdminViewSet, basename='admin')
+r.register(r'pythonanywhere/admin', views.AdminViewSet, basename='admin')
 r.register(r'analytics', views.AnalyticsViewSet, basename='analytics')
 r.register(r'lucky-events', views.LuckyEventViewSet, basename='lucky-event')
 r.register(r'lucky-participants', views.LuckyParticipantViewSet, basename='lucky-participant')
@@ -39,6 +41,9 @@ r.register(r'marketing-resources', views.MarketingResourceViewSet, basename='mar
 
 # Cấu hình urlpatterns cho ứng dụng
 urlpatterns = [
+    # Django Admin with custom path (must be before router)
+    path('pythonanywhere/admin/', admin.site.urls),
+    
     # Router URLs
     path('', include(r.urls)),
 
@@ -52,6 +57,15 @@ urlpatterns = [
     path('api/user_info/', UserInfoAPIView.as_view(), name='user-info'),
     # Other URLs
     path('orders/by-code/<str:order_code>/', OrderByCodeView.as_view(), name='order-by-code'),
+    path('api/product-stock/<int:product_id>/', views.product_stock, name='product-stock'),
+    path('api/orders/auto-complete/', views.auto_complete_orders, name='auto-complete-orders'),
+    path('api/send-new-order-notification/', views.send_new_order_notification, name='send-new-order-notification'),
+    path('api/orders/<int:order_id>/invoice/email/', views.send_invoice_email, name='send-invoice-email'),
+    path('api/upload-bank-transfer/', views.upload_bank_transfer, name='upload-bank-transfer'),
+    path('api/upload-marketing-resource/', views.upload_marketing_resource, name='upload-marketing-resource'),
+    path('api/upload-marketing-resources-bulk/', views.upload_marketing_resources_bulk, name='upload-marketing-resources-bulk'),
+    path('upload-cccd/', views.upload_cccd_image, name='upload-cccd'),
+    path('ctvs/<int:ctv_id>/send-welcome-email/', views.send_ctv_welcome_email, name='send-ctv-welcome-email'),
     path('login/', LoginView.as_view(), name='login'),
     # CTV Pages
     path('ctv/login/', views.ctv_login_page, name='ctv-login-page'),
@@ -67,4 +81,17 @@ urlpatterns = [
 
     # Product Images API (không bị pagination)
     path('product-images/', views.ProductImagesAPIView.as_view(), name='product-images'),
+    
+    # Download Image API
+    path('download-image/', views.download_image, name='download-image'),
+    # Test endpoint for debugging
+    path('test-download/', views.test_download, name='test-download'),
+    
+    # Bank transfer image upload
+    path('upload-bank-transfer/', views.upload_bank_transfer, name='upload-bank-transfer'),
+    
+    # API Documentation
+    path('swagger/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('swagger.json', SpectacularAPIView.as_view(), name='schema'),
+    path('redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]

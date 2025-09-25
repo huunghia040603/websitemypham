@@ -2,6 +2,133 @@
 
 {% block title %}Sản Phẩm - BuddySkincare{% endblock %}
 
+{% block description %}Khám phá bộ sưu tập mỹ phẩm thanh lý chất lượng cao với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng từ các thương hiệu nổi tiếng. Giao hàng nhanh, đảm bảo uy tín.{% endblock %}
+
+{% block keywords %}sản phẩm mỹ phẩm, mỹ phẩm thanh lý, mỹ phẩm giá rẻ, kem dưỡng da, son môi, trang điểm, mỹ phẩm chính hãng{% endblock %}
+
+{% block og_type %}website{% endblock %}
+
+{% block og_title %}Sản Phẩm Mỹ Phẩm Thanh Lý - BuddySkincare{% endblock %}
+
+{% block og_description %}Khám phá bộ sưu tập mỹ phẩm thanh lý chất lượng cao với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng từ các thương hiệu nổi tiếng.{% endblock %}
+
+{% block og_image %}https://buddyskincare.vn/static/image/sukien/banner02.png{% endblock %}
+
+{% block og_image_alt %}Sản phẩm mỹ phẩm thanh lý BuddySkincare{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Search Results Responsive Layout */
+@media (max-width: 576px) {
+    .search-results-grid .col-6 {
+        flex: 0 0 50%;
+        max-width: 50%;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 767px) {
+    .search-results-grid .col-sm-4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+    .search-results-grid .col-md-4 {
+        flex: 0 0 33.333333%;
+        max-width: 33.333333%;
+    }
+}
+
+@media (min-width: 992px) {
+    .search-results-grid .col-lg-3 {
+        flex: 0 0 25%;
+        max-width: 25%;
+    }
+}
+
+/* Search suggestions responsive */
+@media (max-width: 576px) {
+    .search-suggestions {
+        max-height: 250px;
+        font-size: 14px;
+    }
+    
+    .suggestion-item {
+        padding: 8px 12px;
+    }
+    
+    .suggestion-item img {
+        width: 35px !important;
+        height: 35px !important;
+    }
+    
+    .suggestion-item .fw-bold {
+        font-size: 13px !important;
+    }
+    
+    .suggestion-item .text-muted {
+        font-size: 11px !important;
+    }
+}
+</style>
+
+<!-- Breadcrumb Schema -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Trang chủ",
+            "item": "https://buddyskincare.vn/"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Sản phẩm",
+            "item": "https://buddyskincare.vn/products"
+        }
+    ]
+}
+</script>
+
+<!-- Product Collection Schema -->
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Sản Phẩm Mỹ Phẩm Thanh Lý",
+    "description": "Khám phá bộ sưu tập mỹ phẩm thanh lý chất lượng cao với giá tốt nhất. Sản phẩm mới 100% và đã sử dụng từ các thương hiệu nổi tiếng.",
+    "url": "https://buddyskincare.vn/products",
+    "mainEntity": {
+        "@type": "ItemList",
+        "name": "Danh sách sản phẩm mỹ phẩm",
+        "description": "Tất cả sản phẩm mỹ phẩm thanh lý có sẵn"
+    },
+    "breadcrumb": {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Trang chủ",
+                "item": "https://buddyskincare.vn/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "Sản phẩm",
+                "item": "https://buddyskincare.vn/products"
+            }
+        ]
+    }
+}
+</script>
+{% endblock %}
+
 {% block content %}
 <!-- Page Header -->
 <section class="page-header bg-light py-5">
@@ -47,7 +174,16 @@
                     <!-- Brand Filter -->
                     <div class="filter-group mb-4">
                         <h6 class="fw-semibold mb-3">Thương Hiệu</h6>
-                        <div id="filterBrands" class="d-flex flex-column gap-2" style="max-height: 280px; overflow:auto;"></div>
+                        <select id="brandSelect" class="form-select">
+                            <option value="">Tất cả thương hiệu</option>
+                        </select>
+                    </div>
+                     <!-- Category Filter -->
+                     <div class="filter-group mb-4">
+                        <h6 class="fw-semibold mb-3">Danh Mục</h6>
+                        <select id="categorySelect" class="form-select">
+                            <option value="">Tất cả danh mục</option>
+                        </select>
                     </div>
                     
                     <!-- Tags Filter -->
@@ -120,11 +256,7 @@
                         </div>
                     </div>
 
-                    <!-- Category Filter -->
-                    <div class="filter-group mb-4">
-                        <h6 class="fw-semibold mb-3">Danh Mục</h6>
-                        <div id="filterCategories" class="d-flex flex-column gap-2" style="max-height: 280px; overflow:auto;"></div>
-                    </div>
+                   
                     
                     <!-- Clear Filters -->
                     <a class="btn btn-outline-secondary w-100" href="/products">Xóa Bộ Lọc</a>
@@ -150,10 +282,10 @@
                     <div class="d-flex align-items-center">
                         <span class="me-2">Hiển thị:</span>
                         <select id="products-per-page" class="form-select form-select-sm" style="width: auto;">
-                            <option value="12" selected>12 sản phẩm</option>
+                            <option value="12">12 sản phẩm</option>
                             <option value="20">20 sản phẩm</option>
                             <option value="32">32 sản phẩm</option>
-                            <option value="48">48 sản phẩm</option>
+                            <option value="48" selected>48 sản phẩm</option>
                         </select>
                     </div>
                     <div class="d-flex align-items-center">
@@ -175,12 +307,12 @@
                         <div class="search-pill">
                             <i class="fas fa-search"></i>
                             <input type="text" 
-                                   id="products-search" 
+                                   id="products-search-mobile"
                                    class="form-control" 
                                    placeholder="Tìm kiếm sản phẩm..." 
                                    autocomplete="off">
                         </div>
-                        <div id="search-suggestions" class="position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; margin-top: 5px;"></div>
+                        <div id="search-suggestions-mobile" class="position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; margin-top: 5px;"></div>
                     </div>
                 </div>
 
@@ -189,10 +321,10 @@
                         <div class="d-flex align-items-center me-3">
                             <span class="me-2" style="font-size: 0.85rem;">Hiển thị:</span>
                             <select id="products-per-page-mobile" class="form-select form-select-sm" style="width: auto; min-width: 80px;">
-                                <option value="12" selected>12</option>
+                                <option value="12">12</option>
                                 <option value="20">20</option>
                                 <option value="32">32</option>
-                                <option value="48">48</option>
+                                <option value="48" selected>48</option>
                             </select>
                         </div>
                         <div class="d-flex align-items-center">
@@ -243,8 +375,19 @@
         <!-- Brand Filter -->
         <div class="filter-group mb-4">
             <h6 class="fw-semibold mb-3">Thương Hiệu</h6>
-            <div id="filterBrandsMobile" class="d-flex flex-column gap-2" style="max-height: 200px; overflow:auto;"></div>
+            <select id="brandSelectMobile" class="form-select">
+                <option value="">Tất cả thương hiệu</option>
+            </select>
         </div>
+
+        <!-- Category Filter -->
+        <div class="filter-group mb-4">
+            <h6 class="fw-semibold mb-3">Danh Mục</h6>
+            <select id="categorySelectMobile" class="form-select">
+                <option value="">Tất cả danh mục</option>
+            </select>
+        </div>
+        
         
         <!-- Tags Filter -->
         <div class="filter-group mb-4">
@@ -313,11 +456,6 @@
             </div>
         </div>
         
-        <!-- Category Filter -->
-        <div class="filter-group mb-4">
-            <h6 class="fw-semibold mb-3">Danh Mục</h6>
-            <div id="filterCategoriesMobile" class="d-flex flex-column gap-2" style="max-height: 200px; overflow:auto;"></div>
-        </div>
         
         <!-- Apply Filters Button -->
         <div class="d-grid gap-2 mt-4">
@@ -587,29 +725,147 @@
 
     // Render filters from cache
     function renderFiltersFromCache() {
-      // Render categories
+      // Render categories (desktop)
       if (filtersCache.categories) {
-        catWrap.innerHTML = '';
-        filtersCache.categories.forEach(name => {
-          const isActive = selectedCats.includes(name);
-          catWrap.appendChild(makeFilterLink(name, 'category_name', name, isActive));
-        });
+        const categorySelect = document.getElementById('categorySelect');
+        if (categorySelect) {
+          const selectedCatsParams = new URLSearchParams(window.location.search).getAll('category_name');
+          categorySelect.innerHTML = '<option value="">Tất cả danh mục</option>';
+          filtersCache.categories.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (selectedCatsParams.includes(name)) opt.selected = true;
+            categorySelect.appendChild(opt);
+          });
+          categorySelect.addEventListener('change', () => {
+            const p = new URLSearchParams(window.location.search);
+            p.delete('category_name');
+            if (categorySelect.value) p.append('category_name', categorySelect.value);
+            p.delete('page');
+            const qs = p.toString();
+            const newUrl = `/products${qs ? ('?' + qs) : ''}`;
+            window.history.pushState({}, '', newUrl);
+            loadProductsWithAJAX(qs);
+          });
+        }
       }
 
-      // Render brands
+      // Render brands (desktop)
       if (filtersCache.brands) {
-        brandWrap.innerHTML = '';
-        filtersCache.brands.forEach(name => {
-          const isActive = selectedBrands.includes(name);
-          brandWrap.appendChild(makeFilterLink(name, 'brands_name', name, isActive));
-        });
+        const brandSelect = document.getElementById('brandSelect');
+        if (brandSelect) {
+          const selectedBrandsParams = new URLSearchParams(window.location.search).getAll('brands_name');
+          brandSelect.innerHTML = '<option value="">Tất cả thương hiệu</option>';
+          filtersCache.brands.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (selectedBrandsParams.includes(name)) opt.selected = true;
+            brandSelect.appendChild(opt);
+          });
+          brandSelect.addEventListener('change', () => {
+            const p = new URLSearchParams(window.location.search);
+            p.delete('brands_name');
+            if (brandSelect.value) p.append('brands_name', brandSelect.value);
+            p.delete('page');
+            const qs = p.toString();
+            const newUrl = `/products${qs ? ('?' + qs) : ''}`;
+            window.history.pushState({}, '', newUrl);
+            loadProductsWithAJAX(qs);
+          });
+        }
       }
 
-      // Render tags
+      // Render tags (desktop)
       if (filtersCache.tags) {
-        tagsWrap.innerHTML = '';
-        filtersCache.tags.forEach(tag => {
+        const tagsWrap = document.getElementById('filterTags');
+        if (tagsWrap) {
+          tagsWrap.innerHTML = '';
+          const selectedTag = new URLSearchParams(window.location.search).get('tags') || '';
+          filtersCache.tags.forEach(tag => {
             tagsWrap.appendChild(makeFilterLink(tag, 'tags', tag, tag === selectedTag));
+          });
+        }
+      }
+
+      // ✅ Render mobile filters
+      const catWrapMobile = document.getElementById('filterCategoriesMobile');
+      const brandWrapMobile = document.getElementById('filterBrandsMobile');
+      const tagsWrapMobile = document.getElementById('filterTagsMobile');
+      const brandSelectMobile = document.getElementById('brandSelectMobile');
+      const categorySelectMobile = document.getElementById('categorySelectMobile');
+
+      // Render categories (mobile)
+      if (filtersCache.categories) {
+        if (categorySelectMobile) {
+          const selectedCatsParams = new URLSearchParams(window.location.search).getAll('category_name');
+          categorySelectMobile.innerHTML = '<option value="">Tất cả danh mục</option>';
+          filtersCache.categories.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (selectedCatsParams.includes(name)) opt.selected = true;
+            categorySelectMobile.appendChild(opt);
+          });
+          categorySelectMobile.addEventListener('change', () => {
+            const p = new URLSearchParams(window.location.search);
+            p.delete('category_name');
+            if (categorySelectMobile.value) p.append('category_name', categorySelectMobile.value);
+            p.delete('page');
+            const qs = p.toString();
+            const newUrl = `/products${qs ? ('?' + qs) : ''}`;
+            window.history.pushState({}, '', newUrl);
+            loadProductsWithAJAX(qs);
+          });
+        } else if (catWrapMobile) {
+          // fallback link list
+          catWrapMobile.innerHTML = '';
+          filtersCache.categories.forEach(name => {
+            const isActive = selectedCats.includes(name);
+            catWrapMobile.appendChild(makeFilterLink(name, 'category_name', name, isActive));
+          });
+        }
+      }
+
+      // Render brands (mobile)
+      if (filtersCache.brands) {
+        if (brandSelectMobile) {
+          const selectedBrandsParams = new URLSearchParams(window.location.search).getAll('brands_name');
+          brandSelectMobile.innerHTML = '<option value="">Tất cả thương hiệu</option>';
+          filtersCache.brands.forEach(name => {
+            const opt = document.createElement('option');
+            opt.value = name;
+            opt.textContent = name;
+            if (selectedBrandsParams.includes(name)) opt.selected = true;
+            brandSelectMobile.appendChild(opt);
+          });
+          brandSelectMobile.addEventListener('change', () => {
+            const p = new URLSearchParams(window.location.search);
+            p.delete('brands_name');
+            if (brandSelectMobile.value) p.append('brands_name', brandSelectMobile.value);
+            p.delete('page');
+            const qs = p.toString();
+            const newUrl = `/products${qs ? ('?' + qs) : ''}`;
+            window.history.pushState({}, '', newUrl);
+            loadProductsWithAJAX(qs);
+          });
+        } else if (brandWrapMobile) {
+          // fallback link list
+          brandWrapMobile.innerHTML = '';
+          filtersCache.brands.forEach(name => {
+            const isActive = selectedBrands.includes(name);
+            brandWrapMobile.appendChild(makeFilterLink(name, 'brands_name', name, isActive));
+          });
+        }
+      }
+
+      // Render tags (mobile)
+      if (filtersCache.tags && tagsWrapMobile) {
+        tagsWrapMobile.innerHTML = '';
+        const selectedTag = new URLSearchParams(window.location.search).get('tags') || '';
+        filtersCache.tags.forEach(tag => {
+            tagsWrapMobile.appendChild(makeFilterLink(tag, 'tags', tag, tag === selectedTag));
         });
       }
     }
@@ -625,6 +881,10 @@
         // Update pagination visibility on initial load
         const currentParams = new URLSearchParams(window.location.search);
         updatePaginationVisibility(currentParams.toString());
+        
+        // Load products on initial page load
+        console.log('🔄 Initial page load - loading products with AJAX');
+        loadProductsWithAJAX(currentParams.toString());
     }, 500);
     
     // Test functions for debugging pagination - Make them global
@@ -739,7 +999,53 @@
             }
         });
 
-        console.log('✅ Filter states updated');
+        // ✅ Update mobile filter states
+        // Update mobile brand filter states
+        const brandLinksMobile = document.querySelectorAll('#filterBrandsMobile a');
+        brandLinksMobile.forEach(link => {
+            const brandName = link.querySelector('span').textContent;
+            const isActive = currentBrands.includes(brandName);
+
+            if (isActive) {
+                link.className = 'd-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded bg-primary text-white';
+                link.innerHTML = `<span class="text-white">${brandName}</span><i class="fas fa-check text-white"></i>`;
+            } else {
+                link.className = 'd-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded hover-bg-light';
+                link.innerHTML = `<span class="text-dark">${brandName}</span>`;
+            }
+        });
+
+        // Update mobile category filter states
+        const catLinksMobile = document.querySelectorAll('#filterCategoriesMobile a');
+        catLinksMobile.forEach(link => {
+            const catName = link.querySelector('span').textContent;
+            const isActive = currentCats.includes(catName);
+
+            if (isActive) {
+                link.className = 'd-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded bg-primary text-white';
+                link.innerHTML = `<span class="text-white">${catName}</span><i class="fas fa-check text-white"></i>`;
+            } else {
+                link.className = 'd-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded hover-bg-light';
+                link.innerHTML = `<span class="text-dark">${catName}</span>`;
+            }
+        });
+
+        // Update mobile tag filter states
+        const tagLinksMobile = document.querySelectorAll('#filterTagsMobile a');
+        tagLinksMobile.forEach(link => {
+            const tagName = link.querySelector('span').textContent;
+            const isActive = currentTag === tagName;
+
+            if (isActive) {
+                link.className = 'd-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded bg-primary text-white';
+                link.innerHTML = `<span class="text-white">${tagName}</span><i class="fas fa-check text-white"></i>`;
+            } else {
+                link.className = 'd-flex align-items-center justify-content-between text-decoration-none px-2 py-1 rounded hover-bg-light';
+                link.innerHTML = `<span class="text-dark">${tagName}</span>`;
+            }
+        });
+
+        console.log('✅ Filter states updated (desktop + mobile)');
         console.log('🔍 Current brands:', currentBrands);
         console.log('🔍 Current categories:', currentCats);
         console.log('🔍 Current tag:', currentTag);
@@ -806,6 +1112,13 @@
                     if (typeof initAnimations === 'function') {
                         initAnimations();
                     }
+                    // Ensure add-to-cart and other interactions are bound after AJAX updates
+                    if (typeof initProductInteractions === 'function') {
+                        initProductInteractions();
+                    }
+                    if (typeof updateCartCount === 'function') {
+                        updateCartCount();
+                    }
                     
                     // Show/hide pagination based on filters
                     updatePaginationVisibility(queryParams);
@@ -852,36 +1165,64 @@
     // Smart Search Function
     function initSmartSearch() {
         const searchInput = document.getElementById('products-search');
+        const searchInputMobile = document.getElementById('products-search-mobile');
         const suggestionsDiv = document.getElementById('search-suggestions');
+        const suggestionsDivMobile = document.getElementById('search-suggestions-mobile');
         let allProducts = [];
         let searchTimeout;
+        let searchCache = new Map(); // Cache for search results
+        let isLoadingProducts = false;
 
-        // Load products for search
-        fetch('https://buddyskincare.vn/backend/api/products/')
+        // Load products for search with loading state
+        function loadProducts() {
+            if (isLoadingProducts) return Promise.resolve();
+            
+            isLoadingProducts = true;
+            return fetch('https://buddyskincare.vn/backend/api/products/')
             .then(r => r.ok ? r.json() : [])
             .then(products => {
                 allProducts = products || [];
-            })
-            .catch(() => {});
+                    isLoadingProducts = false;
+                    console.log(`✅ Loaded ${allProducts.length} products for search`);
+                })
+                .catch(err => {
+                    console.error('❌ Error loading products for search:', err);
+                    isLoadingProducts = false;
+                });
+        }
+
+        // Helper function to setup search for an input
+        function setupSearchInput(input, suggestions) {
+            if (!input || !suggestions) return;
 
         // Handle search input
-        searchInput.addEventListener('input', function(e) {
+            input.addEventListener('input', function(e) {
             const query = e.target.value.trim();
             
             clearTimeout(searchTimeout);
             
             if (query.length < 2) {
-                hideSuggestions();
+                    // Hide suggestions and reset products list via AJAX (remove search param)
+                    hideSuggestions(suggestions);
+                    const p = new URLSearchParams(window.location.search);
+                    p.delete('search');
+                    const qs = p.toString();
+                    const newUrl = `/products${qs ? ('?' + qs) : ''}`;
+                    window.history.pushState({}, '', newUrl);
+                    loadProductsWithAJAX(qs);
                 return;
             }
 
+                // Do NOT show dropdown suggestions; filter grid directly after debounce
+                if (suggestions) suggestions.style.display = 'none';
+
             searchTimeout = setTimeout(() => {
-                performSearch(query);
-            }, 300);
+                    executeSearch(query);
+                }, 400); // debounce for direct filtering
         });
 
         // Handle search on Enter
-        searchInput.addEventListener('keydown', function(e) {
+            input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const query = e.target.value.trim();
@@ -889,25 +1230,76 @@
                     executeSearch(query);
                 }
             } else if (e.key === 'Escape') {
-                hideSuggestions();
+                    hideSuggestions(suggestions);
             }
         });
 
         // Hide suggestions when clicking outside
         document.addEventListener('click', function(e) {
-            if (!searchInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
-                hideSuggestions();
-            }
-        });
+                if (!input.contains(e.target) && !suggestions.contains(e.target)) {
+                    hideSuggestions(suggestions);
+                }
+            });
+        }
 
-        function performSearch(query) {
+        // Setup desktop search
+        setupSearchInput(searchInput, suggestionsDiv);
+        
+        // Setup mobile search
+        setupSearchInput(searchInputMobile, suggestionsDivMobile);
+
+        // Load products on page load
+        loadProducts();
+        
+        // Flag to prevent AJAX system from interfering with search
+        window.isSearchMode = false;
+
+        function showLoadingState(suggestions) {
+            if (!suggestions) return;
+            
+            suggestions.innerHTML = `
+                <div class="p-3 text-center">
+                    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="text-muted">Đang tìm kiếm...</span>
+                </div>
+            `;
+            suggestions.style.display = 'block';
+        }
+
+        function performSearch(query, suggestions) {
+            // Check cache first
+            if (searchCache.has(query)) {
+                const cachedResults = searchCache.get(query);
+                showSuggestions(cachedResults, query, suggestions);
+                return;
+            }
+
+            // Ensure products are loaded
+            if (allProducts.length === 0) {
+                loadProducts().then(() => {
             const results = searchProducts(query, allProducts);
-            showSuggestions(results, query);
+                    searchCache.set(query, results);
+                    showSuggestions(results, query, suggestions);
+                });
+                return;
+            }
+
+            const results = searchProducts(query, allProducts);
+            searchCache.set(query, results);
+            showSuggestions(results, query, suggestions);
         }
 
         function searchProducts(query, products) {
-            const lowerQuery = query.toLowerCase();
+            const lowerQuery = query.toLowerCase().trim();
+            if (!lowerQuery) return [];
+
             const results = [];
+            const queryWords = lowerQuery.split(/\s+/).filter(word => word.length > 0);
+
+            // Early return if query is too short
+            if (queryWords.length === 0) return [];
 
             products.forEach(product => {
                 const name = (product.name || '').toLowerCase();
@@ -917,68 +1309,109 @@
                     typeof tag === 'string' ? tag.toLowerCase() : (tag.name || '').toLowerCase()
                 );
 
-                let score = 0;
-                let matchType = '';
+                let totalScore = 0;
+                let matchTypes = [];
+                let allWordsMatched = true;
 
-                // Exact name match (highest priority)
-                if (name.includes(lowerQuery)) {
-                    score += 100;
-                    matchType = 'name';
-                }
-                // Brand match
-                else if (brand.includes(lowerQuery)) {
-                    score += 80;
-                    matchType = 'brand';
-                }
-                // Category match
-                else if (category.includes(lowerQuery)) {
-                    score += 60;
-                    matchType = 'category';
-                }
-                // Tags match
-                else if (tags.some(tag => tag.includes(lowerQuery))) {
-                    score += 40;
-                    matchType = 'tag';
+                // Check each word in query - ALL words must match
+                for (const word of queryWords) {
+                    let wordMatched = false;
+                    let wordScore = 0;
+                    let wordMatchType = '';
+
+                    // Exact name match (highest priority)
+                    if (name.includes(word)) {
+                        wordScore = 100;
+                        wordMatchType = 'name';
+                        wordMatched = true;
+                    }
+                    // Brand match
+                    else if (brand.includes(word)) {
+                        wordScore = 80;
+                        wordMatchType = 'brand';
+                        wordMatched = true;
+                    }
+                    // Category match
+                    else if (category.includes(word)) {
+                        wordScore = 60;
+                        wordMatchType = 'category';
+                        wordMatched = true;
+                    }
+                    // Tags match
+                    else if (tags.some(tag => tag.includes(word))) {
+                        wordScore = 40;
+                        wordMatchType = 'tag';
+                        wordMatched = true;
+                    }
+
+                    if (wordMatched) {
+                        totalScore += wordScore;
+                        matchTypes.push(wordMatchType);
+                    } else {
+                        allWordsMatched = false;
+                        break; // If any word doesn't match, skip this product
+                    }
                 }
 
-                if (score > 0) {
+                // Only include products where ALL words matched
+                if (allWordsMatched && totalScore > 0) {
+                    // Bonus score for exact phrase match
+                    if (name.includes(lowerQuery)) {
+                        totalScore += 50;
+                    }
+                    if (brand.includes(lowerQuery)) {
+                        totalScore += 30;
+                    }
+
                     results.push({
                         product,
-                        score,
-                        matchType
+                        score: totalScore,
+                        matchType: matchTypes.join(', ')
                     });
                 }
             });
 
-            // Sort by score and return top 8 results
+            // Sort by score and return top 30 results for suggestions
             return results
                 .sort((a, b) => b.score - a.score)
-                .slice(0, 8);
+                .slice(0, 30);
         }
 
-        function showSuggestions(results, query) {
+        function showSuggestions(results, query, suggestions) {
             if (results.length === 0) {
-                hideSuggestions();
+                suggestions.innerHTML = `
+                    <div class="p-3 text-center text-muted">
+                        <i class="fas fa-search me-2"></i>Không tìm thấy sản phẩm nào
+                    </div>
+                `;
+                suggestions.style.display = 'block';
                 return;
             }
 
             let html = '';
-            results.forEach(result => {
+            results.forEach((result, index) => {
                 const { product, matchType } = result;
                 const imageUrl = product.image || '/static/image/default-product.jpg';
                 const price = product.discounted_price ? (product.discounted_price * 1000).toLocaleString('vi-VN') : 'N/A';
                 
+                // Add animation delay for smooth appearance
+                const animationDelay = index * 50;
+                
                 html += `
-                    <div class="suggestion-item p-2 border-bottom" style="cursor: pointer;" data-product-id="${product.id}">
+                    <div class="suggestion-item p-2 border-bottom" 
+                         style="cursor: pointer; animation: fadeInUp 0.3s ease-out ${animationDelay}ms both;" 
+                         data-product-id="${product.id}">
                         <div class="d-flex align-items-center">
-                            <img src="${imageUrl}" alt="${product.name}" style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 10px;">
+                            <img src="${imageUrl}" 
+                                 alt="${product.name}" 
+                                 style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
+                                 loading="lazy">
                             <div class="flex-grow-1">
                                 <div class="fw-bold" style="font-size: 14px;">${product.name}</div>
                                 <div class="text-muted" style="font-size: 12px;">
                                     ${product.brand_name || 'N/A'} • ${price}đ
                                 </div>
                             </div>
-                            
                         </div>
                     </div>
                 `;
@@ -986,52 +1419,213 @@
 
             // Add "Tìm kiếm tất cả" option
             html += `
-                <div class="suggestion-item p-2 text-center bg-light" style="cursor: pointer;" data-search-all="true">
+                <div class="suggestion-item p-2 text-center bg-light" 
+                     style="cursor: pointer; animation: fadeInUp 0.3s ease-out ${results.length * 50}ms both;" 
+                     data-search-all="true">
                     <i class="fas fa-search me-2"></i>Tìm kiếm tất cả cho "${query}"
                 </div>
             `;
 
-            suggestionsDiv.innerHTML = html;
-            suggestionsDiv.style.display = 'block';
+            // Add CSS animation
+            if (!document.getElementById('search-animations')) {
+                const style = document.createElement('style');
+                style.id = 'search-animations';
+                style.textContent = `
+                    @keyframes fadeInUp {
+                        from {
+                            opacity: 0;
+                            transform: translateY(10px);
+                        }
+                        to {
+                            opacity: 1;
+                            transform: translateY(0);
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
 
-            // Add click handlers
-            suggestionsDiv.querySelectorAll('.suggestion-item').forEach(item => {
+            suggestions.innerHTML = html;
+            suggestions.className = 'position-absolute top-100 start-0 w-100 bg-white border rounded shadow-lg search-suggestions';
+            suggestions.style.display = 'block';
+
+            // Add click handlers with debouncing
+            suggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                let clickTimeout;
+                
                 item.addEventListener('click', function() {
+                    clearTimeout(clickTimeout);
+                    clickTimeout = setTimeout(() => {
                     if (this.dataset.searchAll === 'true') {
                         executeSearch(query);
                     } else {
                         const productId = this.dataset.productId;
                         window.location.href = `/product/${productId}`;
                     }
+                    }, 100);
                 });
 
                 // Hover effect
                 item.addEventListener('mouseenter', function() {
                     this.style.backgroundColor = '#f8f9fa';
+                    this.style.transform = 'translateX(5px)';
+                    this.style.transition = 'all 0.2s ease';
                 });
                 item.addEventListener('mouseleave', function() {
                     this.style.backgroundColor = this.dataset.searchAll === 'true' ? '#f8f9fa' : 'white';
+                    this.style.transform = 'translateX(0)';
                 });
             });
         }
 
-        function hideSuggestions() {
-            suggestionsDiv.style.display = 'none';
+        function hideSuggestions(suggestions) {
+            if (suggestions) {
+                suggestions.style.display = 'none';
+            }
         }
 
         function executeSearch(query) {
-            hideSuggestions();
+            hideSuggestions(suggestionsDiv);
+            hideSuggestions(suggestionsDivMobile);
+            
+            // Set search mode flag
+            window.isSearchMode = true;
+            
+            // Show loading state on the main grid
+            const grid = document.getElementById('products-page-grid');
+            if (grid) {
+                grid.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <div class="spinner-border text-primary mb-3" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted">Đang tìm kiếm "${query}"...</p>
+                    </div>
+                `;
+            }
+            
+            // Update URL without reload
             const p = new URLSearchParams(window.location.search);
             p.set('search', query);
             p.delete('page');
-            window.location.href = `/products?${p.toString()}`;
+            
+            // Use history API to update URL without reload
+            const newUrl = `/products?${p.toString()}`;
+            window.history.pushState({}, '', newUrl);
+            
+            // Disable AJAX system temporarily to prevent conflicts
+            const originalAJAXEnabled = window.productsPageAJAXEnabled;
+            window.productsPageAJAXEnabled = false;
+            
+            // Perform search directly without triggering AJAX system
+            performDirectSearch(query, grid);
+            
+            // Restore AJAX system after search (but keep search mode)
+            setTimeout(() => {
+                window.productsPageAJAXEnabled = originalAJAXEnabled;
+            }, 1000);
         }
+        
+        function performDirectSearch(query, grid) {
+            // Use the same search logic as suggestions but for main grid
+            const results = searchProducts(query, allProducts);
+            
+            if (results.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Không tìm thấy sản phẩm nào</h5>
+                        <p class="text-muted">Thử tìm kiếm với từ khóa khác</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Render search results using the same createProductCard function from main.js
+            let productsHtml = '';
+            results.forEach((result, index) => {
+                const { product } = result;
+                // Use the global createProductCard function from main.js
+                const productCard = window.createProductCard ? window.createProductCard(product) : createSimpleProductCard(product);
+                productsHtml += `<div class="col-lg-3 col-md-4 col-sm-4 col-6 mb-4">${productCard}</div>`;
+            });
+            
+            // Add search info and wrap in grid
+            const html = `
+                <div class="col-12 mb-3">
+                    <div class="alert alert-info">
+                        <i class="fas fa-search me-2"></i>
+                        Tìm thấy <strong>${results.length}</strong> sản phẩm cho "<strong>${query}</strong>"
+                    </div>
+                </div>
+                <div class="row search-results-grid">${productsHtml}</div>
+            `;
+            
+            grid.innerHTML = html;
+            
+            // Re-initialize product interactions
+            if (typeof initProductInteractions === 'function') {
+                initProductInteractions();
+            }
+            if (typeof initProductCards === 'function') {
+                initProductCards();
+            }
+            if (typeof initAnimations === 'function') {
+                initAnimations();
+            }
+            if (typeof updateCartCount === 'function') {
+                updateCartCount();
+            }
+        }
+        
+        // Fallback simple product card if main.js createProductCard is not available
+        function createSimpleProductCard(product) {
+            const imageUrl = product.image || '/static/image/default-product.jpg';
+            const brandName = product.brand_name || 'Không rõ';
+            const price = product.discounted_price ? (product.discounted_price * 1000).toLocaleString('vi-VN') : 'N/A';
+            
+            return `
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="position-relative">
+                        <a href="/product/${product.id}" class="text-decoration-none">
+                            <img src="${imageUrl}" class="card-img-top" alt="${product.name}" style="height: 220px; object-fit: cover;">
+                        </a>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title fw-bold" style="font-size: 12px; line-height: 1.3;">
+                            <a href="/product/${product.id}" class="text-decoration-none text-dark">${product.name}</a>
+                        </h6>
+                        <p class="text-muted small mb-2" style="font-size: 10px;">${brandName}</p>
+                        <div class="d-flex align-items-center mb-3">
+                            <span class="text-danger fw-bold" style="font-size: 13px;">${price}đ</span>
+                        </div>
+                        <button class="btn w-100 btn-light text-dark border add-to-cart-btn" 
+                                data-product-id="${product.id}" 
+                                style="font-size: 13px; padding: 8px;">
+                            Thêm vào giỏ
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
 
         // Pre-fill search if coming from nav-search
         const searchParam = params.get('search') || params.get('q');
         if (searchParam) {
-            searchInput.value = searchParam;
+            if (searchInput) searchInput.value = searchParam;
+            if (searchInputMobile) searchInputMobile.value = searchParam;
         }
+        
+        // Cache cleanup - clear old cache entries
+        setInterval(() => {
+            if (searchCache.size > 50) {
+                const entries = Array.from(searchCache.entries());
+                const toDelete = entries.slice(0, 25); // Remove oldest 25 entries
+                toDelete.forEach(([key]) => searchCache.delete(key));
+                console.log('🧹 Cleaned up search cache');
+            }
+        }, 300000); // Every 5 minutes
         
         // Mobile filters functionality
         initMobileFilters();
@@ -1081,6 +1675,18 @@
         if (discountRange) {
             const mobileDiscountInput = document.querySelector(`input[name="discount_range_mobile"][value="${discountRange}"]`);
             if (mobileDiscountInput) mobileDiscountInput.checked = true;
+        }
+
+        // Sync selects (brand/category)
+        const brandSelectMobile = document.getElementById('brandSelectMobile');
+        const categorySelectMobile = document.getElementById('categorySelectMobile');
+        const selectedBrandsParams = params.getAll('brands_name');
+        const selectedCatsParams = params.getAll('category_name');
+        if (brandSelectMobile && selectedBrandsParams.length) {
+            brandSelectMobile.value = selectedBrandsParams[0] || '';
+        }
+        if (categorySelectMobile && selectedCatsParams.length) {
+            categorySelectMobile.value = selectedCatsParams[0] || '';
         }
     }
     

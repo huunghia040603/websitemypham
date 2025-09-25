@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "📋 Code cần thay đổi trong file static/js/main.js:"
+echo ""
+echo "Tìm dòng 863 và thay đổi từ:"
+echo "const uploadResponse = await fetch('/api/upload-bank-transfer', {"
+echo ""
+echo "Thành:"
+echo "const uploadResponse = await fetch('/backend/api/upload-bank-transfer/', {"
+echo ""
+echo "🔧 Hoặc copy đoạn code này vào PythonAnywhere console:"
+echo ""
+echo "sed -i \"s|/api/upload-bank-transfer|/backend/api/upload-bank-transfer/|g\" /home/buddyskincare/websitemypham/static/js/main.js"
+echo ""
+echo "Sau đó reload web app!"

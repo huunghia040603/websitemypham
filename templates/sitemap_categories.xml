@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Danh mục sản phẩm chính -->
+    <url>
+        <loc>https://buddyskincare.vn/category/skincare</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/makeup</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/fragrance</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Danh mục con skincare -->
+    <url>
+        <loc>https://buddyskincare.vn/category/skincare/cleanser</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/skincare/serum</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/skincare/moisturizer</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/skincare/sunscreen</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/skincare/mask</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Danh mục con makeup -->
+    <url>
+        <loc>https://buddyskincare.vn/category/makeup/foundation</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/makeup/lipstick</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/category/makeup/eye</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Danh mục theo thương hiệu -->
+    <url>
+        <loc>https://buddyskincare.vn/brand/obagi</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/brand/zo</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/brand/freshian</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Danh mục theo tình trạng -->
+    <url>
+        <loc>https://buddyskincare.vn/condition/new</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/condition/used</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/condition/test</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+</urlset>

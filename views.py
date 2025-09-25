@@ -1,7 +1,13 @@
 from rest_framework import viewsets, mixins, status, filters, generics
 from rest_framework.views import APIView
+from django.shortcuts import get_object_or_404
+from django.urls import reverse
+from django.core.mail import send_mail
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from django_filters import rest_framework as django_filters
 from .models import *
 from .serializers import *
 from .pagination import *
@@ -22,7 +28,9 @@ from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import render
 from rest_framework.authentication import TokenAuthentication
+from django.utils import timezone
 User = get_user_model()
+
 
 
 class CurrentUserView(APIView):
@@ -158,23 +166,6 @@ class GiftViewSet(viewsets.ModelViewSet):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_visible=True).select_related('brand', 'category').prefetch_related('tags', 'gifts')
-    serializer_class = ProductSerializer
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_class = ProductFilter
-    parser_classes = [JSONParser, MultiPartParser, FormParser]
-
-    # Thêm các trường tìm kiếm theo tên của brand, category và tags
-    search_fields = ['name', 'brand__name', 'category__name', 'tags__name']
-
-    # Thêm các trường sắp xếp
-    ordering_fields = ['name', 'id', 'original_price', 'sold_quantity']
-
-
-class AdminProductViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet cho admin - có thể xem và quản lý tất cả sản phẩm (bao gồm cả ẩn)
-    """
     queryset = Product.objects.select_related('brand', 'category').prefetch_related('tags', 'gifts')
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -185,7 +176,7 @@ class AdminProductViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'brand__name', 'category__name', 'tags__name']
 
     # Thêm các trường sắp xếp
-    ordering_fields = ['name', 'id', 'original_price', 'sold_quantity', 'is_visible']
+    ordering_fields = ['name', 'id', 'original_price', 'sold_quantity']
 
     @action(detail=False, methods=['patch'])
     def add_tag(self, request):
@@ -220,6 +211,96 @@ class AdminProductViewSet(viewsets.ModelViewSet):
             {"detail": f"Đã thêm tag '{tag.name}' vào {len(products)} sản phẩm thành công."},
             status=status.HTTP_200_OK
         )
+
+    @action(detail=True, methods=['post'], url_path='add_tag')
+    def add_tag_to_product(self, request, pk=None):
+        """Thêm tag vào một sản phẩm cụ thể"""
+        tag_name = request.data.get('tag_name', 'FlashSale')
+        
+        try:
+            product = self.get_object()
+        except Product.DoesNotExist:
+            return Response(
+                {"detail": "Sản phẩm không tồn tại."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            # Tìm tag đã tồn tại trước
+            existing_tag = Tag.objects.filter(name=tag_name).first()
+            if existing_tag:
+                tag = existing_tag
+            else:
+                # Tạo tag mới nếu chưa có
+                tag = Tag.objects.create(
+                    name=tag_name,
+                    code=tag_name.lower().replace(' ', '_')
+                )
+            
+            # Chỉ thêm tag nếu chưa có trong sản phẩm
+            if tag not in product.tags.all():
+                product.tags.add(tag)
+                message = f"Đã thêm tag '{tag.name}' vào sản phẩm '{product.name}' thành công."
+            else:
+                message = f"Tag '{tag.name}' đã tồn tại trong sản phẩm '{product.name}'."
+            
+            return Response(
+                {
+                    "detail": message,
+                    "tag_name": tag.name,
+                    "product_id": product.id
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Lỗi khi thêm tag: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], url_path='remove_tag')
+    def remove_tag_from_product(self, request, pk=None):
+        """Xóa tag khỏi một sản phẩm cụ thể"""
+        tag_name = request.data.get('tag_name', 'FlashSale')
+        
+        try:
+            product = self.get_object()
+        except Product.DoesNotExist:
+            return Response(
+                {"detail": "Sản phẩm không tồn tại."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            # Lấy tất cả tags với tên này và xóa khỏi sản phẩm
+            tags = Tag.objects.filter(name=tag_name)
+            if not tags.exists():
+                return Response(
+                    {"detail": f"Tag '{tag_name}' không tồn tại."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            # Xóa tất cả tags có tên này khỏi sản phẩm
+            removed_count = 0
+            for tag in tags:
+                if tag in product.tags.all():
+                    product.tags.remove(tag)
+                    removed_count += 1
+            
+            return Response(
+                {
+                    "detail": f"Đã xóa {removed_count} tag '{tag_name}' khỏi sản phẩm '{product.name}' thành công.",
+                    "tag_name": tag_name,
+                    "product_id": product.id,
+                    "removed_count": removed_count
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {"detail": f"Lỗi khi xóa tag: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=False, methods=['post'], url_path='import-xlsx')
     def import_xlsx(self, request):
@@ -482,7 +563,7 @@ class LatestProductsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     API endpoint to list the 10 latest products.
     """
-    queryset = Product.objects.filter(is_visible=True).select_related('brand', 'category').prefetch_related('tags', 'gifts').order_by('-id')[:10]
+    queryset = Product.objects.select_related('brand', 'category').prefetch_related('tags', 'gifts').order_by('-id')[:10]
     serializer_class = ProductSerializer
 
 
@@ -492,9 +573,35 @@ class VoucherViewSet(viewsets.ModelViewSet):
     serializer_class = VoucherSerializer
 
 
+class OrderFilter(django_filters.FilterSet):
+    """Custom filter for Order model with date range filtering"""
+    order_date__gte = django_filters.DateTimeFilter(field_name='order_date', lookup_expr='gte')
+    order_date__lte = django_filters.DateTimeFilter(field_name='order_date', lookup_expr='lte')
+    collaborator_code__isnull = django_filters.BooleanFilter(field_name='collaborator_code', lookup_expr='isnull')
+    
+    class Meta:
+        model = Order
+        fields = {
+            'collaborator_code': ['exact', 'icontains'],
+            'status': ['exact'],
+            'is_confirmed': ['exact'],
+            'payment_method': ['exact'],
+            'order_date': ['gte', 'lte', 'exact'],
+            'customer_name': ['icontains'],
+            'phone_number': ['icontains'],
+            'order_code': ['exact', 'icontains'],
+        }
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all().select_related('customer', 'voucher').prefetch_related('items__product')
     serializer_class = OrderSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = OrderFilter
+    search_fields = ['customer_name', 'phone_number', 'order_code']
+    ordering_fields = ['order_date', 'total_amount', 'id']
+    ordering = ['-order_date']
 
     def get_permissions(self):
         """
@@ -558,7 +665,297 @@ class OrderViewSet(viewsets.ModelViewSet):
             # Cho phép Flask admin app truy cập tất cả đơn hàng khi không có authentication
             return Order.objects.all().select_related('customer', 'voucher').prefetch_related('items__product')
 
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def confirm(self, request, pk=None):
+        """
+        Xác nhận đơn hàng (không thay đổi tồn kho)
+        """
+        from django.db import transaction
 
+        order = self.get_object()
+
+        if order.is_confirmed:
+            return Response(
+                {'error': 'Đơn hàng đã được xác nhận trước đó'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if order.status == 'cancelled':
+            return Response(
+                {'error': 'Không thể xác nhận đơn hàng đã bị hủy'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with transaction.atomic():
+                # Chỉ cập nhật trạng thái đơn hàng; tồn kho đã trừ khi tạo đơn
+                order.is_confirmed = True
+                order.status = 'confirmed'
+                order.save()
+
+                return Response(
+                    {'message': 'Đã xác nhận đơn hàng thành công (không thay đổi tồn kho)', 'order_id': order.id},
+                    status=status.HTTP_200_OK
+                )
+
+        except Exception as e:
+            return Response(
+                {'error': f'Lỗi khi xác nhận đơn hàng: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], url_path='update-items', permission_classes=[AllowAny])
+    def update_items(self, request, pk=None):
+        """Cập nhật danh sách sản phẩm trong đơn: thêm/bớt/sửa số lượng.
+        Body dạng: { items: [ {product_id, quantity}, ... ] }
+        """
+        from django.db import transaction
+        from .models import Product, OrderItem
+        order = self.get_object()
+        items = request.data.get('items') or []
+        if not isinstance(items, list):
+            return Response({'error': 'Dữ liệu items không hợp lệ'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            with transaction.atomic():
+                # Map hiện tại (trước khi thay đổi) để tính chênh lệch tồn kho
+                existing_q = {oi.product_id: int(oi.quantity) for oi in order.items.select_for_update()}
+                existing = {oi.product_id: oi for oi in order.items.all()}
+                incoming = {int(i.get('product_id')): int(i.get('quantity', 0)) for i in items if i.get('product_id')}
+
+                # Kiểm tra tồn kho cho những mã có tăng số lượng hoặc thêm mới
+                increase_errors = []
+                for pid, new_qty in incoming.items():
+                    old_qty = existing_q.get(pid, 0)
+                    diff = new_qty - old_qty
+                    if diff > 0:
+                        product = Product.objects.select_for_update().filter(id=pid).first()
+                        if not product:
+                            return Response({'error': f'Sản phẩm {pid} không tồn tại'}, status=status.HTTP_400_BAD_REQUEST)
+                        if product.stock_quantity < diff:
+                            increase_errors.append(f"{product.name}: cần thêm {diff}, còn {product.stock_quantity}")
+                if increase_errors:
+                    return Response({'error': 'Không đủ tồn kho cho: ' + '; '.join(increase_errors)}, status=status.HTTP_400_BAD_REQUEST)
+
+                # Xóa các item không còn
+                to_delete = [pid for pid in existing.keys() if pid not in incoming]
+                if to_delete:
+                    OrderItem.objects.filter(order=order, product_id__in=to_delete).delete()
+
+                # Thêm/sửa items theo incoming
+                from decimal import Decimal
+                for pid, qty in incoming.items():
+                    if qty <= 0:
+                        OrderItem.objects.filter(order=order, product_id=pid).delete()
+                        continue
+                    product = Product.objects.filter(id=pid).first()
+                    if not product:
+                        return Response({'error': f'Sản phẩm {pid} không tồn tại'}, status=status.HTTP_400_BAD_REQUEST)
+                    item = existing.get(pid)
+                    unit_price = (item.price_at_purchase if item and item.price_at_purchase is not None else (product.discounted_price or product.original_price or 0))
+                    if item:
+                        item.quantity = qty
+                        item.price_at_purchase = unit_price
+                        item.save(update_fields=['quantity', 'price_at_purchase'])
+                    else:
+                        OrderItem.objects.create(
+                            order=order,
+                            product=product,
+                            quantity=qty,
+                            price_at_purchase=unit_price
+                        )
+
+                # Điều chỉnh tồn kho theo chênh lệch: new - old
+                all_pids = set(existing_q.keys()) | set(incoming.keys())
+                for pid in all_pids:
+                    old_qty = existing_q.get(pid, 0)
+                    new_qty = incoming.get(pid, 0)
+                    diff = new_qty - old_qty
+                    if diff == 0:
+                        continue
+                    product = Product.objects.select_for_update().filter(id=pid).first()
+                    if not product:
+                        continue
+                    if diff > 0:
+                        # trừ tồn, tăng đã bán
+                        product.stock_quantity = F('stock_quantity') - diff
+                        product.sold_quantity = F('sold_quantity') + diff
+                        product.save(update_fields=['stock_quantity', 'sold_quantity'])
+                    else:
+                        # trả tồn, giảm đã bán
+                        product.stock_quantity = F('stock_quantity') + (-diff)
+                        product.sold_quantity = F('sold_quantity') - (-diff)
+                        product.save(update_fields=['stock_quantity', 'sold_quantity'])
+
+                # Tính lại tổng tiền
+                subtotal = Decimal('0.00')
+                for it in order.items.all():
+                    unit = Decimal(str(it.price_at_purchase or 0))
+                    subtotal += unit * it.quantity
+                order.total_amount = subtotal + Decimal(str(order.shipping_fee or 0)) - Decimal(str(order.discount_applied or 0))
+                order.save(update_fields=['total_amount'])
+
+                return Response({'message': 'Đã cập nhật sản phẩm đơn hàng', 'order_id': order.id}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': f'Lỗi cập nhật: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def cancel(self, request, pk=None):
+        """
+        Hủy đơn hàng và khôi phục tồn kho nếu đã xác nhận
+        """
+        from django.db import transaction
+
+        order = self.get_object()
+
+        if order.status == 'cancelled':
+            return Response(
+                {'error': 'Đơn hàng đã bị hủy trước đó'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if order.status == 'shipped':
+            return Response(
+                {'error': 'Không thể hủy đơn hàng đã giao'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            with transaction.atomic():
+                # Nếu đơn hàng đã được xác nhận, khôi phục tồn kho
+                if order.is_confirmed:
+                    for item in order.items.all():
+                        product = item.product
+                        product.stock_quantity += item.quantity
+                        product.save()
+
+                # Cập nhật trạng thái đơn hàng
+                order.status = 'cancelled'
+                order.save()
+
+                return Response(
+                    {'message': 'Đã hủy đơn hàng thành công', 'order_id': order.id},
+                    status=status.HTTP_200_OK
+                )
+
+        except Exception as e:
+            return Response(
+                {'error': f'Lỗi khi hủy đơn hàng: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=True, methods=['post'], permission_classes=[AllowAny])
+    def ship(self, request, pk=None):
+        """
+        Đánh dấu đơn hàng đã giao
+        """
+        order = self.get_object()
+
+        if order.status == 'cancelled':
+            return Response(
+                {'error': 'Không thể giao đơn hàng đã bị hủy'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if order.status == 'shipped':
+            return Response(
+                {'error': 'Đơn hàng đã được giao trước đó'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not order.is_confirmed:
+            return Response(
+                {'error': 'Phải xác nhận đơn hàng trước khi giao'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            order.status = 'shipped'
+            order.save()
+
+            return Response(
+                {'message': 'Đã đánh dấu đơn hàng đã giao thành công', 'order_id': order.id},
+                status=status.HTTP_200_OK
+            )
+
+        except Exception as e:
+            return Response(
+                {'error': f'Lỗi khi cập nhật trạng thái giao hàng: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def product_stock(request, product_id):
+    """
+    API lấy thông tin stock của sản phẩm
+    """
+    try:
+        product = get_object_or_404(Product, id=product_id)
+        return Response({
+            'id': product.id,
+            'name': product.name,
+            'stock_quantity': product.stock_quantity
+        })
+    except Exception as e:
+        return Response(
+            {'error': f'Lỗi khi lấy thông tin sản phẩm: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def send_new_order_notification(request):
+    """
+    API để gửi email thông báo khi có đơn hàng mới.
+    """
+    serializer = OrderNotificationSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    order_id = serializer.validated_data.get('order_id')
+
+    order = get_object_or_404(Order, id=order_id)
+
+    # Lấy danh sách đơn hàng chờ xác nhận (tối đa 10 đơn)
+    pending_orders = Order.objects.filter(is_confirmed=False).order_by('-order_date')[:10]
+
+    # Tạo URLs cho admin panel - sử dụng URLs thực tế của hệ thống
+    order_absolute_url = f'https://buddyskincare.vn/admin/orders/{order.pk}/'
+    all_orders_url = 'https://buddyskincare.vn/admin/orders'
+
+    context = {
+         'order': order,
+         'order_items': order.items.all(),
+         'pending_orders': pending_orders,
+         'order_absolute_url': order_absolute_url,
+         'all_orders_url': all_orders_url,
+         'current_time': timezone.now().strftime('%d/%m/%Y %H:%M:%S'),
+    }
+
+    email_html_message = render_to_string('emails/new_order_notification.html', context)
+    email_plain_message = f'Đơn hàng mới từ {order.customer_name}. Chi tiết: {order_absolute_url}'
+
+    try:
+        send_mail(
+            subject=f'Bạn có đơn hàng mới (Mã: {order.id})',
+            message=email_plain_message,
+            html_message=email_html_message,
+            from_email='buddyskincarevn@gmail.com',
+            recipient_list=['huunghia040623@gmail.com'],
+            fail_silently=False,
+        )
+        return Response({'message': 'Email thông báo đã được gửi thành công.'}, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response(
+            {'error': f'Không thể gửi email: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemReadSerializer
@@ -1001,43 +1398,58 @@ class RegistrationView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+# @method_decorator(csrf_exempt, name='dispatch')
+# class GoogleSocialAuthView(GenericAPIView):
+#     serializer_class = GoogleSocialAuthSerializer
+#     permission_classes = (AllowAny,)
+
+#     def post(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+
+#         # Corrected line: Get the user object directly from the validated data
+#         # of the 'auth_token' field.
+#         user = serializer.validated_data['auth_token']
+
+#         # Now 'user' is the correct User model instance.
+#         refresh = RefreshToken.for_user(user)
+#         response_data = {
+#             'user': UserSerializer(user).data,
+#             'access_token': str(refresh.access_token),
+#             'refresh_token': str(refresh),
+#         }
+#         return Response(response_data, status=status.HTTP_200_OK)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
 class GoogleSocialAuthView(GenericAPIView):
+    # Set the authentication classes to exclude SessionAuthentication
+    authentication_classes = [] # Để trống để không yêu cầu bất kỳ xác thực nào
     serializer_class = GoogleSocialAuthSerializer
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        serializer = self.serializer_class(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        # Corrected line: Get the user object directly from the validated data
-        # of the 'auth_token' field.
-        user = serializer.validated_data['auth_token']
+        # Đổi dòng này để truy cập đúng đối tượng người dùng
+        # Lấy từ validated_data['auth_token']['user']
+        user_object = serializer.validated_data['auth_token']['user']
 
-        # Now 'user' is the correct User model instance.
-        refresh = RefreshToken.for_user(user)
+        if not user_object:
+            return Response({"error": "Không tìm thấy người dùng."}, status=status.HTTP_400_BAD_REQUEST)
+
+        refresh = RefreshToken.for_user(user_object)
+
         response_data = {
-            'user': UserSerializer(user).data,
+            'user': UserSerializer(user_object).data,
             'access_token': str(refresh.access_token),
             'refresh_token': str(refresh),
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-# class PhoneNumberLoginView(APIView):
-#     """
-#     API View to handle login requests with phone number and password.
-#     Returns user info and JWT tokens upon successful login.
-#     """
-#     permission_classes = [AllowAny]
-
-#     def post(self, request, *args, **kwargs):
-#         serializer = PhoneNumberLoginSerializer(data=request.data, context={'request': request})
-#         if serializer.is_valid():
-#             # Thay đổi dòng này từ serializer.validated_data sang serializer.instance
-#             return Response(serializer.to_representation(serializer.instance), status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+@method_decorator(csrf_exempt, name='dispatch')
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -1861,7 +2273,7 @@ class MarketingResourceViewSet(viewsets.ModelViewSet):
     def get_product_images(self, request):
         """Lấy ảnh sản phẩm từ products"""
         from .models import Product
-        products = Product.objects.filter(status='new', is_visible=True).select_related('brand', 'category')
+        products = Product.objects.filter(status='new').select_related('brand', 'category')
         product_data = []
 
         for product in products:
@@ -1891,7 +2303,7 @@ class ProductImagesAPIView(APIView):
     def get(self, request):
         """Lấy tất cả ảnh sản phẩm"""
         from .models import Product
-        products = Product.objects.filter(is_visible=True).select_related('brand', 'category')
+        products = Product.objects.all().select_related('brand', 'category')
         print(f"🔍 DEBUG: Total products: {products.count()}")
         new_products = products.filter(status='new')
         print(f"🔍 DEBUG: Products with status='new': {new_products.count()}")
@@ -1920,3 +2332,755 @@ class ProductImagesAPIView(APIView):
         return Response(product_data)
 
 
+@api_view(['POST'])
+def send_invoice_email(request, order_id):
+    """Send invoice email to customer"""
+    try:
+        # Get order from database
+        order = Order.objects.get(id=order_id)
+    except Order.DoesNotExist:
+        return Response({'success': False, 'message': 'Không tìm thấy đơn hàng'}, status=404)
+
+    # Get recipient email from request or order
+    recipient = request.data.get('email', '').strip()
+    if not recipient:
+        recipient = order.email
+
+    if not recipient or '@' not in recipient:
+        return Response({'success': False, 'message': 'Email khách hàng không hợp lệ'}, status=400)
+
+    # Render invoice HTML
+    from django.template.loader import render_to_string
+    html_content = render_to_string('emails/invoice_email.html', {'order': order})
+
+    # Send email using Django's email backend
+    from django.core.mail import EmailMultiAlternatives
+    from django.conf import settings
+
+    try:
+        subject = f'Hóa đơn đơn hàng #{order_id} - BuddySkincare'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = [recipient]
+
+        # Create email message
+        msg = EmailMultiAlternatives(subject, '', from_email, to_email)
+        msg.attach_alternative(html_content, "text/html")
+
+        # Send email
+        msg.send()
+
+        return Response({
+            'success': True,
+            'message': f'Đã gửi hóa đơn đến {recipient}'
+        })
+
+    except Exception as e:
+        print(f"❌ Error sending email: {e}")
+        return Response({
+            'success': False,
+            'message': f'Gửi email thất bại: {str(e)}'
+        }, status=500)
+
+
+@api_view(['POST'])
+def upload_bank_transfer(request):
+    """Upload ảnh chuyển khoản lên Cloudinary"""
+    try:
+        print(f"🔍 Upload request received. Files: {list(request.FILES.keys())}")
+
+        if 'file' not in request.FILES:
+            print("❌ No file in request")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        file = request.FILES['file']
+        print(f"📁 File received: {file.name}, Content type: {file.content_type}")
+
+        if not file.name:
+            print("❌ Empty filename")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        # Check file extension
+        allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp')
+        if not file.name.lower().endswith(allowed_extensions):
+            print(f"❌ Invalid file extension: {file.name}")
+            return Response({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}, status=400)
+
+        # Check file size (max 10MB)
+        file_size = file.size
+        print(f"📏 File size: {file_size} bytes")
+
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            print(f"❌ File too large: {file_size} bytes")
+            return Response({'error': 'File quá lớn. Kích thước tối đa là 10MB'}, status=400)
+
+        # Check Cloudinary configuration
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            print(f"☁️ Cloudinary configured: {cloudinary.config().cloud_name}")
+        except Exception as config_error:
+            print(f"❌ Cloudinary config error: {config_error}")
+            return Response({'error': 'Lỗi cấu hình Cloudinary'}, status=500)
+
+        # Upload to Cloudinary with simplified settings
+        print("🚀 Starting Cloudinary upload...")
+        from datetime import datetime
+
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="bank_transfers",
+            public_id=f"transfer_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            resource_type="image",
+            quality="auto",
+            fetch_format="auto"
+        )
+
+        print(f"✅ Upload successful: {upload_result.get('secure_url', 'No URL')}")
+        return Response({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        })
+
+    except Exception as e:
+        print(f"❌ Error uploading bank transfer image: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response({'error': f'Lỗi upload ảnh: {str(e)}'}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def auto_complete_orders(request):
+    """
+    API tự động hoàn thành các đơn hàng đã giao hàng từ 5 ngày trở lên
+    """
+    from datetime import datetime, timedelta
+
+    try:
+        # Lấy tất cả đơn hàng có trạng thái 'shipped'
+        shipped_orders = Order.objects.filter(status='shipped')
+
+        # Tính ngày 5 ngày trước
+        five_days_ago = datetime.now() - timedelta(days=5)
+
+        updated_orders = []
+
+        for order in shipped_orders:
+            # Kiểm tra nếu đơn hàng đã được giao hàng từ 5 ngày trở lên
+            if order.updated_at and order.updated_at.date() <= five_days_ago.date():
+                # Cập nhật trạng thái thành 'completed'
+                order.status = 'completed'
+                order.save()
+
+                updated_orders.append({
+                    'id': order.id,
+                    'customer_name': order.customer_name,
+                    'order_code': order.order_code,
+                    'updated_at': order.updated_at.isoformat()
+                })
+
+        return Response({
+            'success': True,
+            'message': f'Đã tự động hoàn thành {len(updated_orders)} đơn hàng',
+            'updated_orders': updated_orders
+        })
+
+    except Exception as e:
+        return Response(
+            {'error': f'Lỗi khi tự động hoàn thành đơn hàng: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(['POST'])
+def upload_cccd_image(request):
+    """Upload ảnh CCCD lên Cloudinary"""
+    try:
+        print(f"🔍 CCCD Upload request received. Files: {list(request.FILES.keys())}")
+
+        if 'file' not in request.FILES:
+            print("❌ No file in request")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        file = request.FILES['file']
+        print(f"📁 File received: {file.name}, Content type: {file.content_type}")
+
+        if not file.name:
+            print("❌ Empty filename")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        # Check file extension
+        allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp')
+        if not file.name.lower().endswith(allowed_extensions):
+            print(f"❌ Invalid file extension: {file.name}")
+            return Response({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}, status=400)
+
+        # Check file size (max 10MB)
+        file_size = file.size
+        print(f"📏 File size: {file_size} bytes")
+
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            print(f"❌ File too large: {file_size} bytes")
+            return Response({'error': 'File quá lớn. Kích thước tối đa là 10MB'}, status=400)
+
+        # Check Cloudinary configuration
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            print(f"☁️ Cloudinary configured: {cloudinary.config().cloud_name}")
+        except Exception as config_error:
+            print(f"❌ Cloudinary config error: {config_error}")
+            return Response({'error': 'Lỗi cấu hình Cloudinary'}, status=500)
+
+        # Upload to Cloudinary with optimized settings for CCCD
+        print("🚀 Starting Cloudinary upload for CCCD...")
+        from datetime import datetime
+
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="ctv_cccd",
+            public_id=f"cccd_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            resource_type="image",
+            # Image optimization settings for CCCD
+            quality="auto:good",  # Chất lượng tốt cho CCCD
+            fetch_format="auto",  # Tự động chọn format tối ưu
+            width=1200,  # Giới hạn chiều rộng tối đa
+            height=1200,  # Giới hạn chiều cao tối đa
+            crop="limit",  # Giữ nguyên tỷ lệ, chỉ resize nếu vượt quá giới hạn
+            flags="progressive",  # Tạo ảnh progressive JPEG
+            transformation=[
+                {"width": 1200, "height": 1200, "crop": "limit"},
+                {"quality": "auto:good"},
+                {"fetch_format": "auto"}
+            ]
+        )
+
+        print(f"✅ CCCD Upload successful: {upload_result.get('secure_url', 'No URL')}")
+        return Response({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        })
+
+    except Exception as e:
+        print(f"❌ Error uploading CCCD image: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response({'error': f'Lỗi upload ảnh CCCD: {str(e)}'}, status=500)
+
+
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+@csrf_exempt
+@require_http_methods(["GET"])
+def download_image(request):
+    """Proxy download an image URL with Content-Disposition attachment to force save-as"""
+    try:
+        import requests
+        from django.http import HttpResponse, JsonResponse
+        import traceback
+
+        # Log request details
+        print(f"🔍 Download request received")
+        print(f"📋 Method: {request.method}")
+        print(f"📋 Headers: {dict(request.headers)}")
+        print(f"📋 GET params: {dict(request.GET)}")
+
+        img_url = request.GET.get('url', '').strip()
+        filename = request.GET.get('filename', '').strip()
+
+        print(f"🔍 Parsed params: url={img_url[:100]}..., filename={filename}")
+
+        if not img_url:
+            print("❌ Missing URL parameter")
+            return HttpResponse('Missing URL parameter', status=400, content_type='text/plain')
+
+        # Validate URL
+        if not img_url.startswith(('http://', 'https://')):
+            print(f"❌ Invalid URL: {img_url}")
+            return HttpResponse('Invalid URL', status=400, content_type='text/plain')
+
+        # Fetch binary with short timeout
+        print(f"📥 Fetching image from: {img_url}")
+        try:
+            resp = requests.get(img_url, timeout=30, stream=True, allow_redirects=True)
+        except requests.exceptions.RequestException as req_error:
+            print(f"❌ Request failed: {req_error}")
+            return HttpResponse(f'Request failed: {str(req_error)}', status=502, content_type='text/plain')
+
+        print(f"📊 Response status: {resp.status_code}")
+        print(f"📊 Content-Type: {resp.headers.get('Content-Type')}")
+        print(f"📊 Content-Length: {resp.headers.get('Content-Length')}")
+
+        if resp.status_code != 200:
+            print(f"❌ HTTP error: {resp.status_code}")
+            return HttpResponse(f'Cannot load image: {resp.status_code}', status=502, content_type='text/plain')
+
+        # Get content
+        try:
+            content = resp.content
+            print(f"📦 Content size: {len(content)} bytes")
+
+            if len(content) == 0:
+                print("❌ Empty content")
+                return HttpResponse('Empty content', status=502, content_type='text/plain')
+
+        except Exception as content_error:
+            print(f"❌ Content error: {content_error}")
+            return HttpResponse(f'Content error: {str(content_error)}', status=502, content_type='text/plain')
+
+        # Guess filename
+        if not filename:
+            try:
+                from urllib.parse import urlparse
+                import os as _os
+                path = urlparse(img_url).path
+                base = _os.path.basename(path) or 'image'
+                # ensure simple name
+                filename = base.split('?')[0] or 'image'
+                # Add extension if missing
+                if '.' not in filename:
+                    filename += '.jpg'
+            except Exception:
+                filename = 'image.jpg'
+
+        # Clean filename
+        import re
+        filename = re.sub(r'[^\w\-_\.]', '_', filename)
+
+        # Detect content-type
+        content_type = resp.headers.get('Content-Type', 'application/octet-stream')
+
+        print(f"📁 Final filename: {filename}")
+        print(f"📁 Content-Type: {content_type}")
+        print(f"📁 Content-Length: {len(content)}")
+
+        # Create response with binary data
+        response = HttpResponse(content, content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Length'] = str(len(content))
+        response['Cache-Control'] = 'no-cache'
+        response['Pragma'] = 'no-cache'
+
+        print(f"✅ Download response created successfully")
+        return response
+
+    except Exception as e:
+        print(f"❌ General error: {e}")
+        traceback.print_exc()
+        return HttpResponse(f'Unknown error: {str(e)}', status=500, content_type='text/plain')
+
+
+@csrf_exempt
+def test_download(request):
+    """Simple test endpoint to verify Django is working"""
+    try:
+        print("🧪 Test download endpoint called")
+
+        # Simple test response
+        test_content = b"Test download working!"
+        response = HttpResponse(test_content, content_type='text/plain')
+        response['Content-Disposition'] = 'attachment; filename="test.txt"'
+        response['Content-Length'] = str(len(test_content))
+
+        print("✅ Test response created")
+        return response
+
+    except Exception as e:
+        print(f"❌ Test error: {e}")
+        return HttpResponse(f'Test error: {str(e)}', status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def upload_marketing_resources_bulk(request):
+    """Upload nhiều ảnh marketing resource lên Cloudinary hàng loạt"""
+    try:
+        print(f"🔍 Bulk marketing resource upload request received. Files: {list(request.FILES.keys())}")
+
+        files = request.FILES.getlist('files')
+        if not files:
+            print("❌ No files in request")
+            return Response({'error': 'Không có file nào được chọn'}, status=400)
+
+        print(f"📁 Files received: {len(files)} files")
+
+        # Get form data
+        resource_type = request.POST.get('resource_type', 'new_product')
+        description = request.POST.get('description', '')
+        is_active = request.POST.get('is_active') == 'on'
+
+        results = []
+        errors = []
+
+        for i, file in enumerate(files):
+            try:
+                print(f"📁 Processing file {i+1}/{len(files)}: {file.name}")
+
+                if not file.name:
+                    errors.append(f"File {i+1}: Tên file trống")
+                    continue
+
+                # Check file extension
+                allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx')
+                if not file.name.lower().endswith(allowed_extensions):
+                    errors.append(f"File {i+1} ({file.name}): Định dạng không hỗ trợ")
+                    continue
+
+                # Check file size (max 10MB)
+                if file.size > 10 * 1024 * 1024:
+                    errors.append(f"File {i+1} ({file.name}): Quá lớn ({file.size/1024/1024:.1f}MB)")
+                    continue
+
+                # Upload to Cloudinary
+                import cloudinary
+                import cloudinary.uploader
+                from datetime import datetime
+
+                upload_result = cloudinary.uploader.upload(
+                    file,
+                    folder="marketing_resources",
+                    public_id=f"resource_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{i}_{file.name.split('.')[0]}",
+                    resource_type="image" if file.content_type.startswith('image/') else "raw",
+                    quality="auto:good" if file.content_type.startswith('image/') else None,
+                    fetch_format="auto" if file.content_type.startswith('image/') else None,
+                    width=2000 if file.content_type.startswith('image/') else None,
+                    height=2000 if file.content_type.startswith('image/') else None,
+                    crop="limit" if file.content_type.startswith('image/') else None,
+                    flags="progressive" if file.content_type.startswith('image/') else None
+                )
+
+                # Create MarketingResource record directly
+                from .models import MarketingResource
+                
+                resource = MarketingResource.objects.create(
+                    name=file.name.rsplit('.', 1)[0],  # Remove extension
+                    description=description,
+                    resource_type=resource_type,
+                    file_url=upload_result['url'],
+                    thumbnail_url=upload_result['url'],
+                    file_size=upload_result.get('bytes', file.size),
+                    is_active=is_active
+                )
+
+                results.append({
+                    'filename': file.name,
+                    'url': upload_result['url'],
+                    'resource_id': resource.id,
+                    'status': 'success'
+                })
+                print(f"✅ Successfully processed: {file.name}")
+
+            except Exception as file_error:
+                errors.append(f"File {i+1} ({file.name}): {str(file_error)}")
+                print(f"❌ Error processing {file.name}: {str(file_error)}")
+
+        return Response({
+            'success': True,
+            'total_files': len(files),
+            'successful_uploads': len(results),
+            'errors': errors,
+            'results': results,
+            'message': f'Upload hoàn tất: {len(results)}/{len(files)} file thành công'
+        })
+
+    except Exception as e:
+        print(f"❌ Bulk upload error: {str(e)}")
+        return Response({
+            'error': f'Lỗi upload hàng loạt: {str(e)}'
+        }, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def upload_marketing_resource(request):
+    """Upload ảnh marketing resource lên Cloudinary"""
+    try:
+        print(f"🔍 Marketing resource upload request received. Files: {list(request.FILES.keys())}")
+
+        if 'file' not in request.FILES:
+            print("❌ No file in request")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        file = request.FILES['file']
+        print(f"📁 File received: {file.name}, Content type: {file.content_type}")
+
+        if not file.name:
+            print("❌ Empty filename")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        # Check file extension
+        allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.pdf', '.doc', '.docx')
+        if not file.name.lower().endswith(allowed_extensions):
+            print(f"❌ Invalid file extension: {file.name}")
+            return Response({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP, PDF, DOC, DOCX'}, status=400)
+
+        # Check file size (max 10MB)
+        file_size = file.size
+        print(f"📏 File size: {file_size} bytes")
+
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            print(f"❌ File too large: {file_size} bytes")
+            return Response({'error': 'File quá lớn. Kích thước tối đa là 10MB'}, status=400)
+
+        # Check Cloudinary configuration
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            print(f"☁️ Cloudinary configured: {cloudinary.config().cloud_name}")
+        except Exception as config_error:
+            print(f"❌ Cloudinary config error: {config_error}")
+            return Response({'error': 'Lỗi cấu hình Cloudinary'}, status=500)
+
+        # Upload to Cloudinary with marketing resource settings
+        print("🚀 Starting Cloudinary upload for marketing resource...")
+        from datetime import datetime
+
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="marketing_resources",
+            public_id=f"resource_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{file.name.split('.')[0]}",
+            resource_type="image" if file.content_type.startswith('image/') else "raw",
+            # Image optimization settings for marketing materials
+            quality="auto:good" if file.content_type.startswith('image/') else None,
+            fetch_format="auto" if file.content_type.startswith('image/') else None,
+            width=2000 if file.content_type.startswith('image/') else None,
+            height=2000 if file.content_type.startswith('image/') else None,
+            crop="limit" if file.content_type.startswith('image/') else None,
+            flags="progressive" if file.content_type.startswith('image/') else None
+        )
+
+        print(f"✅ Cloudinary upload successful: {upload_result['url']}")
+
+        return Response({
+            'success': True,
+            'url': upload_result['url'],
+            'public_id': upload_result['public_id'],
+            'file_size': upload_result.get('bytes', file_size),
+            'format': upload_result.get('format'),
+            'width': upload_result.get('width'),
+            'height': upload_result.get('height'),
+            'message': 'Upload thành công'
+        })
+
+    except Exception as e:
+        print(f"❌ Upload error: {str(e)}")
+        return Response({
+            'error': f'Lỗi upload: {str(e)}'
+        }, status=500)
+
+
+@api_view(['POST'])
+def send_ctv_welcome_email(request, ctv_id):
+    """Send welcome email to CTV with login credentials"""
+    try:
+        print(f"🔍 CTV Welcome Email request received for CTV ID: {ctv_id}")
+
+        # Get CTV object
+        try:
+            ctv = CTV.objects.get(id=ctv_id)
+            print(f"📋 CTV found: {ctv.full_name} ({ctv.email})")
+        except CTV.DoesNotExist:
+            print(f"❌ CTV with ID {ctv_id} not found")
+            return Response({'error': 'CTV không tồn tại'}, status=404)
+
+        # Generate temporary password if not set
+        import secrets
+        import string
+
+        if not ctv.password_text:
+            # Generate random password
+            alphabet = string.ascii_letters + string.digits
+            temp_password = ''.join(secrets.choice(alphabet) for i in range(8))
+            ctv.password_text = temp_password
+            ctv.save()
+            print(f"🔑 Generated temporary password: {temp_password}")
+        else:
+            temp_password = ctv.password_text
+            print(f"🔑 Using existing temporary password")
+
+        # Prepare email context
+        email_context = {
+            'ctv_name': ctv.full_name,
+            'ctv_phone': ctv.phone,
+            'ctv_email': ctv.email,
+            'ctv_password': temp_password,
+            'login_url': 'https://buddyskincare.vn/ctv/login',
+            'ctv_code': ctv.code
+        }
+
+        print(f"📧 Email context prepared: {email_context}")
+
+        # Render email template
+        from django.template.loader import render_to_string
+        html_content = render_to_string('emails/ctv_welcome_email.html', email_context)
+
+        print(f"📄 Email template rendered successfully")
+
+        # Send email using Django's email backend
+        from django.core.mail import EmailMultiAlternatives
+        from django.conf import settings
+
+        subject = f"🎉 Chào mừng đến với BuddySkincare - CTV {ctv.full_name}"
+
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=f"Chào mừng {ctv.full_name} đến với BuddySkincare!",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[ctv.email]
+        )
+        email.attach_alternative(html_content, "text/html")
+
+        # Try to send email
+        try:
+            email.send()
+            print(f"✅ Welcome email sent successfully to {ctv.email}")
+
+            return Response({
+                'success': True,
+                'message': f'Email chào mừng đã được gửi thành công đến {ctv.email}. CTV có thể đăng nhập bằng số điện thoại {ctv.phone} và mật khẩu {temp_password}'
+            })
+
+        except Exception as email_error:
+            print(f"❌ Email sending failed: {email_error}")
+
+            # Fallback: Save email to file (similar to invoice email)
+            import os
+            from datetime import datetime
+
+            sent_emails_dir = os.path.join(settings.BASE_DIR, 'sent_emails')
+            os.makedirs(sent_emails_dir, exist_ok=True)
+
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"ctv_welcome_{ctv_id}_{timestamp}.html"
+            filepath = os.path.join(sent_emails_dir, filename)
+
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(html_content)
+
+            print(f"📁 Email saved to file: {filepath}")
+
+            return Response({
+                'success': True,
+                'message': f'Email chào mừng đã được lưu vào file: {filename}. CTV có thể đăng nhập bằng số điện thoại {ctv.phone} và mật khẩu {temp_password}'
+            })
+
+    except Exception as e:
+        print(f"❌ Error sending CTV welcome email: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response({'error': f'Lỗi gửi email chào mừng: {str(e)}'}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def upload_bank_transfer(request):
+    """Upload ảnh chuyển khoản lên Cloudinary"""
+    try:
+        print(f"🔍 Upload request received. Files: {list(request.FILES.keys())}")
+
+        if 'file' not in request.FILES:
+            print("❌ No file in request")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        file = request.FILES['file']
+        print(f"📁 File received: {file.name}, Content type: {file.content_type}")
+
+        if not file.name:
+            print("❌ Empty filename")
+            return Response({'error': 'Không có file được chọn'}, status=400)
+
+        # Check file extension
+        allowed_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.webp')
+        if not file.name.lower().endswith(allowed_extensions):
+            print(f"❌ Invalid file extension: {file.name}")
+            return Response({'error': 'File không đúng định dạng. Chỉ chấp nhận: PNG, JPG, JPEG, GIF, WEBP'}, status=400)
+
+        # Check file size (max 10MB)
+        file_size = file.size
+        print(f"📏 File size: {file_size} bytes")
+
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            print(f"❌ File too large: {file_size} bytes")
+            return Response({'error': 'File quá lớn. Kích thước tối đa là 10MB'}, status=400)
+
+        # Check Cloudinary configuration
+        try:
+            import cloudinary
+            import cloudinary.uploader
+            print(f"☁️ Cloudinary configured: {cloudinary.config().cloud_name}")
+        except Exception as config_error:
+            print(f"❌ Cloudinary config error: {config_error}")
+            return Response({'error': 'Lỗi cấu hình Cloudinary'}, status=500)
+
+        # Upload to Cloudinary with simplified settings
+        print("🚀 Starting Cloudinary upload...")
+        from datetime import datetime
+
+        upload_result = cloudinary.uploader.upload(
+            file,
+            folder="bank_transfers",
+            public_id=f"transfer_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            resource_type="image",
+            quality="auto",
+            fetch_format="auto"
+        )
+
+        print(f"✅ Upload successful: {upload_result.get('secure_url', 'No URL')}")
+        return Response({
+            'success': True,
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        })
+
+    except Exception as e:
+        print(f"❌ Error uploading bank transfer image: {e}")
+        import traceback
+        traceback.print_exc()
+        return Response({'error': f'Lỗi upload ảnh: {str(e)}'}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def auto_complete_orders(request):
+    """
+    API tự động hoàn thành các đơn hàng đã giao hàng từ 5 ngày trở lên
+    """
+    from datetime import datetime, timedelta
+
+    try:
+        # Lấy tất cả đơn hàng có trạng thái 'shipped'
+        shipped_orders = Order.objects.filter(status='shipped')
+
+        # Tính ngày 5 ngày trước
+        five_days_ago = datetime.now() - timedelta(days=5)
+
+        updated_orders = []
+
+        for order in shipped_orders:
+            # Kiểm tra nếu đơn hàng đã được giao hàng từ 5 ngày trở lên
+            if order.updated_at and order.updated_at.date() <= five_days_ago.date():
+                # Cập nhật trạng thái thành 'completed'
+                order.status = 'completed'
+                order.save()
+
+                updated_orders.append({
+                    'id': order.id,
+                    'customer_name': order.customer_name,
+                    'order_code': order.order_code,
+                    'updated_at': order.updated_at.isoformat()
+                })
+
+        return Response({
+            'success': True,
+            'message': f'Đã tự động hoàn thành {len(updated_orders)} đơn hàng',
+            'updated_orders': updated_orders
+        })
+
+    except Exception as e:
+        return Response(
+            {'error': f'Lỗi khi tự động hoàn thành đơn hàng: {str(e)}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

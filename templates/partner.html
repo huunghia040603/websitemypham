@@ -90,7 +90,7 @@
           <div class="col-12 mt-2">
             <div class="pt-divider"></div>
             <div class="pt-section-title"><strong>Thông tin ngân hàng nhận hoa hồng</strong> <span class="badge-req">Bắt buộc</span></div>
-            
+
           </div>
           <div class="col-md-4">
             <label class="form-label">Tên ngân hàng <span class="text-danger">*</span></label>
@@ -107,7 +107,7 @@
           <div class="col-12 mt-2">
             <div class="pt-divider"></div>
             <div class="pt-section-title"><strong>Xác minh CCCD</strong> <span class="badge-req">Bắt buộc</span></div>
-            
+
           </div>
           <div class="col-md-6">
             <label class="form-label">Ảnh mặt trước CCCD <span class="text-danger">*</span></label>
@@ -227,19 +227,101 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
     const fFile = document.getElementById('ptCccdFront').files[0];
     const bFile = document.getElementById('ptCccdBack').files[0];
 
-    // Upload to Cloudinary via server proxy to get short URL
+    // Upload to Cloudinary directly from frontend
     async function uploadImage(file){
-      const fd = new FormData();
-      fd.append('file', file);
-        const resp = await fetch('https://buddyskincare.vn/backend/api/upload-bank-transfer', { method: 'POST', body: fd });
-      if (!resp.ok) throw new Error('Upload ảnh thất bại');
-      const data = await resp.json();
-      if (!data.success || !data.url) throw new Error('Upload ảnh thất bại');
-      return data.url;
+      console.log('📤 Uploading file:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+      // Check file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File quá lớn. Kích thước tối đa là 10MB');
+      }
+
+      // Check file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Chỉ được upload file ảnh');
+      }
+
+      try {
+        // Try Django CCCD upload endpoint first
+        console.log('🔄 Trying Django CCCD upload endpoint...');
+        const fd = new FormData();
+        fd.append('file', file);
+        
+        const djangoResp = await fetch('/backend/api/upload-cccd/', { method: 'POST', body: fd });
+        if (djangoResp.ok) {
+          const data = await djangoResp.json();
+          console.log('📊 Django Upload response:', data);
+          if (data.success && data.url) {
+            console.log('✅ Upload successful via Django CCCD endpoint');
+            console.log('🔗 Cloudinary URL:', data.url);
+            console.log('🆔 Public ID:', data.public_id);
+            console.log('📏 Size:', data.size, 'bytes');
+            
+            // Test URL accessibility
+            try {
+              const testResp = await fetch(data.url, { method: 'HEAD' });
+              console.log('🔍 URL test result:', testResp.status, testResp.headers.get('content-type'));
+            } catch (testError) {
+              console.log('⚠️ URL test failed:', testError);
+            }
+            
+            return data.url;
+          }
+        }
+        console.log('⚠️ Django CCCD endpoint failed, trying Flask endpoint...');
+        console.log('❌ Django Response status:', djangoResp.status);
+        console.log('❌ Django Response text:', await djangoResp.text());
+        
+        // Try Flask CCCD upload endpoint as fallback
+        console.log('🔄 Trying Flask CCCD upload endpoint as fallback...');
+        const flaskResp = await fetch('/api/upload-cccd', { method: 'POST', body: fd });
+        if (flaskResp.ok) {
+          const data = await flaskResp.json();
+          console.log('📊 Flask Upload response:', data);
+          if (data.success && data.url) {
+            console.log('✅ Upload successful via Flask CCCD endpoint');
+            console.log('🔗 Cloudinary URL:', data.url);
+            return data.url;
+          }
+        }
+        console.log('⚠️ Flask CCCD endpoint also failed, using base64 fallback...');
+        console.log('❌ Flask Response status:', flaskResp.status);
+        console.log('❌ Flask Response text:', await flaskResp.text());
+        
+        // Final fallback: Convert file to base64
+        const base64Data = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        
+        console.log('✅ File converted to base64, length:', base64Data.length);
+        return base64Data;
+        
+      } catch (error) {
+        console.error('❌ Upload error:', error);
+        throw error;
+      }
     }
 
-    const frontUrl = await uploadImage(fFile);
-    const backUrl = await uploadImage(bFile);
+    // Upload images with fallback
+    let frontUrl, backUrl;
+    try {
+      frontUrl = await uploadImage(fFile);
+      console.log('✅ Front image uploaded:', frontUrl);
+    } catch (error) {
+      console.error('❌ Front image upload failed:', error);
+      throw new Error(`Upload ảnh mặt trước thất bại: ${error.message}`);
+    }
+
+    try {
+      backUrl = await uploadImage(bFile);
+      console.log('✅ Back image uploaded:', backUrl);
+    } catch (error) {
+      console.error('❌ Back image upload failed:', error);
+      throw new Error(`Upload ảnh mặt sau thất bại: ${error.message}`);
+    }
 
     const payload = {
       full_name: fullName,
@@ -256,7 +338,7 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
       agreed: true
     };
 
-        const resp = await fetch('https://buddyskincare.vn/backend/api/ctv-applications/', {
+        const resp = await fetch('/backend/api/ctv-applications/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -281,4 +363,4 @@ document.getElementById('partnerForm')?.addEventListener('submit', async functio
 
 // Đơn giản hóa: bỏ kiểm tra mã, để admin duyệt và sinh mã nếu trùng
 </script>
-{% endblock %} 
+{% endblock %}

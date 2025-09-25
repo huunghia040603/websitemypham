@@ -1,6 +1,20 @@
 {% extends "base.html" %}
 
-{% block title %}Chi tiết sản phẩm - BuddySkincare{% endblock %}
+{% block title %}{{ product.name if product else 'Chi tiết sản phẩm' }} - BuddySkincare{% endblock %}
+
+{% block description %}{{ product.description[:160] if product and product.description else 'Khám phá sản phẩm mỹ phẩm thanh lý chất lượng cao với giá tốt nhất tại BuddySkincare.' }}{% endblock %}
+
+{% block keywords %}{{ product.name if product else 'sản phẩm mỹ phẩm' }}, mỹ phẩm thanh lý, mỹ phẩm giá rẻ, {{ product.brand_name if product and product.brand_name else 'mỹ phẩm chính hãng' }}{% endblock %}
+
+{% block og_type %}product{% endblock %}
+
+{% block og_title %}{{ product.name if product else 'Sản phẩm mỹ phẩm' }} - BuddySkincare{% endblock %}
+
+{% block og_description %}{{ product.description[:200] if product and product.description else 'Sản phẩm mỹ phẩm thanh lý chất lượng cao với giá tốt nhất.' }}{% endblock %}
+
+{% block og_image %}{{ product.image if product and product.image else 'https://buddyskincare.vn/static/image/sukien/banner03.png' }}{% endblock %}
+
+{% block og_image_alt %}{{ product.name if product else 'Sản phẩm mỹ phẩm' }} - BuddySkincare{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -661,7 +675,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Flag to prevent duplicate downloads
+    let isDownloading = false;
+    
     window.downloadCurrentImage = async function(){
+        // Prevent duplicate downloads
+        if (isDownloading) {
+            console.log('Download already in progress, skipping...');
+            return;
+        }
+        
+        isDownloading = true;
+        
         try {
             const img = document.getElementById('mainImage');
             const url = img ? img.src : null;
@@ -674,7 +699,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Always use backend proxy to force download with correct headers
             const productId = (window.productData && (window.productData.id || window.productData.product_id)) || 'product';
             const filename = `${nameFromTitle}-${productId}.jpg`;
-            const proxy = `https://buddyskincare.vn/backend/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+            
+            // Use Django backend endpoint instead of Flask
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            const baseUrl = isLocalhost ? window.location.origin : 'https://buddyskincare.vn';
+            const proxy = `${baseUrl}/backend/api/download-image/?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+            
             const a = document.createElement('a');
             a.href = proxy;
             a.download = filename;
@@ -687,6 +717,11 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch(err){
             const img = document.getElementById('mainImage');
             if (img && img.src) window.open(img.src, '_blank');
+        } finally {
+            // Reset flag after a short delay
+            setTimeout(() => {
+                isDownloading = false;
+            }, 1000);
         }
     }
 

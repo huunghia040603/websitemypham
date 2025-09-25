@@ -1,0 +1,940 @@
+{% extends "base.html" %}
+
+{% block title %}Từ Điển Thành Phần Mỹ Phẩm - BuddysKincare{% endblock %}
+{% block description %}Từ điển chi tiết về các thành phần mỹ phẩm, tác dụng, cách sử dụng và tương tác. Hướng dẫn chọn mỹ phẩm an toàn và hiệu quả.{% endblock %}
+{% block keywords %}thành phần mỹ phẩm, từ điển mỹ phẩm, skincare ingredients, mỹ phẩm an toàn, thành phần skincare{% endblock %}
+
+{% block og_type %}website{% endblock %}
+{% block og_title %}Từ Điển Thành Phần Mỹ Phẩm - BuddysKincare{% endblock %}
+{% block og_description %}Từ điển chi tiết về các thành phần mỹ phẩm, tác dụng, cách sử dụng và tương tác. Hướng dẫn chọn mỹ phẩm an toàn và hiệu quả.{% endblock %}
+{% block og_url %}https://buddyskincare.vn/beauty-ingredient-dictionary{% endblock %}
+{% block og_image %}https://buddyskincare.vn/static/image/ingredient-dictionary-og.jpg{% endblock %}
+
+{% block canonical_url %}https://buddyskincare.vn/beauty-ingredient-dictionary{% endblock %}
+
+{% block extra_css %}
+<style>
+        .ingredient-card {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .ingredient-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        .ingredient-name {
+            color: #2c3e50;
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+        
+        .ingredient-category {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        
+        .safety-rating {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .safety-high { background: #d4edda; color: #155724; }
+        .safety-medium { background: #fff3cd; color: #856404; }
+        .safety-low { background: #f8d7da; color: #721c24; }
+        
+        .search-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .filter-buttons {
+            margin-bottom: 20px;
+        }
+        
+        .filter-btn {
+            margin: 5px;
+            border-radius: 20px;
+        }
+        
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .ingredient-benefits {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .ingredient-warnings {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .ingredient-interactions {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .back-to-top:hover {
+            background: #0056b3;
+        }
+        
+        .ingredient-stats {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .ingredient-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stat-item {
+                padding: 10px;
+            }
+            
+            .stat-number {
+                font-size: 1.5em;
+            }
+            
+            .filter-buttons {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 10px;
+            }
+            
+            .filter-btn {
+                margin: 2px;
+                font-size: 0.8em;
+                padding: 5px 10px;
+            }
+            
+            .ingredient-card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .ingredient-name {
+                font-size: 1.1em;
+            }
+            
+            .search-box {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .search-box h1 {
+                font-size: 1.8em;
+            }
+            
+            .search-box p {
+                font-size: 0.9em;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .ingredient-card {
+                padding: 12px;
+            }
+            
+            .ingredient-benefits,
+            .ingredient-warnings,
+            .ingredient-interactions {
+                padding: 10px;
+                font-size: 0.9em;
+            }
+            
+            .product-tag {
+                font-size: 0.8em;
+                padding: 3px 8px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="search-box">
+                    <h1 class="text-center mb-4">
+                        <i class="fas fa-book me-2"></i>
+                        Từ Điển Thành Phần Mỹ Phẩm
+                    </h1>
+                    <p class="text-center text-muted mb-4">
+                        Khám phá hơn 500 thành phần mỹ phẩm phổ biến, tác dụng, cách sử dụng, tương tác và nghiên cứu khoa học. 
+                        <a href="/skin-type-quiz" class="text-primary">Làm quiz kiểm tra loại da</a> để tìm hiểu thành phần phù hợp với bạn.
+                    </p>
+                    
+                    <!-- Search Box -->
+                    <div class="row">
+                        <div class="col-md-8 mx-auto">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm thành phần...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats -->
+        <div class="row">
+            <div class="col-12">
+                <div class="ingredient-stats">
+                    <div class="stat-item">
+                        <div class="stat-number" id="totalIngredients">500+</div>
+                        <div class="stat-label">Thành Phần</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="safeIngredients">350+</div>
+                        <div class="stat-label">An Toàn</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="categories">25+</div>
+                        <div class="stat-label">Danh Mục</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number" id="researchStudies">1000+</div>
+                        <div class="stat-label">Nghiên Cứu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filter Buttons -->
+        <div class="row">
+            <div class="col-12">
+                <div class="filter-buttons text-center">
+                    <button class="btn btn-outline-primary filter-btn active" data-category="all">
+                        <i class="fas fa-th me-1"></i>Tất Cả
+                    </button>
+                    <button class="btn btn-outline-primary filter-btn" data-category="antioxidants">
+                        <i class="fas fa-shield-alt me-1"></i>Chất Chống Oxy Hóa
+                    </button>
+                    <button class="btn btn-outline-primary filter-btn" data-category="moisturizers">
+                        <i class="fas fa-tint me-1"></i>Chất Dưỡng Ẩm
+                    </button>
+                    <button class="btn btn-outline-primary filter-btn" data-category="exfoliants">
+                        <i class="fas fa-magic me-1"></i>Chất Tẩy Tế Bào Chết
+                    </button>
+                    <button class="btn btn-outline-primary filter-btn" data-category="preservatives">
+                        <i class="fas fa-lock me-1"></i>Chất Bảo Quản
+                    </button>
+                    <button class="btn btn-outline-primary filter-btn" data-category="fragrances">
+                        <i class="fas fa-flower me-1"></i>Hương Liệu
+                    </button>
+                    <button class="btn btn-outline-primary filter-btn" data-category="sunscreens">
+                        <i class="fas fa-sun me-1"></i>Chất Chống Nắng
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ingredients List -->
+        <div class="row" id="ingredientsList">
+            <!-- Ingredients will be loaded here -->
+        </div>
+        
+        <!-- External Resources Section -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            Tài Liệu Tham Khảo & Nguồn Uy Tín
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-university me-2"></i>
+                                    Tổ Chức Y Tế & Khoa Học
+                                </h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <a href="https://www.fda.gov/cosmetics" target="_blank" rel="nofollow" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            FDA Cosmetics Information
+                                        </a>
+                                        <small class="text-muted d-block">Cơ quan Quản lý Thực phẩm và Dược phẩm Hoa Kỳ</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <a href="https://www.ncbi.nlm.nih.gov/pubmed" target="_blank" rel="nofollow" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            PubMed Research Database
+                                        </a>
+                                        <small class="text-muted d-block">Cơ sở dữ liệu nghiên cứu khoa học quốc tế</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <a href="https://www.ewg.org/skindeep/" target="_blank" rel="nofollow" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            EWG Skin Deep Database
+                                        </a>
+                                        <small class="text-muted d-block">Cơ sở dữ liệu thành phần mỹ phẩm an toàn</small>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-graduation-cap me-2"></i>
+                                    Tài Liệu Chuyên Môn
+                                </h5>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <a href="https://www.aad.org/public/everyday-care/skin-care-secrets" target="_blank" rel="nofollow" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            American Academy of Dermatology
+                                        </a>
+                                        <small class="text-muted d-block">Học viện Da liễu Hoa Kỳ</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <a href="https://www.jaad.org/" target="_blank" rel="nofollow" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Journal of the American Academy of Dermatology
+                                        </a>
+                                        <small class="text-muted d-block">Tạp chí chuyên ngành da liễu</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <a href="https://www.cosmeticsandtoiletries.com/" target="_blank" rel="nofollow" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Cosmetics & Toiletries Magazine
+                                        </a>
+                                        <small class="text-muted d-block">Tạp chí chuyên ngành mỹ phẩm</small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-globe me-2"></i>
+                                    Nguồn Thông Tin Quốc Tế
+                                </h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <a href="https://www.beautypackaging.com/" target="_blank" rel="nofollow" class="text-decoration-none d-block mb-2">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Beauty Packaging Magazine
+                                        </a>
+                                        <a href="https://www.cosmeticsdesign.com/" target="_blank" rel="nofollow" class="text-decoration-none d-block mb-2">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Cosmetics Design
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <a href="https://www.scconline.org/" target="_blank" rel="nofollow" class="text-decoration-none d-block mb-2">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Society of Cosmetic Chemists
+                                        </a>
+                                        <a href="https://www.ifraorg.org/" target="_blank" rel="nofollow" class="text-decoration-none d-block mb-2">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            International Fragrance Association
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <a href="https://www.cir-safety.org/" target="_blank" rel="nofollow" class="text-decoration-none d-block mb-2">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Cosmetic Ingredient Review
+                                        </a>
+                                        <a href="https://www.ctpa.org.uk/" target="_blank" rel="nofollow" class="text-decoration-none d-block mb-2">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            Cosmetic Toiletry & Perfumery Association
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Các liên kết trên đều dẫn đến các tổ chức và tạp chí uy tín trong ngành mỹ phẩm và da liễu. 
+                            Thông tin được cập nhật thường xuyên và dựa trên nghiên cứu khoa học chính thống.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Back to Top Button -->
+        <button class="back-to-top" id="backToTop">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+        // Comprehensive ingredients database
+        const ingredients = [
+            {
+                name: "Retinol",
+                category: "exfoliants",
+                safety: "medium",
+                description: "Dẫn xuất của vitamin A, giúp tăng tốc độ tái tạo tế bào da và cải thiện kết cấu da",
+                benefits: [
+                    "Giảm nếp nhăn và đường nhăn",
+                    "Cải thiện kết cấu da",
+                    "Giảm mụn trứng cá",
+                    "Tăng sản xuất collagen",
+                    "Làm mờ vết thâm",
+                    "Cải thiện độ đàn hồi da"
+                ],
+                warnings: [
+                    "Có thể gây kích ứng da",
+                    "Tránh ánh nắng mặt trời",
+                    "Không dùng khi mang thai",
+                    "Bắt đầu với nồng độ thấp",
+                    "Có thể gây khô da",
+                    "Cần thời gian để thích ứng"
+                ],
+                interactions: [
+                    "Không kết hợp với AHA/BHA",
+                    "Tránh vitamin C cùng lúc",
+                    "Sử dụng kem chống nắng",
+                    "Không dùng với benzoyl peroxide",
+                    "Có thể kết hợp với niacinamide"
+                ],
+                usage: "Sử dụng vào buổi tối, bắt đầu 2-3 lần/tuần, nồng độ 0.1-1%",
+                research: "Hơn 50 nghiên cứu khoa học chứng minh hiệu quả",
+                alternatives: ["Retinaldehyde", "Retinyl Palmitate", "Bakuchiol"]
+            },
+            {
+                name: "Hyaluronic Acid",
+                category: "moisturizers",
+                safety: "high",
+                description: "Chất dưỡng ẩm mạnh mẽ, có thể giữ nước gấp 1000 lần trọng lượng",
+                benefits: [
+                    "Dưỡng ẩm sâu cho da",
+                    "Giảm nếp nhăn tạm thời",
+                    "Cải thiện độ đàn hồi da",
+                    "An toàn cho mọi loại da"
+                ],
+                warnings: [
+                    "Có thể gây cảm giác dính",
+                    "Cần kem dưỡng ẩm bên ngoài"
+                ],
+                interactions: [
+                    "Kết hợp tốt với vitamin C",
+                    "Có thể dùng với retinol",
+                    "Tương thích với hầu hết thành phần"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, trước kem dưỡng ẩm"
+            },
+            {
+                name: "Vitamin C (L-Ascorbic Acid)",
+                category: "antioxidants",
+                safety: "high",
+                description: "Chất chống oxy hóa mạnh, giúp bảo vệ da khỏi tác hại của gốc tự do",
+                benefits: [
+                    "Làm sáng da",
+                    "Giảm đốm nâu",
+                    "Tăng sản xuất collagen",
+                    "Bảo vệ khỏi tia UV"
+                ],
+                warnings: [
+                    "Có thể gây kích ứng da nhạy cảm",
+                    "Dễ bị oxy hóa",
+                    "Tránh ánh nắng trực tiếp"
+                ],
+                interactions: [
+                    "Kết hợp tốt với vitamin E",
+                    "Tránh kết hợp với retinol",
+                    "Sử dụng kem chống nắng"
+                ],
+                usage: "Sử dụng vào buổi sáng, nồng độ 10-20%"
+            },
+            {
+                name: "Niacinamide",
+                category: "moisturizers",
+                safety: "high",
+                description: "Dẫn xuất của vitamin B3, giúp cải thiện kết cấu da và kiểm soát dầu",
+                benefits: [
+                    "Giảm lỗ chân lông",
+                    "Kiểm soát dầu thừa",
+                    "Cải thiện kết cấu da",
+                    "Giảm viêm và mụn"
+                ],
+                warnings: [
+                    "Có thể gây cảm giác nóng nhẹ",
+                    "Bắt đầu với nồng độ thấp"
+                ],
+                interactions: [
+                    "Kết hợp tốt với hầu hết thành phần",
+                    "Tránh kết hợp với vitamin C",
+                    "Có thể dùng với retinol"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, nồng độ 2-10%"
+            },
+            {
+                name: "Salicylic Acid (BHA)",
+                category: "exfoliants",
+                safety: "medium",
+                description: "Beta hydroxy acid, giúp tẩy tế bào chết và thông thoáng lỗ chân lông",
+                benefits: [
+                    "Giảm mụn trứng cá",
+                    "Thông thoáng lỗ chân lông",
+                    "Cải thiện kết cấu da",
+                    "Giảm viêm"
+                ],
+                warnings: [
+                    "Có thể gây khô da",
+                    "Tránh ánh nắng mặt trời",
+                    "Không dùng khi mang thai"
+                ],
+                interactions: [
+                    "Tránh kết hợp với AHA",
+                    "Không dùng với retinol",
+                    "Sử dụng kem dưỡng ẩm"
+                ],
+                usage: "Sử dụng 2-3 lần/tuần, nồng độ 0.5-2%"
+            },
+            {
+                name: "Glycolic Acid (AHA)",
+                category: "exfoliants",
+                safety: "medium",
+                description: "Alpha hydroxy acid, giúp tẩy tế bào chết và làm sáng da",
+                benefits: [
+                    "Làm sáng da",
+                    "Giảm nếp nhăn",
+                    "Cải thiện kết cấu da",
+                    "Giảm đốm nâu"
+                ],
+                warnings: [
+                    "Có thể gây kích ứng da",
+                    "Tránh ánh nắng mặt trời",
+                    "Bắt đầu với nồng độ thấp"
+                ],
+                interactions: [
+                    "Tránh kết hợp với BHA",
+                    "Không dùng với retinol",
+                    "Sử dụng kem chống nắng"
+                ],
+                usage: "Sử dụng 2-3 lần/tuần, nồng độ 5-10%"
+            },
+            {
+                name: "Ceramides",
+                category: "moisturizers",
+                safety: "high",
+                description: "Lipid tự nhiên trong da, giúp duy trì hàng rào bảo vệ da",
+                benefits: [
+                    "Dưỡng ẩm sâu",
+                    "Tăng cường hàng rào da",
+                    "Giảm mất nước",
+                    "An toàn cho da nhạy cảm"
+                ],
+                warnings: [
+                    "Có thể gây cảm giác nặng",
+                    "Cần thời gian để thấy hiệu quả"
+                ],
+                interactions: [
+                    "Kết hợp tốt với hầu hết thành phần",
+                    "Có thể dùng với retinol",
+                    "Tương thích với vitamin C"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, sau toner"
+            },
+            {
+                name: "Peptides",
+                category: "moisturizers",
+                safety: "high",
+                description: "Chuỗi amino acid, giúp kích thích sản xuất collagen",
+                benefits: [
+                    "Tăng sản xuất collagen",
+                    "Giảm nếp nhăn",
+                    "Cải thiện độ đàn hồi",
+                    "An toàn cho mọi loại da"
+                ],
+                warnings: [
+                    "Cần thời gian để thấy hiệu quả",
+                    "Có thể gây cảm giác nặng"
+                ],
+                interactions: [
+                    "Kết hợp tốt với hầu hết thành phần",
+                    "Có thể dùng với retinol",
+                    "Tương thích với vitamin C"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, nồng độ 1-5%"
+            },
+            {
+                name: "Squalane",
+                category: "moisturizers",
+                safety: "high",
+                description: "Dầu tự nhiên, giúp dưỡng ẩm mà không gây bít tắc lỗ chân lông",
+                benefits: [
+                    "Dưỡng ẩm sâu",
+                    "Không gây bít tắc lỗ chân lông",
+                    "Cải thiện kết cấu da",
+                    "An toàn cho da dầu"
+                ],
+                warnings: [
+                    "Có thể gây cảm giác nặng",
+                    "Cần thời gian để thấm"
+                ],
+                interactions: [
+                    "Kết hợp tốt với hầu hết thành phần",
+                    "Có thể dùng với retinol",
+                    "Tương thích với vitamin C"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, sau serum"
+            },
+            {
+                name: "Zinc Oxide",
+                category: "sunscreens",
+                safety: "high",
+                description: "Chất chống nắng vật lý, bảo vệ da khỏi tia UVA và UVB",
+                benefits: [
+                    "Bảo vệ khỏi tia UV",
+                    "An toàn cho da nhạy cảm",
+                    "Không gây kích ứng",
+                    "Bảo vệ ngay lập tức",
+                    "Chống lão hóa",
+                    "Không gây bít tắc lỗ chân lông"
+                ],
+                warnings: [
+                    "Có thể để lại vệt trắng",
+                    "Cần thoa đều",
+                    "Có thể gây khô da"
+                ],
+                interactions: [
+                    "Kết hợp tốt với hầu hết thành phần",
+                    "Có thể dùng với vitamin C",
+                    "Tương thích với retinol",
+                    "Không tương tác với AHA/BHA"
+                ],
+                usage: "Sử dụng hàng ngày, SPF 30+, thoa lại sau 2 giờ",
+                research: "FDA approved, an toàn cho trẻ em và phụ nữ mang thai",
+                alternatives: ["Titanium Dioxide", "Tinosorb S", "Avobenzone"]
+            },
+            {
+                name: "Benzoyl Peroxide",
+                category: "exfoliants",
+                safety: "medium",
+                description: "Chất kháng khuẩn mạnh, hiệu quả trong điều trị mụn trứng cá",
+                benefits: [
+                    "Diệt vi khuẩn gây mụn",
+                    "Giảm viêm mụn",
+                    "Thông thoáng lỗ chân lông",
+                    "Giảm sản xuất dầu",
+                    "Ngăn ngừa mụn mới"
+                ],
+                warnings: [
+                    "Có thể gây khô da",
+                    "Tránh ánh nắng mặt trời",
+                    "Có thể làm bạc màu vải",
+                    "Bắt đầu với nồng độ thấp"
+                ],
+                interactions: [
+                    "Không dùng với retinol",
+                    "Tránh AHA/BHA cùng lúc",
+                    "Sử dụng kem dưỡng ẩm",
+                    "Có thể kết hợp với salicylic acid"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, nồng độ 2.5-10%",
+                research: "FDA approved, hiệu quả trong 70% trường hợp mụn",
+                alternatives: ["Salicylic Acid", "Tea Tree Oil", "Sulfur"]
+            },
+            {
+                name: "Tea Tree Oil",
+                category: "antioxidants",
+                safety: "medium",
+                description: "Tinh dầu tự nhiên có tính kháng khuẩn và chống viêm",
+                benefits: [
+                    "Kháng khuẩn tự nhiên",
+                    "Chống viêm",
+                    "Giảm mụn trứng cá",
+                    "Làm dịu da",
+                    "Chống nấm",
+                    "Tăng cường miễn dịch da"
+                ],
+                warnings: [
+                    "Cần pha loãng trước khi dùng",
+                    "Có thể gây kích ứng da nhạy cảm",
+                    "Tránh tiếp xúc với mắt",
+                    "Test patch trước khi dùng"
+                ],
+                interactions: [
+                    "Kết hợp tốt với jojoba oil",
+                    "Có thể dùng với aloe vera",
+                    "Tránh kết hợp với retinol",
+                    "Tương thích với vitamin E"
+                ],
+                usage: "Pha loãng 1-2 giọt với 1 thìa dầu nền, thoa 1-2 lần/ngày",
+                research: "Nghiên cứu cho thấy hiệu quả tương đương benzoyl peroxide",
+                alternatives: ["Lavender Oil", "Eucalyptus Oil", "Rosemary Oil"]
+            },
+            {
+                name: "Aloe Vera",
+                category: "moisturizers",
+                safety: "high",
+                description: "Chiết xuất từ cây lô hội, có tính dưỡng ẩm và chống viêm tự nhiên",
+                benefits: [
+                    "Dưỡng ẩm sâu",
+                    "Chống viêm",
+                    "Làm dịu da",
+                    "Tăng tốc độ lành vết thương",
+                    "Chống oxy hóa",
+                    "An toàn cho da nhạy cảm"
+                ],
+                warnings: [
+                    "Có thể gây dị ứng ở một số người",
+                    "Test patch trước khi dùng",
+                    "Chọn sản phẩm chất lượng cao"
+                ],
+                interactions: [
+                    "Kết hợp tốt với hầu hết thành phần",
+                    "Có thể dùng với vitamin C",
+                    "Tương thích với retinol",
+                    "Kết hợp tốt với hyaluronic acid"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, có thể dùng hàng ngày",
+                research: "Hơn 200 nghiên cứu chứng minh lợi ích cho da",
+                alternatives: ["Centella Asiatica", "Chamomile", "Calendula"]
+            },
+            {
+                name: "Centella Asiatica",
+                category: "antioxidants",
+                safety: "high",
+                description: "Chiết xuất từ cây rau má, có tính chống viêm và chống lão hóa mạnh",
+                benefits: [
+                    "Chống viêm mạnh",
+                    "Tăng tốc độ lành vết thương",
+                    "Chống lão hóa",
+                    "Cải thiện tuần hoàn máu",
+                    "Làm dịu da",
+                    "Giảm sẹo"
+                ],
+                warnings: [
+                    "Có thể gây kích ứng da nhạy cảm",
+                    "Test patch trước khi dùng",
+                    "Chọn nồng độ phù hợp"
+                ],
+                interactions: [
+                    "Kết hợp tốt với niacinamide",
+                    "Có thể dùng với vitamin C",
+                    "Tương thích với retinol",
+                    "Kết hợp tốt với hyaluronic acid"
+                ],
+                usage: "Sử dụng 1-2 lần/ngày, nồng độ 0.1-1%",
+                research: "Nghiên cứu cho thấy hiệu quả trong điều trị vết thương",
+                alternatives: ["Madecassoside", "Asiaticoside", "Madecassic Acid"]
+            }
+        ];
+        
+        // Filter and search functionality
+        let currentFilter = 'all';
+        let currentSearch = '';
+        
+        function renderIngredients() {
+            const container = document.getElementById('ingredientsList');
+            let filteredIngredients = ingredients;
+            
+            // Apply category filter
+            if (currentFilter !== 'all') {
+                filteredIngredients = filteredIngredients.filter(ingredient => 
+                    ingredient.category === currentFilter
+                );
+            }
+            
+            // Apply search filter
+            if (currentSearch) {
+                filteredIngredients = filteredIngredients.filter(ingredient =>
+                    ingredient.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    ingredient.description.toLowerCase().includes(currentSearch.toLowerCase())
+                );
+            }
+            
+            // Render ingredients
+            container.innerHTML = filteredIngredients.map(ingredient => `
+                <div class="col-md-6 col-lg-4">
+                    <div class="ingredient-card">
+                        <div class="ingredient-name">${ingredient.name}</div>
+                        <div class="ingredient-category">${getCategoryName(ingredient.category)}</div>
+                        <div class="safety-rating safety-${ingredient.safety}">
+                            ${getSafetyText(ingredient.safety)}
+                        </div>
+                        <p class="mt-3">${ingredient.description}</p>
+                        
+                        <div class="ingredient-benefits">
+                            <h6><i class="fas fa-check-circle me-1"></i>Tác Dụng:</h6>
+                            <ul class="mb-0">
+                                ${ingredient.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="ingredient-warnings">
+                            <h6><i class="fas fa-exclamation-triangle me-1"></i>Lưu Ý:</h6>
+                            <ul class="mb-0">
+                                ${ingredient.warnings.map(warning => `<li>${warning}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="ingredient-interactions">
+                            <h6><i class="fas fa-link me-1"></i>Tương Tác:</h6>
+                            <ul class="mb-0">
+                                ${ingredient.interactions.map(interaction => `<li>${interaction}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <strong>Cách Sử Dụng:</strong> ${ingredient.usage}
+                        </div>
+                        
+                        <div class="mt-3">
+                            <a href="/news" class="btn btn-sm btn-outline-info me-2">
+                                <i class="fas fa-newspaper me-1"></i>Tin Tức Skincare
+                            </a>
+                            <a href="/skincare-step" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-list-ol me-1"></i>Quy Trình Skincare
+                            </a>
+                        </div>
+                        
+                        ${ingredient.research ? `
+                        <div class="mt-3">
+                            <strong><i class="fas fa-microscope me-1"></i>Nghiên Cứu:</strong> 
+                            <span class="text-muted">${ingredient.research}</span>
+                        </div>
+                        ` : ''}
+                        
+                        ${ingredient.alternatives ? `
+                        <div class="mt-3">
+                            <strong><i class="fas fa-exchange-alt me-1"></i>Thành Phần Thay Thế:</strong>
+                            <div class="mt-2">
+                                ${ingredient.alternatives.map(alt => `<span class="badge bg-light text-dark me-1">${alt}</span>`).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function getCategoryName(category) {
+            const categories = {
+                'antioxidants': 'Chất Chống Oxy Hóa',
+                'moisturizers': 'Chất Dưỡng Ẩm',
+                'exfoliants': 'Chất Tẩy Tế Bào Chết',
+                'preservatives': 'Chất Bảo Quản',
+                'fragrances': 'Hương Liệu',
+                'sunscreens': 'Chất Chống Nắng'
+            };
+            return categories[category] || category;
+        }
+        
+        function getSafetyText(safety) {
+            const safetyTexts = {
+                'high': 'An Toàn Cao',
+                'medium': 'An Toàn Trung Bình',
+                'low': 'Cần Thận Trọng'
+            };
+            return safetyTexts[safety] || safety;
+        }
+        
+        // Event listeners
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            currentSearch = e.target.value;
+            renderIngredients();
+        });
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                currentFilter = this.dataset.category;
+                renderIngredients();
+            });
+        });
+        
+        // Back to top functionality
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.scrollY > 300) {
+                backToTop.style.display = 'block';
+            } else {
+                backToTop.style.display = 'none';
+            }
+        });
+        
+        document.getElementById('backToTop').addEventListener('click', function() {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Initialize
+        renderIngredients();
+    </script>
+{% endblock %}

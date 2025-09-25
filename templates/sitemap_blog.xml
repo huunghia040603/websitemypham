@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Trang blog chính -->
+    <url>
+        <loc>https://buddyskincare.vn/news</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.8</priority>
+    </url>
+    
+    <!-- Các bài viết blog phổ biến về chăm sóc da -->
+    <url>
+        <loc>https://buddyskincare.vn/blog/skincare-routine</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/blog/anti-aging-tips</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/blog/sunscreen-guide</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/blog/vitamin-c-benefits</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/blog/cleansing-routine</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <url>
+        <loc>https://buddyskincare.vn/blog/moisturizing-tips</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    
+    <!-- Hướng dẫn sử dụng sản phẩm -->
+    <url>
+        <loc>https://buddyskincare.vn/blog/product-guides</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Đánh giá sản phẩm -->
+    <url>
+        <loc>https://buddyskincare.vn/blog/product-reviews</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+    <!-- Tin tức ngành mỹ phẩm -->
+    <url>
+        <loc>https://buddyskincare.vn/blog/beauty-news</loc>
+        <lastmod>{{ current_date }}</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.6</priority>
+    </url>
+    
+</urlset>

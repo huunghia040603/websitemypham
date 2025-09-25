@@ -95,95 +95,7 @@ class CollaboratorSerializer(serializers.ModelSerializer):
         model = Collaborator
         fields = ('id', 'name', 'email', 'phone_number', 'sales_code', 'points', 'level')
 
-# class PhoneNumberLoginSerializer(serializers.Serializer):
-#     """
-#     Serializer to handle login with phone number and password,
-#     and return user info and JWT tokens.
-#     """
-#     phone_number = serializers.CharField(max_length=15)
-#     password = serializers.CharField(write_only=True)
-#     user_info = serializers.SerializerMethodField()
 
-#     def validate(self, data):
-#         phone_number = data.get('phone_number')
-#         password = data.get('password')
-
-#         if not phone_number or not password:
-#             raise serializers.ValidationError('Vui lòng cung cấp cả số điện thoại và mật khẩu.')
-
-#         user = authenticate(request=self.context.get('request'),
-#                             phone_number=phone_number, password=password)
-
-#         if not user:
-#             raise serializers.ValidationError('Số điện thoại hoặc mật khẩu không đúng.')
-
-#         if not user.is_active:
-#             raise serializers.ValidationError('Tài khoản đã bị vô hiệu hóa.')
-
-#         self.user = user  # Lưu người dùng vào self để sử dụng trong get_user_info
-#         return data
-
-#     def get_user_info(self, data):
-#         if self.user:
-#             return UserSerializer(self.user).data
-#         return None
-
-#     def to_representation(self, instance):
-#         representation = super().to_representation(instance)
-
-#         # Lấy người dùng từ validated data
-#         user = self.user
-
-#         # Lấy JWT tokens
-#         refresh = RefreshToken.for_user(user)
-#         representation['access_token'] = str(refresh.access_token)
-#         representation['refresh_token'] = str(refresh)
-
-#         # Trả về thông tin người dùng chi tiết
-#         representation['user'] = UserSerializer(user).data
-
-#         return representation
-
-# class PhoneNumberLoginSerializer(serializers.Serializer):
-#     phone_number = serializers.CharField(max_length=15)
-#     password = serializers.CharField(write_only=True)
-
-#     def validate(self, data):
-#         phone_number = data.get('phone_number')
-#         password = data.get('password')
-
-#         if not phone_number or not password:
-#             raise serializers.ValidationError(_('Vui lòng cung cấp cả số điện thoại và mật khẩu.'))
-
-#         # Gọi authenticate và chỉ định backend
-#         user = authenticate(request=self.context.get('request'),
-#                             phone_number=phone_number,
-#                             password=password,
-#                             backend=PhoneNumberAuthenticationBackend) # <-- Thêm dòng này
-
-#         if user is None:
-#             raise serializers.ValidationError(_('Số điện thoại hoặc mật khẩu không đúng.'))
-
-#         if not user.is_active:
-#             raise serializers.ValidationError(_('Tài khoản đã bị vô hiệu hóa.'))
-
-#         self.instance = user
-#         return data
-
-#     def to_representation(self, instance):
-#         # instance ở đây chính là user đã được xác thực
-#         representation = super().to_representation(instance)
-
-#         # Lấy JWT tokens
-#         refresh = RefreshToken.for_user(instance)
-#         representation['access_token'] = str(refresh.access_token)
-#         representation['refresh_token'] = str(refresh)
-
-#         # Thêm thông tin người dùng
-#         # Chắc chắn rằng UserSerializer đã được import
-#         representation['user'] = UserSerializer(instance).data
-
-#         return representation
 
 
 
@@ -274,7 +186,8 @@ class GoogleSocialAuthSerializer(serializers.Serializer):
             print(f"Lỗi khi xử lý người dùng Google: {e}")
             raise serializers.ValidationError(f"Lỗi khi xử lý dữ liệu người dùng: {str(e)}")
 
-        return user
+        # Sửa lỗi: Trả về một dictionary với key 'user'
+        return {'user': user}
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -434,7 +347,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'all_images', 'image_count', 'brand', 'brand_name', 'category', 'category_name',
             'tags', 'tags_write', 'gifts', 'stock_quantity', 'sold_quantity', 'rating',
             'savings_price', 'import_price', 'original_price', 'discount_rate',
-            'discounted_price', 'status', 'is_visible'
+            'discounted_price', 'status'
         )
         read_only_fields = ('savings_price', 'discount_rate')
 
@@ -532,7 +445,8 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
 
         # Calculate total revenue for this specific period
         for o in orders:
-            total_revenue += (o.total_amount or Decimal('0.00'))
+            order_amount = o.total_amount or Decimal('0.00')
+            total_revenue += order_amount
 
             # items for top lists
             for item in getattr(o, 'items').all():
@@ -558,20 +472,30 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             })
 
         # Check if revenue values seem too small (likely in thousands instead of VND)
-        # If average revenue per order is less than 1000, assume it's in thousands
+        # If most orders have revenue < 1000, assume they're in thousands and scale all
         needs_scaling = False
         if orders.exists():
-            avg_revenue = total_revenue / orders.count()
-            if avg_revenue < 1000:
+            # Count orders with revenue < 1000
+            small_revenue_count = 0
+            for o in orders:
+                if (o.total_amount or 0) < 1000:
+                    small_revenue_count += 1
+            
+            # If more than 50% of orders have revenue < 1000, scale all orders
+            if small_revenue_count > orders.count() * 0.5:
                 needs_scaling = True
                 # Scale up revenue and series by 1000
                 total_revenue = total_revenue * 1000
                 series = [s * 1000 for s in series]
+                
+                # Also scale up top_revenue that was calculated from individual items
+                for name in top_revenue:
+                    top_revenue[name] = top_revenue[name] * 1000
+            
+            # Debug: Log scaling decision
+            print(f"🔍 Scaling decision: {small_revenue_count}/{orders.count()} orders < 1000, needs_scaling = {needs_scaling}")
 
-        # Scale up top_revenue if needed
-        if needs_scaling:
-            for name in top_revenue:
-                top_revenue[name] = top_revenue[name] * 1000
+        # top_revenue scaling is now handled above
 
         # Compute import cost and shipping fee totals
         import_total = Decimal('0.00')
@@ -585,7 +509,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             # shipping fee may be None
             ship = Decimal(str(o.shipping_fee or 0))
             # Check if shipping fee seems too small (likely in thousands instead of VND)
-            if ship > 0 and ship < 1000:
+            if needs_scaling and ship > 0:
                 ship = ship * 1000
             shipping_total += ship
             shipping_by_order[str(o.id)] = float(ship)
@@ -594,15 +518,15 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 disc = Decimal(str(o.discount_applied or 0))
             except Exception:
                 disc = Decimal('0.00')
-            if needs_scaling and disc > 0 and disc < 1000:
+            if needs_scaling and disc > 0:
                 disc = disc * 1000
             voucher_discount_total += disc
             # sum import costs for each item
             for item in getattr(o, 'items').all():
                 # Check if import_price needs scaling (likely in thousands instead of VND)
                 unit_import = getattr(item.product, 'import_price', 0) or 0
-                if unit_import > 0 and unit_import < 1000:
-                    # Scale up if seems too small
+                if needs_scaling and unit_import > 0:
+                    # Scale up if needs scaling
                     unit_import_vnd = Decimal(str(unit_import)) * Decimal('1000')
                 else:
                     unit_import_vnd = Decimal(str(unit_import))
@@ -632,8 +556,8 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         # Ensure top_revenue is properly scaled
         tr_list = []
         for name, revenue in top_revenue.items():
-            # If revenue seems too small (< 1000), scale it up
-            if revenue < 1000:
+            # Scale if needed
+            if needs_scaling:
                 revenue = revenue * 1000
             tr_list.append({'name': name, 'revenue': float(revenue)})
 
@@ -651,7 +575,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
             phone = o.phone_number or 'N/A'
             order_revenue = float(o.total_amount or 0)
 
-            if needs_scaling and order_revenue < 1000:
+            if needs_scaling:
                 order_revenue = order_revenue * 1000
 
             customer_revenue[customer_name] = customer_revenue.get(customer_name, 0) + order_revenue
@@ -700,7 +624,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
         for o in orders:
             region = o.province or 'Không xác định'
             order_revenue = float(o.total_amount or 0)
-            if needs_scaling and order_revenue < 1000:
+            if needs_scaling:
                 order_revenue = order_revenue * 1000
             region_revenue[region] = region_revenue.get(region, 0) + order_revenue
 
@@ -718,7 +642,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 qty = float(item.quantity or 0)
                 price = float(item.price_at_purchase or 0)
 
-                if needs_scaling and price < 1000:
+                if needs_scaling:
                     price = price * 1000
 
                 revenue = price * qty
@@ -744,7 +668,7 @@ class ComputeAnalyticsSerializer(serializers.Serializer):
                 qty = float(item.quantity or 0)
                 price = float(item.price_at_purchase or 0)
 
-                if needs_scaling and price < 1000:
+                if needs_scaling:
                     price = price * 1000
 
                 revenue = price * qty
@@ -860,28 +784,53 @@ class OrderSerializer(serializers.ModelSerializer):
             quantity = item_data['quantity']
             if product.stock_quantity < quantity:
                 raise serializers.ValidationError({"detail": f"Sản phẩm {product.name} chỉ còn {product.stock_quantity} sản phẩm trong kho."})
-            order_total += product.discounted_price * quantity
+            order_total += Decimal(str(product.discounted_price)) * quantity
 
         discount_amount = Decimal('0.00')
         voucher = None
+        ctv = None
         if voucher_code:
+            # First check if it's a CTV code
             try:
-                voucher = Voucher.objects.get(
-                    code=voucher_code,
-                    is_active=True,
-                    valid_from__lte=timezone.now(),
-                    valid_to__gte=timezone.now(),
-                    max_uses__gt=F('times_used')
-                )
-            except Voucher.DoesNotExist:
-                raise serializers.ValidationError({"voucher_code": "Mã voucher không hợp lệ hoặc đã hết hạn."})
-
-            if voucher.min_order_amount > order_total:
-                raise serializers.ValidationError({"voucher_code": f"Đơn hàng phải có giá trị tối thiểu là {voucher.min_order_amount} để sử dụng voucher này."})
-
-            discount_amount = voucher.get_discount_amount(order_total)
-            if voucher.discount_type == "percentage" and voucher.max_order_amount > 0 and discount_amount > voucher.max_order_amount:
-                discount_amount = voucher.max_order_amount
+                ctv = CTV.objects.get(code=voucher_code.upper())
+                # CTV code exists, now check if it also has a voucher
+                try:
+                    voucher = Voucher.objects.get(
+                        code=voucher_code,
+                        is_active=True,
+                        valid_from__lte=timezone.now(),
+                        valid_to__gte=timezone.now(),
+                        max_uses__gt=F('times_used')
+                    )
+                    # CTV code exists as voucher - apply discount
+                    if Decimal(str(voucher.min_order_amount)) > order_total:
+                        raise serializers.ValidationError({"voucher_code": f"Đơn hàng phải có giá trị tối thiểu là {voucher.min_order_amount} để sử dụng voucher này."})
+                    
+                    discount_amount = voucher.get_discount_amount(order_total)
+                    if voucher.discount_type == "percentage" and voucher.max_order_amount > 0 and discount_amount > Decimal(str(voucher.max_order_amount)):
+                        discount_amount = Decimal(str(voucher.max_order_amount))
+                except Voucher.DoesNotExist:
+                    # CTV code exists but no voucher - allow order without discount
+                    voucher = None
+                    discount_amount = Decimal('0.00')
+            except CTV.DoesNotExist:
+                # Not a CTV code, check if it's a regular voucher
+                try:
+                    voucher = Voucher.objects.get(
+                        code=voucher_code,
+                        is_active=True,
+                        valid_from__lte=timezone.now(),
+                        valid_to__gte=timezone.now(),
+                        max_uses__gt=F('times_used')
+                    )
+                    if Decimal(str(voucher.min_order_amount)) > order_total:
+                        raise serializers.ValidationError({"voucher_code": f"Đơn hàng phải có giá trị tối thiểu là {voucher.min_order_amount} để sử dụng voucher này."})
+                    
+                    discount_amount = voucher.get_discount_amount(order_total)
+                    if voucher.discount_type == "percentage" and voucher.max_order_amount > 0 and discount_amount > Decimal(str(voucher.max_order_amount)):
+                        discount_amount = Decimal(str(voucher.max_order_amount))
+                except Voucher.DoesNotExist:
+                    raise serializers.ValidationError({"voucher_code": "Mã voucher không hợp lệ hoặc đã hết hạn."})
 
         # Lấy phí ship từ request data
         shipping_fee = validated_data.get('shipping_fee', Decimal('0'))
@@ -891,11 +840,17 @@ class OrderSerializer(serializers.ModelSerializer):
         validated_data['total_amount'] = order_total - discount_amount + shipping_fee
         validated_data['shipping_fee'] = shipping_fee
         validated_data['discount_applied'] = discount_amount
+        
+        # Lưu voucher nếu có
         if voucher:
             validated_data['voucher'] = voucher
-            # Tự động map mã voucher vào collaborator_code nếu chưa có
-            if not validated_data.get('collaborator_code'):
-                validated_data['collaborator_code'] = voucher.code
+        
+        # Lưu mã CTV nếu có (dù có voucher hay không)
+        if ctv:
+            validated_data['collaborator_code'] = ctv.code
+        elif voucher and not validated_data.get('collaborator_code'):
+            # Nếu chỉ có voucher (không phải CTV) thì lưu mã voucher
+            validated_data['collaborator_code'] = voucher.code
 
         order = Order.objects.create(**validated_data)
 
@@ -927,6 +882,18 @@ class OrderSerializer(serializers.ModelSerializer):
                 price_at_purchase=price_at_purchase
             )
 
+        # Immediately deduct stock and increment sold quantity upon order placement
+        # This ensures inventory is reserved at checkout time instead of admin confirmation
+        for item in order.items.all():
+            product = item.product
+            qty = item.quantity
+            # Double-check stock before deducting to avoid negative inventory in race conditions
+            if product.stock_quantity < qty:
+                raise serializers.ValidationError({"detail": f"Sản phẩm {product.name} không đủ tồn kho để tạo đơn. Còn {product.stock_quantity} sản phẩm."})
+            product.stock_quantity = F('stock_quantity') - qty
+            product.sold_quantity = F('sold_quantity') + qty
+            product.save(update_fields=['stock_quantity', 'sold_quantity'])
+
         if voucher:
             voucher.times_used = F('times_used') + 1
             voucher.save(update_fields=['times_used'])
@@ -951,16 +918,6 @@ class OrderSerializer(serializers.ModelSerializer):
             if status is None:
                 validated_data['status'] = 'processing'
 
-            # Lặp qua các sản phẩm trong đơn hàng
-            for item in instance.items.all():
-                product = item.product
-                quantity = item.quantity
-
-                # Cập nhật số lượng tồn kho và đã bán
-                product.stock_quantity = F('stock_quantity') - quantity
-                product.sold_quantity = F('sold_quantity') + quantity
-                product.save(update_fields=['stock_quantity', 'sold_quantity'])
-
         # Kiểm tra nếu đơn hàng bị hủy
         elif status == 'cancelled' and instance.status != 'cancelled':
             # Đảm bảo is_confirmed vẫn là True khi hủy đơn hàng
@@ -981,11 +938,20 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 
+class OrderNotificationSerializer(serializers.Serializer):
+    """
+    Serializer để xác thực dữ liệu đầu vào cho việc gửi email thông báo.
+    """
+    order_id = serializers.IntegerField(
+        required=True,
+        help_text="ID của đơn hàng cần gửi thông báo."
+    )
+
 
 class CartItemSerializer(serializers.ModelSerializer):
     product = ProductSerializer(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.filter(is_visible=True), write_only=True, source='product'
+        queryset=Product.objects.all(), write_only=True, source='product'
     )
 
     class Meta:

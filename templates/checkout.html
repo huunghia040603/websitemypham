@@ -25,27 +25,211 @@
         cursor: pointer !important;
         padding: 0 !important;
     }
-    
+
     .voucher-close-btn:hover {
         background: #dc3545 !important;
         color: white !important;
         /* transform: scale(1.1) !important; */
         box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3) !important;
     }
-    
+
     /* Hide Bootstrap's default close button */
     .btn-close::before,
     .btn-close::after {
         display: none !important;
     }
-    
+
     /* Improve voucher alert styling */
     .alert-success {
         border-left: 4px solid #198754 !important;
         background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%) !important;
         padding: 12px !important;
     }
-    
+
+    /* Mobile fixed checkout button */
+    .mobile-checkout-btn {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: white;
+        border-top: 1px solid #e9ecef;
+        padding: 15px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        display: none; /* Hidden by default, shown on mobile */
+    }
+
+    .mobile-checkout-btn .btn {
+        height: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        transform: none !important;
+    }
+
+    .mobile-checkout-btn .btn:hover:not(.loading) {
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+    }
+
+    .mobile-checkout-btn .btn:active:not(.loading) {
+        transform: translateY(0) !important;
+    }
+
+    /* Ensure loading state overrides hover effects */
+    .mobile-checkout-btn .btn.loading:hover {
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .mobile-checkout-btn .btn.loading {
+        pointer-events: none;
+        opacity: 0.8;
+        position: relative;
+    }
+
+    .mobile-checkout-btn .btn.btn-success {
+        background-color: #198754 !important;
+        border-color: #198754 !important;
+        pointer-events: none;
+        animation: successPulse 0.6s ease-in-out;
+    }
+
+    @keyframes successPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    /* Validation error styling */
+    .form-control.validation-error {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
+    /* Disable button when validation fails */
+    .btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Disabled button styling */
+    .btn.btn-secondary:disabled {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        color: #fff !important;
+    }
+
+    /* Mobile button disabled state */
+    .mobile-checkout-btn .btn:disabled {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        color: #fff !important;
+        opacity: 0.6;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    /* Button transition for smooth state changes - but not for mobile checkout button */
+    .btn:not(.mobile-checkout-btn .btn) {
+        transition: all 0.3s ease;
+    }
+
+    .mobile-checkout-btn .btn.loading .fa-spinner {
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }
+
+    /* Ensure the button itself doesn't rotate during loading */
+    .mobile-checkout-btn .btn.loading {
+        transform: none !important;
+        animation: none !important;
+    }
+
+    /* Only allow hover effects when not loading */
+    .mobile-checkout-btn .btn:not(.loading) {
+        transform: none;
+    }
+
+    /* Prevent any rotation on the button container */
+    .mobile-checkout-btn .btn {
+        transform: none !important;
+    }
+
+    /* Only allow spinner to rotate, not the button */
+    .mobile-checkout-btn .btn.loading * {
+        transform: none !important;
+    }
+
+    .mobile-checkout-btn .btn.loading .fa-spinner {
+        transform: none !important;
+        animation: spin 1s linear infinite !important;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .mobile-checkout-summary {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .mobile-checkout-total {
+        font-size: 18px;
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    /* Show mobile button only on mobile devices */
+    @media (max-width: 768px) {
+        .mobile-checkout-btn {
+            display: block;
+        }
+        
+        /* Add bottom padding to main content to prevent content from being hidden behind fixed button */
+        .container-fluid {
+            padding-bottom: 120px;
+        }
+        
+        /* Hide the original checkout button on mobile to avoid duplication */
+        .card .btn#place-order-btn {
+            display: none;
+        }
+        
+        /* Ensure the mobile button is always visible */
+        .mobile-checkout-btn {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 1050 !important;
+        }
+    }
+
+    /* Desktop: hide mobile button */
+    @media (min-width: 769px) {
+        .mobile-checkout-btn {
+            display: none !important;
+        }
+    }
+
     /* Bank transfer instructions styling */
     .bank-transfer-note {
         background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
@@ -54,12 +238,12 @@
         padding: 12px !important;
         margin-top: 8px !important;
     }
-    
+
     .bank-transfer-note .text-warning {
         color: #5d4000 !important;
         font-weight: 500 !important;
     }
-    
+
     /* Suggested products styling */
     .suggested-products-title {
         background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
@@ -67,259 +251,188 @@
         -webkit-text-fill-color: transparent !important;
         background-clip: text !important;
     }
-    
+
     .suggested-product-card {
         transition: all 0.3s ease !important;
         border: 1px solid #e9ecef !important;
-        min-height: 150px !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
     }
-    
+
     .suggested-product-card:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
         border-color: #ff6b6b !important;
     }
-    
-    .flash-sale-badge {
-        background: linear-gradient(45deg, #ff6b6b, #ee5a24) !important;
-        color: white !important;
-        font-weight: bold !important;
-        font-size: 8px !important;
-        padding: 2px 5px !important;
-        border-radius: 8px !important;
-        position: absolute !important;
-        top: 4px !important;
-        left: 4px !important;
-        z-index: 5 !important;
-    }
-    
-    /* Responsive adjustments for tablet (3-4 products per row) */
-    @media (max-width: 991px) {
-        .suggested-product-card {
-            min-height: 180px !important;
-            height: 180px !important;
-            max-height: 180px !important;
-        }
-        
-        .suggested-product-card .card-title {
-            font-size: 10px !important;
-            height: 12px !important;
-            line-height: 12px !important;
-        }
-        
-        .suggested-product-card img {
-            height: 100px !important;
-        }
-        
-        /* Only affect the main product image, not the logo */
-        .suggested-product-card .suggested-product-image {
-            height: 100px !important;
-        }
-        
-        .suggested-product-card .card-body {
-            padding: 8px !important;
-        }
-    }
-    
-    /* Responsive adjustments for small mobile (2 products per row) */
+
+    /* Mobile responsive: 2 products per row */
     @media (max-width: 767px) {
         .suggested-product-card {
-            min-height: 160px !important;
-            height: 160px !important;
-            max-height: 160px !important;
+            height: 180px !important;
+            min-height: 180px !important;
+            max-height: 180px !important;
         }
-        
+
         .suggested-product-card .card-title {
             font-size: 9px !important;
-            height: 11px !important;
-            line-height: 11px !important;
+            line-height: 1.2 !important;
+            margin-bottom: 4px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
         }
-        
-        .suggested-product-card .flash-sale-badge {
-            font-size: 8px !important;
-            padding: 2px 5px !important;
-        }
-        
+
         .suggested-product-card img {
-            height: 140px !important;
+            height: 100px !important;
+            object-fit: cover !important;
         }
-        
+
         .suggested-product-card .card-body {
             padding: 6px !important;
         }
-        .product-logo img{
-            height: 24px !important;
+
+        .suggested-product-card .btn {
+            font-size: 8px !important;
+            padding: 2px 4px !important;
         }
-        
+
+        .suggested-product-card .text-muted {
+            font-size: 7px !important;
+        }
+
+        .suggested-product-card .text-danger {
+            font-size: 9px !important;
+            font-weight: bold !important;
+        }
+
+        .suggested-product-card .text-decoration-line-through {
+            font-size: 8px !important;
+        }
+
+        .product-logo img{
+            height: 20px !important;
+        }
+
         /* Ensure 2 columns on mobile */
         #checkout-suggested-products .col-6 {
             flex: 0 0 50% !important;
             max-width: 50% !important;
         }
     }
-    
-    /* Empty product slot styling */
-    .empty-product-slot {
-        background: #f8f9fa !important;
-        border: 1px dashed #dee2e6 !important;
-    }
-    
-    .empty-product-slot:hover {
-        transform: none !important;
-        box-shadow: none !important;
-        border-color: #dee2e6 !important;
-    }
-    
-    .empty-image-placeholder {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-        border: 1px dashed #dee2e6 !important;
-    }
-    
-    .empty-text-placeholder {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%) !important;
-        border: 1px dashed #dee2e6 !important;
-    }
-    
-    /* Fixed dimensions for all suggested product cards */
-    .suggested-product-card {
-        width: 100% !important;
-        height: 230px !important;
-        min-height: 230px !important;
-        max-height: 230px !important;
-    }
-    
-    /* Ensure equal column widths */
-    #checkout-suggested-products .col-6.col-lg {
-        flex: 1 1 0 !important;
-        min-width: 0 !important;
-        max-width: 20% !important;
-    }
-    
-    /* Grid container styling */
-    #checkout-suggested-products .row {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        margin: 0 !important;
-    }
-    
-    #checkout-suggested-products .col-6.col-lg {
-        flex: 1 1 0 !important;
-        padding: 0 4px !important;
-        margin: 0 !important;
-    }
-    
-    /* Mobile responsive: 2 products per row */
-    @media (max-width: 767px) {
-        #checkout-suggested-products .col-6.col-lg {
-            flex: 0 0 50% !important;
-            max-width: 50% !important;
-        }
-        
-        #checkout-suggested-products .row {
-            flex-wrap: wrap !important;
-        }
-        
-        /* Adjust card sizing for mobile */
-        .suggested-product-card {
-            height: 210px !important;
-            min-height: 210px !important;
-            max-height: 210px !important;
-            margin-bottom: 10px !important;
-        }
-        
-        /* Only affect the main product image, not the logo */
-        .suggested-product-card .suggested-product-image {
-            height: 140px ;
-        }
-        
-        .suggested-product-card .card-body {
-            padding: 6px !important;
-        }
-        
-        .suggested-product-card .card-title {
-            font-size: 8px !important;
-            height: 10px !important;
-            line-height: 10px !important;
-        }
-        
-        .suggested-product-card .flash-sale-badge {
-            font-size: 7px !important;
-            padding: 1px 4px !important;
-        }
-    }
-    
-    /* Tablet responsive: 3-4 products per row */
+
+    /* Tablet responsive: 3 products per row */
     @media (min-width: 768px) and (max-width: 991px) {
-        #checkout-suggested-products .col-6.col-lg {
-            flex: 0 0 33.333% !important;
-            max-width: 33.333% !important;
-        }
-        
-        #checkout-suggested-products .row {
-            flex-wrap: wrap !important;
-        }
-        
-        /* Adjust card sizing for tablet */
         .suggested-product-card {
-            height: 210px !important;
-            min-height: 210px !important;
-            max-height: 210px !important;
+            height: 200px !important;
+            min-height: 200px !important;
+            max-height: 200px !important;
         }
-        
+
+        .suggested-product-card .card-title {
+            font-size: 10px !important;
+            line-height: 1.2 !important;
+            margin-bottom: 4px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+
         .suggested-product-card img {
-            height: 140px ;
+            height: 120px !important;
+            object-fit: cover !important;
         }
-        
-        /* Only affect the main product image, not the logo */
-        .suggested-product-card .suggested-product-image {
-            height: 140px ;
-        }
-        
+
         .suggested-product-card .card-body {
             padding: 8px !important;
         }
-        
-        .suggested-product-card .card-title {
+
+        .suggested-product-card .btn {
             font-size: 9px !important;
-            height: 11px !important;
-            line-height: 11px !important;
-        }
-        
-        .suggested-product-card .flash-sale-badge {
-            font-size: 8px !important;
             padding: 2px 6px !important;
         }
+
+        .suggested-product-card .text-muted {
+            font-size: 8px !important;
+        }
+
+        .suggested-product-card .text-danger {
+            font-size: 10px !important;
+            font-weight: bold !important;
+        }
+
+        .suggested-product-card .text-decoration-line-through {
+            font-size: 9px !important;
+        }
+
+        .product-logo img{
+            height: 22px !important;
+        }
+
+        /* Ensure 3 columns on tablet */
+        #checkout-suggested-products .col-6 {
+            flex: 0 0 33.333% !important;
+            max-width: 33.333% !important;
+        }
     }
-    
+
     /* Desktop responsive: 5 products per row */
     @media (min-width: 992px) {
-        #checkout-suggested-products .col-6.col-lg {
-            flex: 1 1 0 !important;
+        .suggested-product-card {
+            height: 220px !important;
+            min-height: 220px !important;
+            max-height: 220px !important;
+        }
+
+        .suggested-product-card .card-title {
+            font-size: 11px !important;
+            line-height: 1.2 !important;
+            margin-bottom: 4px !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+
+        .suggested-product-card img {
+            height: 140px !important;
+            object-fit: cover !important;
+        }
+
+        .suggested-product-card .card-body {
+            padding: 3px !important;
+        }
+
+        .suggested-product-card .btn {
+            font-size: 10px !important;
+            padding: 2px 8px !important;
+        }
+
+        .suggested-product-card .text-muted {
+            font-size: 9px !important;
+        }
+
+        .suggested-product-card .text-danger {
+            font-size: 11px !important;
+            font-weight: bold !important;
+        }
+
+        .suggested-product-card .text-decoration-line-through {
+            font-size: 10px !important;
+        }
+
+        .product-logo img{
+            height: 24px !important;
+        }
+
+        /* Ensure 5 columns on desktop */
+        #checkout-suggested-products .col-6 {
+            flex: 0 0 20% !important;
             max-width: 20% !important;
         }
-        
-        #checkout-suggested-products .row {
-            flex-wrap: nowrap !important;
-        }
     }
-    
-    /* Product title styling for single line */
-    .suggested-product-card .card-title {
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        height: 11px !important;
-        line-height: 11px !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-    
-    /* Prevent text from affecting card dimensions */
-    .suggested-product-card .card-body {
-        overflow: hidden !important;
-        word-wrap: break-word !important;
-    }
-    
+
     /* Add to cart button styling for suggested products */
     .suggested-product-card .add-to-cart-btn {
         transition: all 0.3s ease !important;
@@ -327,22 +440,22 @@
         min-width: 24px !important;
         height: 20px !important;
     }
-    
+
     .suggested-product-card .add-to-cart-btn:hover {
         background-color: #007bff !important;
         color: white !important;
         transform: scale(1.1) !important;
     }
-    
+
     .suggested-product-card .add-to-cart-btn:active {
         transform: scale(0.95) !important;
     }
-    
+
     .suggested-product-card .add-to-cart-btn:disabled {
         opacity: 0.6 !important;
         cursor: not-allowed !important;
     }
-    
+
     /* Ensure content doesn't overlap with close button */
     .pe-4 {
         padding-right: 2rem !important;
@@ -375,20 +488,22 @@
                         <h5 class="fw-bold mb-3">Thông Tin Khách Hàng</h5>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <input id="fullName" name="fullName" type="text" class="form-control checkout-required" placeholder="Nhập tên" required>
-                            </div>
-                            <div class="col-md-6">
-                                <input id="phone" name="phone" type="tel" class="form-control checkout-required" placeholder="Nhập số điện thoại nhận hàng nên để sđt có Zalo" required>
+                                <input id="phone" name="phone" type="tel" class="form-control checkout-required" placeholder="Nhập số điện thoại nhận hàng" required>
                             </div>
                             <div class="col-md-6">
                                 <input id="email" name="email" type="email" class="form-control" placeholder="Nhập email để nhận hoá đơn chi tiết">
                             </div>
-                
                             <div class="col-md-6">
-                                <input id="city" name="city" type="text" class="form-control checkout-required" placeholder="Nhập tỉnh/thành" required>
+                                <input id="fullName" name="fullName" type="text" class="form-control checkout-required" placeholder="Nhập tên" required>
+                            </div>
+                           
+                           
+
+                            <div class="col-md-6">
+                                <input id="city" name="city" type="text" class="form-control" placeholder="Nhập tỉnh/thành (tuỳ chọn)">
                             </div>
                             <div class="col-12">
-                                <input id="shippingAddress" name="shippingAddress" type="text" class="form-control checkout-required" placeholder="Số nhà, đường, phường/xã, quận/huyện" required>
+                                <input id="shippingAddress" name="shippingAddress" type="text" class="form-control checkout-required" placeholder=" Chi tiết Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố" required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Ghi chú</label>
@@ -420,7 +535,7 @@
                             Sản Phẩm Gợi Ý Đang Giảm Mạnh
                         </h5>
                         <p class="text-muted small mb-3">Khám phá thêm các sản phẩm flash-sale hấp dẫn! </p>
-                        
+
                         <!-- Flash Sale Products Container -->
                         <div id="checkout-suggested-products">
                             <!-- Loading state -->
@@ -431,7 +546,7 @@
                                 <p class="text-muted mt-2">Đang tải sản phẩm gợi ý...</p>
                             </div>
                         </div>
-                        
+
                         <!-- View All Products Button -->
                         <div class="text-center mt-3">
                             <a href="/products" class="btn btn-outline-primary btn-sm">
@@ -440,16 +555,16 @@
                         </div>
                     </div>
                 </div>
-                
-               
-                
+
+
+
             </div>
 
             <div class="col-lg-4">
                 <div class="card border-0 shadow">
                     <div class="card-body">
                         <h5 class="fw-bold mb-3">Tóm Tắt Đơn Hàng</h5><hr>
-                        
+
                         <!-- Cart items will be loaded here by JavaScript -->
                         <div id="checkout-items-container">
                             <!-- Loading state -->
@@ -466,7 +581,7 @@
                             <span class="text-muted">Tạm tính</span>
                             <span class="checkout-subtotal">0đ</span>
                         </div>
-                        
+
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Phí vận chuyển</span>
                             <span class="checkout-shipping">0đ</span>
@@ -488,18 +603,18 @@
                             <span class="fw-bold">Tổng cộng</span>
                             <span class="fs-5 fw-bold text-danger checkout-total">0đ</span>
                         </div>
-                       
+
                                                  <div class="mt-3">
-                            <button class="btn btn-primary w-100" id="place-order-btn" onclick="handlePlaceOrder()" type="button">Đặt hàng</button>
+                            <button class="btn btn-primary w-100" id="place-order-btn" onclick="handlePlaceOrderWithValidation()" type="button">Đặt hàng</button>
                         </div>
-                        
-                        
+
+
                     </div>
                 </div>
                 <div class="card border-0 shadow" style="margin-top: 14px;">
                     <div class="card-body">
                         <h5 class="fw-bold mb-3">Phương Thức Thanh Toán</h5>
-                        
+
                         <!-- Payment Method Selection -->
                         <div class="mb-3">
                             <div class="form-check mb-3">
@@ -510,7 +625,7 @@
                                     <div class="text-muted small">Nhân viên sẽ gọi điện xác nhận trước khi giao hàng</div>
                                 </label>
                             </div>
-                            
+
                             <div class="form-check mb-3">
                                 <input class="form-check-input" type="radio" name="pay" id="pay2" value="bankTransfer">
                                 <label class="form-check-label" for="pay2">
@@ -519,18 +634,18 @@
                                     <div class="text-muted small">Giảm 50% phí vận chuyển</div>
                                 </label>
                             </div>
-                            
-                            
+
+
                         </div>
-                        
-                       
+
+
                         <!-- Bank Transfer Information -->
                         <div id="bankTransferSection" class="d-none">
                             <hr class="my-3">
                             <h6 class="fw-bold mb-3 text-primary">
                                 <i class="fas fa-university me-2"></i>Thông Tin Chuyển Khoản
                             </h6>
-                            
+
                             <!-- Bank Account Info -->
                             <div class="alert alert-primary py-3 mb-3">
                                 <div class="row g-2">
@@ -560,15 +675,15 @@
                                     <span class="fw-bold fs-6 transfer-amount">0đ</span>
                                 </div>
                             </div>
-                            
+
                             <!-- QR Code Section -->
                             <div class="text-center mb-3">
                                 <img src="{{ url_for('static', filename='image/qr.jpg') }}" alt="QR Code chuyển khoản" class="img-fluid border rounded" style="max-width: 200px;">
                                 <div class="text-muted small mt-2">Quét mã QR để chuyển khoản</div>
                             </div>
 
-                             
-                            
+
+
                             <!-- Upload Transfer Proof -->
                             <div class="mb-3">
                                 <label class="form-label fw-semibold">
@@ -601,8 +716,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                           
+
+
                         </div>
                          <!-- Order Processing Notice -->
                          <div class="alert alert-info border-0 shadow-sm mb-3" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border-left: 4px solid #2196f3 !important;">
@@ -611,26 +726,26 @@
                                 </div>
                                 <div>
                                     <h6 class="alert-heading mb-2 text-primary fw-bold">
-                                        <i class="fas fa-heart me-1"></i>Tin nhắn dễ thương từ shop 
+                                        <i class="fas fa-heart me-1"></i>Tin nhắn dễ thương từ shop
                                     </h6>
                                     <p class="mb-2 small">
-                                        🌸 <strong>Xin chào các bạn yêu quý!</strong> Shop mình có một tin nhắn nhỏ muốn gửi đến các bạn ạ! Do số lượng hàng có hạn nên shop sẽ ưu tiên xử lý các đơn chuyển khoản trước, sau đó mới đến các đơn COD nha 
+                                        🌸 <strong>Xin chào các bạn yêu quý!</strong> Shop mình có một tin nhắn nhỏ muốn gửi đến các bạn ạ! Do số lượng hàng có hạn nên shop sẽ ưu tiên xử lý các đơn chuyển khoản trước, sau đó mới đến các đơn COD nha
                                     </p>
                                     <p class="mb-2 small">
-                                        ⏰ <strong>Nhân viên shop sẽ check đơn hàng mỗi 1-2 tiếng</strong> một lần để đảm bảo xử lý nhanh nhất có thể cho các bạn ạ! 
+                                        ⏰ <strong>Nhân viên shop sẽ check đơn hàng mỗi 1-2 tiếng</strong> một lần để đảm bảo xử lý nhanh nhất có thể cho các bạn ạ!
                                     </p>
                                     <p class="mb-0 small">
-                                        🥺 <strong>Nếu hết hàng, shop xin lỗi các bạn nhiều lắm!</strong> Chúng mình sẽ cố gắng bổ sung hàng sớm nhất để phục vụ các bạn tốt hơn nha! Mong các bạn thông cảm cho shop nhé 
+                                        🥺 <strong>Nếu hết hàng, shop xin lỗi các bạn nhiều lắm!</strong> Chúng mình sẽ cố gắng bổ sung hàng sớm nhất để phục vụ các bạn tốt hơn nha! Mong các bạn thông cảm cho shop nhé
                                     </p>
                                 </div>
                             </div>
                         </div>
-                        
+
                     </div>
-                    
+
                 </div>
 
-                
+
                 <!-- Voucher Section -->
                 <div class="mt-3" style="margin-bottom: 14px;">
                     <div class="card border-0 shadow">
@@ -651,7 +766,7 @@
                                     <button type="button" class="btn-close position-absolute voucher-close-btn" id="removeCheckoutVoucher">
                                         <span aria-hidden="true" style="font-weight: bold;">×</span>
                                     </button>
-                                    
+
                                     <!-- Voucher content -->
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span class="fw-semibold"><i class="fas fa-check-circle me-2 text-success"></i>Đã áp dụng:</span>
@@ -680,11 +795,11 @@
         </ol>
     </div>
 </div>
-                
+
             </div>
- 
-            
-            
+
+
+
         </div>
     </div>
 </section>
@@ -694,14 +809,14 @@ function previewBankTransferImage(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         const maxSize = 10 * 1024 * 1024; // 10MB
-        
+
         // Check file size
         if (file.size > maxSize) {
             alert('File quá lớn! Kích thước tối đa là 10MB. Vui lòng chọn file khác.');
             input.value = '';
             return;
         }
-        
+
         // Check file type
         const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
         if (!allowedTypes.includes(file.type)) {
@@ -709,24 +824,24 @@ function previewBankTransferImage(input) {
             input.value = '';
             return;
         }
-        
+
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('bankTransferImage').src = e.target.result;
             document.getElementById('bankTransferPreview').style.display = 'block';
-            
+
             // Show file size info
             const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
             const fileInfo = document.createElement('div');
             fileInfo.className = 'text-muted small mt-2';
             fileInfo.innerHTML = `<i class="fas fa-info-circle me-1"></i>Kích thước file: ${fileSizeMB}MB`;
-            
+
             // Remove existing file info if any
             const existingInfo = document.querySelector('.file-size-info');
             if (existingInfo) {
                 existingInfo.remove();
             }
-            
+
             fileInfo.className += ' file-size-info';
             document.getElementById('bankTransferPreview').appendChild(fileInfo);
         };
@@ -738,14 +853,525 @@ function removeBankTransferImage() {
     document.getElementById('transferProof').value = '';
     document.getElementById('bankTransferPreview').style.display = 'none';
     document.getElementById('bankTransferImage').src = '';
-    
+
     // Remove file size info
     const existingInfo = document.querySelector('.file-size-info');
     if (existingInfo) {
         existingInfo.remove();
     }
 }
+
+// Initialize checkout page when DOM is loaded
+// Auto-fill customer information from phone number
+async function fetchCustomerByPhone(phone) {
+    try {
+        console.log('🔍 Searching for customer with phone:', phone);
+        const response = await fetch('https://buddyskincare.vn/backend/api/customer-leads/');
+        
+        if (!response.ok) {
+            throw new Error('API request failed');
+        }
+        
+        const customers = await response.json();
+        console.log('📋 Total customers found:', customers.length);
+        
+        // Find customer by phone number
+        const customer = customers.find(c => c.phone === phone);
+        
+        if (customer) {
+            console.log('✅ Customer found:', customer);
+            return customer;
+        } else {
+            console.log('❌ No customer found with phone:', phone);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Error fetching customer data:', error);
+        return null;
+    }
+}
+
+function autoFillCustomerInfo(customer) {
+    let filledFields = [];
+    let skippedFields = [];
+    
+    // Fill name only if field is empty
+    const nameField = document.getElementById('fullName');
+    if (nameField && customer.name) {
+        if (!nameField.value.trim()) {
+            nameField.value = customer.name;
+            filledFields.push('Tên');
+            console.log('✅ Filled name:', customer.name);
+        } else {
+            skippedFields.push('Tên');
+            console.log('⏭️ Skipped name (already filled):', nameField.value);
+        }
+    }
+    
+    // Fill email only if field is empty
+    const emailField = document.getElementById('email');
+    if (emailField && customer.email) {
+        if (!emailField.value.trim()) {
+            emailField.value = customer.email;
+            filledFields.push('Email');
+            console.log('✅ Filled email:', customer.email);
+        } else {
+            skippedFields.push('Email');
+            console.log('⏭️ Skipped email (already filled):', emailField.value);
+        }
+    }
+    
+    // Fill address only if field is empty
+    const addressField = document.getElementById('shippingAddress');
+    if (addressField && customer.address) {
+        if (!addressField.value.trim()) {
+            addressField.value = customer.address;
+            filledFields.push('Địa chỉ');
+            console.log('✅ Filled address:', customer.address);
+        } else {
+            skippedFields.push('Địa chỉ');
+            console.log('⏭️ Skipped address (already filled):', addressField.value);
+        }
+    }
+    
+    // Force update button state after auto-filling
+    setTimeout(() => {
+        if (typeof window.forceUpdateButtonState === 'function') {
+            window.forceUpdateButtonState();
+            console.log('🔄 Button state updated after auto-fill');
+        }
+    }, 100); // Small delay to ensure DOM is updated
+    
+    // Show appropriate notification
+    if (filledFields.length > 0) {
+        let message = `Đã điền thông tin: ${filledFields.join(', ')}`;
+        if (skippedFields.length > 0) {
+            message += ` (Bỏ qua: ${skippedFields.join(', ')})`;
+        }
+        showAutoFillNotification(message, 'success');
+    } else if (skippedFields.length > 0) {
+        showAutoFillNotification(`Tất cả thông tin đã được điền sẵn (${skippedFields.join(', ')})`, 'info');
+    } else {
+        showAutoFillNotification('Không có dữ liệu khách hàng để điền', 'warning');
+    }
+}
+
+function clearCustomerInfo() {
+    const nameField = document.getElementById('fullName');
+    const emailField = document.getElementById('email');
+    const addressField = document.getElementById('shippingAddress');
+    
+    if (nameField) nameField.value = '';
+    if (emailField) emailField.value = '';
+    if (addressField) addressField.value = '';
+    
+    // Force update button state after clearing
+    setTimeout(() => {
+        if (typeof window.forceUpdateButtonState === 'function') {
+            window.forceUpdateButtonState();
+            console.log('🔄 Button state updated after clearing fields');
+        }
+    }, 100); // Small delay to ensure DOM is updated
+    
+    console.log('🧹 Cleared customer info fields');
+}
+
+function showAutoFillNotification(message, type = 'info') {
+    // Remove existing notification if any
+    const existingNotification = document.getElementById('auto-fill-notification');
+    if (existingNotification) {
+        existingNotification.remove();
+    }
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.id = 'auto-fill-notification';
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'info'} alert-dismissible fade show`;
+    notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    // Add to page
+    document.body.appendChild(notification);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (notification && notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
+
+// Phone input event listener with debounce
+let phoneSearchTimeout;
+document.addEventListener('DOMContentLoaded', function() {
+    const phoneField = document.getElementById('phone');
+    
+    if (phoneField) {
+        phoneField.addEventListener('input', function(e) {
+            const phone = e.target.value.trim();
+            
+            // Clear previous timeout
+            if (phoneSearchTimeout) {
+                clearTimeout(phoneSearchTimeout);
+            }
+            
+            // Clear fields if phone is empty
+            if (phone === '') {
+                clearCustomerInfo();
+                return;
+            }
+            
+            // Only search if phone has at least 10 digits
+            if (phone.length >= 10) {
+                phoneSearchTimeout = setTimeout(async () => {
+                    console.log('🔍 Searching for customer with phone:', phone);
+                    const customer = await fetchCustomerByPhone(phone);
+                    
+                    if (customer) {
+                        autoFillCustomerInfo(customer);
+                    } else {
+                        console.log('ℹ️ No customer data found for phone:', phone);
+                    }
+                }, 800); // Wait 800ms after user stops typing
+            }
+        });
+        
+        console.log('✅ Phone auto-fill listener attached');
+    }
+    
+    // Initialize suggested products for checkout
+    if (typeof initCheckoutSuggestedProducts === 'function') {
+        initCheckoutSuggestedProducts();
+    } else {
+        console.warn('initCheckoutSuggestedProducts function not found');
+    }
+
+    // Update mobile checkout button total
+    function updateMobileCheckoutTotal() {
+        const totalElement = document.getElementById('mobile-checkout-total');
+        const checkoutTotalElement = document.querySelector('.checkout-total');
+        
+        if (totalElement && checkoutTotalElement) {
+            totalElement.textContent = checkoutTotalElement.textContent;
+            console.log('📱 Mobile checkout total updated:', checkoutTotalElement.textContent);
+        }
+    }
+
+    // Reset mobile checkout button
+    function resetMobileCheckoutButton() {
+        const mobileBtn = document.getElementById('mobile-place-order-btn');
+        if (mobileBtn) {
+            mobileBtn.classList.remove('loading');
+            mobileBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Đặt hàng ngay';
+            console.log('📱 Mobile checkout button reset');
+        }
+    }
+
+    // Show success state on mobile button
+    function showMobileCheckoutSuccess() {
+        const mobileBtn = document.getElementById('mobile-place-order-btn');
+        if (mobileBtn) {
+            mobileBtn.classList.remove('loading');
+            mobileBtn.classList.add('btn-success');
+            mobileBtn.innerHTML = '<i class="fas fa-check me-2"></i>Đặt hàng thành công!';
+            console.log('📱 Mobile checkout button success state');
+        }
+    }
+
+    // Validate required fields before placing order
+    function validateCheckoutForm() {
+        const requiredFields = [
+            { id: 'phone', name: 'Số điện thoại' },
+            { id: 'fullName', name: 'Tên' },
+            { id: 'shippingAddress', name: 'Địa chỉ' }
+        ];
+
+        const missingFields = [];
+        
+        // Clear previous validation errors
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                element.classList.remove('validation-error');
+            }
+        });
+        
+        // Check required fields
+        requiredFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (!element || !element.value.trim()) {
+                missingFields.push(field.name);
+                if (element) {
+                    element.classList.add('validation-error');
+                }
+            }
+        });
+
+        if (missingFields.length > 0) {
+            const message = `Vui lòng điền đầy đủ thông tin: ${missingFields.join(', ')}`;
+            showNotification(message, 'error');
+            
+            // Scroll to first missing field
+            const firstMissingField = requiredFields.find(field => {
+                const element = document.getElementById(field.id);
+                return !element || !element.value.trim();
+            });
+            
+            if (firstMissingField) {
+                const element = document.getElementById(firstMissingField.id);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.focus();
+                }
+            }
+            
+            return false;
+        }
+
+        return true;
+    }
+
+    // Enhanced place order function with validation
+    function handlePlaceOrderWithValidation() {
+        console.log('📱 Mobile checkout button clicked with validation');
+        
+        // Check if button is disabled
+        const desktopBtn = document.getElementById('place-order-btn');
+        const mobileBtn = document.getElementById('mobile-place-order-btn');
+        
+        if ((desktopBtn && desktopBtn.disabled) || (mobileBtn && mobileBtn.disabled)) {
+            console.log('❌ Button is disabled - form validation failed');
+            return;
+        }
+        
+        // Validate form first
+        if (!validateCheckoutForm()) {
+            return;
+        }
+
+        // If validation passes, call the original function
+        if (typeof handlePlaceOrder === 'function') {
+            handlePlaceOrder();
+        } else {
+            console.error('handlePlaceOrder function not found');
+        }
+    }
+
+    // Force update button state (for external auto-fill functions)
+    function forceUpdateButtonState() {
+        console.log('🔄 Force updating button state...');
+        updateButtonState();
+    }
+
+    // Make functions globally available
+    window.resetMobileCheckoutButton = resetMobileCheckoutButton;
+    window.showMobileCheckoutSuccess = showMobileCheckoutSuccess;
+    window.validateCheckoutForm = validateCheckoutForm;
+    window.handlePlaceOrderWithValidation = handlePlaceOrderWithValidation;
+    window.forceUpdateButtonState = forceUpdateButtonState;
+
+    // Check if all required fields are filled
+    function checkRequiredFields() {
+        const requiredFields = ['phone', 'fullName', 'shippingAddress'];
+        
+        for (let fieldId of requiredFields) {
+            const element = document.getElementById(fieldId);
+            if (!element || !element.value.trim()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Update button state based on validation
+    function updateButtonState() {
+        const isFormValid = checkRequiredFields();
+        const desktopBtn = document.getElementById('place-order-btn');
+        const mobileBtn = document.getElementById('mobile-place-order-btn');
+        
+        if (desktopBtn) {
+            desktopBtn.disabled = !isFormValid;
+            if (isFormValid) {
+                desktopBtn.classList.remove('btn-secondary');
+                desktopBtn.classList.add('btn-primary');
+            } else {
+                desktopBtn.classList.remove('btn-primary');
+                desktopBtn.classList.add('btn-secondary');
+            }
+        }
+        
+        if (mobileBtn) {
+            mobileBtn.disabled = !isFormValid;
+            if (isFormValid) {
+                mobileBtn.classList.remove('btn-secondary');
+                mobileBtn.classList.add('btn-primary');
+            } else {
+                mobileBtn.classList.remove('btn-primary');
+                mobileBtn.classList.add('btn-secondary');
+            }
+        }
+    }
+
+    // Initialize real-time validation
+    function initRealTimeValidation() {
+        const requiredFields = ['phone', 'fullName', 'shippingAddress'];
+        
+        requiredFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                // Clear validation error when user starts typing
+                element.addEventListener('input', function() {
+                    this.classList.remove('validation-error');
+                    updateButtonState(); // Update button state on input
+                });
+                
+                // Clear validation error when field gets focus
+                element.addEventListener('focus', function() {
+                    this.classList.remove('validation-error');
+                });
+
+                // Update button state when field loses focus
+                element.addEventListener('blur', function() {
+                    updateButtonState();
+                });
+
+                // Listen for programmatic changes (auto-fill, etc.)
+                element.addEventListener('change', function() {
+                    updateButtonState();
+                });
+            }
+        });
+
+        // Initial button state check
+        updateButtonState();
+        
+        // Set up MutationObserver to detect programmatic changes
+        setupMutationObserver();
+        
+        // Periodic check for auto-filled data (backup method)
+        setupPeriodicCheck();
+    }
+
+    // Set up MutationObserver to detect DOM changes
+    function setupMutationObserver() {
+        const requiredFields = ['phone', 'fullName', 'shippingAddress'];
+        
+        requiredFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                            updateButtonState();
+                        }
+                    });
+                });
+                
+                observer.observe(element, {
+                    attributes: true,
+                    attributeFilter: ['value']
+                });
+            }
+        });
+    }
+
+    // Set up periodic check for auto-filled data
+    function setupPeriodicCheck() {
+        let lastValues = {};
+        const requiredFields = ['phone', 'fullName', 'shippingAddress'];
+        
+        // Initial values
+        requiredFields.forEach(fieldId => {
+            const element = document.getElementById(fieldId);
+            if (element) {
+                lastValues[fieldId] = element.value;
+            }
+        });
+        
+        // Check every 500ms for changes
+        setInterval(function() {
+            let hasChanges = false;
+            
+            requiredFields.forEach(fieldId => {
+                const element = document.getElementById(fieldId);
+                if (element && element.value !== lastValues[fieldId]) {
+                    lastValues[fieldId] = element.value;
+                    hasChanges = true;
+                }
+            });
+            
+            if (hasChanges) {
+                updateButtonState();
+            }
+        }, 500);
+    }
+
+    // Initialize mobile checkout button
+    function initMobileCheckoutButton() {
+        // Update total when page loads
+        updateMobileCheckoutTotal();
+        
+        // Update total when checkout total changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'childList' || mutation.type === 'characterData') {
+                    updateMobileCheckoutTotal();
+                }
+            });
+        });
+        
+        const checkoutTotalElement = document.querySelector('.checkout-total');
+        if (checkoutTotalElement) {
+            observer.observe(checkoutTotalElement, {
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+        }
+
+        // Add click handler for mobile button
+        const mobileBtn = document.getElementById('mobile-place-order-btn');
+        if (mobileBtn) {
+            mobileBtn.addEventListener('click', function(e) {
+                console.log('📱 Mobile checkout button clicked');
+                // Add loading state
+                mobileBtn.classList.add('loading');
+                mobileBtn.innerHTML = '<i class="fas fa-spinner me-2"></i>Đang xử lý...';
+                
+                // The handlePlaceOrder function will be called via onclick
+                // Reset button state after a delay (in case of error)
+                setTimeout(() => {
+                    if (mobileBtn.classList.contains('loading')) {
+                        mobileBtn.classList.remove('loading');
+                        mobileBtn.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Đặt hàng ngay';
+                    }
+                }, 10000); // Reset after 10 seconds
+            });
+        }
+
+        // Initialize real-time validation
+        initRealTimeValidation();
+    }
+
+    // Initialize mobile checkout button
+    initMobileCheckoutButton();
+});
 </script>
+
+<!-- Mobile Fixed Checkout Button -->
+<div class="mobile-checkout-btn">
+    <div class="mobile-checkout-summary">
+        <span>Tổng cộng:</span>
+        <span class="mobile-checkout-total" id="mobile-checkout-total">0đ</span>
+    </div>
+    <button class="btn btn-primary w-100" id="mobile-place-order-btn" onclick="handlePlaceOrderWithValidation()" type="button">
+        <i class="fas fa-shopping-cart me-2"></i>Đặt hàng ngay
+    </button>
+</div>
 
 {% endblock %}
 

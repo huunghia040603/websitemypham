@@ -2,7 +2,7 @@
     <div class="container">
         <div class="row align-items-center">
             <div class="col-md-6" style="padding-bottom: 5px;">
-                <small class="text-muted">
+                <small class="text-muted" style="padding-left: 15%;">
                     <i class="fas fa-truck me-2"></i>FREESHIP ĐƠN TỪ 499K
                     <span class="mx-3">|</span>
                     <i class="fas fa-shipping-fast me-2"></i>Giao hàng toàn quốc
@@ -45,7 +45,7 @@
                                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                                         Sản phẩm 
                                     </a>
-                                    <ul class="dropdown-menu">
+                                    <ul class="dropdown-menu" style="z-index: 1550 !important;">
                                         <li><a class="dropdown-item" href="/products/new"><i class="fas fa-tag text-success"></i>Sản phẩm mới <small class="text-muted">100% chính hãng</small></a></li>
                                         <li><a class="dropdown-item" href="/products/used"><i class="fas fa-recycle text-warning"></i>Sản phẩm đã sử dụng <small class="text-muted">Tiết kiệm 50-80%</small></a></li>
                                         <li><hr class="dropdown-divider"></li>
@@ -78,8 +78,17 @@
                                         <li><a class="dropdown-item" href="/products/used"><i class="fas fa-shopping-bag text-success"></i>Mua thanh lý hộ <small class="text-muted">Giá tốt, số lượng có hạn</small></a></li>
                                     </ul>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" href="/live-chat">Tư vấn</a>
+                                <li class="nav-item dropdown">
+                                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                        Tư vấn
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="/live-chat"><i class="fas fa-comments text-primary"></i>Chat trực tiếp <small class="text-muted">Tư vấn miễn phí 24/7</small></a></li>
+                                        <li><a class="dropdown-item" href="/skin-type-quiz"><i class="fas fa-user-md text-success"></i>Bài test kiểm tra da <small class="text-muted">Xác định loại da chính xác</small></a></li>
+                                        <li><a class="dropdown-item" href="/beauty-ingredient-dictionary"><i class="fas fa-book text-info"></i>Tìm hiểu thành phần <small class="text-muted">500+ thành phần mỹ phẩm</small></a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item" href="/skincare-step"><i class="fas fa-list-ol text-warning"></i>Quy trình skincare <small class="text-muted">Hướng dẫn chăm sóc da</small></a></li>
+                                    </ul>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" href="/news">Blog làm đẹp</a>
@@ -183,47 +192,48 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="/">Trang chủ</a>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            Sản phẩm
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="/products/new"><i class="fas fa-tag text-success"></i>Sản phẩm mới <small class="text-muted">100% chính hãng</small></a></li>
-                            <li><a class="dropdown-item" href="/products/used"><i class="fas fa-recycle text-warning"></i>Sản phẩm đã sử dụng <small class="text-muted">Tiết kiệm 50-80%</small></a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/products"><i class="fas fa-th-large"></i>Xem tất cả thương hiệu</a></li>
-                        </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/products">Sản phẩm mới</a>
                     </li>
+                    
                     
                     <li class="nav-item">
                         <a class="nav-link" href="/skincare">Dưỡng da</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/live-chat">Tư vấn</a>
-                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            Sự kiện
+                            Tư vấn
                         </a>
                         <ul class="dropdown-menu">
-                            <!-- <li><a class="dropdown-item" href="/events/voucher"><i class="fas fa-gift text-danger"></i>Voucher may mắn <small class="text-muted">Quay số trúng thưởng</small></a></li> -->
-                            <li><a class="dropdown-item" href="/events/lucky-number"><i class="fas fa-dice-one text-success"></i>Số may mắn <small class="text-muted">Tham gia nhận quà</small></a></li>
-                            <li><a class="dropdown-item" href="/events/partner"><i class="fas fa-handshake text-primary"></i>Đăng ký cộng tác viên <small class="text-muted">Thu nhập hấp dẫn</small></a></li>
-                            <li><a class="dropdown-item" href="/products?tags=FlashSale"><i class="fas fa-bolt text-warning"></i>Flash sale chớp nhoáng <small class="text-muted">Giảm giá sốc</small></a></li>
+                            <li><a class="dropdown-item" href="/live-chat"><i class="fas fa-comments text-primary"></i>Chat trực tiếp <small class="text-muted" style="font-size: 11px;">Tư vấn miễn phí 24/7</small></a></li>
+                            <li><a class="dropdown-item" href="/skin-type-quiz"><i class="fas fa-user-md text-success"></i>Bài test kiểm tra da <small class="text-muted" style="font-size: 11px;">Xác định loại da chính xác</small></a></li>
+                            <li><a class="dropdown-item" href="/beauty-ingredient-dictionary"><i class="fas fa-book text-info"></i>Tìm hiểu thành phần <small class="text-muted" style="font-size: 11px;">500+ thành phần mỹ phẩm</small></a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="/events"><i class="fas fa-calendar-alt"></i>Xem tất cả sự kiện</a></li>
+                            <li><a class="dropdown-item" href="/skincare-step"><i class="fas fa-list-ol text-warning"></i>Quy trình skincare <small class="text-muted" style="font-size: 11px;">Hướng dẫn chăm sóc da</small></a></li>
                         </ul>
                     </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                            Thanh lý
-                        </a>
-                        <ul class="dropdown-menu">
-                            <!-- <li><a class="dropdown-item" href="/consign"><i class="fas fa-upload text-primary"></i>Đăng thanh lý hộ <small class="text-muted">Gửi sản phẩm, chúng tôi đăng bán</small></a></li> -->
-                            <li><a class="dropdown-item" href="/products/used"><i class="fas fa-shopping-bag text-success"></i>Mua thanh lý hộ <small class="text-muted">Giá tốt, số lượng có hạn</small></a></li>
-                        </ul>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/events/lucky-number">Số may mắn <small class="text-muted" style="font-size: 11px;">Tham gia nhận quà</small></a>
                     </li>
-                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="/events/partner">Đăng ký cộng tác viên <small class="text-muted" style="font-size: 11px;">Thu nhập hấp dẫn</small></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/products?tags=FlashSale">Flash sale chớp nhoáng <small class="text-muted" style="font-size: 11px;">Giảm giá sốc</small></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/products/used">Thanh lý hộ <small class="text-muted" style="font-size: 11px;">Giá tốt, số lượng có hạn</small></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/skin-type-quiz">Bài test kiểm tra da <small class="text-muted" style="font-size: 11px;">Xác định loại da chính xác</small></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/beauty-ingredient-dictionary">Tìm hiểu thành phần <small class="text-muted" style="font-size: 11px;">500+ thành phần mỹ phẩm</small></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/skincare-step">Quy trình skincare <small class="text-muted" style="font-size: 11px;">Hướng dẫn chăm sóc da</small></a>
+                    </li>
+
                 </ul>
             </div>
         </div>
