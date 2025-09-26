@@ -23,6 +23,11 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
+# Add timestamp helper for cache busting
+@app.template_global()
+def timestamp():
+    return int(time.time())
+
 # API URL for PythonAnywhere
 API_BASE_URL = 'https://buddyskincare.vn/backend/api'
 
@@ -1029,6 +1034,17 @@ def admin_dashboard():
 def admin_products():
     """Admin - Quản lý sản phẩm (unified)"""
     return render_template('admin_products.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    try:
+        return send_file('static/favicon.ico', mimetype='image/vnd.microsoft.icon')
+    except FileNotFoundError:
+        # Fallback to logo if favicon doesn't exist
+        return send_file('static/image/logo.png', mimetype='image/png')
+    except Exception as e:
+        print(f"Error serving favicon: {e}")
+        return '', 204  # No content
 
 @app.route('/admin/products/new')
 def admin_products_new():
@@ -2617,6 +2633,32 @@ def admin_api_update_product(product_id):
             return jsonify(result)
         else:
             return jsonify({'error': f'Không thể cập nhật sản phẩm. API trả về: {response.status_code} - {response.text}'}), 500
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Request error: {e}")
+        return jsonify({'error': f'Lỗi kết nối: {str(e)}'}), 500
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return jsonify({'error': f'Lỗi không xác định: {str(e)}'}), 500
+
+@app.route('/admin/api/products/<int:product_id>', methods=['DELETE'])
+def admin_api_delete_product(product_id):
+    """API xóa sản phẩm cho admin"""
+    import requests
+
+    try:
+        print(f"🗑️ Deleting product {product_id}")
+        
+        response = requests.delete(f'{API_BASE_URL}/admin-products/{product_id}/', timeout=30)
+        
+        if response.status_code == 204:
+            print(f"✅ Product {product_id} deleted successfully")
+            return jsonify({'success': True, 'message': 'Sản phẩm đã được xóa thành công'})
+        elif response.status_code == 404:
+            return jsonify({'error': 'Không tìm thấy sản phẩm'}), 404
+        else:
+            print(f"❌ Delete failed: {response.status_code} - {response.text}")
+            return jsonify({'error': f'Không thể xóa sản phẩm. API trả về: {response.status_code}'}), response.status_code
 
     except requests.exceptions.RequestException as e:
         print(f"❌ Request error: {e}")

@@ -479,8 +479,26 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            loadProducts();
             setupEventListeners();
+            // Wait for AdminAPI to be loaded
+            if (typeof AdminAPI !== 'undefined') {
+                loadProducts();
+            } else {
+                window.addEventListener('adminjs-loaded', function() {
+                    loadProducts();
+                });
+                
+                // Fallback: try to load after a delay
+                setTimeout(function() {
+                    if (typeof AdminAPI !== 'undefined') {
+                        loadProducts();
+                    } else {
+                        console.error('AdminAPI still not available after timeout');
+                        document.getElementById('productsContainer').innerHTML = 
+                            '<div class="alert alert-danger">Lỗi: Không thể tải AdminAPI. Vui lòng refresh trang.</div>';
+                    }
+                }, 3000);
+            }
         });
 
         async function loadProducts() {

@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{% block title %}Admin Dashboard - BuddySkincare{% endblock %}</title>
     
     <!-- Bootstrap CSS -->
@@ -173,9 +176,57 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom Admin JS -->
-    <script src="/static/admin/js/admin.js"></script>
+    <script>
+        // Force clear any cached admin.js
+        const script = document.createElement('script');
+        script.src = '/static/admin/js/admin.js?v=' + Date.now() + '&r=' + Math.floor(Math.random() * 10000);
+        script.onload = function() {
+            console.log('Admin.js loaded successfully with cache busting');
+            // Trigger page load events after AdminAPI is available
+            window.dispatchEvent(new Event('adminjs-loaded'));
+        };
+        script.onerror = function() {
+            console.error('Failed to load admin.js');
+        };
+        document.head.appendChild(script);
+    </script>
     
     <script>
+        // Debug: Test API directly
+        async function testAPI() {
+            try {
+                console.log('Testing API...');
+                const response = await fetch('/admin/api/products');
+                console.log('API Response status:', response.status);
+                console.log('API Response headers:', response.headers);
+                const text = await response.text();
+                console.log('API Response text (first 100 chars):', text.substring(0, 100));
+                
+                if (text.startsWith('<!DOCTYPE')) {
+                    console.error('API returned HTML instead of JSON!');
+                } else {
+                    console.log('API returned valid data');
+                }
+            } catch (error) {
+                console.error('API test failed:', error);
+            }
+        }
+        
+        // Run API test after page loads
+        window.addEventListener('load', testAPI);
+        
+        // Force reload if still having issues
+        setTimeout(() => {
+            if (window.location.search.indexOf('reload') === -1) {
+                console.log('Checking if page needs reload...');
+                // Check if admin.js loaded properly
+                if (typeof AdminAPI === 'undefined') {
+                    console.log('AdminAPI not found, reloading page...');
+                    window.location.href = window.location.href + '?reload=' + Date.now();
+                }
+            }
+        }, 2000);
+        
         // Simple admin authentication check
         // In production, use proper session management
         const isAdminLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';

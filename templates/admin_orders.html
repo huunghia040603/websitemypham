@@ -1558,59 +1558,7 @@ async function confirmOrder() {
     confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang xử lý...';
     
     try {
-        // Check stock availability first
-        const order = allOrders.find(o => o.id === currentOrderId);
-        if (!order || !order.items) {
-            throw new Error('Không tìm thấy thông tin đơn hàng');
-        }
-        
-        console.log('Order items for stock check:', order.items);
-        
-        // Try to check stock availability (optional - skip if API fails)
-        try {
-            const stockCheckPromises = order.items.map(async (item) => {
-                // Get product ID - handle both object and number cases
-                const productId = typeof item.product === 'object' ? item.product.id : item.product;
-                const productName = item.product_name || (typeof item.product === 'object' ? item.product.name : `Sản phẩm ${productId}`);
-                
-                console.log(`Checking stock for product ${productId}: ${productName}`);
-                
-                const response = await fetch(`https://buddyskincare.vn/backend/api/api/product-stock/${productId}/`);
-                if (!response.ok) {
-                    console.warn(`Stock check failed for product ${productId}: ${response.status}`);
-                    return null; // Skip this product
-                }
-                const data = await response.json();
-                return {
-                    product_id: productId,
-                    product_name: productName,
-                    requested: item.quantity,
-                    available: data.stock_quantity || 0
-                };
-            });
-            
-            const stockResults = await Promise.all(stockCheckPromises);
-            const validResults = stockResults.filter(result => result !== null);
-            
-            if (validResults.length > 0) {
-                const insufficientStock = validResults.filter(item => item.available < item.requested);
-                
-                if (insufficientStock.length > 0) {
-                    const insufficientList = insufficientStock.map(item => 
-                        `- ${item.product_name}: Cần ${item.requested}, Còn ${item.available}`
-                    ).join('\n');
-                    
-                    showNotification(`Không đủ tồn kho cho các sản phẩm sau:\n${insufficientList}`, 'error');
-                    return;
-                }
-            } else {
-                console.log('Stock check skipped - no valid results');
-            }
-        } catch (stockError) {
-            console.warn('Stock check failed, proceeding without stock validation:', stockError);
-        }
-        
-        // Direct API call
+        // Direct API call - no stock check needed
         const response = await fetch(`https://buddyskincare.vn/backend/api/orders/${currentOrderId}/confirm/`, {
             method: 'POST',
             headers: {

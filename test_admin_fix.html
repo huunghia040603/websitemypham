@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Admin Fix</title>
+</head>
+<body>
+    <h1>Test Admin Products Fix</h1>
+    <div id="results"></div>
+    
+    <script>
+        // Auto-detect environment and set appropriate API base
+        const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000'
+            : 'https://buddyskincare.vn/backend/api';
+        const FLASK_API_BASE = API_BASE_URL; // Use same base URL
+        
+        async function testEndpoints() {
+            const results = document.getElementById('results');
+            
+            // Test 1: Direct API call (should work)
+            try {
+                results.innerHTML += '<h3>Test 1: Direct API Call</h3>';
+                const directResponse = await fetch('/admin/api/products');
+                const directText = await directResponse.text();
+                results.innerHTML += `<p>Status: ${directResponse.status}</p>`;
+                results.innerHTML += `<p>Type: ${directText.startsWith('<!DOCTYPE') ? 'HTML' : 'JSON'}</p>`;
+                if (directText.startsWith('<!DOCTYPE')) {
+                    results.innerHTML += '<p style="color: red;">❌ Direct API returned HTML!</p>';
+                } else {
+                    results.innerHTML += '<p style="color: green;">✅ Direct API returned JSON</p>';
+                }
+            } catch (e) {
+                results.innerHTML += `<p style="color: red;">❌ Direct API error: ${e.message}</p>`;
+            }
+            
+            // Test 2: fetchProducts function (should now work)
+            try {
+                results.innerHTML += '<h3>Test 2: fetchProducts Function</h3>';
+                
+                // Simulate the fixed fetchProducts function
+                async function fetchProducts(status = null, flashSale = false) {
+                    let url = `${FLASK_API_BASE}/admin/api/products`;
+                    const params = new URLSearchParams();
+                    
+                    if (status) {
+                        params.append('status', status);
+                    }
+                    if (flashSale) {
+                        params.append('discount_rate__gt', '0');
+                    }
+                    
+                    if (params.toString()) {
+                        url += `?${params.toString()}`;
+                    }
+                    
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                }
+                
+                const products = await fetchProducts();
+                results.innerHTML += `<p style="color: green;">✅ fetchProducts returned ${products.length} products</p>`;
+            } catch (e) {
+                results.innerHTML += `<p style="color: red;">❌ fetchProducts error: ${e.message}</p>`;
+            }
+            
+            // Test 3: Old endpoint (should fail)
+            try {
+                results.innerHTML += '<h3>Test 3: Old Endpoint (should fail)</h3>';
+                const oldResponse = await fetch(`${API_BASE_URL}/products/`);
+                const oldText = await oldResponse.text();
+                results.innerHTML += `<p>Status: ${oldResponse.status}</p>`;
+                results.innerHTML += `<p>Type: ${oldText.startsWith('<!DOCTYPE') ? 'HTML' : 'JSON'}</p>`;
+                if (oldText.startsWith('<!DOCTYPE')) {
+                    results.innerHTML += '<p style="color: orange;">⚠️ Old endpoint returned HTML (expected)</p>';
+                } else {
+                    results.innerHTML += '<p style="color: green;">✅ Old endpoint returned JSON (unexpected)</p>';
+                }
+            } catch (e) {
+                results.innerHTML += `<p style="color: orange;">⚠️ Old endpoint error: ${e.message} (expected)</p>`;
+            }
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('load', testEndpoints);
+    </script>
+</body>
+</html>

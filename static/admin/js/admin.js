@@ -1,6 +1,11 @@
 // Admin Dashboard JavaScript
-const API_BASE_URL = 'https://buddyskincare.vn/backend/api';
-const FLASK_API_BASE = 'https://buddyskincare.vn/backend/api'; // Use new API base
+// Auto-detect environment and set appropriate API base  
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8000' 
+    : 'https://buddyskincare.vn/backend/api';
+const FLASK_API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? 'http://localhost:8000' 
+    : 'https://buddyskincare.vn'; // Remove /backend/api for Flask routes
 
 // AdminAPI Object
 const AdminAPI = {
@@ -37,16 +42,25 @@ const AdminAPI = {
     
     // Products
     async getProducts() {
-        const response = await fetch(`${FLASK_API_BASE}/admin-products`);
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/products`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
     },
     
     async updateProduct(productId, data) {
-        const response = await fetch(`${FLASK_API_BASE}/admin-products/${productId}`, {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/products/${productId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return await response.json();
+    },
+    
+    async deleteProduct(productId) {
+        const response = await fetch(`${FLASK_API_BASE}/admin/api/products/${productId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
         });
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return await response.json();
@@ -173,7 +187,7 @@ function showLoading(containerId) {
 // Product Management Functions
 async function fetchProducts(status = null, flashSale = false) {
     try {
-        let url = `${API_BASE_URL}/products/`;
+        let url = `${FLASK_API_BASE}/admin/api/products`;
         const params = new URLSearchParams();
         
         if (status) {

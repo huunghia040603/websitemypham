@@ -1,6 +1,8 @@
 // API Configuration
 const API_CONFIG = {
-    BASE_URL: 'https://buddyskincare.vn/backend/api',
+    BASE_URL: (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
+        ? 'http://localhost:8000' 
+        : 'https://buddyskincare.vn/backend/api',
     ENDPOINTS: {
         collaborators: '/collaborators/',
         customer: '/customer/',
@@ -9,7 +11,7 @@ const API_CONFIG = {
         tags: '/tags/',
         gifts: '/gifts/',
         products: '/products/',
-        adminProducts: '/admin-products/',
+        adminProducts: '/admin/api/products',
         vouchers: '/vouchers/',
         orders: '/orders/',
         orderItems: '/order-items/',
@@ -38,4 +40,8 @@ function getApiUrl(endpoint) {
 // Helper function to get full API URL with custom path
 function getApiUrlWithPath(endpoint, path = '') {
     return API_CONFIG.BASE_URL + API_CONFIG.ENDPOINTS[endpoint] + path;
+}
+// Helper function to get base API URL
+function getApiBaseUrl() {
+    return API_CONFIG.BASE_URL;
 }

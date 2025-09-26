@@ -11,7 +11,7 @@ function generateRandomDiscount() {
 // Fetch voucher by code from backend API
 async function fetchVoucherFromAPI(code){
     try{
-        const res = await fetch('https://buddyskincare.vn/backend/api/vouchers/');
+        const res = await fetch(getApiUrl('vouchers'));
         if(!res.ok) return null;
         const list = await res.json();
         const found = (list||[]).find(v => (v.code||'').toUpperCase() === String(code||'').toUpperCase());
@@ -25,7 +25,7 @@ async function fetchVoucherFromAPI(code){
 // Fetch CTV by code from backend API
 async function fetchCTVFromAPI(code){
     try{
-        const res = await fetch('https://buddyskincare.vn/backend/api/ctvs/');
+        const res = await fetch(getApiUrl('ctvs'));
         if(!res.ok) return null;
         const list = await res.json();
         const found = (list||[]).find(ctv => (ctv.code||'').toUpperCase() === String(code||'').toUpperCase());

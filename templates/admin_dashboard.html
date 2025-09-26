@@ -187,11 +187,28 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', async function() {
-    // Load dashboard statistics
-    await loadDashboardStats();
-    
-    // Load recent orders
-    await loadRecentOrders();
+    // Wait for AdminAPI to be loaded
+    if (typeof AdminAPI !== 'undefined') {
+        await loadDashboardStats();
+        await loadRecentOrders();
+    } else {
+        window.addEventListener('adminjs-loaded', async function() {
+            await loadDashboardStats();
+            await loadRecentOrders();
+        });
+        
+        // Fallback: try to load after a delay
+        setTimeout(async function() {
+            if (typeof AdminAPI !== 'undefined') {
+                await loadDashboardStats();
+                await loadRecentOrders();
+            } else {
+                console.error('AdminAPI still not available after timeout');
+                document.getElementById('recentOrders').innerHTML = 
+                    '<div class="alert alert-danger">Lỗi: Không thể tải AdminAPI. Vui lòng refresh trang.</div>';
+            }
+        }, 3000);
+    }
 });
 
 async function loadDashboardStats() {
@@ -256,9 +273,20 @@ async function loadDashboardStats() {
             console.error('Error loading withdrawals:', error);
         }
         
-        // Load customers
-        const customers = await AdminAPI.getCustomers();
-        document.getElementById('totalCustomers').textContent = customers.length;
+        // Load customers from customer-leads endpoint
+        try {
+            const customersResponse = await fetch('https://buddyskincare.vn/backend/api/customer-leads/');
+            if (customersResponse.ok) {
+                const customers = await customersResponse.json();
+                document.getElementById('totalCustomers').textContent = customers.length;
+            } else {
+                console.error('Error loading customers:', customersResponse.status);
+                document.getElementById('totalCustomers').textContent = '-';
+            }
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            document.getElementById('totalCustomers').textContent = '-';
+        }
         
     } catch (error) {
         console.error('Error loading dashboard stats:', error);
